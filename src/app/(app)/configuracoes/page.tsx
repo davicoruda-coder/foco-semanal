@@ -16,12 +16,15 @@ export default function ConfiguracoesPage() {
     setTheme,
     user,
     cloud,
+    supabaseReady,
     exportBackup,
     importBackup,
     resetDemoData,
+    logout,
   } = useApp();
   const fileRef = useRef<HTMLInputElement>(null);
   const [backupMsg, setBackupMsg] = useState<string | null>(null);
+  const [authBusy, setAuthBusy] = useState(false);
 
   function downloadBackup() {
     const blob = new Blob([exportBackup()], { type: "application/json" });
@@ -38,6 +41,32 @@ export default function ConfiguracoesPage() {
     const text = await file.text();
     const result = importBackup(text);
     setBackupMsg(result.ok ? "Backup restaurado." : result.error);
+  }
+
+  async function loginGoogle() {
+    if (!supabaseReady) {
+      alert("Supabase ainda não está configurado neste deploy.");
+      return;
+    }
+    setAuthBusy(true);
+    try {
+      const { createClient } = await import("@/lib/supabase/client");
+      const supabase = createClient();
+      await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+          scopes: "https://www.googleapis.com/auth/drive.readonly",
+          queryParams: {
+            access_type: "offline",
+            prompt: "consent",
+          },
+        },
+      });
+    } catch {
+      setAuthBusy(false);
+      alert("Não foi possível iniciar o login Google.");
+    }
   }
 
   return (
@@ -139,12 +168,40 @@ export default function ConfiguracoesPage() {
           </div>
           <div className="min-w-0">
             <p className="truncate text-sm font-medium">{user?.name}</p>
-            <p className="truncate text-xs opacity-60">{user?.email}</p>
+            <p className="truncate text-xs opacity-60">
+              {cloud ? user?.email : "neste aparelho"}
+            </p>
             <p className="mt-0.5 text-xs opacity-50">
-              {cloud ? "Conta Google · nuvem" : "Demo · neste navegador"}
+              {cloud ? "Conta Google · nuvem" : "Local · neste navegador"}
             </p>
           </div>
         </div>
+
+        <div className="mt-4 flex flex-wrap gap-2">
+          {cloud ? (
+            <button
+              type="button"
+              className="btn"
+              onClick={() => logout()}
+            >
+              Usar só neste aparelho
+            </button>
+          ) : (
+            <button
+              type="button"
+              className="btn btn-primary"
+              disabled={!supabaseReady || authBusy}
+              onClick={() => void loginGoogle()}
+            >
+              {authBusy ? "Abrindo Google…" : "Entrar com Google"}
+            </button>
+          )}
+        </div>
+        {!cloud && (
+          <p className="mt-2 text-xs opacity-55">
+            Opcional: sincroniza matérias, timers e notas entre aparelhos.
+          </p>
+        )}
       </section>
     </div>
   );

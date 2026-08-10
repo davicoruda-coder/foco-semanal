@@ -30,7 +30,7 @@ export default function MusicaPage() {
   async function connectDrive() {
     if (!supabaseReady) {
       alert(
-        "No modo demo: use o mapa Seg–Dom abaixo. Com Supabase + Google configurados, este botão abre o OAuth do Drive.",
+        "No modo local: use o mapa Seg–Dom abaixo. Com Google conectado, este botão abre o OAuth do Drive.",
       );
       return;
     }

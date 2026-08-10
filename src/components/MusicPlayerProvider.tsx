@@ -347,7 +347,7 @@ export function MusicPlayerProvider({ children }: { children: ReactNode }) {
 
       if (music.source === "drive") {
         setError(
-          "Drive na demo só mapeia nomes. Toque real com Supabase na versão final.",
+          "Drive no modo local só mapeia nomes. Toque real com Google conectado.",
         );
         return false;
       }

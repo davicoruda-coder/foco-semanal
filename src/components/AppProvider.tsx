@@ -153,7 +153,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setCloud(false);
       cloudRef.current = false;
       userIdRef.current = null;
-      setUser(getDemoUser());
+      let local = getDemoUser();
+      if (
+        !local ||
+        local.email === "demo@foco.local" ||
+        local.name === "Demo"
+      ) {
+        local = {
+          id: local?.id ?? newId("user"),
+          name: "Você",
+          email: "neste aparelho",
+        };
+        setDemoUser(local);
+      }
+      setUser(local);
       setDataState(loadDemoData());
       setReady(true);
     }
@@ -225,25 +238,21 @@ export function AppProvider({ children }: { children: ReactNode }) {
         void createClient().auth.signOut();
       });
     }
+    const existing = getDemoUser();
     const u = {
-      id: newId("user"),
-      email: email?.trim() || "demo@foco.local",
-      name: name?.trim() || "Demo",
+      id: existing?.id ?? newId("user"),
+      email: email?.trim() || existing?.email || "neste aparelho",
+      name: name?.trim() || existing?.name || "Você",
     };
     setDemoUser(u);
     setUser(u);
-    setDataState((prev) => {
-      const next = localStorage.getItem("foco_semanal_data_v1")
-        ? prev
-        : loadDemoData();
-      saveDemoData(next);
-      return next;
-    });
+    const next = loadDemoData();
+    setDataState(next);
+    saveDemoData(next);
   }, []);
 
+  /** Sai da nuvem e continua no modo local neste aparelho. */
   const logout = useCallback(() => {
-    setDemoUser(null);
-    setUser(null);
     cloudRef.current = false;
     userIdRef.current = null;
     setCloud(false);
@@ -252,6 +261,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
         void createClient().auth.signOut();
       });
     }
+    const existing = getDemoUser();
+    const u = {
+      id: existing?.id ?? newId("user"),
+      email: existing?.email || "neste aparelho",
+      name: existing?.name || "Você",
+    };
+    setDemoUser(u);
+    setUser(u);
+    setDataState(loadDemoData());
   }, []);
 
   const exportBackup = useCallback(() => {

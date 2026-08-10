@@ -5,8 +5,9 @@ import { useRouter } from "next/navigation";
 import { Target } from "lucide-react";
 import { useApp } from "@/components/AppProvider";
 
+/** Mantida para OAuth legado; entrada normal vai direto para /hoje. */
 export default function LoginPage() {
-  const { user, ready, loginDemo, supabaseReady } = useApp();
+  const { user, ready, cloud, supabaseReady } = useApp();
   const router = useRouter();
 
   useEffect(() => {
@@ -15,9 +16,7 @@ export default function LoginPage() {
 
   async function loginGoogle() {
     if (!supabaseReady) {
-      alert(
-        "Supabase ainda não está configurado. Use o modo demo por enquanto, ou siga o SETUP.md.",
-      );
+      alert("Supabase ainda não está configurado neste deploy.");
       return;
     }
     const { createClient } = await import("@/lib/supabase/client");
@@ -35,11 +34,6 @@ export default function LoginPage() {
     });
   }
 
-  function enterDemo() {
-    loginDemo();
-    router.push("/hoje");
-  }
-
   return (
     <div className="relative z-10 flex min-h-screen items-center justify-center px-4 py-10">
       <div className="surface w-full max-w-md p-8 md:p-10">
@@ -54,24 +48,25 @@ export default function LoginPage() {
         </div>
         <p className="font-display text-4xl font-semibold tracking-tight">Foco Semanal</p>
         <p className="mt-2 text-[color-mix(in_srgb,var(--ink)_60%,transparent)]">
-          Uma semana, um ritmo.
+          {cloud
+            ? "Conta Google conectada."
+            : "Use o app sem conta, ou sincronize com Google."}
         </p>
 
         <div className="mt-8 space-y-3">
-          <button type="button" className="btn btn-primary w-full" onClick={loginGoogle}>
-            Entrar com Google
+          <button
+            type="button"
+            className="btn btn-primary w-full"
+            onClick={() => router.push("/hoje")}
+          >
+            Continuar
           </button>
+          {!cloud && (
+            <button type="button" className="btn w-full" onClick={loginGoogle}>
+              Entrar com Google
+            </button>
+          )}
         </div>
-
-        <div className="my-8 flex items-center gap-3 text-xs uppercase tracking-wider text-[color-mix(in_srgb,var(--ink)_40%,transparent)]">
-          <span className="h-px flex-1 bg-[var(--line)]" />
-          ou
-          <span className="h-px flex-1 bg-[var(--line)]" />
-        </div>
-
-        <button type="button" className="btn w-full" onClick={enterDemo}>
-          Continuar em modo demo
-        </button>
       </div>
     </div>
   );
