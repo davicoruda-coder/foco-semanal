@@ -27,12 +27,6 @@ const NOTE_COLORS = [
   "#DDD6FE",
 ];
 
-const FONT_SIZES = [
-  { label: "P", title: "Pequeno", px: "13px" },
-  { label: "M", title: "Médio", px: "15px" },
-  { label: "G", title: "Grande", px: "18px" },
-] as const;
-
 function toLocalInput(iso: string) {
   const d = new Date(iso);
   if (Number.isNaN(+d)) return "";
@@ -43,42 +37,6 @@ function toLocalInput(iso: string) {
 function runFormat(cmd: "bold" | "italic") {
   document.execCommand("styleWithCSS", false, "true");
   document.execCommand(cmd, false);
-}
-
-function applyFontSize(px: string, editor: HTMLElement | null) {
-  if (!editor) return;
-  const sel = window.getSelection();
-  if (!sel) return;
-
-  if (sel.rangeCount === 0 || sel.isCollapsed) {
-    const plain = (editor.textContent || "").trim();
-    if (!plain) {
-      editor.style.fontSize = px;
-      return;
-    }
-    const range = document.createRange();
-    range.selectNodeContents(editor);
-    sel.removeAllRanges();
-    sel.addRange(range);
-  }
-
-  document.execCommand("styleWithCSS", false, "true");
-  const range = sel.getRangeAt(0);
-  const span = document.createElement("span");
-  span.style.fontSize = px;
-  try {
-    range.surroundContents(span);
-  } catch {
-    const frag = range.extractContents();
-    span.appendChild(frag);
-    range.insertNode(span);
-  }
-  editor.style.fontSize = "";
-  sel.removeAllRanges();
-  const next = document.createRange();
-  next.selectNodeContents(span);
-  next.collapse(false);
-  sel.addRange(next);
 }
 
 function NoteCard({
@@ -110,18 +68,8 @@ function NoteCard({
   function persistFromEditor() {
     const el = editorRef.current;
     if (!el) return;
-    let html = sanitizeNoteHtml(el.innerHTML);
+    const html = sanitizeNoteHtml(el.innerHTML);
     const plain = plainTextFromHtml(html);
-    if (!plain) {
-      html = "";
-      el.style.fontSize = el.style.fontSize || "";
-    } else if (el.style.fontSize) {
-      html = sanitizeNoteHtml(
-        `<span style="font-size:${el.style.fontSize}">${html}</span>`,
-      );
-      el.style.fontSize = "";
-      el.innerHTML = html;
-    }
     const stored = plain ? html : "";
     if (stored === reminder.title) return;
     skipSync.current = true;
@@ -179,24 +127,6 @@ function NoteCard({
           >
             <Italic size={14} strokeWidth={2.25} />
           </button>
-          <span className="mx-0.5 h-4 w-px bg-black/15" aria-hidden />
-          {FONT_SIZES.map((s) => (
-            <button
-              key={s.px}
-              type="button"
-              title={s.title}
-              aria-label={`Tamanho ${s.title.toLowerCase()}`}
-              className="grid h-7 min-w-7 place-items-center rounded px-1.5 text-[11px] font-semibold text-[#292524] transition hover:bg-black/10"
-              style={{ fontSize: s.px === "13px" ? 11 : s.px === "15px" ? 13 : 15 }}
-              onClick={() => {
-                editorRef.current?.focus();
-                applyFontSize(s.px, editorRef.current);
-                persistFromEditor();
-              }}
-            >
-              {s.label}
-            </button>
-          ))}
         </div>
       )}
 
