@@ -12,10 +12,11 @@
   --warn: #f97316;
   --warn-soft: #fff1e6;
   --ok: #16a34a;
-  --row-tint-ok: 16%;
+  --row-tint-ok: 9%;
   --row-tint-warn: 14%;
-  --status-ok-fill: 42%;
-  --status-ok-ring: 35%;
+  --status-ok-fill: 100%;
+  --status-ok-ring: 20%;
+  --status-ok-fg: #ffffff;
   --next: #64748b;
   --line: #dddcec;
   --radius: 18px;
@@ -43,6 +44,7 @@
   --row-tint-warn: 6%;
   --status-ok-fill: 55%;
   --status-ok-ring: 45%;
+  --status-ok-fg: var(--ok);
   --next: #94a3b8;
   --line: #2a2b38;
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35), 0 1px 3px rgba(0, 0, 0, 0.3);
