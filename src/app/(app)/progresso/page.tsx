@@ -108,7 +108,7 @@ export default function ProgressoPage() {
 
   return (
     <div className="mx-auto max-w-3xl">
-      <h1 className="font-display text-3xl font-semibold tracking-tight md:text-4xl">
+      <h1 className="font-display pb-0.5 text-2xl font-semibold leading-normal tracking-tight md:text-3xl">
         Progresso
       </h1>
       <p className="mt-1 text-sm opacity-60">
