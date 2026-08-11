@@ -7,7 +7,6 @@ import {
   CalendarDays,
   StickyNote,
   Home,
-  LogOut,
   Bell,
   Settings,
   Target,
@@ -22,13 +21,11 @@ const NAV = [
   { href: "/lembretes", label: "Lembretes", icon: Bell },
   { href: "/notas", label: "Notas", icon: StickyNote },
   { href: "/historico", label: "Histórico", icon: History },
-  { href: "/configuracoes", label: "Configurações", icon: Settings },
 ];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const { user, ready, cloud, logout } = useApp();
-  const onHome = pathname.startsWith("/hoje");
+  const { user, ready } = useApp();
   const onConfig = pathname.startsWith("/configuracoes");
 
   if (!ready || !user) {
@@ -39,100 +36,68 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     );
   }
 
-  const initial = (user.name || user.email || "?").trim().charAt(0).toUpperCase();
-
   return (
     <div className="relative z-0 min-h-screen">
-      <aside className="fixed inset-y-0 left-0 z-20 hidden w-64 flex-col gap-6 border-r border-[var(--line)] bg-[var(--surface)]/75 p-5 backdrop-blur-xl md:flex">
-        <div className="flex items-center gap-3">
-          <div
-            className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl text-white"
-            style={{
-              background:
-                "linear-gradient(135deg, var(--signal), var(--accent-2))",
-              boxShadow: "var(--shadow-md)",
-            }}
+      <header className="sticky top-0 z-20 border-b border-[var(--line)] bg-[var(--surface)]/80 backdrop-blur-xl">
+        <div className="mx-auto flex h-14 max-w-7xl items-center gap-2 px-3 sm:gap-3 sm:px-5 md:px-8">
+          <Link
+            href="/hoje"
+            className="flex min-w-0 shrink-0 items-center gap-2.5"
+            title="Foco Semanal"
           >
-            <Target size={20} strokeWidth={2.25} />
-          </div>
-          <div className="min-w-0">
-            <p className="font-display text-lg font-semibold leading-tight tracking-tight">
+            <div
+              className="grid h-8 w-8 shrink-0 place-items-center rounded-xl text-white"
+              style={{
+                background:
+                  "linear-gradient(135deg, var(--signal), var(--accent-2))",
+                boxShadow: "var(--shadow-md)",
+              }}
+            >
+              <Target size={16} strokeWidth={2.25} />
+            </div>
+            <span className="font-display hidden truncate text-base font-semibold tracking-tight sm:inline">
               Foco Semanal
-            </p>
-            <p className="truncate text-xs text-[color-mix(in_srgb,var(--ink)_55%,transparent)]">
-              Uma semana, um ritmo.
-            </p>
-          </div>
-        </div>
+            </span>
+          </Link>
 
-        <nav className="flex flex-1 flex-col gap-1">
-          {NAV.map(({ href, label, icon: Icon }) => {
-            const active = pathname.startsWith(href);
-            return (
-              <Link
-                key={href}
-                href={href}
-                className={`flex items-center gap-3 rounded-[var(--radius-btn)] px-3 py-2.5 text-sm transition ${
-                  active
-                    ? "bg-[var(--signal-soft)] font-semibold text-[var(--signal)]"
-                    : "text-[color-mix(in_srgb,var(--ink)_75%,transparent)] hover:bg-[var(--mist)]"
-                }`}
-              >
-                <Icon size={18} strokeWidth={active ? 2.25 : 1.75} />
-                {label}
-              </Link>
-            );
-          })}
-        </nav>
-
-        <div className="flex items-center gap-3 border-t border-[var(--line)] pt-4">
-          <div
-            className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-sm font-semibold"
-            style={{ background: "var(--signal-soft)", color: "var(--signal)" }}
-          >
-            {initial}
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-medium">{user.name}</p>
-            <p className="truncate text-xs text-[color-mix(in_srgb,var(--ink)_50%,transparent)]">
-              {cloud ? user.email : "Local · neste navegador"}
-            </p>
-          </div>
-          {cloud && (
-            <button
-              type="button"
-              title="Desconectar nuvem"
-              aria-label="Desconectar nuvem"
-              className="shrink-0 rounded-[var(--radius-btn)] p-2 text-[color-mix(in_srgb,var(--ink)_55%,transparent)] transition hover:bg-[var(--mist)] hover:text-[var(--warn)]"
-              onClick={() => logout()}
-            >
-              <LogOut size={16} />
-            </button>
-          )}
-        </div>
-      </aside>
-
-      <main className="min-h-screen px-4 pb-8 pt-6 md:ml-64 md:px-8">
-        {!onHome && (
-          <div className="mb-4 flex items-center justify-between md:hidden">
+          <nav className="ml-auto flex max-w-[calc(100%-2.5rem)] items-center gap-0.5 overflow-x-auto sm:max-w-none sm:gap-1">
+            {NAV.map(({ href, label, icon: Icon }) => {
+              const active = pathname.startsWith(href);
+              return (
+                <Link
+                  key={href}
+                  href={href}
+                  title={label}
+                  aria-label={label}
+                  aria-current={active ? "page" : undefined}
+                  className={`grid h-9 w-9 place-items-center rounded-[var(--radius-btn)] transition sm:h-10 sm:w-10 ${
+                    active
+                      ? "bg-[var(--signal-soft)] text-[var(--signal)]"
+                      : "text-[color-mix(in_srgb,var(--ink)_55%,transparent)] hover:bg-[var(--mist)] hover:text-[var(--ink)]"
+                  }`}
+                >
+                  <Icon size={18} strokeWidth={active ? 2.25 : 1.75} />
+                </Link>
+              );
+            })}
             <Link
-              href="/hoje"
-              className="text-sm font-medium text-[var(--signal)]"
+              href="/configuracoes"
+              title="Configurações"
+              aria-label="Configurações"
+              aria-current={onConfig ? "page" : undefined}
+              className={`grid h-9 w-9 place-items-center rounded-[var(--radius-btn)] transition sm:h-10 sm:w-10 ${
+                onConfig
+                  ? "bg-[var(--signal-soft)] text-[var(--signal)]"
+                  : "text-[color-mix(in_srgb,var(--ink)_55%,transparent)] hover:bg-[var(--mist)] hover:text-[var(--ink)]"
+              }`}
             >
-              ← Hoje
+              <Settings size={18} strokeWidth={onConfig ? 2.25 : 1.75} />
             </Link>
-            {!onConfig && (
-              <Link
-                href="/configuracoes"
-                title="Configurações"
-                aria-label="Configurações"
-                className="rounded-full p-2 text-[color-mix(in_srgb,var(--ink)_50%,transparent)] transition hover:bg-[var(--mist)] hover:text-[var(--signal)]"
-              >
-                <Settings size={20} strokeWidth={1.75} />
-              </Link>
-            )}
-          </div>
-        )}
+          </nav>
+        </div>
+      </header>
+
+      <main className="mx-auto max-w-7xl px-4 pb-10 pt-5 sm:px-5 md:px-8 md:pt-6">
         {children}
       </main>
     </div>
