@@ -1,6 +1,6 @@
 # Foco Semanal
 
-Sistema de estudo moderno: grade semanal, matérias, timer 40/10/5, lembretes com alarme, sticky notes e música (Google Drive / Spotify / YouTube).
+Sistema de estudo: grade semanal, matérias, timers, lembretes com alarme e sticky notes. Dados na nuvem via Supabase (e-mail + senha).
 
 ## Desenvolvimento
 
@@ -9,14 +9,11 @@ npm install
 npm run dev
 ```
 
-Abra [http://localhost:3000](http://localhost:3000) e use **Continuar em modo demo**.
+Abra [http://localhost:3000](http://localhost:3000) — crie conta ou continue sem conta.
 
-## Produção (suas contas)
+## Produção
 
-Siga o guia completo em **[SETUP.md](SETUP.md)**:
+Siga **[SETUP.md](SETUP.md)**:
 
-1. Supabase (banco + auth)
-2. Google Cloud (OAuth do app)
-3. Deploy na Vercel
-
-Você hospeda; cada usuário entra com a própria Google e conecta o próprio Drive.
+1. Supabase (banco + auth e-mail)
+2. Deploy na Vercel

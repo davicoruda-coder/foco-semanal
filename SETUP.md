@@ -1,6 +1,6 @@
 # Foco Semanal — Setup (Supabase + Vercel)
 
-Guia para a **versão final**: login Google, dados na nuvem e deploy.
+Guia para a **versão final**: login por e-mail (Supabase), dados na nuvem e deploy.
 
 ---
 
@@ -9,40 +9,34 @@ Guia para a **versão final**: login Google, dados na nuvem e deploy.
 1. Crie um projeto em [supabase.com](https://supabase.com).
 2. **Project Settings → API** — copie:
    - Project URL  
-   - `anon` `public` key
+   - `anon` / publishable key
 3. **SQL Editor** — cole e rode todo o arquivo [`supabase/schema.sql`](supabase/schema.sql).
-4. **Authentication → Providers**:
-   - **Google** — ative (Client ID/Secret do passo 2).
-   - **Email** — deixe habilitado (criar conta / esqueci a senha).
+4. **Authentication → Providers → Email** — habilitado (criar conta / esqueci a senha).  
+   Pode desligar Google se estiver ativo.
 5. **Authentication → URL Configuration**:
-   - Site URL: `http://localhost:3000` (depois a URL da Vercel)
+   - Site URL: `https://SEU-APP.vercel.app` (local: `http://localhost:3000`)
    - Redirect URLs:  
      `http://localhost:3000/auth/callback`  
      `https://SEU-APP.vercel.app/auth/callback`
 
----
+Se o projeto já tinha tabelas de música, pode limpar (opcional):
 
-## 2. Google Cloud (OAuth)
+```sql
+drop table if exists public.music_day_map;
+drop table if exists public.music_settings;
+```
 
-1. [Google Cloud Console](https://console.cloud.google.com/) → projeto (ex.: `foco-semanal`).
-2. Ative **Google Drive API**.
-3. **Tela de consentimento OAuth** (Externo):
-   - Escopos: `email`, `profile`, `openid`  
-     e `https://www.googleapis.com/auth/drive.readonly`
-   - Em Teste, adicione e-mails de teste.
-4. **Credenciais → ID do cliente OAuth** (Aplicativo da Web):
-   - Redirect: `https://SEU-PROJECT.supabase.co/auth/v1/callback`
-5. Cole Client ID e Secret no Supabase → Google provider.
+E rode de novo o `handle_new_user` do `schema.sql` (a função atualizada).
 
 ---
 
-## 3. Variáveis locais
+## 2. Variáveis locais
 
 Crie `.env.local` na raiz:
 
 ```env
 NEXT_PUBLIC_SUPABASE_URL=https://xxxx.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGci...
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGci...   # ou sb_publishable_...
 ```
 
 ```bash
@@ -50,38 +44,36 @@ npm install
 npm run dev
 ```
 
-Abra `http://localhost:3000` → **Entrar com Google**.
+Abra `http://localhost:3000` → **Criar conta** ou **Entrar** com e-mail.
 
-Sem `.env.local`, o app continua em **modo demo**.
+Sem `.env.local`, use **Continuar sem conta** (só neste aparelho).
 
 ---
 
-## 4. GitHub + Vercel
+## 3. GitHub + Vercel
 
 1. Crie um repositório no GitHub e faça push deste projeto.
 2. [vercel.com](https://vercel.com) → Import do repo.
 3. **Environment Variables** — mesmas do `.env.local`.
 4. Deploy.
-5. Atualize redirects no Supabase (e Google, se preciso) com  
-   `https://seu-app.vercel.app` e `/auth/callback`.
+5. Atualize redirects no Supabase com a URL da Vercel.
 
 ---
 
-## 5. O que cada pessoa faz
+## 4. O que cada pessoa faz
 
 1. Abre o link.
-2. **Entrar com Google** → Permitir.
+2. Cria conta ou entra com e-mail e senha.
 3. Usa o app (dados sincronizam na conta).
-4. Música: pasta local no PC, ou Drive quando conectar em **Música**.
 
 ---
 
-## Demo vs nuvem
+## Local vs nuvem
 
-| | Demo | Google + Supabase |
+| | Sem conta | E-mail + Supabase |
 |--|------|-------------------|
 | Dados | `localStorage` | banco Supabase |
-| Login | Continuar em modo demo | Entrar com Google |
+| Login | Continuar sem conta | Criar conta / Entrar |
 | Backup JSON | útil | opcional (já tem nuvem) |
 
 ---

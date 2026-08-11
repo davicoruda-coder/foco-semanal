@@ -7,6 +7,15 @@ import { useApp } from "@/components/AppProvider";
 
 type Mode = "signin" | "signup" | "forgot";
 
+function authErrorMessage(err: unknown): string {
+  if (err && typeof err === "object" && "message" in err) {
+    const msg = String((err as { message: unknown }).message);
+    if (msg) return msg;
+  }
+  if (typeof err === "string" && err) return err;
+  return "Falha ao autenticar. Tente de novo.";
+}
+
 export default function LoginPage() {
   const { user, ready, cloud, supabaseReady, loginDemo } = useApp();
   const router = useRouter();
@@ -18,43 +27,15 @@ export default function LoginPage() {
   const [err, setErr] = useState<string | null>(null);
 
   useEffect(() => {
-    // Já logado na nuvem: entra direto. Convidado local pode ver a tela para criar conta.
     if (ready && user && cloud) router.replace("/hoje");
   }, [ready, user, cloud, router]);
-
-  async function loginGoogle() {
-    if (!supabaseReady) {
-      setErr("Supabase ainda não está configurado neste deploy.");
-      return;
-    }
-    setBusy(true);
-    setErr(null);
-    try {
-      const { createClient } = await import("@/lib/supabase/client");
-      const supabase = createClient();
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
-          scopes: "https://www.googleapis.com/auth/drive.readonly",
-          queryParams: {
-            access_type: "offline",
-            prompt: "consent",
-          },
-        },
-      });
-      if (error) setErr(error.message);
-      else setBusy(false);
-    } catch {
-      setBusy(false);
-      setErr("Não foi possível abrir o Google.");
-    }
-  }
 
   async function submitEmail(e: React.FormEvent) {
     e.preventDefault();
     if (!supabaseReady) {
-      setErr("Supabase ainda não está configurado neste deploy.");
+      setErr(
+        "Supabase não configurado neste deploy. Verifique as variáveis NEXT_PUBLIC_SUPABASE_URL e NEXT_PUBLIC_SUPABASE_ANON_KEY.",
+      );
       return;
     }
     setBusy(true);
@@ -107,9 +88,9 @@ export default function LoginPage() {
         return;
       }
       window.location.assign("/hoje");
-    } catch {
+    } catch (e) {
       setBusy(false);
-      setErr("Falha ao autenticar. Tente de novo.");
+      setErr(authErrorMessage(e));
     }
   }
 
@@ -143,24 +124,7 @@ export default function LoginPage() {
           Crie uma conta para salvar seus dados na nuvem.
         </p>
 
-        <div className="mt-8 space-y-3">
-          <button
-            type="button"
-            className="btn btn-primary w-full"
-            disabled={busy || !supabaseReady}
-            onClick={() => void loginGoogle()}
-          >
-            Continuar com Google
-          </button>
-        </div>
-
-        <div className="my-6 flex items-center gap-3 text-xs uppercase tracking-wider text-[color-mix(in_srgb,var(--ink)_40%,transparent)]">
-          <span className="h-px flex-1 bg-[var(--line)]" />
-          ou e-mail
-          <span className="h-px flex-1 bg-[var(--line)]" />
-        </div>
-
-        <form className="space-y-3" onSubmit={(e) => void submitEmail(e)}>
+        <form className="mt-8 space-y-3" onSubmit={(e) => void submitEmail(e)}>
           <input
             className="input w-full"
             type="email"
@@ -192,6 +156,12 @@ export default function LoginPage() {
                   : "Entrar"}
           </button>
         </form>
+
+        {!supabaseReady && (
+          <p className="mt-3 text-sm text-[var(--warn)]">
+            Supabase não configurado neste ambiente.
+          </p>
+        )}
 
         <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-sm">
           {mode !== "signin" && (

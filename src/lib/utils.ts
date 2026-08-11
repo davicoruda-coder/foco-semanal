@@ -77,7 +77,3 @@ export function todayIndex(): number {
   const js = new Date().getDay(); // 0 Sun
   return js === 0 ? 6 : js - 1;
 }
-
-export function supportsDirectoryPicker(): boolean {
-  return typeof window !== "undefined" && "showDirectoryPicker" in window;
-}

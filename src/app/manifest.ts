@@ -4,8 +4,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "Foco Semanal",
     short_name: "Foco",
-    description:
-      "Sistema de estudo: grade, matérias, timer, lembretes e música.",
+    description: "Sistema de estudo: grade, matérias, timer e lembretes.",
     start_url: "/hoje",
     scope: "/",
     display: "standalone",

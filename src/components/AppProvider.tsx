@@ -25,7 +25,6 @@ import { loadCloudData, saveCloudData } from "@/lib/supabase/sync";
 import type {
   AppData,
   FocusTimer,
-  MusicSettings,
   NoteColumn,
   Reminder,
   SessionSettings,
@@ -59,7 +58,7 @@ type AppContextValue = {
   ready: boolean;
   user: User | null;
   data: AppData;
-  /** true = logado via Google/Supabase (dados na nuvem) */
+  /** true = logado via Supabase (dados na nuvem) */
   cloud: boolean;
   supabaseReady: boolean;
   theme: Theme;
@@ -83,7 +82,6 @@ type AppContextValue = {
   updateSettings: (settings: Partial<SessionSettings>) => void;
   upsertTimer: (timer: Partial<FocusTimer> & { name: string; minutes: number }) => void;
   deleteTimer: (id: string) => void;
-  updateMusic: (settings: Partial<MusicSettings>) => void;
   addStudySession: (session: Omit<StudySession, "id">) => void;
   exportBackup: () => string;
   importBackup: (json: string) => { ok: true } | { ok: false; error: string };
@@ -316,23 +314,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
         timers: parsed.data.timers?.length
           ? parsed.data.timers
           : createDefaultData().timers,
-        music_settings: {
-          ...createDefaultData().music_settings,
-          ...parsed.data.music_settings,
-          source:
-            parsed.data.music_settings?.source === "local" ||
-            parsed.data.music_settings?.source === "drive"
-              ? parsed.data.music_settings.source
-              : "none",
-        },
-        music_day_map: (parsed.data.music_day_map ?? []).map((m) => ({
-          day: m.day,
-          file_id:
-            (m as { file_id?: string }).file_id ??
-            (m as { drive_file_id?: string }).drive_file_id ??
-            m.file_name,
-          file_name: m.file_name,
-        })),
       };
       saveDemoData(imported);
       setDataState(imported);
@@ -581,11 +562,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
           timers: prev.timers
             .filter((t) => t.id !== id)
             .map((t, i) => ({ ...t, sort_order: i })),
-        })),
-      updateMusic: (settings) =>
-        setData((prev) => ({
-          ...prev,
-          music_settings: { ...prev.music_settings, ...settings },
         })),
       addStudySession: (session) =>
         setData((prev) => ({

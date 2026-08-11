@@ -170,8 +170,8 @@ export default function ConfiguracoesPage() {
         </div>
         {!cloud && (
           <p className="mt-2 text-xs opacity-55">
-            Sem conta, os dados ficam só neste navegador. Conta Google ou e-mail
-            salva na nuvem.
+            Sem conta, os dados ficam só neste navegador. Com e-mail e senha,
+            sincronizam na nuvem (Supabase).
           </p>
         )}
       </section>

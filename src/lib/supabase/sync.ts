@@ -3,7 +3,6 @@ import { createDefaultData } from "@/lib/demo-store";
 import type {
   AppData,
   FocusTimer,
-  MusicSettings,
   NoteColumn,
   Reminder,
   SessionSettings,
@@ -34,8 +33,6 @@ export async function loadCloudData(
     remindersRes,
     columnsRes,
     stickiesRes,
-    musicRes,
-    dayMapRes,
   ] = await Promise.all([
     supabase.from("profiles").select("display_name, theme").eq("id", userId).maybeSingle(),
     supabase.from("subjects").select("*").eq("user_id", userId).order("cycle_order"),
@@ -51,8 +48,6 @@ export async function loadCloudData(
     supabase.from("reminders").select("*").eq("user_id", userId),
     supabase.from("note_columns").select("*").eq("user_id", userId).order("sort_order"),
     supabase.from("sticky_notes").select("*").eq("user_id", userId).order("sort_order"),
-    supabase.from("music_settings").select("*").eq("user_id", userId).maybeSingle(),
-    supabase.from("music_day_map").select("*").eq("user_id", userId).order("day"),
   ]);
 
   const defaults = createDefaultData();
@@ -131,21 +126,6 @@ export async function loadCloudData(
     sort_order: n.sort_order ?? 0,
   }));
 
-  const ms = musicRes.data;
-  const music_settings: MusicSettings = {
-    source:
-      ms?.source === "local" || ms?.source === "drive" ? ms.source : "none",
-    drive_folder_id: ms?.drive_folder_id ?? null,
-    drive_folder_name: ms?.drive_folder_name ?? null,
-    local_folder_name: ms?.local_folder_name ?? null,
-  };
-
-  const music_day_map = (dayMapRes.data ?? []).map((m) => ({
-    day: m.day,
-    file_id: m.file_id,
-    file_name: m.file_name,
-  }));
-
   return {
     data: {
       subjects,
@@ -156,8 +136,6 @@ export async function loadCloudData(
       study_sessions,
       session_settings,
       timers,
-      music_settings,
-      music_day_map,
     },
     theme: asTheme(profileRes.data?.theme),
     displayName: profileRes.data?.display_name ?? null,
@@ -180,22 +158,12 @@ export async function saveCloudData(
     ...data.session_settings,
   });
 
-  await supabase.from("music_settings").upsert({
-    user_id: userId,
-    source: data.music_settings.source,
-    drive_folder_id: data.music_settings.drive_folder_id,
-    drive_folder_name: data.music_settings.drive_folder_name,
-    local_folder_name: data.music_settings.local_folder_name,
-  });
-
-  // Replace collections
   await supabase.from("sticky_notes").delete().eq("user_id", userId);
   await supabase.from("note_columns").delete().eq("user_id", userId);
   await supabase.from("subjects").delete().eq("user_id", userId);
   await supabase.from("week_blocks").delete().eq("user_id", userId);
   await supabase.from("reminders").delete().eq("user_id", userId);
   await supabase.from("focus_timers").delete().eq("user_id", userId);
-  await supabase.from("music_day_map").delete().eq("user_id", userId);
 
   if (data.subjects.length) {
     await supabase.from("subjects").insert(
@@ -280,18 +248,6 @@ export async function saveCloudData(
     );
   }
 
-  if (data.music_day_map.length) {
-    await supabase.from("music_day_map").insert(
-      data.music_day_map.map((m) => ({
-        user_id: userId,
-        day: m.day,
-        file_id: m.file_id,
-        file_name: m.file_name,
-      })),
-    );
-  }
-
-  // Study sessions: append-only — sync recent ones with upsert
   if (data.study_sessions.length) {
     await supabase.from("study_sessions").upsert(
       data.study_sessions.slice(0, 50).map((s) => ({

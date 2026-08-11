@@ -4,8 +4,6 @@ export type Theme = "light" | "dark";
 
 export type BlockType = "trabalho" | "estudo" | "reuniao" | "pessoal" | "outro";
 
-export type MusicSource = "local" | "drive" | "none";
-
 export type SessionMode = "ciclo" | "unica";
 
 export type TimerPhase = "focus" | "break_short" | "break_long";
@@ -84,22 +82,6 @@ export interface FocusTimer {
   sort_order: number;
 }
 
-export interface MusicSettings {
-  source: MusicSource;
-  /** Pasta no Google Drive */
-  drive_folder_id: string | null;
-  drive_folder_name: string | null;
-  /** Nome da pasta local (PC) — handle fica no IndexedDB */
-  local_folder_name: string | null;
-}
-
-export interface MusicDayMap {
-  day: number;
-  /** id no Drive, ou nome estável no local */
-  file_id: string;
-  file_name: string;
-}
-
 export interface AppData {
   subjects: Subject[];
   week_blocks: WeekBlock[];
@@ -109,8 +91,6 @@ export interface AppData {
   study_sessions: StudySession[];
   session_settings: SessionSettings;
   timers: FocusTimer[];
-  music_settings: MusicSettings;
-  music_day_map: MusicDayMap[];
 }
 
 export const DAYS = [

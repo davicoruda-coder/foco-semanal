@@ -164,13 +164,6 @@ export function createDefaultData(): AppData {
         sort_order: 2,
       },
     ],
-    music_settings: {
-      source: "none",
-      drive_folder_id: null,
-      drive_folder_name: null,
-      local_folder_name: null,
-    },
-    music_day_map: [],
   };
 }
 
@@ -240,25 +233,6 @@ export function loadDemoData(): AppData {
         },
       ];
     }
-    const ms = data.music_settings ?? createDefaultData().music_settings;
-    const rawSource = (ms as { source?: string }).source;
-    data.music_settings = {
-      source:
-        rawSource === "local" || rawSource === "drive"
-          ? rawSource
-          : "none",
-      drive_folder_id: ms.drive_folder_id ?? null,
-      drive_folder_name: ms.drive_folder_name ?? null,
-      local_folder_name: ms.local_folder_name ?? null,
-    };
-    data.music_day_map = (data.music_day_map ?? []).map((m) => ({
-      day: m.day,
-      file_id:
-        (m as { file_id?: string; drive_file_id?: string }).file_id ??
-        (m as { drive_file_id?: string }).drive_file_id ??
-        m.file_name,
-      file_name: m.file_name,
-    }));
     return data;
   } catch {
     return createDefaultData();

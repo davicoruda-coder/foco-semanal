@@ -89,23 +89,6 @@ create table if not exists public.sticky_notes (
   sort_order int not null default 0
 );
 
-create table if not exists public.music_settings (
-  user_id uuid primary key references auth.users(id) on delete cascade,
-  source text not null check (source in ('local', 'drive', 'none')) default 'none',
-  drive_folder_id text,
-  drive_folder_name text,
-  local_folder_name text
-);
-
-create table if not exists public.music_day_map (
-  id uuid primary key default gen_random_uuid(),
-  user_id uuid not null references auth.users(id) on delete cascade,
-  day int not null check (day between 0 and 6),
-  file_id text not null,
-  file_name text not null,
-  unique (user_id, day)
-);
-
 -- RLS
 alter table public.profiles enable row level security;
 alter table public.subjects enable row level security;
@@ -116,8 +99,6 @@ alter table public.study_sessions enable row level security;
 alter table public.reminders enable row level security;
 alter table public.note_columns enable row level security;
 alter table public.sticky_notes enable row level security;
-alter table public.music_settings enable row level security;
-alter table public.music_day_map enable row level security;
 
 create policy "profiles_own" on public.profiles for all using (auth.uid() = id) with check (auth.uid() = id);
 create policy "subjects_own" on public.subjects for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
@@ -128,8 +109,6 @@ create policy "study_sessions_own" on public.study_sessions for all using (auth.
 create policy "reminders_own" on public.reminders for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 create policy "note_columns_own" on public.note_columns for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 create policy "sticky_notes_own" on public.sticky_notes for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
-create policy "music_settings_own" on public.music_settings for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
-create policy "music_day_map_own" on public.music_day_map for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
 -- Auto profile + defaults on signup
 create or replace function public.handle_new_user()
@@ -142,7 +121,6 @@ begin
   values (new.id, coalesce(new.raw_user_meta_data->>'full_name', new.email));
 
   insert into public.session_settings (user_id) values (new.id);
-  insert into public.music_settings (user_id) values (new.id);
 
   insert into public.focus_timers (user_id, name, minutes, accent, sort_order) values
     (new.id, 'Sessão', 40, 'var(--signal)', 0),

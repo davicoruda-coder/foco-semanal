@@ -30,7 +30,7 @@ const caveat = Caveat({
 
 export const metadata: Metadata = {
   title: "Foco Semanal",
-  description: "Sistema de estudo: grade, matérias, timer, lembretes e música.",
+  description: "Sistema de estudo: grade, matérias, timer e lembretes.",
   applicationName: "Foco Semanal",
   appleWebApp: {
     capable: true,

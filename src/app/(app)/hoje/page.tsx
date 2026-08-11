@@ -9,7 +9,6 @@ import { blockStyle, statusClass, statusRowClass, todayIndex } from "@/lib/utils
 import { ReminderWatcher } from "@/components/ReminderWatcher";
 import { ReminderBoard } from "@/components/ReminderBoard";
 import { SessionClock } from "@/components/SessionClock";
-import { HomeMusicCard } from "@/components/HomeMusicCard";
 
 export default function HojePage() {
   const { data, upsertSubject, setSubjectStatus } = useApp();
@@ -173,10 +172,6 @@ export default function HojePage() {
 
       <div className="mb-6">
         <SessionClock />
-      </div>
-
-      <div className="mb-6">
-        <HomeMusicCard />
       </div>
 
       <section className="surface mt-6 overflow-hidden p-0">
