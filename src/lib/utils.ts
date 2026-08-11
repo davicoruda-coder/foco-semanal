@@ -69,7 +69,7 @@ export function blockTint(type: BlockType): string {
 export function statusClass(status: SubjectStatus): string {
   switch (status) {
     case "ok":
-      return "bg-[color-mix(in_srgb,var(--ok)_42%,var(--surface))] text-[var(--ok)] ring-1 ring-[color-mix(in_srgb,var(--ok)_35%,transparent)]";
+      return "bg-[color-mix(in_srgb,var(--ok)_var(--status-ok-fill),var(--surface))] text-[var(--ok)] ring-1 ring-[color-mix(in_srgb,var(--ok)_var(--status-ok-ring),transparent)]";
     case "prox":
       return "bg-[color-mix(in_srgb,var(--warn)_38%,var(--surface))] text-[var(--warn)] ring-1 ring-[color-mix(in_srgb,var(--warn)_45%,transparent)]";
   }

@@ -14,6 +14,8 @@
   --ok: #16a34a;
   --row-tint-ok: 16%;
   --row-tint-warn: 14%;
+  --status-ok-fill: 42%;
+  --status-ok-ring: 35%;
   --next: #64748b;
   --line: #dddcec;
   --radius: 18px;
@@ -36,9 +38,11 @@
   --accent-2: #2dd4bf;
   --warn: #ffb14a;
   --warn-soft: #2a1c12;
-  --ok: #34d399;
-  --row-tint-ok: 7%;
+  --ok: #4ade80;
+  --row-tint-ok: 9%;
   --row-tint-warn: 6%;
+  --status-ok-fill: 55%;
+  --status-ok-ring: 45%;
   --next: #94a3b8;
   --line: #2a2b38;
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35), 0 1px 3px rgba(0, 0, 0, 0.3);
