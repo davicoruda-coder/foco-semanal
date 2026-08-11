@@ -149,9 +149,13 @@ export async function saveCloudData(
   data: AppData,
   theme: ThemePref,
 ): Promise<void> {
-  await supabase
+  const { error: themeError } = await supabase
     .from("profiles")
     .upsert({ id: userId, theme }, { onConflict: "id" });
+  if (themeError) {
+    // Banco antigo pode rejeitar "auto"; não bloqueia o restante do save.
+    console.warn("[foco] falha ao salvar tema na nuvem:", themeError.message);
+  }
 
   await supabase.from("session_settings").upsert({
     user_id: userId,

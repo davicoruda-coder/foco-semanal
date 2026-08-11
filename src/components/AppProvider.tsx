@@ -199,10 +199,21 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 "Usuário",
             });
             setDataState(loaded.data);
-            setThemePrefState(loaded.theme);
-            setThemeState(resolveTheme(loaded.theme));
-            applyTheme(resolveTheme(loaded.theme));
-            localStorage.setItem(THEME_KEY, loaded.theme);
+            // Se o local está em "auto" e a nuvem ainda não (constraint antiga),
+            // mantém o auto local e tenta sincronizar de novo.
+            const theme =
+              localPref === "auto" && loaded.theme !== "auto"
+                ? "auto"
+                : loaded.theme;
+            setThemePrefState(theme);
+            setThemeState(resolveTheme(theme));
+            applyTheme(resolveTheme(theme));
+            localStorage.setItem(THEME_KEY, theme);
+            if (theme === "auto" && loaded.theme !== "auto") {
+              void saveCloudData(supabase, uid, loaded.data, "auto").catch(
+                () => {},
+              );
+            }
             setDemoUser(null);
             setGuestMode(false);
             setReady(true);
