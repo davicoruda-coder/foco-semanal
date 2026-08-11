@@ -9,20 +9,20 @@ import type {
   StickyNote,
   StudySession,
   Subject,
-  Theme,
+  ThemePref,
   WeekBlock,
 } from "@/lib/types";
 
 type Client = SupabaseClient;
 
-function asTheme(v: string | null | undefined): Theme {
-  return v === "dark" ? "dark" : "light";
+function asTheme(v: string | null | undefined): ThemePref {
+  return v === "dark" || v === "auto" ? v : "light";
 }
 
 export async function loadCloudData(
   supabase: Client,
   userId: string,
-): Promise<{ data: AppData; theme: Theme; displayName: string | null }> {
+): Promise<{ data: AppData; theme: ThemePref; displayName: string | null }> {
   const [
     profileRes,
     subjectsRes,
@@ -147,7 +147,7 @@ export async function saveCloudData(
   supabase: Client,
   userId: string,
   data: AppData,
-  theme: Theme,
+  theme: ThemePref,
 ): Promise<void> {
   await supabase
     .from("profiles")

@@ -33,6 +33,7 @@ import type {
   Subject,
   SubjectStatus,
   Theme,
+  ThemePref,
   WeekBlock,
 } from "@/lib/types";
 
@@ -40,15 +41,24 @@ type User = { id: string; email: string; name: string };
 
 const THEME_KEY = "foco_semanal_theme";
 
+/** No modo auto: claro das 6h às 17h59, escuro à noite. */
+function resolveTheme(pref: ThemePref): Theme {
+  if (pref !== "auto") return pref;
+  const h = new Date().getHours();
+  return h >= 6 && h < 18 ? "light" : "dark";
+}
+
 function applyTheme(theme: Theme) {
   if (typeof document === "undefined") return;
   document.documentElement.setAttribute("data-theme", theme);
 }
 
-function getStoredTheme(): Theme {
+function getStoredPref(): ThemePref {
   if (typeof window === "undefined") return "light";
   const stored = localStorage.getItem(THEME_KEY);
-  if (stored === "light" || stored === "dark") return stored;
+  if (stored === "light" || stored === "dark" || stored === "auto") {
+    return stored;
+  }
   return window.matchMedia?.("(prefers-color-scheme: dark)").matches
     ? "dark"
     : "light";
@@ -62,7 +72,8 @@ type AppContextValue = {
   cloud: boolean;
   supabaseReady: boolean;
   theme: Theme;
-  setTheme: (theme: Theme) => void;
+  themePref: ThemePref;
+  setTheme: (pref: ThemePref) => void;
   loginDemo: (name?: string, email?: string) => void;
   logout: () => void;
   setData: (updater: (prev: AppData) => AppData) => void;
@@ -97,23 +108,40 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [cloud, setCloud] = useState(false);
   const [data, setDataState] = useState<AppData>(() => createDefaultData());
+  const [themePref, setThemePrefState] = useState<ThemePref>("light");
   const [theme, setThemeState] = useState<Theme>("light");
   const cloudRef = useRef(false);
   const userIdRef = useRef<string | null>(null);
-  const themeRef = useRef<Theme>("light");
+  const themeRef = useRef<ThemePref>("light");
   const saveTimer = useRef<number | null>(null);
 
   useEffect(() => {
-    themeRef.current = theme;
-  }, [theme]);
+    themeRef.current = themePref;
+  }, [themePref]);
+
+  // No modo auto, re-avalia periodicamente para trocar ao anoitecer/amanhecer.
+  useEffect(() => {
+    if (themePref !== "auto") return;
+    const tick = () => {
+      const next = resolveTheme("auto");
+      setThemeState((prev) => {
+        if (prev !== next) applyTheme(next);
+        return next;
+      });
+    };
+    tick();
+    const id = window.setInterval(tick, 60_000);
+    return () => window.clearInterval(id);
+  }, [themePref]);
 
   useEffect(() => {
     let cancelled = false;
 
     async function boot() {
-      const initialTheme = getStoredTheme();
-      setThemeState(initialTheme);
-      applyTheme(initialTheme);
+      const initialPref = getStoredPref();
+      setThemePrefState(initialPref);
+      setThemeState(resolveTheme(initialPref));
+      applyTheme(resolveTheme(initialPref));
 
       if (isSupabaseConfigured()) {
         try {
@@ -125,12 +153,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
           if (session?.user && !cancelled) {
             const uid = session.user.id;
             const localSnapshot = loadDemoData();
-            const localTheme = getStoredTheme();
+            const localPref = getStoredPref();
             const migrate = consumeMigrateLocalFlag();
 
             if (migrate) {
               try {
-                await saveCloudData(supabase, uid, localSnapshot, localTheme);
+                await saveCloudData(supabase, uid, localSnapshot, localPref);
               } catch {
                 /* still continue with local snapshot */
               }
@@ -147,8 +175,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
                   "Usuário",
               });
               setDataState(localSnapshot);
-              setThemeState(localTheme);
-              applyTheme(localTheme);
+              setThemePrefState(localPref);
+              setThemeState(resolveTheme(localPref));
+              applyTheme(resolveTheme(localPref));
               setDemoUser(null);
               setGuestMode(false);
               setReady(true);
@@ -170,8 +199,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 "Usuário",
             });
             setDataState(loaded.data);
-            setThemeState(loaded.theme);
-            applyTheme(loaded.theme);
+            setThemePrefState(loaded.theme);
+            setThemeState(resolveTheme(loaded.theme));
+            applyTheme(resolveTheme(loaded.theme));
             localStorage.setItem(THEME_KEY, loaded.theme);
             setDemoUser(null);
             setGuestMode(false);
@@ -213,7 +243,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  const persistCloud = useCallback((next: AppData, nextTheme: Theme) => {
+  const persistCloud = useCallback((next: AppData, nextTheme: ThemePref) => {
     if (!cloudRef.current || !userIdRef.current) return;
     if (saveTimer.current) window.clearTimeout(saveTimer.current);
     saveTimer.current = window.setTimeout(() => {
@@ -235,9 +265,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const setTheme = useCallback(
-    (next: Theme) => {
-      setThemeState(next);
-      applyTheme(next);
+    (next: ThemePref) => {
+      setThemePrefState(next);
+      const resolved = resolveTheme(next);
+      setThemeState(resolved);
+      applyTheme(resolved);
       localStorage.setItem(THEME_KEY, next);
       themeRef.current = next;
       if (cloudRef.current) {
@@ -315,20 +347,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
       {
         version: 1,
         exported_at: new Date().toISOString(),
-        theme,
+        theme: themePref,
         user,
         data,
       },
       null,
       2,
     );
-  }, [theme, user, data]);
+  }, [themePref, user, data]);
 
   const importBackup = useCallback((json: string) => {
     try {
       const parsed = JSON.parse(json) as {
         data?: AppData;
-        theme?: Theme;
+        theme?: ThemePref;
         user?: User | null;
       };
       if (!parsed?.data || !Array.isArray(parsed.data.subjects)) {
@@ -351,7 +383,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
       };
       saveDemoData(imported);
       setDataState(imported);
-      if (parsed.theme === "light" || parsed.theme === "dark") {
+      if (
+        parsed.theme === "light" ||
+        parsed.theme === "dark" ||
+        parsed.theme === "auto"
+      ) {
         setTheme(parsed.theme);
       }
       if (parsed.user) {
@@ -405,6 +441,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       cloud,
       supabaseReady: isSupabaseConfigured(),
       theme,
+      themePref,
       setTheme,
       loginDemo,
       logout,
@@ -642,6 +679,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       data,
       cloud,
       theme,
+      themePref,
       setTheme,
       loginDemo,
       logout,

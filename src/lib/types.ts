@@ -2,6 +2,9 @@ export type SubjectStatus = "ok" | "prox";
 
 export type Theme = "light" | "dark";
 
+/** Preferência de aparência: fixa ou automática (claro de dia, escuro à noite). */
+export type ThemePref = Theme | "auto";
+
 export type BlockType = "trabalho" | "estudo" | "reuniao" | "pessoal" | "outro";
 
 export type SessionMode = "ciclo" | "unica";

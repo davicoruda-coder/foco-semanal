@@ -1,19 +1,20 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Download, Moon, Sun, Upload } from "lucide-react";
+import { Download, Moon, Sun, SunMoon, Upload } from "lucide-react";
 import { useApp } from "@/components/AppProvider";
 import { markMigrateLocalOnNextCloudLogin } from "@/lib/demo-store";
-import type { Theme } from "@/lib/types";
+import type { ThemePref } from "@/lib/types";
 
-const OPTIONS: { value: Theme; label: string; icon: typeof Sun }[] = [
+const OPTIONS: { value: ThemePref; label: string; icon: typeof Sun }[] = [
   { value: "light", label: "Claro", icon: Sun },
   { value: "dark", label: "Escuro", icon: Moon },
+  { value: "auto", label: "Automático", icon: SunMoon },
 ];
 
 export default function ConfiguracoesPage() {
   const {
-    theme,
+    themePref,
     setTheme,
     user,
     cloud,
@@ -104,9 +105,9 @@ export default function ConfiguracoesPage() {
         <h2 className="font-display text-base font-semibold tracking-tight md:text-lg">
           Aparência
         </h2>
-        <div className="mt-3 grid gap-2.5 sm:grid-cols-2">
+        <div className="mt-3 grid gap-2.5 sm:grid-cols-3">
           {OPTIONS.map(({ value, label, icon: Icon }) => {
-            const active = theme === value;
+            const active = themePref === value;
             return (
               <button
                 key={value}
@@ -132,6 +133,11 @@ export default function ConfiguracoesPage() {
             );
           })}
         </div>
+        {themePref === "auto" && (
+          <p className="mt-2 text-xs opacity-55">
+            Automático: claro das 6h às 18h, escuro à noite.
+          </p>
+        )}
       </section>
 
       <section className="surface mt-4 p-4 md:p-5">
