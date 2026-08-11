@@ -255,10 +255,10 @@ export default function HojePage() {
         </div>
 
         <aside className="hidden space-y-4 lg:sticky lg:top-[4.5rem] lg:block lg:max-h-[calc(100vh-5.5rem)] lg:overflow-y-auto lg:self-start">
-          <SessionClock layout="stack" />
           <div className="surface p-3">
             <ReminderBoard compact />
           </div>
+          <SessionClock layout="stack" />
         </aside>
 
         <div className="surface p-4 lg:hidden">
