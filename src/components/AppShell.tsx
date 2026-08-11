@@ -56,7 +56,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <Target size={16} strokeWidth={2.25} />
             </div>
             <span className="font-display hidden truncate text-base font-semibold tracking-tight sm:inline">
-              Foco Semanal
+              Foco
             </span>
           </Link>
 

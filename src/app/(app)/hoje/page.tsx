@@ -39,10 +39,7 @@ export default function HojePage() {
               }}
             >
               <p className="font-display text-base font-semibold tracking-tight md:text-lg">
-                {`${DAYS[day]} · ${new Date().toLocaleDateString("pt-BR", {
-                  day: "numeric",
-                  month: "long",
-                })}`}
+                Semana
               </p>
             </div>
 
