@@ -161,30 +161,39 @@ export default function ConfiguracoesPage() {
           Alarme ao terminar um temporizador e avisos de lembretes com sino.
         </p>
         <div className="mt-3 flex flex-wrap items-center gap-2">
-          <button
-            type="button"
-            className="btn btn-primary"
-            disabled={
-              notifPermission === "granted" || notifPermission === "unsupported"
-            }
-            onClick={async () => {
-              const ok = await ensureNotificationPermission();
-              if (typeof window !== "undefined" && "Notification" in window) {
-                setNotifPermission(Notification.permission);
-              }
-              setNotifMsg(
-                ok
-                  ? "Notificações permitidas."
-                  : "Não foi possível permitir. Confira o cadeado na barra de endereço.",
-              );
-            }}
-          >
-            <Bell size={16} strokeWidth={1.75} />
-            {notifPermission === "granted"
-              ? "Notificações ativas"
-              : "Permitir notificações do navegador"}
-          </button>
+          {notifPermission === "granted" ? (
+            <div className="inline-flex items-center gap-2 rounded-[var(--radius-btn)] border border-[color-mix(in_srgb,var(--ok)_35%,var(--line))] bg-[color-mix(in_srgb,var(--ok)_12%,var(--surface))] px-3.5 py-2.5 text-sm font-medium text-[var(--ok)]">
+              <Bell size={16} strokeWidth={1.75} />
+              Notificações ativas
+            </div>
+          ) : (
+            <button
+              type="button"
+              className="btn btn-primary"
+              disabled={notifPermission === "unsupported"}
+              onClick={async () => {
+                const ok = await ensureNotificationPermission();
+                if (typeof window !== "undefined" && "Notification" in window) {
+                  setNotifPermission(Notification.permission);
+                }
+                setNotifMsg(
+                  ok
+                    ? "Notificações permitidas."
+                    : "Não foi possível permitir. Confira o cadeado na barra de endereço.",
+                );
+              }}
+            >
+              <Bell size={16} strokeWidth={1.75} />
+              Permitir notificações do navegador
+            </button>
+          )}
         </div>
+        {notifPermission === "granted" && (
+          <p className="mt-2 text-xs opacity-55">
+            Para desativar, use o cadeado na barra de endereço do navegador →
+            Notificações → Bloquear. O site não consegue revogar sozinho.
+          </p>
+        )}
         {notifPermission === "denied" && (
           <p className="mt-2 text-xs text-[var(--warn)]">
             Bloqueadas neste site. Libere em Configurações do navegador →
