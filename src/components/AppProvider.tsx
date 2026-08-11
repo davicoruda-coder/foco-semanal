@@ -13,7 +13,6 @@ import {
 import {
   consumeMigrateLocalFlag,
   createDefaultData,
-  getDemoUser,
   loadDemoData,
   newId,
   saveDemoData,
@@ -74,7 +73,6 @@ type AppContextValue = {
   theme: Theme;
   themePref: ThemePref;
   setTheme: (pref: ThemePref) => void;
-  loginDemo: (name?: string, email?: string) => void;
   logout: () => void;
   setData: (updater: (prev: AppData) => AppData) => void;
   upsertSubject: (subject: Partial<Subject> & { name: string }) => void;
@@ -96,7 +94,6 @@ type AppContextValue = {
   addStudySession: (session: Omit<StudySession, "id">) => void;
   exportBackup: () => string;
   importBackup: (json: string) => { ok: true } | { ok: false; error: string };
-  resetDemoData: () => void;
   /** Zera dados na nuvem (e neste aparelho). Só com sessão cloud. */
   resetCloudData: () => Promise<{ ok: true } | { ok: false; error: string }>;
 };
@@ -136,6 +133,89 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let cancelled = false;
+    let unsubscribe: (() => void) | undefined;
+
+    async function enterSession(
+      uid: string,
+      sessionUser: {
+        email?: string | null;
+        user_metadata?: { full_name?: string };
+      },
+    ) {
+      const { createClient } = await import("@/lib/supabase/client");
+      const supabase = createClient();
+      const localSnapshot = loadDemoData();
+      const localPref = getStoredPref();
+      const migrate = consumeMigrateLocalFlag();
+
+      if (migrate) {
+        try {
+          await saveCloudData(supabase, uid, localSnapshot, localPref);
+        } catch {
+          /* still continue with local snapshot */
+        }
+        if (cancelled) return;
+        setCloud(true);
+        cloudRef.current = true;
+        userIdRef.current = uid;
+        setUser({
+          id: uid,
+          email: sessionUser.email ?? "",
+          name:
+            sessionUser.user_metadata?.full_name ||
+            sessionUser.email ||
+            "Usuário",
+        });
+        setDataState(localSnapshot);
+        setThemePrefState(localPref);
+        setThemeState(resolveTheme(localPref));
+        applyTheme(resolveTheme(localPref));
+        setDemoUser(null);
+        setGuestMode(false);
+        setReady(true);
+        return;
+      }
+
+      const loaded = await loadCloudData(supabase, uid);
+      if (cancelled) return;
+      setCloud(true);
+      cloudRef.current = true;
+      userIdRef.current = uid;
+      setUser({
+        id: uid,
+        email: sessionUser.email ?? "",
+        name:
+          loaded.displayName ||
+          sessionUser.user_metadata?.full_name ||
+          sessionUser.email ||
+          "Usuário",
+      });
+      setDataState(loaded.data);
+      const theme =
+        localPref === "auto" && loaded.theme !== "auto"
+          ? "auto"
+          : loaded.theme;
+      setThemePrefState(theme);
+      setThemeState(resolveTheme(theme));
+      applyTheme(resolveTheme(theme));
+      localStorage.setItem(THEME_KEY, theme);
+      if (theme === "auto" && loaded.theme !== "auto") {
+        void saveCloudData(supabase, uid, loaded.data, "auto").catch(() => {});
+      }
+      setDemoUser(null);
+      setGuestMode(false);
+      setReady(true);
+    }
+
+    function clearSession() {
+      cloudRef.current = false;
+      userIdRef.current = null;
+      setCloud(false);
+      setUser(null);
+      setDataState(createDefaultData());
+      setGuestMode(false);
+      setReady(true);
+    }
 
     async function boot() {
       const initialPref = getStoredPref();
@@ -143,114 +223,48 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setThemeState(resolveTheme(initialPref));
       applyTheme(resolveTheme(initialPref));
 
-      if (isSupabaseConfigured()) {
-        try {
-          const { createClient } = await import("@/lib/supabase/client");
-          const supabase = createClient();
-          const { data: sessionData } = await supabase.auth.getSession();
-          const session = sessionData.session;
+      if (!isSupabaseConfigured()) {
+        if (!cancelled) clearSession();
+        return;
+      }
 
-          if (session?.user && !cancelled) {
-            const uid = session.user.id;
-            const localSnapshot = loadDemoData();
-            const localPref = getStoredPref();
-            const migrate = consumeMigrateLocalFlag();
+      try {
+        const { createClient } = await import("@/lib/supabase/client");
+        const supabase = createClient();
+        const { data: sessionData } = await supabase.auth.getSession();
+        const session = sessionData.session;
 
-            if (migrate) {
-              try {
-                await saveCloudData(supabase, uid, localSnapshot, localPref);
-              } catch {
-                /* still continue with local snapshot */
-              }
-              if (cancelled) return;
-              setCloud(true);
-              cloudRef.current = true;
-              userIdRef.current = uid;
-              setUser({
-                id: uid,
-                email: session.user.email ?? "",
-                name:
-                  session.user.user_metadata?.full_name ||
-                  session.user.email ||
-                  "Usuário",
-              });
-              setDataState(localSnapshot);
-              setThemePrefState(localPref);
-              setThemeState(resolveTheme(localPref));
-              applyTheme(resolveTheme(localPref));
-              setDemoUser(null);
-              setGuestMode(false);
-              setReady(true);
+        if (session?.user && !cancelled) {
+          await enterSession(session.user.id, session.user);
+        } else if (!cancelled) {
+          clearSession();
+        }
+
+        const { data: sub } = supabase.auth.onAuthStateChange(
+          (event, nextSession) => {
+            if (cancelled) return;
+            if (event === "SIGNED_OUT") {
+              clearSession();
               return;
             }
-
-            const loaded = await loadCloudData(supabase, uid);
-            if (cancelled) return;
-            setCloud(true);
-            cloudRef.current = true;
-            userIdRef.current = uid;
-            setUser({
-              id: uid,
-              email: session.user.email ?? "",
-              name:
-                loaded.displayName ||
-                session.user.user_metadata?.full_name ||
-                session.user.email ||
-                "Usuário",
-            });
-            setDataState(loaded.data);
-            // Se o local está em "auto" e a nuvem ainda não (constraint antiga),
-            // mantém o auto local e tenta sincronizar de novo.
-            const theme =
-              localPref === "auto" && loaded.theme !== "auto"
-                ? "auto"
-                : loaded.theme;
-            setThemePrefState(theme);
-            setThemeState(resolveTheme(theme));
-            applyTheme(resolveTheme(theme));
-            localStorage.setItem(THEME_KEY, theme);
-            if (theme === "auto" && loaded.theme !== "auto") {
-              void saveCloudData(supabase, uid, loaded.data, "auto").catch(
-                () => {},
-              );
+            if (event === "SIGNED_IN" && nextSession?.user) {
+              if (userIdRef.current === nextSession.user.id && cloudRef.current) {
+                return;
+              }
+              void enterSession(nextSession.user.id, nextSession.user);
             }
-            setDemoUser(null);
-            setGuestMode(false);
-            setReady(true);
-            return;
-          }
-        } catch {
-          /* cai no local */
-        }
+          },
+        );
+        unsubscribe = () => sub.subscription.unsubscribe();
+      } catch {
+        if (!cancelled) clearSession();
       }
-
-      if (cancelled) return;
-      // Sem sessão: entra direto no modo local deste aparelho.
-      setCloud(false);
-      cloudRef.current = false;
-      userIdRef.current = null;
-      setGuestMode(true);
-      let local = getDemoUser();
-      if (
-        !local ||
-        local.email === "demo@foco.local" ||
-        local.name === "Demo"
-      ) {
-        local = {
-          id: local?.id ?? newId("user"),
-          name: "Você",
-          email: "neste aparelho",
-        };
-        setDemoUser(local);
-      }
-      setUser(local);
-      setDataState(loadDemoData());
-      setReady(true);
     }
 
     void boot();
     return () => {
       cancelled = true;
+      unsubscribe?.();
     };
   }, []);
 
@@ -299,7 +313,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
         const next = updater(prev);
         if (cloudRef.current) {
           persistCloud(next, themeRef.current);
-        } else {
           saveDemoData(next);
         }
         return next;
@@ -308,49 +321,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
     [persistCloud],
   );
 
-  const loginDemo = useCallback((name?: string, email?: string) => {
-    cloudRef.current = false;
-    userIdRef.current = null;
-    setCloud(false);
-    setGuestMode(true);
-    if (isSupabaseConfigured()) {
-      void import("@/lib/supabase/client").then(({ createClient }) => {
-        void createClient().auth.signOut();
-      });
-    }
-    const existing = getDemoUser();
-    const u = {
-      id: existing?.id ?? newId("user"),
-      email: email?.trim() || existing?.email || "neste aparelho",
-      name: name?.trim() || existing?.name || "Você",
-    };
-    setDemoUser(u);
-    setUser(u);
-    const next = loadDemoData();
-    setDataState(next);
-    saveDemoData(next);
-  }, []);
-
-  /** Sai da nuvem e volta ao modo local neste aparelho. */
+  /** Sai da nuvem e volta à tela de login. */
   const logout = useCallback(() => {
     cloudRef.current = false;
     userIdRef.current = null;
     setCloud(false);
+    setUser(null);
+    setDataState(createDefaultData());
+    setGuestMode(false);
     if (isSupabaseConfigured()) {
       void import("@/lib/supabase/client").then(({ createClient }) => {
         void createClient().auth.signOut();
       });
     }
-    setGuestMode(true);
-    const existing = getDemoUser();
-    const u = {
-      id: existing?.id ?? newId("user"),
-      email: existing?.email || "neste aparelho",
-      name: existing?.name || "Você",
-    };
-    setDemoUser(u);
-    setUser(u);
-    setDataState(loadDemoData());
   }, []);
 
   const exportBackup = useCallback(() => {
@@ -394,6 +377,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       };
       saveDemoData(imported);
       setDataState(imported);
+      if (cloudRef.current) {
+        persistCloud(imported, themeRef.current);
+      }
       if (
         parsed.theme === "light" ||
         parsed.theme === "dark" ||
@@ -401,22 +387,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
       ) {
         setTheme(parsed.theme);
       }
-      if (parsed.user) {
-        setDemoUser(parsed.user);
-        setUser(parsed.user);
-      }
       return { ok: true as const };
     } catch {
       return { ok: false as const, error: "JSON inválido." };
     }
-  }, [setTheme]);
-
-  const resetDemoData = useCallback(() => {
-    if (cloudRef.current) return;
-    const fresh = createDefaultData();
-    saveDemoData(fresh);
-    setDataState(fresh);
-  }, []);
+  }, [setTheme, persistCloud]);
 
   const resetCloudData = useCallback(async () => {
     if (!cloudRef.current || !userIdRef.current || !isSupabaseConfigured()) {
@@ -454,7 +429,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
       theme,
       themePref,
       setTheme,
-      loginDemo,
       logout,
       setData,
       upsertSubject: (subject) => {
@@ -681,7 +655,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
         })),
       exportBackup,
       importBackup,
-      resetDemoData,
       resetCloudData,
     }),
     [
@@ -692,12 +665,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
       theme,
       themePref,
       setTheme,
-      loginDemo,
       logout,
       setData,
       exportBackup,
       importBackup,
-      resetDemoData,
       resetCloudData,
     ],
   );

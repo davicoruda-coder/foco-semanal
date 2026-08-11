@@ -11,6 +11,7 @@ import {
   ChartColumn,
 } from "lucide-react";
 import { useApp } from "@/components/AppProvider";
+import { LoginScreen } from "@/components/LoginScreen";
 
 const NAV = [
   { href: "/hoje", label: "Hoje", icon: Home },
@@ -22,14 +23,18 @@ const NAV = [
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { user, ready } = useApp();
-  const onConfig = pathname.startsWith("/configuracoes");
+  const onAjustes = pathname.startsWith("/ajustes") || pathname.startsWith("/configuracoes");
 
-  if (!ready || !user) {
+  if (!ready) {
     return (
       <div className="flex min-h-screen items-center justify-center text-[color-mix(in_srgb,var(--ink)_55%,transparent)]">
         Carregando…
       </div>
     );
+  }
+
+  if (!user) {
+    return <LoginScreen />;
   }
 
   return (
@@ -77,17 +82,17 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               );
             })}
             <Link
-              href="/configuracoes"
-              title="Configurações"
-              aria-label="Configurações"
-              aria-current={onConfig ? "page" : undefined}
+              href="/ajustes"
+              title="Ajustes"
+              aria-label="Ajustes"
+              aria-current={onAjustes ? "page" : undefined}
               className={`grid h-9 w-9 place-items-center rounded-[var(--radius-btn)] transition sm:h-10 sm:w-10 ${
-                onConfig
+                onAjustes
                   ? "bg-[var(--signal-soft)] text-[var(--signal)]"
                   : "text-[color-mix(in_srgb,var(--ink)_55%,transparent)] hover:bg-[var(--mist)] hover:text-[var(--ink)]"
               }`}
             >
-              <Settings size={18} strokeWidth={onConfig ? 2.25 : 1.75} />
+              <Settings size={18} strokeWidth={onAjustes ? 2.25 : 1.75} />
             </Link>
           </nav>
         </div>
