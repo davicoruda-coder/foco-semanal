@@ -32,16 +32,13 @@ export default function HojePage() {
         <div className="min-w-0 space-y-5">
           <section className="surface overflow-hidden p-0">
             <div
-              className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 text-white md:px-5"
+              className="px-4 py-3 text-white md:px-5"
               style={{
                 background:
                   "linear-gradient(120deg, var(--signal), color-mix(in srgb, var(--signal) 55%, var(--accent-2)))",
               }}
             >
               <p className="font-display text-base font-semibold tracking-tight md:text-lg">
-                Semana
-              </p>
-              <p className="text-sm font-medium text-white/85">
                 {`${DAYS[day]} · ${new Date().toLocaleDateString("pt-BR", {
                   day: "2-digit",
                   month: "2-digit",
