@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
-import { CalendarDays, SlidersHorizontal } from "lucide-react";
+import { useMemo } from "react";
+import { SlidersHorizontal } from "lucide-react";
 import { useApp } from "@/components/AppProvider";
 import { DAYS, STATUS_LABEL, type SubjectStatus } from "@/lib/types";
 import { blockStyle, statusClass, statusRowClass, todayIndex } from "@/lib/utils";
@@ -12,7 +12,6 @@ import { SessionClock } from "@/components/SessionClock";
 
 export default function HojePage() {
   const { data, upsertSubject, setSubjectStatus } = useApp();
-  const [showWeek, setShowWeek] = useState(false);
   const day = todayIndex();
 
   const subjects = useMemo(
@@ -23,17 +22,7 @@ export default function HojePage() {
     [data.subjects],
   );
 
-  const todayBlocks = useMemo(
-    () =>
-      data.week_blocks
-        .filter((b) => b.day === day)
-        .sort((a, b) => a.sort_order - b.sort_order),
-    [data.week_blocks, day],
-  );
-
-  const visibleDays = showWeek
-    ? DAYS.map((name, i) => ({ name, i }))
-    : [{ name: DAYS[day], i: day }];
+  const weekDays = DAYS.map((name, i) => ({ name, i }));
 
   return (
     <div>
@@ -50,92 +39,57 @@ export default function HojePage() {
               }}
             >
               <p className="font-display text-base font-semibold tracking-tight md:text-lg">
-                {showWeek ? "Semana" : `${DAYS[day]} · hoje`}
+                Semana
               </p>
-              <button
-                type="button"
-                className="inline-flex items-center justify-center rounded-[var(--radius-tag)] bg-white/15 p-1.5 transition hover:bg-white/25"
-                onClick={() => setShowWeek((v) => !v)}
-                title={showWeek ? "Mostrar só hoje" : "Mostrar semana"}
-                aria-label={showWeek ? "Mostrar só hoje" : "Mostrar semana"}
+              <Link
+                href="/semana"
+                className="rounded-[var(--radius-tag)] bg-white/15 px-2.5 py-1 text-xs font-medium transition hover:bg-white/25"
               >
-                <CalendarDays size={16} strokeWidth={1.75} />
-              </button>
+                Editar grade
+              </Link>
             </div>
 
-            <div className={showWeek ? "overflow-x-auto" : ""}>
-              {!showWeek ? (
-                <div className="bg-[var(--signal-soft)]/60 p-4 md:p-5">
-                  <div className="flex flex-wrap gap-2">
-                    {todayBlocks.length === 0 && (
-                      <p className="text-sm opacity-55">Nenhum bloco hoje.</p>
-                    )}
-                    {todayBlocks.map((b) => {
-                      const style = blockStyle(b);
-                      return (
-                        <div
-                          key={b.id}
-                          className="rounded-[var(--radius-tag)] px-3 py-2 text-sm font-medium"
-                          style={style.style}
-                        >
-                          {b.label}
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              ) : (
-                <div>
-                  <div className="grid min-w-[720px] grid-cols-7 divide-x divide-[var(--line)]">
-                    {visibleDays.map(({ name, i }) => {
-                      const blocks = data.week_blocks
-                        .filter((b) => b.day === i)
-                        .sort((a, b) => a.sort_order - b.sort_order);
-                      const isToday = i === day;
-                      return (
-                        <div
-                          key={name}
-                          className={`min-h-44 ${isToday ? "bg-[var(--signal-soft)]/50" : "bg-[var(--surface)]/40"}`}
-                        >
-                          <div
-                            className={`border-b border-[var(--line)] px-2 py-2 text-center text-[11px] font-semibold uppercase tracking-wider ${
-                              isToday ? "text-[var(--signal)]" : "opacity-55"
-                            }`}
-                          >
-                            {name.slice(0, 3)}
-                            {isToday ? " · hoje" : ""}
-                          </div>
-                          <div className="space-y-1.5 p-2">
-                            {blocks.length === 0 && (
-                              <p className="px-1 text-[11px] opacity-40">—</p>
-                            )}
-                            {blocks.map((b) => {
-                              const style = blockStyle(b);
-                              return (
-                                <div
-                                  key={b.id}
-                                  className="rounded-[var(--radius-tag)] px-2 py-1.5 text-xs font-medium leading-snug"
-                                  style={style.style}
-                                >
-                                  {b.label}
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                  <div className="border-t border-[var(--line)] px-4 py-2">
-                    <Link
-                      href="/semana"
-                      className="text-xs font-medium text-[var(--signal)]"
+            <div className="overflow-x-auto">
+              <div className="grid min-w-[720px] grid-cols-7 divide-x divide-[var(--line)]">
+                {weekDays.map(({ name, i }) => {
+                  const blocks = data.week_blocks
+                    .filter((b) => b.day === i)
+                    .sort((a, b) => a.sort_order - b.sort_order);
+                  const isToday = i === day;
+                  return (
+                    <div
+                      key={name}
+                      className={`min-h-44 ${isToday ? "bg-[var(--signal-soft)]/50" : "bg-[var(--surface)]/40"}`}
                     >
-                      Editar grade →
-                    </Link>
-                  </div>
-                </div>
-              )}
+                      <div
+                        className={`border-b border-[var(--line)] px-2 py-2 text-center text-[11px] font-semibold uppercase tracking-wider ${
+                          isToday ? "text-[var(--signal)]" : "opacity-55"
+                        }`}
+                      >
+                        {name.slice(0, 3)}
+                        {isToday ? " · hoje" : ""}
+                      </div>
+                      <div className="space-y-1.5 p-2">
+                        {blocks.length === 0 && (
+                          <p className="px-1 text-[11px] opacity-40">—</p>
+                        )}
+                        {blocks.map((b) => {
+                          const style = blockStyle(b);
+                          return (
+                            <div
+                              key={b.id}
+                              className="rounded-[var(--radius-tag)] px-2 py-1.5 text-xs font-medium leading-snug"
+                              style={style.style}
+                            >
+                              {b.label}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </section>
 
