@@ -1,6 +1,6 @@
 # Foco Semanal — Setup (Supabase + Vercel)
 
-Guia para a **versão final**: login por e-mail (Supabase), dados na nuvem e deploy.
+App **local primeiro**; nuvem opcional por **magic link** (e-mail de confirmação).
 
 ---
 
@@ -9,76 +9,49 @@ Guia para a **versão final**: login por e-mail (Supabase), dados na nuvem e dep
 1. Crie um projeto em [supabase.com](https://supabase.com).
 2. **Project Settings → API** — copie:
    - Project URL  
-   - `anon` / publishable key
-3. **SQL Editor** — cole e rode todo o arquivo [`supabase/schema.sql`](supabase/schema.sql).
-4. **Authentication → Providers → Email** — habilitado (criar conta / esqueci a senha).  
-   Pode desligar Google se estiver ativo.
+   - Publishable / anon key
+3. **SQL Editor** — rode [`supabase/schema.sql`](supabase/schema.sql).
+4. **Authentication → Providers → Email** — habilitado.  
+   Em Email, deixe **Magic link** / OTP disponível (padrão).
 5. **Authentication → URL Configuration**:
-   - Site URL: `https://SEU-APP.vercel.app` (local: `http://localhost:3000`)
+   - Site URL: `https://SEU-APP.vercel.app`
    - Redirect URLs:  
      `http://localhost:3000/auth/callback`  
      `https://SEU-APP.vercel.app/auth/callback`
 
-Se o projeto já tinha tabelas de música, pode limpar (opcional):
+### E-mails chegando?
 
-```sql
-drop table if exists public.music_day_map;
-drop table if exists public.music_settings;
-```
+No plano free o remetente padrão do Supabase é limitado. Se o link não chegar:
 
-E rode de novo o `handle_new_user` do `schema.sql` (a função atualizada).
+- Confira spam, ou  
+- Configure **SMTP custom** (Resend, etc.) em Authentication → SMTP / Emails.
+
+Sem SMTP confiável, use **Exportar/Importar** nas Configurações como backup.
 
 ---
 
-## 2. Variáveis locais
+## 2. Variáveis
 
-Crie `.env.local` na raiz:
+`.env.local` e Vercel:
 
 ```env
 NEXT_PUBLIC_SUPABASE_URL=https://xxxx.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGci...   # ou sb_publishable_...
+NEXT_PUBLIC_SUPABASE_ANON_KEY=sb_publishable_...   # ou eyJ...
 ```
 
-```bash
-npm install
-npm run dev
-```
-
-Abra `http://localhost:3000` → **Criar conta** ou **Entrar** com e-mail.
-
-Sem `.env.local`, use **Continuar sem conta** (só neste aparelho).
+Cole **sem Enter no final**. Na Vercel, faça **Redeploy** depois de alterar.
 
 ---
 
-## 3. GitHub + Vercel
+## 3. Como a pessoa usa
 
-1. Crie um repositório no GitHub e faça push deste projeto.
-2. [vercel.com](https://vercel.com) → Import do repo.
-3. **Environment Variables** — mesmas do `.env.local`.
-4. Deploy.
-5. Atualize redirects no Supabase com a URL da Vercel.
-
----
-
-## 4. O que cada pessoa faz
-
-1. Abre o link.
-2. Cria conta ou entra com e-mail e senha.
-3. Usa o app (dados sincronizam na conta).
+1. Abre o app → entra direto (dados neste aparelho).
+2. Opcional: **Configurações → Nuvem** → e-mail → abre o link do e-mail.
+3. Depois disso, alterações sincronizam na nuvem.
+4. Sempre disponível: **Exportar / Importar** backup JSON.
 
 ---
 
-## Local vs nuvem
+## 4. Deploy
 
-| | Sem conta | E-mail + Supabase |
-|--|------|-------------------|
-| Dados | `localStorage` | banco Supabase |
-| Login | Continuar sem conta | Criar conta / Entrar |
-| Backup JSON | útil | opcional (já tem nuvem) |
-
----
-
-## Planos free
-
-Free do Supabase/Vercel costuma bastar no início.  
-Clientes **não** precisam de conta Vercel/Supabase.
+GitHub → Vercel → mesmas env vars → redirects no Supabase com a URL da Vercel.

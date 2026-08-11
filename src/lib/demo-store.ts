@@ -170,6 +170,8 @@ export function createDefaultData(): AppData {
 const STORAGE_KEY = "foco_semanal_data_v1";
 const AUTH_KEY = "foco_semanal_demo_user";
 const GUEST_KEY = "foco_semanal_guest";
+/** Após magic link, sobe os dados locais para a nuvem uma vez. */
+export const MIGRATE_LOCAL_KEY = "foco_semanal_migrate_local";
 
 export function isGuestMode() {
   if (typeof window === "undefined") return false;
@@ -180,6 +182,18 @@ export function setGuestMode(enabled: boolean) {
   if (typeof window === "undefined") return;
   if (enabled) localStorage.setItem(GUEST_KEY, "1");
   else localStorage.removeItem(GUEST_KEY);
+}
+
+export function markMigrateLocalOnNextCloudLogin() {
+  if (typeof window === "undefined") return;
+  localStorage.setItem(MIGRATE_LOCAL_KEY, "1");
+}
+
+export function consumeMigrateLocalFlag(): boolean {
+  if (typeof window === "undefined") return false;
+  const on = localStorage.getItem(MIGRATE_LOCAL_KEY) === "1";
+  if (on) localStorage.removeItem(MIGRATE_LOCAL_KEY);
+  return on;
 }
 
 export function loadDemoData(): AppData {

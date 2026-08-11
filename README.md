@@ -1,6 +1,7 @@
 # Foco Semanal
 
-Sistema de estudo: grade semanal, matérias, timers, lembretes com alarme e sticky notes. Dados na nuvem via Supabase (e-mail + senha).
+Sistema de estudo: grade semanal, matérias, timers, lembretes e notas.  
+Usa o aparelho primeiro; nuvem opcional via e-mail (magic link) + Supabase.
 
 ## Desenvolvimento
 
@@ -9,11 +10,8 @@ npm install
 npm run dev
 ```
 
-Abra [http://localhost:3000](http://localhost:3000) — crie conta ou continue sem conta.
+Abra [http://localhost:3000](http://localhost:3000).
 
 ## Produção
 
-Siga **[SETUP.md](SETUP.md)**:
-
-1. Supabase (banco + auth e-mail)
-2. Deploy na Vercel
+Veja **[SETUP.md](SETUP.md)**.

@@ -1,10 +1,9 @@
 "use client";
 
 import { useRef, useState } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { Download, Moon, Sun, Upload } from "lucide-react";
 import { useApp } from "@/components/AppProvider";
+import { markMigrateLocalOnNextCloudLogin } from "@/lib/demo-store";
 import type { Theme } from "@/lib/types";
 
 const OPTIONS: { value: Theme; label: string; icon: typeof Sun }[] = [
@@ -18,14 +17,18 @@ export default function ConfiguracoesPage() {
     setTheme,
     user,
     cloud,
+    supabaseReady,
     exportBackup,
     importBackup,
     resetDemoData,
     logout,
   } = useApp();
-  const router = useRouter();
   const fileRef = useRef<HTMLInputElement>(null);
   const [backupMsg, setBackupMsg] = useState<string | null>(null);
+  const [email, setEmail] = useState("");
+  const [cloudBusy, setCloudBusy] = useState(false);
+  const [cloudMsg, setCloudMsg] = useState<string | null>(null);
+  const [cloudErr, setCloudErr] = useState<string | null>(null);
 
   function downloadBackup() {
     const blob = new Blob([exportBackup()], { type: "application/json" });
@@ -44,9 +47,48 @@ export default function ConfiguracoesPage() {
     setBackupMsg(result.ok ? "Backup restaurado." : result.error);
   }
 
-  function sair() {
-    logout();
-    router.push("/login");
+  async function sendMagicLink(e: React.FormEvent) {
+    e.preventDefault();
+    if (!supabaseReady) {
+      setCloudErr("Supabase não configurado neste deploy.");
+      return;
+    }
+    const trimmed = email.trim();
+    if (!trimmed) {
+      setCloudErr("Informe um e-mail.");
+      return;
+    }
+    setCloudBusy(true);
+    setCloudErr(null);
+    setCloudMsg(null);
+    try {
+      markMigrateLocalOnNextCloudLogin();
+      const { createClient } = await import("@/lib/supabase/client");
+      const supabase = createClient();
+      const { error } = await supabase.auth.signInWithOtp({
+        email: trimmed,
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback?next=/hoje`,
+          shouldCreateUser: true,
+        },
+      });
+      if (error) {
+        setCloudErr(error.message);
+        setCloudBusy(false);
+        return;
+      }
+      setCloudMsg(
+        "Enviamos um link de confirmação para o seu e-mail. Abra o link neste aparelho para ativar a nuvem.",
+      );
+      setCloudBusy(false);
+    } catch (err) {
+      setCloudBusy(false);
+      setCloudErr(
+        err && typeof err === "object" && "message" in err
+          ? String((err as { message: unknown }).message)
+          : "Não foi possível enviar o link.",
+      );
+    }
   }
 
   return (
@@ -91,8 +133,11 @@ export default function ConfiguracoesPage() {
 
       <section className="surface mt-4 p-4 md:p-5">
         <h2 className="font-display text-base font-semibold tracking-tight md:text-lg">
-          Backup
+          Backup neste aparelho
         </h2>
+        <p className="mt-1 text-xs opacity-55">
+          Exportar/importar um arquivo JSON — não precisa de e-mail.
+        </p>
         <div className="mt-3 flex flex-wrap gap-2">
           <button type="button" className="btn btn-primary" onClick={downloadBackup}>
             <Download size={16} strokeWidth={1.75} /> Exportar
@@ -137,7 +182,7 @@ export default function ConfiguracoesPage() {
 
       <section className="surface mt-4 p-4 md:p-5">
         <h2 className="font-display text-base font-semibold tracking-tight md:text-lg">
-          Conta
+          Nuvem (opcional)
         </h2>
         <div className="mt-3 flex items-center gap-3">
           <div
@@ -152,27 +197,56 @@ export default function ConfiguracoesPage() {
               {cloud ? user?.email : "neste aparelho"}
             </p>
             <p className="mt-0.5 text-xs opacity-50">
-              {cloud ? "Conta · nuvem (Supabase)" : "Local · neste navegador"}
+              {cloud
+                ? "Conectado · alterações salvam na nuvem"
+                : "Local · use o link por e-mail para sincronizar"}
             </p>
           </div>
         </div>
 
-        <div className="mt-4 flex flex-wrap gap-2">
-          {cloud ? (
-            <button type="button" className="btn" onClick={sair}>
-              Sair da conta
+        {cloud ? (
+          <div className="mt-4">
+            <button type="button" className="btn" onClick={() => logout()}>
+              Desconectar nuvem
             </button>
-          ) : (
-            <Link href="/login" className="btn btn-primary">
-              Entrar ou criar conta
-            </Link>
-          )}
-        </div>
-        {!cloud && (
-          <p className="mt-2 text-xs opacity-55">
-            Sem conta, os dados ficam só neste navegador. Com e-mail e senha,
-            sincronizam na nuvem (Supabase).
-          </p>
+            <p className="mt-2 text-xs opacity-55">
+              Os dados neste navegador continuam; a sincronização para.
+            </p>
+          </div>
+        ) : (
+          <form className="mt-4 space-y-3" onSubmit={(e) => void sendMagicLink(e)}>
+            <p className="text-xs opacity-55">
+              Digite seu e-mail. Enviamos um link de confirmação — só quem abre o
+              e-mail conecta a conta. Depois, as alterações salvam na nuvem
+              automaticamente.
+            </p>
+            <input
+              className="input w-full"
+              type="email"
+              autoComplete="email"
+              required
+              placeholder="seu@email.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              disabled={!supabaseReady || cloudBusy}
+            />
+            <button
+              type="submit"
+              className="btn btn-primary"
+              disabled={!supabaseReady || cloudBusy}
+            >
+              {cloudBusy ? "Enviando…" : "Enviar link de confirmação"}
+            </button>
+            {!supabaseReady && (
+              <p className="text-sm text-[var(--warn)]">
+                Supabase não configurado neste ambiente.
+              </p>
+            )}
+            {cloudErr && (
+              <p className="text-sm text-[var(--warn)]">{cloudErr}</p>
+            )}
+            {cloudMsg && <p className="text-sm opacity-70">{cloudMsg}</p>}
+          </form>
         )}
       </section>
     </div>
