@@ -31,15 +31,16 @@ export function blockStyle(
   opts?: { muted?: boolean },
 ): {
   className: string;
-  style?: { background: string; color: string };
+  style?: { background: string; color: string; opacity?: number };
 } {
   const bg = block.color || defaultBlockColor(block.type);
   if (opts?.muted) {
     return {
       className: "",
       style: {
-        background: `color-mix(in srgb, ${bg} 48%, var(--surface))`,
-        color: "color-mix(in srgb, #14201a 55%, var(--ink))",
+        background: `color-mix(in srgb, ${bg} 78%, var(--surface))`,
+        color: "#14201a",
+        opacity: 0.82,
       },
     };
   }
