@@ -152,9 +152,13 @@ export default function ConfiguracoesPage() {
           <button
             type="button"
             className="btn text-[var(--warn)]"
-            disabled={cloud}
             onClick={() => {
-              if (cloud) return;
+              if (cloud) {
+                setBackupMsg(
+                  "Com a nuvem conectada o reset local fica desligado. Desconecte a nuvem se quiser zerar só este aparelho.",
+                );
+                return;
+              }
               if (confirm("Resetar todos os dados deste navegador?")) {
                 resetDemoData();
                 setBackupMsg("Dados resetados.");
@@ -164,6 +168,11 @@ export default function ConfiguracoesPage() {
             Resetar
           </button>
         </div>
+        {cloud && (
+          <p className="mt-2 text-xs opacity-55">
+            Resetar só funciona no modo local (sem nuvem).
+          </p>
+        )}
         <input
           ref={fileRef}
           type="file"
