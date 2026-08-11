@@ -47,9 +47,17 @@ const THEME_INIT_SCRIPT = `
 (function () {
   try {
     var stored = localStorage.getItem("foco_semanal_theme");
-    var theme = stored === "light" || stored === "dark"
-      ? stored
-      : (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+    var theme;
+    if (stored === "light" || stored === "dark") {
+      theme = stored;
+    } else if (stored === "auto") {
+      var h = new Date().getHours();
+      theme = h >= 6 && h < 18 ? "light" : "dark";
+    } else {
+      theme = window.matchMedia("(prefers-color-scheme: dark)").matches
+        ? "dark"
+        : "light";
+    }
     document.documentElement.setAttribute("data-theme", theme);
   } catch (e) {}
 })();
