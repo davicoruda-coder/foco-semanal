@@ -211,7 +211,9 @@ function DayCard({ dayIndex, name }: { dayIndex: number; name: string }) {
 export default function SemanaPage() {
   return (
     <div className="mx-auto max-w-6xl">
-      <h1 className="font-display text-4xl font-semibold">Semana</h1>
+      <h1 className="font-display pb-0.5 text-2xl font-semibold leading-normal tracking-tight md:text-3xl">
+        Semana
+      </h1>
       <p className="mt-2 opacity-65">
         Edite direto em cada dia · escolha a cor do bloco.
       </p>
