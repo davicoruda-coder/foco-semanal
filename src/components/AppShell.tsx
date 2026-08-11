@@ -6,7 +6,6 @@ import {
   BookOpen,
   CalendarDays,
   Home,
-  Bell,
   Settings,
   Target,
   ChartColumn,
@@ -17,7 +16,6 @@ const NAV = [
   { href: "/hoje", label: "Hoje", icon: Home },
   { href: "/semana", label: "Semana", icon: CalendarDays },
   { href: "/materias", label: "Matérias", icon: BookOpen },
-  { href: "/lembretes", label: "Lembretes", icon: Bell },
   { href: "/estatisticas", label: "Estatísticas", icon: ChartColumn },
 ];
 

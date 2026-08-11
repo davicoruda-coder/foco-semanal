@@ -1,8 +1,9 @@
 "use client";
 
-import { useRef, useState } from "react";
-import { Download, Moon, Sun, SunMoon, Upload } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Bell, Download, Moon, Sun, SunMoon, Upload } from "lucide-react";
 import { useApp } from "@/components/AppProvider";
+import { ensureNotificationPermission } from "@/lib/audio";
 import { markMigrateLocalOnNextCloudLogin } from "@/lib/demo-store";
 import type { ThemePref } from "@/lib/types";
 
@@ -33,6 +34,18 @@ export default function ConfiguracoesPage() {
   const [cloudErr, setCloudErr] = useState<string | null>(null);
   const [cloudWipeBusy, setCloudWipeBusy] = useState(false);
   const [cloudWipeMsg, setCloudWipeMsg] = useState<string | null>(null);
+  const [notifPermission, setNotifPermission] = useState<
+    NotificationPermission | "unsupported"
+  >("default");
+  const [notifMsg, setNotifMsg] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !("Notification" in window)) {
+      setNotifPermission("unsupported");
+      return;
+    }
+    setNotifPermission(Notification.permission);
+  }, []);
 
   function downloadBackup() {
     const blob = new Blob([exportBackup()], { type: "application/json" });
@@ -138,6 +151,52 @@ export default function ConfiguracoesPage() {
             Automático: claro das 6h às 18h, escuro à noite.
           </p>
         )}
+      </section>
+
+      <section className="surface mt-4 p-4 md:p-5">
+        <h2 className="font-display text-base font-semibold tracking-tight md:text-lg">
+          Notificações
+        </h2>
+        <p className="mt-1 text-xs opacity-55">
+          Alarme ao terminar um temporizador e avisos de lembretes com sino.
+        </p>
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            className="btn btn-primary"
+            disabled={
+              notifPermission === "granted" || notifPermission === "unsupported"
+            }
+            onClick={async () => {
+              const ok = await ensureNotificationPermission();
+              if (typeof window !== "undefined" && "Notification" in window) {
+                setNotifPermission(Notification.permission);
+              }
+              setNotifMsg(
+                ok
+                  ? "Notificações permitidas."
+                  : "Não foi possível permitir. Confira o cadeado na barra de endereço.",
+              );
+            }}
+          >
+            <Bell size={16} strokeWidth={1.75} />
+            {notifPermission === "granted"
+              ? "Notificações ativas"
+              : "Permitir notificações do navegador"}
+          </button>
+        </div>
+        {notifPermission === "denied" && (
+          <p className="mt-2 text-xs text-[var(--warn)]">
+            Bloqueadas neste site. Libere em Configurações do navegador →
+            Notificações.
+          </p>
+        )}
+        {notifPermission === "unsupported" && (
+          <p className="mt-2 text-xs opacity-55">
+            Este navegador não suporta notificações.
+          </p>
+        )}
+        {notifMsg && <p className="mt-2 text-sm opacity-70">{notifMsg}</p>}
       </section>
 
       <section className="surface mt-4 p-4 md:p-5">
