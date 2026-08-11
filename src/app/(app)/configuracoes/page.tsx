@@ -218,9 +218,6 @@ export default function ConfiguracoesPage() {
             <button type="button" className="btn" onClick={() => logout()}>
               Desconectar nuvem
             </button>
-            <p className="mt-2 text-xs opacity-55">
-              Os dados neste navegador continuam; a sincronização para.
-            </p>
           </div>
         ) : (
           <form className="mt-4 space-y-3" onSubmit={(e) => void sendMagicLink(e)}>
