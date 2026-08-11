@@ -232,7 +232,10 @@ function MiniRing({
           className={`font-mono-num relative z-[1] grid h-full w-full place-items-center font-medium leading-none tracking-tight ${
             paused ? "timer-paused" : ""
           }`}
-          style={{ fontSize: size > 90 ? "1.35rem" : "1.15rem" }}
+          style={{
+            fontSize:
+              size > 120 ? "1.9rem" : size > 90 ? "1.35rem" : "1.15rem",
+          }}
         >
           {display}
         </span>
@@ -365,11 +368,11 @@ export function SessionClock({
       </div>
 
       {mode === "stopwatch" ? (
-        <div className={`flex justify-center ${stack ? "px-3 py-4" : "px-3 py-6"}`}>
+        <div className={`flex justify-center ${stack ? "px-3 py-6" : "px-3 py-6"}`}>
           <MiniRing
             display={formatTime(stopwatchSeconds)}
-            size={stack ? 96 : 128}
-            stroke={stack ? 6 : 8}
+            size={stack ? 170 : 128}
+            stroke={stack ? 10 : 8}
             progress={
               stopwatchSeconds > 0 || stopwatch.running
                 ? (stopwatchSeconds % 60) / 60
