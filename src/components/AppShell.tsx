@@ -9,6 +9,7 @@ import {
   Bell,
   Settings,
   Target,
+  ChartColumn,
 } from "lucide-react";
 import { useApp } from "@/components/AppProvider";
 
@@ -17,6 +18,7 @@ const NAV = [
   { href: "/semana", label: "Semana", icon: CalendarDays },
   { href: "/materias", label: "Matérias", icon: BookOpen },
   { href: "/lembretes", label: "Lembretes", icon: Bell },
+  { href: "/progresso", label: "Progresso", icon: ChartColumn },
 ];
 
 export function AppShell({ children }: { children: React.ReactNode }) {

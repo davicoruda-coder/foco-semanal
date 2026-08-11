@@ -12,6 +12,7 @@ import {
 } from "react";
 import { useApp } from "@/components/AppProvider";
 import { ensureNotificationPermission, notify, playAlarmTone } from "@/lib/audio";
+import { addFocusSeconds } from "@/lib/focus-log";
 
 export type TimerRuntime = {
   secondsLeft: number;
@@ -192,6 +193,48 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
     [runtime],
   );
   const anyRunning = anyTimerRunning || stopwatch.running;
+
+  // Conta foco só com Sessão (sort_order 0) ou cronômetro em play — nunca em pause.
+  const sessionTimer = useMemo(
+    () => [...timers].sort((a, b) => a.sort_order - b.sort_order)[0] ?? null,
+    [timers],
+  );
+  const trackingFocus = Boolean(
+    (sessionTimer && runtime[sessionTimer.id]?.running) || stopwatch.running,
+  );
+  const focusLastRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (!ready) return;
+    if (!trackingFocus) {
+      focusLastRef.current = null;
+      return;
+    }
+    focusLastRef.current = Date.now();
+    const id = window.setInterval(() => {
+      const now = Date.now();
+      const last = focusLastRef.current ?? now;
+      focusLastRef.current = now;
+      const deltaSec = Math.floor((now - last) / 1000);
+      if (deltaSec > 0) {
+        addFocusSeconds(deltaSec);
+        window.dispatchEvent(new Event("foco-focus-log"));
+      }
+    }, 1000);
+    return () => {
+      const now = Date.now();
+      const last = focusLastRef.current;
+      focusLastRef.current = null;
+      if (last) {
+        const deltaSec = Math.floor((now - last) / 1000);
+        if (deltaSec > 0) {
+          addFocusSeconds(deltaSec);
+          window.dispatchEvent(new Event("foco-focus-log"));
+        }
+      }
+      window.clearInterval(id);
+    };
+  }, [ready, trackingFocus]);
 
   // Global tick — continues even when Hoje is unmounted
   useEffect(() => {
