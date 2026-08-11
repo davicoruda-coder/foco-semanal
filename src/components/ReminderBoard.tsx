@@ -1,10 +1,21 @@
 "use client";
 
-import { useState, type CSSProperties } from "react";
-import { Bell, BellOff, Plus, Trash2 } from "lucide-react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type MouseEvent,
+} from "react";
+import { Bell, BellOff, Bold, Italic, Plus, Trash2 } from "lucide-react";
 import { useApp } from "@/components/AppProvider";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { ensureNotificationPermission } from "@/lib/audio";
+import {
+  noteHtmlFromStored,
+  plainTextFromHtml,
+  sanitizeNoteHtml,
+} from "@/lib/note-html";
 import type { Reminder } from "@/lib/types";
 
 const NOTE_COLORS = [
@@ -16,11 +27,58 @@ const NOTE_COLORS = [
   "#DDD6FE",
 ];
 
+const FONT_SIZES = [
+  { label: "P", title: "Pequeno", px: "13px" },
+  { label: "M", title: "Médio", px: "15px" },
+  { label: "G", title: "Grande", px: "18px" },
+] as const;
+
 function toLocalInput(iso: string) {
   const d = new Date(iso);
   if (Number.isNaN(+d)) return "";
   const pad = (n: number) => String(n).padStart(2, "0");
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function runFormat(cmd: "bold" | "italic") {
+  document.execCommand("styleWithCSS", false, "true");
+  document.execCommand(cmd, false);
+}
+
+function applyFontSize(px: string, editor: HTMLElement | null) {
+  if (!editor) return;
+  const sel = window.getSelection();
+  if (!sel) return;
+
+  if (sel.rangeCount === 0 || sel.isCollapsed) {
+    const plain = (editor.textContent || "").trim();
+    if (!plain) {
+      editor.style.fontSize = px;
+      return;
+    }
+    const range = document.createRange();
+    range.selectNodeContents(editor);
+    sel.removeAllRanges();
+    sel.addRange(range);
+  }
+
+  document.execCommand("styleWithCSS", false, "true");
+  const range = sel.getRangeAt(0);
+  const span = document.createElement("span");
+  span.style.fontSize = px;
+  try {
+    range.surroundContents(span);
+  } catch {
+    const frag = range.extractContents();
+    span.appendChild(frag);
+    range.insertNode(span);
+  }
+  editor.style.fontSize = "";
+  sel.removeAllRanges();
+  const next = document.createRange();
+  next.selectNodeContents(span);
+  next.collapse(false);
+  sel.addRange(next);
 }
 
 function NoteCard({
@@ -34,9 +92,50 @@ function NoteCard({
 }) {
   const { upsertReminder } = useApp();
   const [alarmOpen, setAlarmOpen] = useState(false);
+  const [focused, setFocused] = useState(false);
   const [when, setWhen] = useState(
     reminder.has_alarm ? toLocalInput(reminder.notify_at) : "",
   );
+  const editorRef = useRef<HTMLDivElement>(null);
+  const skipSync = useRef(false);
+
+  useEffect(() => {
+    const el = editorRef.current;
+    if (!el || skipSync.current) return;
+    if (document.activeElement === el) return;
+    const next = noteHtmlFromStored(reminder.title);
+    if (el.innerHTML !== next) el.innerHTML = next;
+  }, [reminder.id, reminder.title]);
+
+  function persistFromEditor() {
+    const el = editorRef.current;
+    if (!el) return;
+    let html = sanitizeNoteHtml(el.innerHTML);
+    const plain = plainTextFromHtml(html);
+    if (!plain) {
+      html = "";
+      el.style.fontSize = el.style.fontSize || "";
+    } else if (el.style.fontSize) {
+      html = sanitizeNoteHtml(
+        `<span style="font-size:${el.style.fontSize}">${html}</span>`,
+      );
+      el.style.fontSize = "";
+      el.innerHTML = html;
+    }
+    const stored = plain ? html : "";
+    if (stored === reminder.title) return;
+    skipSync.current = true;
+    upsertReminder({ ...reminder, title: stored });
+    queueMicrotask(() => {
+      skipSync.current = false;
+    });
+  }
+
+  function onToolbarMouseDown(e: MouseEvent) {
+    e.preventDefault();
+  }
+
+  const showPlaceholder = !plainTextFromHtml(reminder.title);
 
   return (
     <article
@@ -49,16 +148,75 @@ function NoteCard({
         } as CSSProperties
       }
     >
-      <textarea
-        className={`w-full flex-1 resize-none bg-transparent font-medium leading-snug outline-none placeholder:opacity-40 ${
+      {focused && (
+        <div
+          className="mb-1.5 flex flex-wrap items-center gap-0.5 rounded-[var(--radius-tag)] bg-white/75 p-0.5 shadow-sm"
+          onMouseDown={onToolbarMouseDown}
+        >
+          <button
+            type="button"
+            title="Negrito"
+            aria-label="Negrito"
+            className="grid h-7 w-7 place-items-center rounded text-[#292524] transition hover:bg-black/10"
+            onClick={() => {
+              editorRef.current?.focus();
+              runFormat("bold");
+              persistFromEditor();
+            }}
+          >
+            <Bold size={14} strokeWidth={2.5} />
+          </button>
+          <button
+            type="button"
+            title="Itálico"
+            aria-label="Itálico"
+            className="grid h-7 w-7 place-items-center rounded text-[#292524] transition hover:bg-black/10"
+            onClick={() => {
+              editorRef.current?.focus();
+              runFormat("italic");
+              persistFromEditor();
+            }}
+          >
+            <Italic size={14} strokeWidth={2.25} />
+          </button>
+          <span className="mx-0.5 h-4 w-px bg-black/15" aria-hidden />
+          {FONT_SIZES.map((s) => (
+            <button
+              key={s.px}
+              type="button"
+              title={s.title}
+              aria-label={`Tamanho ${s.title.toLowerCase()}`}
+              className="grid h-7 min-w-7 place-items-center rounded px-1.5 text-[11px] font-semibold text-[#292524] transition hover:bg-black/10"
+              style={{ fontSize: s.px === "13px" ? 11 : s.px === "15px" ? 13 : 15 }}
+              onClick={() => {
+                editorRef.current?.focus();
+                applyFontSize(s.px, editorRef.current);
+                persistFromEditor();
+              }}
+            >
+              {s.label}
+            </button>
+          ))}
+        </div>
+      )}
+
+      <div
+        ref={editorRef}
+        role="textbox"
+        aria-multiline
+        aria-label="Texto da nota"
+        contentEditable
+        suppressContentEditableWarning
+        data-placeholder="Escreva…"
+        className={`note-editor relative w-full flex-1 bg-transparent font-medium leading-snug outline-none ${
           compact ? "min-h-[56px] text-sm" : "min-h-[60px] text-xs"
-        }`}
-        placeholder="Escreva…"
-        value={reminder.title}
-        rows={compact ? 3 : 3}
-        onChange={(e) =>
-          upsertReminder({ ...reminder, title: e.target.value })
-        }
+        } ${showPlaceholder ? "note-editor--empty" : ""}`}
+        onFocus={() => setFocused(true)}
+        onBlur={() => {
+          setFocused(false);
+          persistFromEditor();
+        }}
+        onInput={() => persistFromEditor()}
       />
 
       {reminder.has_alarm && !alarmOpen && (
@@ -183,6 +341,10 @@ export function ReminderBoard({ compact }: { compact?: boolean }) {
     setPickingColor(false);
   }
 
+  const deleteLabel = pendingDelete
+    ? plainTextFromHtml(pendingDelete.title) || "esta nota"
+    : "";
+
   return (
     <div className={compact ? "" : "mx-auto max-w-3xl"}>
       <ConfirmDialog
@@ -190,7 +352,7 @@ export function ReminderBoard({ compact }: { compact?: boolean }) {
         title="Excluir lembrete?"
         message={
           pendingDelete
-            ? `Deseja mesmo excluir "${pendingDelete.title.trim() || "esta nota"}"?`
+            ? `Deseja mesmo excluir "${deleteLabel}"?`
             : ""
         }
         confirmLabel="Sim, excluir"
@@ -264,7 +426,8 @@ export function ReminderBoard({ compact }: { compact?: boolean }) {
 
       {!compact && (
         <p className="mb-6 opacity-65">
-          Escolha a cor · escreva · sino pra alarme · lixeira pra excluir.
+          Escolha a cor · escreva · formate ao focar · sino pra alarme · lixeira
+          pra excluir.
         </p>
       )}
 

@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { useApp } from "@/components/AppProvider";
 import { ensureNotificationPermission, notify, playAlarmTone } from "@/lib/audio";
+import { plainTextFromHtml } from "@/lib/note-html";
 
 const fired = new Set<string>();
 
@@ -24,7 +25,7 @@ export function ReminderWatcher() {
         if (now >= target && now < target + 60_000 && !fired.has(key)) {
           fired.add(key);
           playAlarmTone();
-          notify("Lembrete", r.title);
+          notify("Lembrete", plainTextFromHtml(r.title) || "Lembrete");
         }
       }
     };
