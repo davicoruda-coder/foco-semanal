@@ -191,7 +191,7 @@ export default function ConfiguracoesPage() {
         {notifPermission === "granted" && (
           <p className="mt-2 text-xs opacity-55">
             Para desativar, use o cadeado na barra de endereço do navegador →
-            Notificações → Bloquear. O site não consegue revogar sozinho.
+            Notificações → Bloquear.
           </p>
         )}
         {notifPermission === "denied" && (
