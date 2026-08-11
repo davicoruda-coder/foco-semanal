@@ -32,7 +32,7 @@ export default function HojePage() {
         <div className="min-w-0 space-y-5">
           <section className="surface overflow-hidden p-0">
             <div
-              className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 text-white md:px-5"
+              className="px-4 py-3 text-white md:px-5"
               style={{
                 background:
                   "linear-gradient(120deg, var(--signal), color-mix(in srgb, var(--signal) 55%, var(--accent-2)))",
@@ -41,12 +41,6 @@ export default function HojePage() {
               <p className="font-display text-base font-semibold tracking-tight md:text-lg">
                 Semana
               </p>
-              <Link
-                href="/semana"
-                className="rounded-[var(--radius-tag)] bg-white/15 px-2.5 py-1 text-xs font-medium transition hover:bg-white/25"
-              >
-                Editar grade
-              </Link>
             </div>
 
             <div className="overflow-x-auto">
