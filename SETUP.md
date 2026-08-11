@@ -1,6 +1,6 @@
-# Foco Semanal — Setup (Supabase + Vercel)
+# Foco — Setup (Supabase + Vercel)
 
-App **local primeiro**; nuvem opcional por **magic link** (e-mail de confirmação).
+App com **login obrigatório** por **magic link** (e-mail). Dados principais ficam na **nuvem** (Supabase).
 
 ---
 
@@ -10,14 +10,16 @@ App **local primeiro**; nuvem opcional por **magic link** (e-mail de confirmaç�
 2. **Project Settings → API** — copie:
    - Project URL  
    - Publishable / anon key
-3. **SQL Editor** — rode [`supabase/schema.sql`](supabase/schema.sql).
-4. **Authentication → Providers → Email** — habilitado.  
-   Em Email, deixe **Magic link** / OTP disponível (padrão).
+3. **SQL Editor** — rode [`supabase/schema.sql`](supabase/schema.sql).  
+   Se já tinha o schema antigo, rode também [`supabase/migrate-theme-auto.sql`](supabase/migrate-theme-auto.sql) (tema Automático).
+4. **Authentication → Providers → Email** — habilitado (Magic link / OTP).
 5. **Authentication → URL Configuration**:
-   - Site URL: `https://SEU-APP.vercel.app`
+   - Site URL: `https://foco.davicosystems.ia.br` (ou sua URL da Vercel)
    - Redirect URLs:  
      `http://localhost:3000/auth/callback`  
-     `https://SEU-APP.vercel.app/auth/callback`
+     `https://SEU-APP.vercel.app/auth/callback`  
+     `https://foco.davicosystems.ia.br/auth/callback`  
+     (opcional) `https://foco.davicosystems.ia.br/**`
 
 ### E-mails chegando?
 
@@ -26,7 +28,7 @@ No plano free o remetente padrão do Supabase é limitado. Se o link não chegar
 - Confira spam, ou  
 - Configure **SMTP custom** (Resend, etc.) em Authentication → SMTP / Emails.
 
-Sem SMTP confiável, use **Exportar/Importar** nas Configurações como backup.
+Sempre disponível: **Exportar / Importar** em Ajustes (backup JSON).
 
 ---
 
@@ -45,13 +47,12 @@ Cole **sem Enter no final**. Na Vercel, faça **Redeploy** depois de alterar.
 
 ## 3. Como a pessoa usa
 
-1. Abre o app → entra direto (dados neste aparelho).
-2. Opcional: **Configurações → Nuvem** → e-mail → abre o link do e-mail.
-3. Depois disso, alterações sincronizam na nuvem.
-4. Sempre disponível: **Exportar / Importar** backup JSON.
+1. Abre o app → informa o e-mail → abre o link de confirmação.
+2. Entra no app; alterações salvam na nuvem automaticamente.
+3. Em **Ajustes**: tema, notificações, backup JSON, sair da conta, apagar dados na nuvem.
 
 ---
 
 ## 4. Deploy
 
-GitHub → Vercel → mesmas env vars → redirects no Supabase com a URL da Vercel.
+GitHub → Vercel → mesmas env vars → redirects no Supabase com a URL de produção (e do domínio customizado, se houver).
