@@ -86,6 +86,8 @@ type AppContextValue = {
   exportBackup: () => string;
   importBackup: (json: string) => { ok: true } | { ok: false; error: string };
   resetDemoData: () => void;
+  /** Zera dados na nuvem (e neste aparelho). Só com sessão cloud. */
+  resetCloudData: () => Promise<{ ok: true } | { ok: false; error: string }>;
 };
 
 const AppContext = createContext<AppContextValue | null>(null);
@@ -369,6 +371,32 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setDataState(fresh);
   }, []);
 
+  const resetCloudData = useCallback(async () => {
+    if (!cloudRef.current || !userIdRef.current || !isSupabaseConfigured()) {
+      return { ok: false as const, error: "Nuvem não conectada." };
+    }
+    if (saveTimer.current) {
+      window.clearTimeout(saveTimer.current);
+      saveTimer.current = null;
+    }
+    const fresh = createDefaultData();
+    try {
+      const { createClient } = await import("@/lib/supabase/client");
+      const supabase = createClient();
+      await saveCloudData(
+        supabase,
+        userIdRef.current,
+        fresh,
+        themeRef.current,
+      );
+      setDataState(fresh);
+      saveDemoData(fresh);
+      return { ok: true as const };
+    } catch {
+      return { ok: false as const, error: "Não foi possível apagar na nuvem." };
+    }
+  }, []);
+
   const value = useMemo<AppContextValue>(
     () => ({
       ready,
@@ -606,6 +634,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       exportBackup,
       importBackup,
       resetDemoData,
+      resetCloudData,
     }),
     [
       ready,
@@ -620,6 +649,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       exportBackup,
       importBackup,
       resetDemoData,
+      resetCloudData,
     ],
   );
 

@@ -21,6 +21,7 @@ export default function ConfiguracoesPage() {
     exportBackup,
     importBackup,
     resetDemoData,
+    resetCloudData,
     logout,
   } = useApp();
   const fileRef = useRef<HTMLInputElement>(null);
@@ -29,6 +30,8 @@ export default function ConfiguracoesPage() {
   const [cloudBusy, setCloudBusy] = useState(false);
   const [cloudMsg, setCloudMsg] = useState<string | null>(null);
   const [cloudErr, setCloudErr] = useState<string | null>(null);
+  const [cloudWipeBusy, setCloudWipeBusy] = useState(false);
+  const [cloudWipeMsg, setCloudWipeMsg] = useState<string | null>(null);
 
   function downloadBackup() {
     const blob = new Blob([exportBackup()], { type: "application/json" });
@@ -214,10 +217,57 @@ export default function ConfiguracoesPage() {
         </div>
 
         {cloud ? (
-          <div className="mt-4">
+          <div className="mt-4 space-y-3">
             <button type="button" className="btn" onClick={() => logout()}>
               Desconectar nuvem
             </button>
+            <div className="border-t border-[var(--line)] pt-3">
+              <p className="text-xs opacity-55">
+                Apaga matérias, semana, lembretes, notas e sessões na nuvem e
+                neste aparelho. A conta permanece conectada.
+              </p>
+              <button
+                type="button"
+                className="btn mt-2 text-[var(--warn)]"
+                disabled={cloudWipeBusy}
+                onClick={() => {
+                  void (async () => {
+                    if (
+                      !confirm(
+                        "Isso apaga TODOS os dados na nuvem e neste aparelho. Continuar?",
+                      )
+                    ) {
+                      return;
+                    }
+                    const typed = window.prompt(
+                      'Para confirmar, digite APAGAR (em maiúsculas):',
+                    );
+                    if (typed !== "APAGAR") {
+                      setCloudWipeMsg(
+                        typed == null
+                          ? null
+                          : "Cancelado — digite exatamente APAGAR.",
+                      );
+                      return;
+                    }
+                    setCloudWipeBusy(true);
+                    setCloudWipeMsg(null);
+                    const result = await resetCloudData();
+                    setCloudWipeBusy(false);
+                    setCloudWipeMsg(
+                      result.ok
+                        ? "Dados na nuvem apagados. Estado inicial restaurado."
+                        : result.error,
+                    );
+                  })();
+                }}
+              >
+                {cloudWipeBusy ? "Apagando…" : "Apagar dados na nuvem"}
+              </button>
+              {cloudWipeMsg && (
+                <p className="mt-2 text-sm opacity-70">{cloudWipeMsg}</p>
+              )}
+            </div>
           </div>
         ) : (
           <form className="mt-4 space-y-3" onSubmit={(e) => void sendMagicLink(e)}>

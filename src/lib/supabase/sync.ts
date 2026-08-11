@@ -164,6 +164,7 @@ export async function saveCloudData(
   await supabase.from("week_blocks").delete().eq("user_id", userId);
   await supabase.from("reminders").delete().eq("user_id", userId);
   await supabase.from("focus_timers").delete().eq("user_id", userId);
+  await supabase.from("study_sessions").delete().eq("user_id", userId);
 
   if (data.subjects.length) {
     await supabase.from("subjects").insert(
