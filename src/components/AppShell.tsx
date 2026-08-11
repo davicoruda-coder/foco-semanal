@@ -5,12 +5,10 @@ import { usePathname } from "next/navigation";
 import {
   BookOpen,
   CalendarDays,
-  StickyNote,
   Home,
   Bell,
   Settings,
   Target,
-  History,
 } from "lucide-react";
 import { useApp } from "@/components/AppProvider";
 
@@ -19,8 +17,6 @@ const NAV = [
   { href: "/semana", label: "Semana", icon: CalendarDays },
   { href: "/materias", label: "Matérias", icon: BookOpen },
   { href: "/lembretes", label: "Lembretes", icon: Bell },
-  { href: "/notas", label: "Notas", icon: StickyNote },
-  { href: "/historico", label: "Histórico", icon: History },
 ];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
