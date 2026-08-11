@@ -5,6 +5,7 @@ import { useMemo } from "react";
 import { Pause, Play, RotateCcw, SlidersHorizontal } from "lucide-react";
 import { useApp } from "@/components/AppProvider";
 import { useTimerRuntime } from "@/components/TimerRuntimeProvider";
+import { sanitizeCssColor } from "@/lib/utils";
 
 type FlashKind = "play" | "pause";
 type ClockLayout = "row" | "stack";
@@ -50,6 +51,7 @@ function MiniRing({
   onReset,
   dense,
 }: RingProps) {
+  const safeAccent = sanitizeCssColor(accent, "var(--signal)");
   const r = (size - stroke) / 2;
   const c = 2 * Math.PI * r;
   const dash = c * (1 - Math.min(1, Math.max(0, progress)));
@@ -66,7 +68,7 @@ function MiniRing({
         style={
           active
             ? {
-                boxShadow: `inset 3px 0 0 ${accent}`,
+                boxShadow: `inset 3px 0 0 ${safeAccent}`,
               }
             : undefined
         }
@@ -104,7 +106,7 @@ function MiniRing({
               cy={size / 2}
               r={r}
               fill="none"
-              stroke={accent}
+              stroke={safeAccent}
               strokeWidth={stroke}
               strokeLinecap="round"
               strokeDasharray={c}
@@ -113,7 +115,7 @@ function MiniRing({
           </svg>
           <span
             className="relative z-[1] grid place-items-center"
-            style={{ color: accent }}
+            style={{ color: safeAccent }}
           >
             {active ? (
               <Pause size={20} fill="currentColor" strokeWidth={0} />
@@ -130,7 +132,7 @@ function MiniRing({
             <span
               key={flashKey}
               className="timer-flash absolute inset-0 z-[2] grid place-items-center"
-              style={{ color: accent }}
+              style={{ color: safeAccent }}
             >
               <span className="grid place-items-center rounded-full bg-[var(--surface)]/85 p-1 shadow-sm">
                 {flash === "pause" ? (
@@ -154,7 +156,7 @@ function MiniRing({
               className="truncate text-xs font-medium"
               style={{
                 color: active
-                  ? accent
+                  ? safeAccent
                   : "color-mix(in srgb, var(--ink) 60%, transparent)",
               }}
             >
@@ -220,7 +222,7 @@ function MiniRing({
             cy={size / 2}
             r={r}
             fill="none"
-            stroke={accent}
+            stroke={safeAccent}
             strokeWidth={stroke}
             strokeLinecap="round"
             strokeDasharray={c}
@@ -244,7 +246,7 @@ function MiniRing({
           <span
             key={flashKey}
             className="timer-flash absolute inset-0 z-[2] grid place-items-center"
-            style={{ color: accent }}
+            style={{ color: safeAccent }}
           >
             <span className="grid place-items-center rounded-full bg-[var(--surface)]/85 p-2 shadow-sm">
               {flash === "pause" ? (
@@ -268,7 +270,7 @@ function MiniRing({
             className="text-sm font-medium"
             style={{
               color: active
-                ? accent
+                ? safeAccent
                 : "color-mix(in srgb, var(--ink) 65%, transparent)",
             }}
           >

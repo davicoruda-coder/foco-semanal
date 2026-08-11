@@ -7,6 +7,7 @@ import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { ensureNotificationPermission } from "@/lib/audio";
 import { plainTextFromHtml } from "@/lib/note-html";
 import type { Reminder } from "@/lib/types";
+import { sanitizeCssColor } from "@/lib/utils";
 
 const NOTE_COLORS = [
   "#FDE68A",
@@ -47,7 +48,7 @@ function NoteCard({
     <article
       className="note-enter relative flex min-h-[128px] flex-col rounded-[var(--radius-tag)] p-3 shadow-sm"
       style={{
-        background: reminder.color,
+        background: sanitizeCssColor(reminder.color, "#FDE68A"),
         color: "#292524",
       }}
     >

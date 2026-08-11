@@ -19,6 +19,24 @@ function asTheme(v: string | null | undefined): ThemePref {
   return v === "dark" || v === "auto" ? v : "light";
 }
 
+function assertOk(label: string, error: { message: string } | null) {
+  if (error) {
+    throw new Error(`[foco] ${label}: ${error.message}`);
+  }
+}
+
+/** Conta nova / sem dados na nuvem (seguro para seed a partir do local). */
+export function isCloudDataEmpty(data: AppData): boolean {
+  return (
+    data.subjects.length === 0 &&
+    data.week_blocks.length === 0 &&
+    data.reminders.length === 0 &&
+    data.study_sessions.length === 0 &&
+    data.sticky_notes.length === 0 &&
+    data.note_columns.length === 0
+  );
+}
+
 export async function loadCloudData(
   supabase: Client,
   userId: string,
@@ -49,6 +67,16 @@ export async function loadCloudData(
     supabase.from("note_columns").select("*").eq("user_id", userId).order("sort_order"),
     supabase.from("sticky_notes").select("*").eq("user_id", userId).order("sort_order"),
   ]);
+
+  assertOk("profiles", profileRes.error);
+  assertOk("subjects", subjectsRes.error);
+  assertOk("week_blocks", blocksRes.error);
+  assertOk("session_settings", settingsRes.error);
+  assertOk("focus_timers", timersRes.error);
+  assertOk("study_sessions", sessionsRes.error);
+  assertOk("reminders", remindersRes.error);
+  assertOk("note_columns", columnsRes.error);
+  assertOk("sticky_notes", stickiesRes.error);
 
   const defaults = createDefaultData();
 
@@ -157,21 +185,27 @@ export async function saveCloudData(
     console.warn("[foco] falha ao salvar tema na nuvem:", themeError.message);
   }
 
-  await supabase.from("session_settings").upsert({
+  const { error: settingsError } = await supabase.from("session_settings").upsert({
     user_id: userId,
     ...data.session_settings,
   });
+  assertOk("session_settings upsert", settingsError);
 
-  await supabase.from("sticky_notes").delete().eq("user_id", userId);
-  await supabase.from("note_columns").delete().eq("user_id", userId);
-  await supabase.from("subjects").delete().eq("user_id", userId);
-  await supabase.from("week_blocks").delete().eq("user_id", userId);
-  await supabase.from("reminders").delete().eq("user_id", userId);
-  await supabase.from("focus_timers").delete().eq("user_id", userId);
-  await supabase.from("study_sessions").delete().eq("user_id", userId);
+  // study_sessions: upsert only (não apaga histórico remoto além do que sincronizamos)
+  const deletes = await Promise.all([
+    supabase.from("sticky_notes").delete().eq("user_id", userId),
+    supabase.from("note_columns").delete().eq("user_id", userId),
+    supabase.from("subjects").delete().eq("user_id", userId),
+    supabase.from("week_blocks").delete().eq("user_id", userId),
+    supabase.from("reminders").delete().eq("user_id", userId),
+    supabase.from("focus_timers").delete().eq("user_id", userId),
+  ]);
+  for (const res of deletes) {
+    assertOk("delete collection", res.error);
+  }
 
   if (data.subjects.length) {
-    await supabase.from("subjects").insert(
+    const { error } = await supabase.from("subjects").insert(
       data.subjects.map((s) => ({
         id: s.id,
         user_id: userId,
@@ -182,10 +216,11 @@ export async function saveCloudData(
         active: s.active,
       })),
     );
+    assertOk("subjects insert", error);
   }
 
   if (data.week_blocks.length) {
-    await supabase.from("week_blocks").insert(
+    const { error } = await supabase.from("week_blocks").insert(
       data.week_blocks.map((b) => ({
         id: b.id,
         user_id: userId,
@@ -196,10 +231,11 @@ export async function saveCloudData(
         color: b.color ?? null,
       })),
     );
+    assertOk("week_blocks insert", error);
   }
 
   if (data.reminders.length) {
-    await supabase.from("reminders").insert(
+    const { error } = await supabase.from("reminders").insert(
       data.reminders.map((r) => ({
         id: r.id,
         user_id: userId,
@@ -213,10 +249,11 @@ export async function saveCloudData(
         color: r.color,
       })),
     );
+    assertOk("reminders insert", error);
   }
 
   if (data.note_columns.length) {
-    await supabase.from("note_columns").insert(
+    const { error } = await supabase.from("note_columns").insert(
       data.note_columns.map((c) => ({
         id: c.id,
         user_id: userId,
@@ -225,10 +262,11 @@ export async function saveCloudData(
         sort_order: c.sort_order,
       })),
     );
+    assertOk("note_columns insert", error);
   }
 
   if (data.sticky_notes.length) {
-    await supabase.from("sticky_notes").insert(
+    const { error } = await supabase.from("sticky_notes").insert(
       data.sticky_notes.map((n) => ({
         id: n.id,
         user_id: userId,
@@ -238,10 +276,11 @@ export async function saveCloudData(
         sort_order: n.sort_order,
       })),
     );
+    assertOk("sticky_notes insert", error);
   }
 
   if (data.timers.length) {
-    await supabase.from("focus_timers").insert(
+    const { error } = await supabase.from("focus_timers").insert(
       data.timers.map((t) => ({
         id: t.id,
         user_id: userId,
@@ -251,11 +290,12 @@ export async function saveCloudData(
         sort_order: t.sort_order,
       })),
     );
+    assertOk("focus_timers insert", error);
   }
 
   if (data.study_sessions.length) {
-    await supabase.from("study_sessions").upsert(
-      data.study_sessions.slice(0, 50).map((s) => ({
+    const { error } = await supabase.from("study_sessions").upsert(
+      data.study_sessions.slice(0, 100).map((s) => ({
         id: s.id,
         user_id: userId,
         subject_id: s.subject_id,
@@ -268,5 +308,6 @@ export async function saveCloudData(
       })),
       { onConflict: "id" },
     );
+    assertOk("study_sessions upsert", error);
   }
 }

@@ -256,7 +256,7 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
         if (changed) writeStored(next);
         return changed ? next : prev;
       });
-    }, 250);
+    }, 1000);
 
     return () => window.clearInterval(id);
   }, [ready, anyRunning]);

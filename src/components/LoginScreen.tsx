@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { Target } from "lucide-react";
 import { useApp } from "@/components/AppProvider";
-import { markMigrateLocalOnNextCloudLogin } from "@/lib/demo-store";
 
 /** Tela de entrada — só nuvem via magic link. */
 export function LoginScreen() {
@@ -28,7 +27,6 @@ export function LoginScreen() {
     setErr(null);
     setMsg(null);
     try {
-      markMigrateLocalOnNextCloudLogin();
       const { createClient } = await import("@/lib/supabase/client");
       const supabase = createClient();
       const { error } = await supabase.auth.signInWithOtp({

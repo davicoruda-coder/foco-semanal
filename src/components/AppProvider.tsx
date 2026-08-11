@@ -20,7 +20,11 @@ import {
   setGuestMode,
 } from "@/lib/demo-store";
 import { isSupabaseConfigured } from "@/lib/env";
-import { loadCloudData, saveCloudData } from "@/lib/supabase/sync";
+import {
+  isCloudDataEmpty,
+  loadCloudData,
+  saveCloudData,
+} from "@/lib/supabase/sync";
 import type {
   AppData,
   FocusTimer,
@@ -111,6 +115,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const userIdRef = useRef<string | null>(null);
   const themeRef = useRef<ThemePref>("light");
   const saveTimer = useRef<number | null>(null);
+  const pendingSaveRef = useRef<{ data: AppData; theme: ThemePref } | null>(
+    null,
+  );
+  const saveInFlightRef = useRef(false);
+  const loadOkRef = useRef(false);
 
   useEffect(() => {
     themeRef.current = themePref;
@@ -146,14 +155,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const supabase = createClient();
       const localSnapshot = loadDemoData();
       const localPref = getStoredPref();
-      const migrate = consumeMigrateLocalFlag();
+      // Limpa flag antiga; migrate só se a nuvem estiver vazia (nunca sobrescreve).
+      const migrateFlag = consumeMigrateLocalFlag();
 
-      if (migrate) {
-        try {
-          await saveCloudData(supabase, uid, localSnapshot, localPref);
-        } catch {
-          /* still continue with local snapshot */
-        }
+      let loaded: Awaited<ReturnType<typeof loadCloudData>>;
+      try {
+        loaded = await loadCloudData(supabase, uid);
+        loadOkRef.current = true;
+      } catch (err) {
+        console.error("[foco] falha ao carregar nuvem:", err);
+        loadOkRef.current = false;
         if (cancelled) return;
         setCloud(true);
         cloudRef.current = true;
@@ -176,8 +187,23 @@ export function AppProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      const loaded = await loadCloudData(supabase, uid);
       if (cancelled) return;
+
+      const cloudEmpty = isCloudDataEmpty(loaded.data);
+      // Seed / migrate local → nuvem somente quando a conta ainda não tem dados.
+      if (cloudEmpty && (migrateFlag || localSnapshot.subjects.length > 0)) {
+        try {
+          await saveCloudData(supabase, uid, localSnapshot, localPref);
+          loaded = {
+            data: localSnapshot,
+            theme: localPref,
+            displayName: loaded.displayName,
+          };
+        } catch (err) {
+          console.warn("[foco] seed local→nuvem falhou:", err);
+        }
+      }
+
       setCloud(true);
       cloudRef.current = true;
       userIdRef.current = uid;
@@ -210,6 +236,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     function clearSession() {
       cloudRef.current = false;
       userIdRef.current = null;
+      loadOkRef.current = false;
+      pendingSaveRef.current = null;
       setCloud(false);
       setUser(null);
       setDataState(createDefaultData());
@@ -231,11 +259,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
       try {
         const { createClient } = await import("@/lib/supabase/client");
         const supabase = createClient();
-        const { data: sessionData } = await supabase.auth.getSession();
-        const session = sessionData.session;
+        const { data: userData } = await supabase.auth.getUser();
+        const authUser = userData.user;
 
-        if (session?.user && !cancelled) {
-          await enterSession(session.user.id, session.user);
+        if (authUser && !cancelled) {
+          await enterSession(authUser.id, authUser);
         } else if (!cancelled) {
           clearSession();
         }
@@ -268,24 +296,45 @@ export function AppProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
+  const flushCloudSaveRef = useRef<() => Promise<void>>(async () => {});
+
+  flushCloudSaveRef.current = async () => {
+    if (saveInFlightRef.current) return;
+    if (!cloudRef.current || !userIdRef.current) return;
+    if (!loadOkRef.current) return;
+    const pending = pendingSaveRef.current;
+    if (!pending) return;
+    saveInFlightRef.current = true;
+    pendingSaveRef.current = null;
+    try {
+      const { createClient } = await import("@/lib/supabase/client");
+      const supabase = createClient();
+      await saveCloudData(
+        supabase,
+        userIdRef.current,
+        pending.data,
+        pending.theme,
+      );
+    } catch (err) {
+      console.error("[foco] falha ao salvar na nuvem:", err);
+      if (!pendingSaveRef.current) {
+        pendingSaveRef.current = pending;
+      }
+    } finally {
+      saveInFlightRef.current = false;
+      if (pendingSaveRef.current) {
+        void flushCloudSaveRef.current();
+      }
+    }
+  };
+
   const persistCloud = useCallback((next: AppData, nextTheme: ThemePref) => {
     if (!cloudRef.current || !userIdRef.current) return;
+    if (!loadOkRef.current) return;
+    pendingSaveRef.current = { data: next, theme: nextTheme };
     if (saveTimer.current) window.clearTimeout(saveTimer.current);
     saveTimer.current = window.setTimeout(() => {
-      void (async () => {
-        try {
-          const { createClient } = await import("@/lib/supabase/client");
-          const supabase = createClient();
-          await saveCloudData(
-            supabase,
-            userIdRef.current!,
-            next,
-            nextTheme,
-          );
-        } catch {
-          /* ignore transient errors */
-        }
-      })();
+      void flushCloudSaveRef.current();
     }, 600);
   }, []);
 
@@ -323,17 +372,24 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   /** Sai da nuvem e volta à tela de login. */
   const logout = useCallback(() => {
-    cloudRef.current = false;
-    userIdRef.current = null;
-    setCloud(false);
-    setUser(null);
-    setDataState(createDefaultData());
-    setGuestMode(false);
-    if (isSupabaseConfigured()) {
-      void import("@/lib/supabase/client").then(({ createClient }) => {
-        void createClient().auth.signOut();
-      });
-    }
+    void (async () => {
+      if (isSupabaseConfigured()) {
+        try {
+          const { createClient } = await import("@/lib/supabase/client");
+          await createClient().auth.signOut();
+        } catch (err) {
+          console.error("[foco] falha ao sair:", err);
+        }
+      }
+      cloudRef.current = false;
+      userIdRef.current = null;
+      loadOkRef.current = false;
+      pendingSaveRef.current = null;
+      setCloud(false);
+      setUser(null);
+      setDataState(createDefaultData());
+      setGuestMode(false);
+    })();
   }, []);
 
   const exportBackup = useCallback(() => {
@@ -342,13 +398,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
         version: 1,
         exported_at: new Date().toISOString(),
         theme: themePref,
-        user,
         data,
       },
       null,
       2,
     );
-  }, [themePref, user, data]);
+  }, [themePref, data]);
 
   const importBackup = useCallback((json: string) => {
     try {

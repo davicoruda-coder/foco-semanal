@@ -226,7 +226,7 @@ export default function AjustesPage() {
               {cloud
                 ? "Conectado · alterações salvam na nuvem"
                 : supabaseReady
-                  ? "Sessão local temporária"
+                  ? "Entre com o e-mail para sincronizar"
                   : "Supabase não configurado"}
             </p>
           </div>

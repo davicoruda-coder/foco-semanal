@@ -46,10 +46,15 @@ export default function EstatisticasPage() {
     const refresh = () => setLog(loadFocusLog());
     refresh();
     window.addEventListener("foco-focus-log", refresh);
-    const id = window.setInterval(refresh, 2000);
+    const onVis = () => {
+      if (document.visibilityState === "visible") refresh();
+    };
+    document.addEventListener("visibilitychange", onVis);
+    window.addEventListener("focus", refresh);
     return () => {
       window.removeEventListener("foco-focus-log", refresh);
-      window.clearInterval(id);
+      document.removeEventListener("visibilitychange", onVis);
+      window.removeEventListener("focus", refresh);
     };
   }, []);
 

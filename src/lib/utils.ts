@@ -26,6 +26,20 @@ export function defaultBlockColor(type: BlockType): string {
   }
 }
 
+/** Aceita só hex (#rgb/#rrggbb/#rrggbbaa) ou var(--token). */
+export function sanitizeCssColor(
+  value: string | undefined | null,
+  fallback: string,
+): string {
+  if (!value) return fallback;
+  const v = value.trim();
+  if (/^#[0-9A-Fa-f]{3}([0-9A-Fa-f]{1}|[0-9A-Fa-f]{3}|[0-9A-Fa-f]{5})?$/.test(v)) {
+    return v;
+  }
+  if (/^var\(--[a-zA-Z0-9-]+\)$/.test(v)) return v;
+  return fallback;
+}
+
 export function blockStyle(
   block: Pick<WeekBlock, "type" | "color">,
   opts?: { muted?: boolean },
@@ -33,7 +47,10 @@ export function blockStyle(
   className: string;
   style?: { background: string; color: string; opacity?: number };
 } {
-  const bg = block.color || defaultBlockColor(block.type);
+  const bg = sanitizeCssColor(
+    block.color,
+    defaultBlockColor(block.type),
+  );
   if (opts?.muted) {
     return {
       className: "",
