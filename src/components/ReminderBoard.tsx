@@ -45,7 +45,7 @@ function NoteCard({
 
   return (
     <article
-      className="note-enter relative flex min-h-[110px] flex-col rounded-[var(--radius-tag)] p-2.5 shadow-sm"
+      className="note-enter relative flex min-h-[120px] flex-col rounded-[var(--radius-tag)] p-3 shadow-sm"
       style={
         {
           background: reminder.color,
@@ -55,12 +55,23 @@ function NoteCard({
       }
     >
       <textarea
-        className={`w-full flex-1 resize-none bg-transparent font-medium leading-snug outline-none placeholder:opacity-40 ${
-          compact ? "min-h-[56px] text-sm" : "min-h-[60px] text-xs"
+        className={`w-full flex-1 resize-none bg-transparent leading-relaxed outline-none placeholder:opacity-40 ${
+          compact
+            ? "min-h-[64px] text-base font-semibold tracking-[-0.01em]"
+            : "min-h-[60px] text-sm font-medium"
         }`}
+        style={
+          compact
+            ? {
+                WebkitFontSmoothing: "antialiased",
+                MozOsxFontSmoothing: "grayscale",
+                textRendering: "optimizeLegibility",
+              }
+            : undefined
+        }
         placeholder="Escreva…"
         value={noteText(reminder.title)}
-        rows={3}
+        rows={compact ? 3 : 3}
         onChange={(e) =>
           upsertReminder({ ...reminder, title: e.target.value })
         }
