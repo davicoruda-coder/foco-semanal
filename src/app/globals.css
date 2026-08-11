@@ -14,9 +14,9 @@
   --ok: #16a34a;
   --row-tint-ok: 18%;
   --row-tint-warn: 14%;
-  --status-ok-bg: #16a34a;
-  --status-ok-fg: #ffffff;
-  --status-ok-ring: color-mix(in srgb, #16a34a 35%, transparent);
+  --status-ok-bg: color-mix(in srgb, #16a34a 22%, #ffffff);
+  --status-ok-fg: #15803d;
+  --status-ok-ring: color-mix(in srgb, #16a34a 40%, transparent);
   --next: #64748b;
   --line: #dddcec;
   --radius: 18px;
@@ -42,8 +42,8 @@
   --ok: #4ade80;
   --row-tint-ok: 9%;
   --row-tint-warn: 6%;
-  --status-ok-bg: #22c55e;
-  --status-ok-fg: #ffffff;
+  --status-ok-bg: color-mix(in srgb, #4ade80 55%, #15161e);
+  --status-ok-fg: #4ade80;
   --status-ok-ring: color-mix(in srgb, #4ade80 45%, transparent);
   --next: #94a3b8;
   --line: #2a2b38;
