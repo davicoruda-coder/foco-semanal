@@ -1,7 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Plus, Trash2 } from "lucide-react";
+import Link from "next/link";
+import { ArrowLeft, Plus, Trash2 } from "lucide-react";
 import { useApp } from "@/components/AppProvider";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import type { FocusTimer } from "@/lib/types";
@@ -55,6 +56,13 @@ export default function TemporizadoresPage() {
         }}
       />
 
+      <Link
+        href="/hoje"
+        className="mb-3 inline-flex items-center gap-1.5 text-sm font-medium text-[color-mix(in_srgb,var(--ink)_60%,transparent)] transition hover:text-[var(--signal)]"
+      >
+        <ArrowLeft size={16} strokeWidth={2} />
+        Voltar
+      </Link>
       <h1 className="font-display pb-0.5 text-2xl font-semibold leading-normal tracking-tight md:text-3xl">
         Temporizadores
       </h1>
