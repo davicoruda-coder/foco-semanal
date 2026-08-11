@@ -213,7 +213,7 @@ export function ReminderBoard({ compact }: { compact?: boolean }) {
           className={
             compact
               ? "text-xs font-semibold uppercase tracking-[0.14em] opacity-55"
-              : "font-display text-4xl font-semibold"
+              : "font-display pb-0.5 text-2xl font-semibold leading-normal tracking-tight md:text-3xl"
           }
         >
           Lembretes
