@@ -14,9 +14,9 @@
   --ok: #16a34a;
   --row-tint-ok: 18%;
   --row-tint-warn: 14%;
-  --status-ok-bg: color-mix(in srgb, #16a34a 22%, #ffffff);
-  --status-ok-fg: #15803d;
-  --status-ok-ring: color-mix(in srgb, #16a34a 40%, transparent);
+  --status-ok-bg: #16a34a;
+  --status-ok-fg: #ffffff;
+  --status-ok-ring: color-mix(in srgb, #16a34a 35%, transparent);
   --next: #64748b;
   --line: #dddcec;
   --radius: 18px;
