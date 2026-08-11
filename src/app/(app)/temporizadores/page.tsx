@@ -1,10 +1,18 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Volume2 } from "lucide-react";
 import { useApp } from "@/components/AppProvider";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
+import {
+  ALARM_TONES,
+  loadAlarmPrefs,
+  previewAlarmTone,
+  saveAlarmPrefs,
+  type AlarmPrefs,
+  type AlarmToneId,
+} from "@/lib/audio";
 import type { FocusTimer } from "@/lib/types";
 
 const ACCENTS = [
@@ -25,6 +33,16 @@ export default function TemporizadoresPage() {
   const [pendingDelete, setPendingDelete] = useState<FocusTimer | null>(null);
   const [draftName, setDraftName] = useState("");
   const [draftMinutes, setDraftMinutes] = useState(25);
+  const [alarm, setAlarm] = useState<AlarmPrefs>({ volume: 0.7, tone: "acorde" });
+
+  useEffect(() => {
+    setAlarm(loadAlarmPrefs());
+  }, []);
+
+  function updateAlarm(next: AlarmPrefs) {
+    setAlarm(next);
+    saveAlarmPrefs(next);
+  }
 
   function addTimer() {
     const name = draftName.trim() || `Temporizador ${timers.length + 1}`;
@@ -170,6 +188,65 @@ export default function TemporizadoresPage() {
             </button>
           </div>
         </div>
+      </section>
+
+      <section className="surface mt-4 p-4 md:p-5">
+        <h2 className="font-display text-base font-semibold tracking-tight md:text-lg">
+          Alarme
+        </h2>
+        <p className="mt-1 text-xs opacity-55">
+          Vale para temporizadores e lembretes com sino neste aparelho.
+        </p>
+
+        <label className="mt-4 flex items-center gap-3">
+          <Volume2 size={18} strokeWidth={1.75} className="shrink-0 opacity-60" />
+          <span className="w-16 shrink-0 text-sm opacity-70">Volume</span>
+          <input
+            type="range"
+            min={0}
+            max={100}
+            value={Math.round(alarm.volume * 100)}
+            className="w-full accent-[var(--signal)]"
+            onChange={(e) =>
+              updateAlarm({
+                ...alarm,
+                volume: Number(e.target.value) / 100,
+              })
+            }
+          />
+          <span className="font-mono-num w-10 shrink-0 text-right text-sm opacity-60">
+            {Math.round(alarm.volume * 100)}%
+          </span>
+        </label>
+
+        <p className="mt-4 text-sm font-medium opacity-70">Toque</p>
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          {ALARM_TONES.map(({ id, label }) => {
+            const active = alarm.tone === id;
+            return (
+              <button
+                key={id}
+                type="button"
+                onClick={() => updateAlarm({ ...alarm, tone: id as AlarmToneId })}
+                className={`rounded-full px-3.5 py-1.5 text-sm font-medium transition ${
+                  active
+                    ? "bg-[var(--signal-soft)] text-[var(--signal)] ring-1 ring-[color-mix(in_srgb,var(--signal)_40%,transparent)]"
+                    : "bg-[color-mix(in_srgb,var(--ink)_6%,transparent)] text-[color-mix(in_srgb,var(--ink)_55%,transparent)] hover:text-[var(--ink)]"
+                }`}
+              >
+                {label}
+              </button>
+            );
+          })}
+        </div>
+
+        <button
+          type="button"
+          className="btn mt-4"
+          onClick={() => previewAlarmTone(alarm.tone, alarm.volume)}
+        >
+          Ouvir
+        </button>
       </section>
     </div>
   );
