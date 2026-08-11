@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type CSSProperties } from "react";
+import { useState } from "react";
 import { Bell, BellOff, Plus, Trash2 } from "lucide-react";
 import { useApp } from "@/components/AppProvider";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
@@ -45,33 +45,21 @@ function NoteCard({
 
   return (
     <article
-      className="note-enter relative flex min-h-[120px] flex-col rounded-[var(--radius-tag)] p-3 shadow-sm"
-      style={
-        {
-          background: reminder.color,
-          color: "#292524",
-          "--rot": `${(reminder.id.length % 5) - 2}deg`,
-        } as CSSProperties
-      }
+      className="note-enter relative flex min-h-[128px] flex-col rounded-[var(--radius-tag)] p-3 shadow-sm"
+      style={{
+        background: reminder.color,
+        color: "#292524",
+      }}
     >
       <textarea
-        className={`w-full flex-1 resize-none bg-transparent leading-relaxed outline-none placeholder:opacity-40 ${
+        className={`w-full flex-1 resize-none bg-transparent leading-relaxed outline-none placeholder:opacity-40 [text-rendering:geometricPrecision] [-webkit-font-smoothing:subpixel-antialiased] ${
           compact
-            ? "min-h-[64px] text-base font-semibold tracking-[-0.01em]"
-            : "min-h-[60px] text-sm font-medium"
+            ? "min-h-[72px] text-lg font-normal"
+            : "min-h-[60px] text-sm font-normal"
         }`}
-        style={
-          compact
-            ? {
-                WebkitFontSmoothing: "antialiased",
-                MozOsxFontSmoothing: "grayscale",
-                textRendering: "optimizeLegibility",
-              }
-            : undefined
-        }
         placeholder="Escreva…"
         value={noteText(reminder.title)}
-        rows={compact ? 3 : 3}
+        rows={3}
         onChange={(e) =>
           upsertReminder({ ...reminder, title: e.target.value })
         }
