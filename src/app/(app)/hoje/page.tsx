@@ -127,7 +127,7 @@ export default function HojePage() {
                             <p className="px-1 text-[11px] opacity-40">—</p>
                           )}
                           {blocks.map((b) => {
-                            const style = blockStyle(b);
+                            const style = blockStyle(b, { muted: !isToday });
                             return (
                               <div
                                 key={b.id}

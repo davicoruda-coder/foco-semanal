@@ -26,11 +26,23 @@ export function defaultBlockColor(type: BlockType): string {
   }
 }
 
-export function blockStyle(block: Pick<WeekBlock, "type" | "color">): {
+export function blockStyle(
+  block: Pick<WeekBlock, "type" | "color">,
+  opts?: { muted?: boolean },
+): {
   className: string;
   style?: { background: string; color: string };
 } {
   const bg = block.color || defaultBlockColor(block.type);
+  if (opts?.muted) {
+    return {
+      className: "",
+      style: {
+        background: `color-mix(in srgb, ${bg} 48%, var(--surface))`,
+        color: "color-mix(in srgb, #14201a 55%, var(--ink))",
+      },
+    };
+  }
   return {
     className: "",
     style: { background: bg, color: "#14201a" },
