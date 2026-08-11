@@ -1,21 +1,11 @@
 "use client";
 
-import {
-  useEffect,
-  useRef,
-  useState,
-  type CSSProperties,
-  type MouseEvent,
-} from "react";
-import { Bell, BellOff, Bold, Italic, Plus, Trash2 } from "lucide-react";
+import { useState, type CSSProperties } from "react";
+import { Bell, BellOff, Plus, Trash2 } from "lucide-react";
 import { useApp } from "@/components/AppProvider";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { ensureNotificationPermission } from "@/lib/audio";
-import {
-  noteHtmlFromStored,
-  plainTextFromHtml,
-  sanitizeNoteHtml,
-} from "@/lib/note-html";
+import { plainTextFromHtml } from "@/lib/note-html";
 import type { Reminder } from "@/lib/types";
 
 const NOTE_COLORS = [
@@ -34,9 +24,8 @@ function toLocalInput(iso: string) {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
-function runFormat(cmd: "bold" | "italic") {
-  document.execCommand("styleWithCSS", false, "true");
-  document.execCommand(cmd, false);
+function noteText(value: string) {
+  return plainTextFromHtml(value);
 }
 
 function NoteCard({
@@ -50,40 +39,9 @@ function NoteCard({
 }) {
   const { upsertReminder } = useApp();
   const [alarmOpen, setAlarmOpen] = useState(false);
-  const [focused, setFocused] = useState(false);
   const [when, setWhen] = useState(
     reminder.has_alarm ? toLocalInput(reminder.notify_at) : "",
   );
-  const editorRef = useRef<HTMLDivElement>(null);
-  const skipSync = useRef(false);
-
-  useEffect(() => {
-    const el = editorRef.current;
-    if (!el || skipSync.current) return;
-    if (document.activeElement === el) return;
-    const next = noteHtmlFromStored(reminder.title);
-    if (el.innerHTML !== next) el.innerHTML = next;
-  }, [reminder.id, reminder.title]);
-
-  function persistFromEditor() {
-    const el = editorRef.current;
-    if (!el) return;
-    const html = sanitizeNoteHtml(el.innerHTML);
-    const plain = plainTextFromHtml(html);
-    const stored = plain ? html : "";
-    if (stored === reminder.title) return;
-    skipSync.current = true;
-    upsertReminder({ ...reminder, title: stored });
-    queueMicrotask(() => {
-      skipSync.current = false;
-    });
-  }
-
-  function onToolbarMouseDown(e: MouseEvent) {
-    e.preventDefault();
-  }
-
-  const showPlaceholder = !plainTextFromHtml(reminder.title);
 
   return (
     <article
@@ -96,57 +54,16 @@ function NoteCard({
         } as CSSProperties
       }
     >
-      {focused && (
-        <div
-          className="mb-1.5 flex flex-wrap items-center gap-0.5 rounded-[var(--radius-tag)] bg-white/75 p-0.5 shadow-sm"
-          onMouseDown={onToolbarMouseDown}
-        >
-          <button
-            type="button"
-            title="Negrito"
-            aria-label="Negrito"
-            className="grid h-7 w-7 place-items-center rounded text-[#292524] transition hover:bg-black/10"
-            onClick={() => {
-              editorRef.current?.focus();
-              runFormat("bold");
-              persistFromEditor();
-            }}
-          >
-            <Bold size={14} strokeWidth={2.5} />
-          </button>
-          <button
-            type="button"
-            title="Itálico"
-            aria-label="Itálico"
-            className="grid h-7 w-7 place-items-center rounded text-[#292524] transition hover:bg-black/10"
-            onClick={() => {
-              editorRef.current?.focus();
-              runFormat("italic");
-              persistFromEditor();
-            }}
-          >
-            <Italic size={14} strokeWidth={2.25} />
-          </button>
-        </div>
-      )}
-
-      <div
-        ref={editorRef}
-        role="textbox"
-        aria-multiline
-        aria-label="Texto da nota"
-        contentEditable
-        suppressContentEditableWarning
-        data-placeholder="Escreva…"
-        className={`note-editor relative w-full flex-1 bg-transparent font-medium leading-snug outline-none ${
+      <textarea
+        className={`w-full flex-1 resize-none bg-transparent font-medium leading-snug outline-none placeholder:opacity-40 ${
           compact ? "min-h-[56px] text-sm" : "min-h-[60px] text-xs"
-        } ${showPlaceholder ? "note-editor--empty" : ""}`}
-        onFocus={() => setFocused(true)}
-        onBlur={() => {
-          setFocused(false);
-          persistFromEditor();
-        }}
-        onInput={() => persistFromEditor()}
+        }`}
+        placeholder="Escreva…"
+        value={noteText(reminder.title)}
+        rows={3}
+        onChange={(e) =>
+          upsertReminder({ ...reminder, title: e.target.value })
+        }
       />
 
       {reminder.has_alarm && !alarmOpen && (
@@ -272,7 +189,7 @@ export function ReminderBoard({ compact }: { compact?: boolean }) {
   }
 
   const deleteLabel = pendingDelete
-    ? plainTextFromHtml(pendingDelete.title) || "esta nota"
+    ? noteText(pendingDelete.title) || "esta nota"
     : "";
 
   return (
@@ -281,9 +198,7 @@ export function ReminderBoard({ compact }: { compact?: boolean }) {
         open={Boolean(pendingDelete)}
         title="Excluir lembrete?"
         message={
-          pendingDelete
-            ? `Deseja mesmo excluir "${deleteLabel}"?`
-            : ""
+          pendingDelete ? `Deseja mesmo excluir "${deleteLabel}"?` : ""
         }
         confirmLabel="Sim, excluir"
         cancelLabel="Cancelar"
@@ -356,8 +271,7 @@ export function ReminderBoard({ compact }: { compact?: boolean }) {
 
       {!compact && (
         <p className="mb-6 opacity-65">
-          Escolha a cor · escreva · formate ao focar · sino pra alarme · lixeira
-          pra excluir.
+          Escolha a cor · escreva · sino pra alarme · lixeira pra excluir.
         </p>
       )}
 
