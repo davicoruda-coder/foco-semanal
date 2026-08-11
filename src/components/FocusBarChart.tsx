@@ -8,56 +8,60 @@ type Bar = {
 
 export function FocusBarChart({
   bars,
-  height = 180,
+  height = 200,
 }: {
   bars: Bar[];
   height?: number;
 }) {
   const max = Math.max(1, ...bars.map((b) => b.value));
-  const gap = 6;
-  const n = Math.max(1, bars.length);
-  const barW = Math.max(4, Math.min(28, (100 - gap) / n - 0.5));
+  const hasData = bars.some((b) => b.value > 0);
+  const dense = bars.length > 14;
 
   return (
     <div className="w-full">
-      <svg
-        viewBox={`0 0 100 ${height}`}
-        className="h-auto w-full"
-        role="img"
-        aria-label="Gráfico de tempo de foco"
+      {!hasData && (
+        <p className="mb-3 text-xs opacity-50">
+          Ainda sem tempo registrado neste período. Coloque a Sessão ou o
+          Cronômetro em play para preencher o gráfico.
+        </p>
+      )}
+      <div
+        className="flex items-end gap-1 border-b border-[var(--line)] pb-1 sm:gap-1.5"
+        style={{ height }}
       >
         {bars.map((b, i) => {
-          const h = (b.value / max) * (height - 28);
-          const x = (i / n) * 100 + gap / n;
-          const y = height - 18 - h;
+          const pct = Math.max((b.value / max) * 100, b.value > 0 ? 4 : 0);
+          const showLabel =
+            !dense || i % Math.ceil(bars.length / 8) === 0 || i === bars.length - 1;
           return (
-            <g key={`${b.label}-${i}`}>
-              <title>{b.hint ?? `${b.label}: ${b.value}`}</title>
-              <rect
-                x={x}
-                y={y}
-                width={barW}
-                height={Math.max(h, b.value > 0 ? 2 : 0)}
-                rx={1.2}
-                fill="var(--signal)"
-                opacity={b.value > 0 ? 0.9 : 0.15}
+            <div
+              key={`${b.label}-${i}`}
+              className="relative flex h-full min-w-0 flex-1 flex-col items-center justify-end"
+              title={b.hint ?? `${b.label}: ${b.value}`}
+            >
+              {/* trilha de fundo — sempre visível */}
+              <div
+                className="absolute inset-x-[12%] bottom-0 rounded-t-[6px] bg-[color-mix(in_srgb,var(--ink)_8%,transparent)]"
+                style={{ height: "100%" }}
               />
-              {n <= 12 || i % Math.ceil(n / 8) === 0 ? (
-                <text
-                  x={x + barW / 2}
-                  y={height - 4}
-                  textAnchor="middle"
-                  fontSize="3.2"
-                  fill="currentColor"
-                  opacity={0.45}
-                >
+              <div
+                className="relative z-[1] w-[76%] rounded-t-[6px] bg-[var(--signal)] transition-[height] duration-300"
+                style={{
+                  height: `${pct}%`,
+                  opacity: b.value > 0 ? 1 : 0,
+                  minHeight: b.value > 0 ? 4 : 0,
+                }}
+              />
+              {showLabel && (
+                <span className="pointer-events-none absolute -bottom-5 text-[10px] font-medium opacity-45 sm:text-[11px]">
                   {b.label}
-                </text>
-              ) : null}
-            </g>
+                </span>
+              )}
+            </div>
           );
         })}
-      </svg>
+      </div>
+      <div className="h-5" aria-hidden />
     </div>
   );
 }
