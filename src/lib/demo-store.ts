@@ -176,6 +176,18 @@ export function createDefaultData(): AppData {
 
 const STORAGE_KEY = "foco_semanal_data_v1";
 const AUTH_KEY = "foco_semanal_demo_user";
+const GUEST_KEY = "foco_semanal_guest";
+
+export function isGuestMode() {
+  if (typeof window === "undefined") return false;
+  return localStorage.getItem(GUEST_KEY) === "1";
+}
+
+export function setGuestMode(enabled: boolean) {
+  if (typeof window === "undefined") return;
+  if (enabled) localStorage.setItem(GUEST_KEY, "1");
+  else localStorage.removeItem(GUEST_KEY);
+}
 
 export function loadDemoData(): AppData {
   if (typeof window === "undefined") return createDefaultData();

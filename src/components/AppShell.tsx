@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   BookOpen,
   CalendarDays,
@@ -14,6 +14,7 @@ import {
   History,
 } from "lucide-react";
 import { useApp } from "@/components/AppProvider";
+import { useEffect } from "react";
 
 const NAV = [
   { href: "/hoje", label: "Hoje", icon: Home },
@@ -27,9 +28,14 @@ const NAV = [
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
   const { user, ready, cloud, logout } = useApp();
   const onHome = pathname.startsWith("/hoje");
   const onConfig = pathname.startsWith("/configuracoes");
+
+  useEffect(() => {
+    if (ready && !user) router.replace("/login");
+  }, [ready, user, router]);
 
   if (!ready || !user) {
     return (
@@ -98,22 +104,22 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               {cloud ? user.email : "Local · neste navegador"}
             </p>
           </div>
-          {cloud && (
-            <button
-              type="button"
-              title="Sair da nuvem"
-              aria-label="Sair da nuvem"
-              className="shrink-0 rounded-[var(--radius-btn)] p-2 text-[color-mix(in_srgb,var(--ink)_55%,transparent)] transition hover:bg-[var(--mist)] hover:text-[var(--warn)]"
-              onClick={() => logout()}
-            >
-              <LogOut size={16} />
-            </button>
-          )}
+          <button
+            type="button"
+            title={cloud ? "Sair da conta" : "Trocar conta"}
+            aria-label={cloud ? "Sair da conta" : "Trocar conta"}
+            className="shrink-0 rounded-[var(--radius-btn)] p-2 text-[color-mix(in_srgb,var(--ink)_55%,transparent)] transition hover:bg-[var(--mist)] hover:text-[var(--warn)]"
+            onClick={() => {
+              logout();
+              router.push("/login");
+            }}
+          >
+            <LogOut size={16} />
+          </button>
         </div>
       </aside>
 
       <main className="min-h-screen px-4 pb-8 pt-6 md:ml-64 md:px-8">
-        {/* Mobile: voltar + config quando não está na home */}
         {!onHome && (
           <div className="mb-4 flex items-center justify-between md:hidden">
             <Link

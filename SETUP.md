@@ -11,7 +11,9 @@ Guia para a **versão final**: login Google, dados na nuvem e deploy.
    - Project URL  
    - `anon` `public` key
 3. **SQL Editor** — cole e rode todo o arquivo [`supabase/schema.sql`](supabase/schema.sql).
-4. **Authentication → Providers → Google** — ative (Client ID/Secret do passo 2).
+4. **Authentication → Providers**:
+   - **Google** — ative (Client ID/Secret do passo 2).
+   - **Email** — deixe habilitado (criar conta / esqueci a senha).
 5. **Authentication → URL Configuration**:
    - Site URL: `http://localhost:3000` (depois a URL da Vercel)
    - Redirect URLs:  

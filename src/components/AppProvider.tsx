@@ -13,10 +13,12 @@ import {
 import {
   createDefaultData,
   getDemoUser,
+  isGuestMode,
   loadDemoData,
   newId,
   saveDemoData,
   setDemoUser,
+  setGuestMode,
 } from "@/lib/demo-store";
 import { isSupabaseConfigured } from "@/lib/env";
 import { loadCloudData, saveCloudData } from "@/lib/supabase/sync";
@@ -141,6 +143,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
             applyTheme(loaded.theme);
             localStorage.setItem(THEME_KEY, loaded.theme);
             setDemoUser(null);
+            setGuestMode(false);
             setReady(true);
             return;
           }
@@ -150,24 +153,31 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
 
       if (cancelled) return;
+      // Sem sessão: só entra no app se escolheu "continuar sem conta".
       setCloud(false);
       cloudRef.current = false;
       userIdRef.current = null;
-      let local = getDemoUser();
-      if (
-        !local ||
-        local.email === "demo@foco.local" ||
-        local.name === "Demo"
-      ) {
-        local = {
-          id: local?.id ?? newId("user"),
-          name: "Você",
-          email: "neste aparelho",
-        };
-        setDemoUser(local);
+      if (isGuestMode()) {
+        let local = getDemoUser();
+        if (
+          !local ||
+          local.email === "demo@foco.local" ||
+          local.name === "Demo"
+        ) {
+          local = {
+            id: local?.id ?? newId("user"),
+            name: "Você",
+            email: "neste aparelho",
+          };
+          setDemoUser(local);
+        }
+        setUser(local);
+        setDataState(loadDemoData());
+      } else {
+        setUser(null);
+        setDemoUser(null);
+        setDataState(createDefaultData());
       }
-      setUser(local);
-      setDataState(loadDemoData());
       setReady(true);
     }
 
@@ -233,6 +243,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     cloudRef.current = false;
     userIdRef.current = null;
     setCloud(false);
+    setGuestMode(true);
     if (isSupabaseConfigured()) {
       void import("@/lib/supabase/client").then(({ createClient }) => {
         void createClient().auth.signOut();
@@ -251,25 +262,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
     saveDemoData(next);
   }, []);
 
-  /** Sai da nuvem e continua no modo local neste aparelho. */
+  /** Sai da conta na nuvem e volta à tela de login. */
   const logout = useCallback(() => {
     cloudRef.current = false;
     userIdRef.current = null;
     setCloud(false);
+    setGuestMode(false);
+    setDemoUser(null);
+    setUser(null);
+    setDataState(createDefaultData());
     if (isSupabaseConfigured()) {
       void import("@/lib/supabase/client").then(({ createClient }) => {
         void createClient().auth.signOut();
       });
     }
-    const existing = getDemoUser();
-    const u = {
-      id: existing?.id ?? newId("user"),
-      email: existing?.email || "neste aparelho",
-      name: existing?.name || "Você",
-    };
-    setDemoUser(u);
-    setUser(u);
-    setDataState(loadDemoData());
   }, []);
 
   const exportBackup = useCallback(() => {

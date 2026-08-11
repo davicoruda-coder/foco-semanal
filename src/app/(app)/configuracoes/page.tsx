@@ -1,6 +1,8 @@
 "use client";
 
 import { useRef, useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Download, Moon, Sun, Upload } from "lucide-react";
 import { useApp } from "@/components/AppProvider";
 import type { Theme } from "@/lib/types";
@@ -16,15 +18,14 @@ export default function ConfiguracoesPage() {
     setTheme,
     user,
     cloud,
-    supabaseReady,
     exportBackup,
     importBackup,
     resetDemoData,
     logout,
   } = useApp();
+  const router = useRouter();
   const fileRef = useRef<HTMLInputElement>(null);
   const [backupMsg, setBackupMsg] = useState<string | null>(null);
-  const [authBusy, setAuthBusy] = useState(false);
 
   function downloadBackup() {
     const blob = new Blob([exportBackup()], { type: "application/json" });
@@ -43,30 +44,9 @@ export default function ConfiguracoesPage() {
     setBackupMsg(result.ok ? "Backup restaurado." : result.error);
   }
 
-  async function loginGoogle() {
-    if (!supabaseReady) {
-      alert("Supabase ainda não está configurado neste deploy.");
-      return;
-    }
-    setAuthBusy(true);
-    try {
-      const { createClient } = await import("@/lib/supabase/client");
-      const supabase = createClient();
-      await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
-          scopes: "https://www.googleapis.com/auth/drive.readonly",
-          queryParams: {
-            access_type: "offline",
-            prompt: "consent",
-          },
-        },
-      });
-    } catch {
-      setAuthBusy(false);
-      alert("Não foi possível iniciar o login Google.");
-    }
+  function sair() {
+    logout();
+    router.push("/login");
   }
 
   return (
@@ -172,34 +152,26 @@ export default function ConfiguracoesPage() {
               {cloud ? user?.email : "neste aparelho"}
             </p>
             <p className="mt-0.5 text-xs opacity-50">
-              {cloud ? "Conta Google · nuvem" : "Local · neste navegador"}
+              {cloud ? "Conta · nuvem (Supabase)" : "Local · neste navegador"}
             </p>
           </div>
         </div>
 
         <div className="mt-4 flex flex-wrap gap-2">
           {cloud ? (
-            <button
-              type="button"
-              className="btn"
-              onClick={() => logout()}
-            >
-              Usar só neste aparelho
+            <button type="button" className="btn" onClick={sair}>
+              Sair da conta
             </button>
           ) : (
-            <button
-              type="button"
-              className="btn btn-primary"
-              disabled={!supabaseReady || authBusy}
-              onClick={() => void loginGoogle()}
-            >
-              {authBusy ? "Abrindo Google…" : "Entrar com Google"}
-            </button>
+            <Link href="/login" className="btn btn-primary">
+              Entrar ou criar conta
+            </Link>
           )}
         </div>
         {!cloud && (
           <p className="mt-2 text-xs opacity-55">
-            Opcional: sincroniza matérias, timers e notas entre aparelhos.
+            Sem conta, os dados ficam só neste navegador. Conta Google ou e-mail
+            salva na nuvem.
           </p>
         )}
       </section>
