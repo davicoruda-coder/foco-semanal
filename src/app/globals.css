@@ -12,6 +12,8 @@
   --warn: #f97316;
   --warn-soft: #fff1e6;
   --ok: #16a34a;
+  --row-tint-ok: 16%;
+  --row-tint-warn: 14%;
   --next: #64748b;
   --line: #e7e7f2;
   --radius: 18px;
@@ -35,6 +37,8 @@
   --warn: #ffb14a;
   --warn-soft: #2a1c12;
   --ok: #34d399;
+  --row-tint-ok: 7%;
+  --row-tint-warn: 6%;
   --next: #94a3b8;
   --line: #2a2b38;
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35), 0 1px 3px rgba(0, 0, 0, 0.3);

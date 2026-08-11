@@ -66,9 +66,9 @@ export function statusClass(status: SubjectStatus): string {
 export function statusRowClass(status: SubjectStatus): string {
   switch (status) {
     case "ok":
-      return "bg-[color-mix(in_srgb,var(--ok)_16%,var(--surface))]";
+      return "bg-[color-mix(in_srgb,var(--ok)_var(--row-tint-ok),var(--surface))]";
     case "prox":
-      return "bg-[color-mix(in_srgb,var(--warn)_14%,var(--surface))]";
+      return "bg-[color-mix(in_srgb,var(--warn)_var(--row-tint-warn),var(--surface))]";
   }
 }
 
