@@ -40,8 +40,8 @@ function NoteCard({
 
   return (
     <article
-      className={`note-enter relative flex flex-col rounded-[var(--radius-tag)] p-2 shadow-sm ${
-        compact ? "min-h-[88px]" : "min-h-[110px]"
+      className={`note-enter relative flex flex-col rounded-[var(--radius-tag)] p-2.5 shadow-sm ${
+        compact ? "min-h-[96px]" : "min-h-[110px]"
       }`}
       style={
         {
@@ -272,7 +272,7 @@ export function ReminderBoard({ compact }: { compact?: boolean }) {
         <div
           className={
             compact
-              ? "grid grid-cols-2 gap-1.5"
+              ? "grid grid-cols-1 gap-2"
               : "grid gap-2 sm:grid-cols-3 md:grid-cols-4"
           }
         >
