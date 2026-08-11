@@ -40,6 +40,15 @@ export function FocusTodayCard() {
     wasTracking.current = tracking;
   }, [tracking]);
 
+  // Após reset do histórico (ou outra mudança externa), atualiza se não estiver contando.
+  useEffect(() => {
+    const onLog = () => {
+      if (!wasTracking.current) setLog(loadFocusLog());
+    };
+    window.addEventListener("foco-focus-log", onLog);
+    return () => window.removeEventListener("foco-focus-log", onLog);
+  }, []);
+
   const today = getDay(log, dateKey());
   const max = Math.max(1, ...today.byHour);
 

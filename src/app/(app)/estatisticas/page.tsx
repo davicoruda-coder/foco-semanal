@@ -3,8 +3,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { useApp } from "@/components/AppProvider";
 import { useTimerRuntime } from "@/components/TimerRuntimeProvider";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { FocusBarChart } from "@/components/FocusBarChart";
 import {
+  clearFocusLog,
   dateKey,
   formatFocusDuration,
   getDay,
@@ -38,6 +40,7 @@ export default function EstatisticasPage() {
   const { runtime, stopwatch } = useTimerRuntime();
   const [range, setRange] = useState<Range>("semana");
   const [log, setLog] = useState<FocusLog>({ version: 1, days: {} });
+  const [confirmReset, setConfirmReset] = useState(false);
 
   useEffect(() => {
     const refresh = () => setLog(loadFocusLog());
@@ -106,8 +109,25 @@ export default function EstatisticasPage() {
           ? monthTotal
           : yearTotal;
 
+  function resetHistory() {
+    const empty = clearFocusLog();
+    setLog(empty);
+    window.dispatchEvent(new Event("foco-focus-log"));
+    setConfirmReset(false);
+  }
+
   return (
     <div className="mx-auto max-w-3xl">
+      <ConfirmDialog
+        open={confirmReset}
+        title="Resetar histórico de tempo?"
+        message="Isso apaga todo o tempo registrado (dia, semana, mês e ano) neste aparelho. Os temporizadores em si não mudam. Esta ação não pode ser desfeita."
+        confirmLabel="Sim, resetar"
+        cancelLabel="Cancelar"
+        onCancel={() => setConfirmReset(false)}
+        onConfirm={resetHistory}
+      />
+
       <h1 className="font-display pb-0.5 text-2xl font-semibold leading-normal tracking-tight md:text-3xl">
         Estatísticas
       </h1>
@@ -196,6 +216,16 @@ export default function EstatisticasPage() {
           </p>
         </div>
       </section>
+
+      <div className="mt-6 flex justify-end">
+        <button
+          type="button"
+          className="btn text-[var(--warn)]"
+          onClick={() => setConfirmReset(true)}
+        >
+          Resetar histórico de tempo
+        </button>
+      </div>
     </div>
   );
 }

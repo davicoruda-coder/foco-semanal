@@ -49,6 +49,13 @@ export function saveFocusLog(log: FocusLog) {
   }
 }
 
+/** Zera todo o histórico de tempo de foco neste aparelho. */
+export function clearFocusLog(): FocusLog {
+  const empty: FocusLog = { version: 1, days: {} };
+  saveFocusLog(empty);
+  return empty;
+}
+
 /** Acrescenta segundos de foco no momento atual (dia + hora). */
 export function addFocusSeconds(seconds: number, at = new Date()): FocusLog {
   if (seconds <= 0) return loadFocusLog();
