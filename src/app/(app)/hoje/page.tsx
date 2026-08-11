@@ -77,25 +77,29 @@ export default function HojePage() {
                   month: "2-digit",
                 })}`}
               </button>
-              <button
-                type="button"
-                title={showFullWeek ? "Mostrar só hoje" : "Mostrar semana toda"}
-                aria-label={
-                  showFullWeek ? "Mostrar só hoje" : "Mostrar semana toda"
-                }
-                className="inline-flex items-center gap-1 rounded-[var(--radius-tag)] bg-white/15 px-2 py-1 text-xs font-medium transition hover:bg-white/25"
-                onClick={() => setWeekOverride(!showFullWeek)}
-              >
-                {showFullWeek ? (
-                  <>
-                    <ChevronUp size={14} strokeWidth={2} /> Só hoje
-                  </>
-                ) : (
-                  <>
-                    <ChevronDown size={14} strokeWidth={2} /> Semana
-                  </>
-                )}
-              </button>
+              {autoCompact && (
+                <button
+                  type="button"
+                  title={
+                    showFullWeek ? "Mostrar só hoje" : "Mostrar semana toda"
+                  }
+                  aria-label={
+                    showFullWeek ? "Mostrar só hoje" : "Mostrar semana toda"
+                  }
+                  className="inline-flex items-center gap-1 rounded-[var(--radius-tag)] bg-white/15 px-2 py-1 text-xs font-medium transition hover:bg-white/25"
+                  onClick={() => setWeekOverride(!showFullWeek)}
+                >
+                  {showFullWeek ? (
+                    <>
+                      <ChevronUp size={14} strokeWidth={2} /> Só hoje
+                    </>
+                  ) : (
+                    <>
+                      <ChevronDown size={14} strokeWidth={2} /> Semana
+                    </>
+                  )}
+                </button>
+              )}
             </div>
 
             {showFullWeek ? (
