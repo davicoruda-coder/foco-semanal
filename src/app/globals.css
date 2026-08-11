@@ -2,9 +2,9 @@
 
 :root {
   --ink: #16171f;
-  --paper: #f3f2fb;
-  --paper-deep: #e6e4f5;
-  --mist: #f8f8fc;
+  --paper: #eceafa;
+  --paper-deep: #dfdcf2;
+  --mist: #f1f0f8;
   --surface: #ffffff;
   --signal: #6d5ef8;
   --signal-soft: #ece9fe;
@@ -15,7 +15,7 @@
   --row-tint-ok: 16%;
   --row-tint-warn: 14%;
   --next: #64748b;
-  --line: #e7e7f2;
+  --line: #dddcec;
   --radius: 18px;
   --radius-tag: 10px;
   --radius-btn: 12px;

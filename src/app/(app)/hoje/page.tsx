@@ -2,7 +2,12 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { CalendarDays, SlidersHorizontal } from "lucide-react";
+import {
+  CalendarDays,
+  ChevronDown,
+  ChevronUp,
+  SlidersHorizontal,
+} from "lucide-react";
 import { useApp } from "@/components/AppProvider";
 import { DAYS, STATUS_LABEL, type SubjectStatus } from "@/lib/types";
 import { blockStyle, statusClass, statusRowClass, todayIndex } from "@/lib/utils";
@@ -11,9 +16,13 @@ import { ReminderBoard } from "@/components/ReminderBoard";
 import { SessionClock } from "@/components/SessionClock";
 import { MonthCalendarDialog } from "@/components/MonthCalendar";
 
+/** Com o ciclo grande, a semana encolhe para "só hoje" e o ciclo sobe. */
+const COMPACT_WEEK_THRESHOLD = 5;
+
 export default function HojePage() {
   const { data, upsertSubject, setSubjectStatus } = useApp();
   const [calendarOpen, setCalendarOpen] = useState(false);
+  const [weekOverride, setWeekOverride] = useState<boolean | null>(null);
   const day = todayIndex();
 
   const subjects = useMemo(
@@ -23,6 +32,17 @@ export default function HojePage() {
         .sort((a, b) => a.cycle_order - b.cycle_order),
     [data.subjects],
   );
+
+  const todayBlocks = useMemo(
+    () =>
+      data.week_blocks
+        .filter((b) => b.day === day)
+        .sort((a, b) => a.sort_order - b.sort_order),
+    [data.week_blocks, day],
+  );
+
+  const autoCompact = subjects.length >= COMPACT_WEEK_THRESHOLD;
+  const showFullWeek = weekOverride ?? !autoCompact;
 
   const weekDays = DAYS.map((name, i) => ({ name, i }));
 
@@ -38,7 +58,7 @@ export default function HojePage() {
         <div className="min-w-0 space-y-5">
           <section className="surface overflow-hidden p-0">
             <div
-              className="px-4 py-3 text-white md:px-5"
+              className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 text-white md:px-5"
               style={{
                 background:
                   "linear-gradient(120deg, var(--signal), color-mix(in srgb, var(--signal) 55%, var(--accent-2)))",
@@ -57,49 +77,90 @@ export default function HojePage() {
                   month: "2-digit",
                 })}`}
               </button>
+              <button
+                type="button"
+                title={showFullWeek ? "Mostrar só hoje" : "Mostrar semana toda"}
+                aria-label={
+                  showFullWeek ? "Mostrar só hoje" : "Mostrar semana toda"
+                }
+                className="inline-flex items-center gap-1 rounded-[var(--radius-tag)] bg-white/15 px-2 py-1 text-xs font-medium transition hover:bg-white/25"
+                onClick={() => setWeekOverride(!showFullWeek)}
+              >
+                {showFullWeek ? (
+                  <>
+                    <ChevronUp size={14} strokeWidth={2} /> Só hoje
+                  </>
+                ) : (
+                  <>
+                    <ChevronDown size={14} strokeWidth={2} /> Semana
+                  </>
+                )}
+              </button>
             </div>
 
-            <div className="overflow-x-auto">
-              <div className="grid min-w-[720px] grid-cols-7 divide-x divide-[var(--line)]">
-                {weekDays.map(({ name, i }) => {
-                  const blocks = data.week_blocks
-                    .filter((b) => b.day === i)
-                    .sort((a, b) => a.sort_order - b.sort_order);
-                  const isToday = i === day;
-                  return (
-                    <div
-                      key={name}
-                      className={`min-h-44 ${isToday ? "bg-[var(--signal-soft)]/50" : "bg-[var(--surface)]/40"}`}
-                    >
+            {showFullWeek ? (
+              <div className="overflow-x-auto">
+                <div className="grid min-w-[720px] grid-cols-7 divide-x divide-[var(--line)]">
+                  {weekDays.map(({ name, i }) => {
+                    const blocks = data.week_blocks
+                      .filter((b) => b.day === i)
+                      .sort((a, b) => a.sort_order - b.sort_order);
+                    const isToday = i === day;
+                    return (
                       <div
-                        className={`border-b border-[var(--line)] px-2 py-2 text-center text-[11px] font-semibold uppercase tracking-wider ${
-                          isToday ? "text-[var(--signal)]" : "opacity-55"
-                        }`}
+                        key={name}
+                        className={`min-h-44 ${isToday ? "bg-[var(--signal-soft)]/50" : "bg-[var(--surface)]/40"}`}
                       >
-                        {name.slice(0, 3)}
+                        <div
+                          className={`border-b border-[var(--line)] px-2 py-2 text-center text-[11px] font-semibold uppercase tracking-wider ${
+                            isToday ? "text-[var(--signal)]" : "opacity-55"
+                          }`}
+                        >
+                          {name.slice(0, 3)}
+                        </div>
+                        <div className="space-y-1.5 p-2">
+                          {blocks.length === 0 && (
+                            <p className="px-1 text-[11px] opacity-40">—</p>
+                          )}
+                          {blocks.map((b) => {
+                            const style = blockStyle(b);
+                            return (
+                              <div
+                                key={b.id}
+                                className="rounded-[var(--radius-tag)] px-2 py-1.5 text-xs font-medium leading-snug"
+                                style={style.style}
+                              >
+                                {b.label}
+                              </div>
+                            );
+                          })}
+                        </div>
                       </div>
-                      <div className="space-y-1.5 p-2">
-                        {blocks.length === 0 && (
-                          <p className="px-1 text-[11px] opacity-40">—</p>
-                        )}
-                        {blocks.map((b) => {
-                          const style = blockStyle(b);
-                          return (
-                            <div
-                              key={b.id}
-                              className="rounded-[var(--radius-tag)] px-2 py-1.5 text-xs font-medium leading-snug"
-                              style={style.style}
-                            >
-                              {b.label}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="bg-[var(--signal-soft)]/50 p-3 md:px-5">
+                <div className="flex flex-wrap items-center gap-2">
+                  {todayBlocks.length === 0 && (
+                    <p className="text-sm opacity-55">Nenhum bloco hoje.</p>
+                  )}
+                  {todayBlocks.map((b) => {
+                    const style = blockStyle(b);
+                    return (
+                      <div
+                        key={b.id}
+                        className="rounded-[var(--radius-tag)] px-3 py-1.5 text-sm font-medium"
+                        style={style.style}
+                      >
+                        {b.label}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </section>
 
           <div className="lg:hidden">
