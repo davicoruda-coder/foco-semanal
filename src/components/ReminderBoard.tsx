@@ -200,7 +200,7 @@ export function ReminderBoard({ compact }: { compact?: boolean }) {
   }
 
   const deleteLabel = pendingDelete
-    ? noteText(pendingDelete.title) || "esta nota"
+    ? noteText(pendingDelete.title).trim() || "esta nota"
     : "";
 
   return (

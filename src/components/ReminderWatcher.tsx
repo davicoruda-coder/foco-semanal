@@ -25,7 +25,10 @@ export function ReminderWatcher() {
         if (now >= target && now < target + 60_000 && !fired.has(key)) {
           fired.add(key);
           playAlarmTone();
-          notify("Lembrete", plainTextFromHtml(r.title) || "Lembrete");
+          notify(
+            "Lembrete",
+            plainTextFromHtml(r.title).trim() || "Lembrete",
+          );
         }
       }
     };

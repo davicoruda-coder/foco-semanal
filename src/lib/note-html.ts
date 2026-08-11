@@ -4,12 +4,13 @@ const ALLOWED = new Set(["B", "STRONG", "I", "EM", "BR", "DIV", "SPAN", "P"]);
 
 export function plainTextFromHtml(html: string): string {
   if (!html) return "";
+  if (!looksLikeHtml(html)) return html;
   if (typeof document === "undefined") {
-    return html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+    return html.replace(/<[^>]+>/g, "");
   }
   const el = document.createElement("div");
   el.innerHTML = html;
-  return (el.textContent || "").replace(/\s+/g, " ").trim();
+  return el.textContent || "";
 }
 
 export function looksLikeHtml(value: string): boolean {
