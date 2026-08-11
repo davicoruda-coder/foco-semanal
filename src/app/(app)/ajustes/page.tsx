@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Bell, Download, Moon, Sun, SunMoon, Upload } from "lucide-react";
 import { useApp } from "@/components/AppProvider";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { ensureNotificationPermission } from "@/lib/audio";
 import type { ThemePref } from "@/lib/types";
 
@@ -28,6 +29,7 @@ export default function AjustesPage() {
   const [backupMsg, setBackupMsg] = useState<string | null>(null);
   const [cloudWipeBusy, setCloudWipeBusy] = useState(false);
   const [cloudWipeMsg, setCloudWipeMsg] = useState<string | null>(null);
+  const [confirmLogout, setConfirmLogout] = useState(false);
   const [notifPermission, setNotifPermission] = useState<
     NotificationPermission | "unsupported"
   >("default");
@@ -60,6 +62,19 @@ export default function AjustesPage() {
 
   return (
     <div className="mx-auto max-w-2xl">
+      <ConfirmDialog
+        open={confirmLogout}
+        title="Sair da conta?"
+        message="Você precisará abrir o link do e-mail de novo para entrar. Os dados na nuvem continuam salvos."
+        confirmLabel="Sim, sair"
+        cancelLabel="Cancelar"
+        onCancel={() => setConfirmLogout(false)}
+        onConfirm={() => {
+          setConfirmLogout(false);
+          logout();
+        }}
+      />
+
       <h1 className="font-display pb-0.5 text-2xl font-semibold leading-normal tracking-tight md:text-3xl">
         Ajustes
       </h1>
@@ -218,7 +233,7 @@ export default function AjustesPage() {
         </div>
 
         <div className="mt-4 space-y-3">
-          <button type="button" className="btn" onClick={() => logout()}>
+          <button type="button" className="btn" onClick={() => setConfirmLogout(true)}>
             Sair
           </button>
           {cloud && (
