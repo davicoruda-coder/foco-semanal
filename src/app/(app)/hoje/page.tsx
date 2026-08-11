@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useMemo } from "react";
-import { SlidersHorizontal } from "lucide-react";
+import { CalendarDays, SlidersHorizontal } from "lucide-react";
 import { useApp } from "@/components/AppProvider";
 import { DAYS, STATUS_LABEL, type SubjectStatus } from "@/lib/types";
 import { blockStyle, statusClass, statusRowClass, todayIndex } from "@/lib/utils";
@@ -38,12 +38,17 @@ export default function HojePage() {
                   "linear-gradient(120deg, var(--signal), color-mix(in srgb, var(--signal) 55%, var(--accent-2)))",
               }}
             >
-              <p className="font-display text-base font-semibold tracking-tight md:text-lg">
+              <Link
+                href="/semana"
+                title="Abrir calendário da semana"
+                className="font-display inline-flex items-center gap-2 rounded-[var(--radius-tag)] text-base font-semibold tracking-tight transition hover:opacity-85 md:text-lg"
+              >
+                <CalendarDays size={18} strokeWidth={2} />
                 {`${DAYS[day]} · ${new Date().toLocaleDateString("pt-BR", {
                   day: "2-digit",
                   month: "2-digit",
                 })}`}
-              </p>
+              </Link>
             </div>
 
             <div className="overflow-x-auto">
