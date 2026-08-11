@@ -40,9 +40,7 @@ function NoteCard({
 
   return (
     <article
-      className={`note-enter relative flex flex-col rounded-[var(--radius-tag)] p-2.5 shadow-sm ${
-        compact ? "min-h-[96px]" : "min-h-[110px]"
-      }`}
+      className="note-enter relative flex min-h-[110px] flex-col rounded-[var(--radius-tag)] p-2.5 shadow-sm"
       style={
         {
           background: reminder.color,
@@ -52,19 +50,23 @@ function NoteCard({
       }
     >
       <textarea
-        className={`w-full flex-1 resize-none bg-transparent text-xs font-medium leading-snug outline-none placeholder:opacity-40 ${
-          compact ? "min-h-[44px]" : "min-h-[60px]"
+        className={`w-full flex-1 resize-none bg-transparent font-medium leading-snug outline-none placeholder:opacity-40 ${
+          compact ? "min-h-[56px] text-sm" : "min-h-[60px] text-xs"
         }`}
         placeholder="Escreva…"
         value={reminder.title}
-        rows={compact ? 2 : 3}
+        rows={compact ? 3 : 3}
         onChange={(e) =>
           upsertReminder({ ...reminder, title: e.target.value })
         }
       />
 
       {reminder.has_alarm && !alarmOpen && (
-        <p className="font-mono-num text-[10px] opacity-70">
+        <p
+          className={`font-mono-num opacity-70 ${
+            compact ? "text-xs" : "text-[10px]"
+          }`}
+        >
           ⏰{" "}
           {new Date(reminder.notify_at).toLocaleString("pt-BR", {
             day: "2-digit",
