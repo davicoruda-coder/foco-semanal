@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { CalendarDays, SlidersHorizontal } from "lucide-react";
 import { useApp } from "@/components/AppProvider";
 import { DAYS, STATUS_LABEL, type SubjectStatus } from "@/lib/types";
@@ -9,9 +9,11 @@ import { blockStyle, statusClass, statusRowClass, todayIndex } from "@/lib/utils
 import { ReminderWatcher } from "@/components/ReminderWatcher";
 import { ReminderBoard } from "@/components/ReminderBoard";
 import { SessionClock } from "@/components/SessionClock";
+import { MonthCalendarDialog } from "@/components/MonthCalendar";
 
 export default function HojePage() {
   const { data, upsertSubject, setSubjectStatus } = useApp();
+  const [calendarOpen, setCalendarOpen] = useState(false);
   const day = todayIndex();
 
   const subjects = useMemo(
@@ -27,6 +29,10 @@ export default function HojePage() {
   return (
     <div>
       <ReminderWatcher />
+      <MonthCalendarDialog
+        open={calendarOpen}
+        onClose={() => setCalendarOpen(false)}
+      />
 
       <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_300px] xl:grid-cols-[minmax(0,1fr)_320px]">
         <div className="min-w-0 space-y-5">
@@ -38,17 +44,19 @@ export default function HojePage() {
                   "linear-gradient(120deg, var(--signal), color-mix(in srgb, var(--signal) 55%, var(--accent-2)))",
               }}
             >
-              <Link
-                href="/semana"
-                title="Abrir calendário da semana"
+              <button
+                type="button"
+                title="Abrir calendário do mês"
+                aria-label="Abrir calendário do mês"
                 className="font-display inline-flex items-center gap-2 rounded-[var(--radius-tag)] text-base font-semibold tracking-tight transition hover:opacity-85 md:text-lg"
+                onClick={() => setCalendarOpen(true)}
               >
                 <CalendarDays size={18} strokeWidth={2} />
                 {`${DAYS[day]} · ${new Date().toLocaleDateString("pt-BR", {
                   day: "2-digit",
                   month: "2-digit",
                 })}`}
-              </Link>
+              </button>
             </div>
 
             <div className="overflow-x-auto">
@@ -69,7 +77,6 @@ export default function HojePage() {
                         }`}
                       >
                         {name.slice(0, 3)}
-                        {isToday ? " · hoje" : ""}
                       </div>
                       <div className="space-y-1.5 p-2">
                         {blocks.length === 0 && (
