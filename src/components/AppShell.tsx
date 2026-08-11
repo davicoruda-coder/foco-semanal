@@ -18,7 +18,7 @@ const NAV = [
   { href: "/semana", label: "Semana", icon: CalendarDays },
   { href: "/materias", label: "Matérias", icon: BookOpen },
   { href: "/lembretes", label: "Lembretes", icon: Bell },
-  { href: "/progresso", label: "Progresso", icon: ChartColumn },
+  { href: "/estatisticas", label: "Estatísticas", icon: ChartColumn },
 ];
 
 export function AppShell({ children }: { children: React.ReactNode }) {

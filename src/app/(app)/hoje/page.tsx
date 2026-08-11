@@ -14,6 +14,7 @@ import { blockStyle, statusClass, statusRowClass, todayIndex } from "@/lib/utils
 import { ReminderWatcher } from "@/components/ReminderWatcher";
 import { ReminderBoard } from "@/components/ReminderBoard";
 import { SessionClock } from "@/components/SessionClock";
+import { FocusTodayCard } from "@/components/FocusTodayCard";
 import { MonthCalendarDialog } from "@/components/MonthCalendar";
 
 /** Com o ciclo grande, a semana encolhe para "só hoje" e o ciclo sobe. */
@@ -287,10 +288,15 @@ export default function HojePage() {
             <ReminderBoard compact />
           </div>
           <SessionClock layout="stack" />
+          <FocusTodayCard />
         </aside>
 
         <div className="surface p-4 lg:hidden">
           <ReminderBoard compact />
+        </div>
+
+        <div className="lg:hidden">
+          <FocusTodayCard />
         </div>
       </div>
     </div>
