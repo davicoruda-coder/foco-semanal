@@ -82,7 +82,7 @@ function MiniRing({
                 ? `Pausar ${label ?? "cronômetro"}`
                 : `Iniciar ${label ?? "cronômetro"}`
           }
-          className="relative grid shrink-0 place-items-center rounded-full transition hover:scale-105"
+          className="relative grid shrink-0 place-items-center rounded-full transition"
           style={{ width: size, height: size }}
         >
           <svg
@@ -162,7 +162,7 @@ function MiniRing({
             </p>
           ) : null}
           <p
-            className={`font-mono-num text-xl font-semibold leading-tight tracking-tight ${
+            className={`font-mono-num text-xl font-medium leading-none ${
               paused ? "timer-paused" : ""
             }`}
           >
@@ -229,7 +229,7 @@ function MiniRing({
         </svg>
 
         <span
-          className={`font-mono-num relative z-[1] grid h-full w-full place-items-center font-medium leading-none tracking-tight ${
+          className={`font-mono-num relative z-[1] grid h-full w-full place-items-center font-medium leading-none ${
             paused ? "timer-paused" : ""
           }`}
           style={{
