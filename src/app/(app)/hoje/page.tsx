@@ -331,15 +331,17 @@ export default function HojePage() {
                             : ""
                         }`}
                       >
-                        <textarea
-                          className="min-h-[1.5rem] w-full resize-y break-words rounded-[var(--radius-tag)] border border-transparent bg-transparent px-0 py-0 text-[15px] font-normal leading-snug text-[color-mix(in_srgb,var(--ink)_84%,transparent)] outline-none focus:border-[var(--line)] focus:bg-[var(--surface)] focus:px-2 focus:py-1.5 focus:text-[var(--ink)]"
-                          rows={1}
-                          value={s.notes}
-                          placeholder="Anotações…"
-                          onChange={(e) =>
-                            upsertSubject({ ...s, notes: e.target.value })
-                          }
-                        />
+                        <div className="flex min-h-[2.25rem] items-center">
+                          <textarea
+                            className="field-sizing-content max-h-28 min-h-[1.375rem] w-full resize-y break-words rounded-[var(--radius-tag)] border border-transparent bg-transparent px-0 py-0 text-[15px] font-normal leading-snug text-[color-mix(in_srgb,var(--ink)_84%,transparent)] outline-none focus:border-[var(--line)] focus:bg-[var(--surface)] focus:px-2 focus:py-1 focus:text-[var(--ink)]"
+                            rows={1}
+                            value={s.notes}
+                            placeholder="Anotações…"
+                            onChange={(e) =>
+                              upsertSubject({ ...s, notes: e.target.value })
+                            }
+                          />
+                        </div>
                       </td>
                     </tr>
                   ))}
