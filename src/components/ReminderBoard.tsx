@@ -55,7 +55,7 @@ function NoteCard({
       <textarea
         className={`w-full flex-1 resize-none bg-transparent leading-relaxed outline-none placeholder:opacity-40 [text-rendering:geometricPrecision] [-webkit-font-smoothing:subpixel-antialiased] ${
           compact
-            ? "min-h-[72px] text-sm font-medium"
+            ? "min-h-[72px] text-lg font-medium"
             : "min-h-[60px] text-base font-normal"
         }`}
         placeholder="Escreva…"

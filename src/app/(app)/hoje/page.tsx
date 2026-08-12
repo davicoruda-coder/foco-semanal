@@ -218,7 +218,7 @@ export default function HojePage() {
                   className={`space-y-2.5 px-4 py-3.5 ${statusRowClass(s.status)}`}
                 >
                   <div className="flex flex-wrap items-start justify-between gap-2">
-                    <p className="min-w-0 flex-1 text-sm font-semibold leading-snug">
+                    <p className="min-w-0 flex-1 text-base font-semibold leading-snug">
                       {s.name}
                     </p>
                     <div className="inline-flex shrink-0 items-center gap-0.5 rounded-full border border-[var(--line)] bg-[color-mix(in_srgb,var(--ink)_6%,transparent)] p-0.5">
@@ -242,7 +242,7 @@ export default function HojePage() {
                     </div>
                   </div>
                   <textarea
-                    className="min-h-12 w-full resize-y rounded-[var(--radius-tag)] border border-[var(--line)] bg-[var(--surface)]/70 px-2.5 py-2 text-sm outline-none focus:border-[var(--signal)]"
+                    className="min-h-12 w-full resize-y rounded-[var(--radius-tag)] border border-[var(--line)] bg-[var(--surface)]/70 px-2.5 py-2 text-base outline-none focus:border-[var(--signal)]"
                     value={s.notes}
                     placeholder="Anotações…"
                     onChange={(e) =>
@@ -289,7 +289,7 @@ export default function HojePage() {
                       className={`transition-colors ${statusRowClass(s.status)}`}
                     >
                       <td
-                        className={`break-words px-5 py-3 align-top text-sm font-semibold ${
+                        className={`break-words px-5 py-3 align-top text-base font-semibold ${
                           i < subjects.length - 1
                             ? "border-b-2 border-[var(--surface)]"
                             : ""
@@ -332,7 +332,7 @@ export default function HojePage() {
                         }`}
                       >
                         <textarea
-                          className="min-h-14 w-full resize-y break-words rounded-[var(--radius-tag)] border border-transparent bg-transparent px-2 py-1 text-sm outline-none focus:border-[var(--line)] focus:bg-[var(--surface)]"
+                          className="min-h-14 w-full resize-y break-words rounded-[var(--radius-tag)] border border-transparent bg-transparent px-2 py-1 text-base outline-none focus:border-[var(--line)] focus:bg-[var(--surface)]"
                           value={s.notes}
                           placeholder="Anotações…"
                           onChange={(e) =>
