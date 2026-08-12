@@ -47,7 +47,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="relative z-0 min-h-screen pb-[calc(4.25rem+env(safe-area-inset-bottom))] lg:pb-0">
       <header className="sticky top-0 z-20 border-b border-[var(--line)] bg-[var(--surface)]/80 pt-[env(safe-area-inset-top)] backdrop-blur-xl">
-        <div className="mx-auto flex h-14 max-w-7xl items-center gap-2 px-3 sm:gap-3 sm:px-5 md:px-8">
+        <div className="mx-auto flex h-12 max-w-7xl items-center gap-2 px-3 sm:gap-3 sm:px-5 md:px-8 lg:h-14">
           <Link
             href="/hoje"
             className="flex min-w-0 shrink-0 items-center gap-2.5"
@@ -63,7 +63,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             >
               <Target size={16} strokeWidth={2.25} />
             </div>
-            <span className="font-display truncate text-base font-semibold tracking-tight">
+            <span className="font-display hidden truncate text-base font-semibold tracking-tight lg:inline">
               Foco
             </span>
           </Link>
