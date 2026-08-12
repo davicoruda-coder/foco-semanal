@@ -128,11 +128,21 @@ export default function HojePage() {
                         className="min-h-36 bg-[var(--mist)] sm:min-h-44"
                       >
                         <div
-                          className={`border-b border-[var(--line)] px-2 py-2 text-center text-[11px] font-semibold uppercase tracking-wider ${
+                          className={`border-b px-2 py-2 text-center text-[11px] font-semibold uppercase tracking-wider ${
                             isToday
-                              ? "bg-[color-mix(in_srgb,var(--signal)_14%,var(--signal-soft))] text-[var(--ink)]"
-                              : "opacity-55"
+                              ? "relative z-[1] border-[color-mix(in_srgb,var(--signal)_28%,var(--line))] text-[var(--ink)]"
+                              : "border-[var(--line)] opacity-55"
                           }`}
+                          style={
+                            isToday
+                              ? {
+                                  background:
+                                    "color-mix(in srgb, var(--signal) 22%, var(--signal-soft))",
+                                  boxShadow:
+                                    "inset 0 0 14px color-mix(in srgb, var(--signal) 32%, transparent), 0 0 10px color-mix(in srgb, var(--signal) 18%, transparent)",
+                                }
+                              : undefined
+                          }
                         >
                           {name.slice(0, 3)}
                         </div>
