@@ -125,15 +125,13 @@ export default function HojePage() {
                     return (
                       <div
                         key={name}
-                        className={`min-h-36 sm:min-h-44 ${
-                          isToday
-                            ? "bg-[color-mix(in_srgb,var(--signal)_14%,var(--signal-soft))]"
-                            : "bg-[var(--mist)]"
-                        }`}
+                        className="min-h-36 bg-[var(--mist)] sm:min-h-44"
                       >
                         <div
                           className={`border-b border-[var(--line)] px-2 py-2 text-center text-[11px] font-semibold uppercase tracking-wider ${
-                            isToday ? "text-[var(--ink)]" : "opacity-55"
+                            isToday
+                              ? "bg-[color-mix(in_srgb,var(--signal)_14%,var(--signal-soft))] text-[var(--ink)]"
+                              : "opacity-55"
                           }`}
                         >
                           {name.slice(0, 3)}
