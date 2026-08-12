@@ -46,8 +46,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="relative z-0 min-h-screen pb-[calc(4.25rem+env(safe-area-inset-bottom))] lg:pb-0">
-      <header className="sticky top-0 z-20 border-b border-[var(--line)] bg-[var(--surface)]/80 pt-[env(safe-area-inset-top)] backdrop-blur-xl">
-        <div className="mx-auto flex h-12 max-w-7xl items-center gap-2 px-3 sm:gap-3 sm:px-5 md:px-8 lg:h-14">
+      <header className="sticky top-0 z-20 hidden border-b border-[var(--line)] bg-[var(--surface)]/80 backdrop-blur-xl lg:block">
+        <div className="mx-auto flex h-14 max-w-7xl items-center gap-3 px-5 md:px-8">
           <Link
             href="/hoje"
             className="flex min-w-0 shrink-0 items-center gap-2.5"
@@ -63,12 +63,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             >
               <Target size={16} strokeWidth={2.25} />
             </div>
-            <span className="font-display hidden truncate text-base font-semibold tracking-tight lg:inline">
+            <span className="font-display truncate text-base font-semibold tracking-tight">
               Foco
             </span>
           </Link>
 
-          <nav className="ml-auto hidden items-center gap-1 lg:flex">
+          <nav className="ml-auto flex items-center gap-1">
             {NAV.map(({ href, label, icon: Icon }) => {
               const active = navActive(pathname, href);
               return (
@@ -92,7 +92,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       </header>
 
-      <main className="mx-auto max-w-7xl px-3 pb-6 pt-4 sm:px-5 sm:pt-5 md:px-8 md:pt-6 lg:pb-10">
+      <main className="mx-auto max-w-7xl px-3 pb-6 pt-[max(0.75rem,env(safe-area-inset-top))] sm:px-5 md:px-8 lg:pb-10 lg:pt-6">
         {children}
       </main>
 
