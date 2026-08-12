@@ -297,17 +297,19 @@ a {
 @keyframes tab-running-pulse {
   0%,
   100% {
-    color: color-mix(in srgb, var(--signal) 42%, transparent);
-    text-shadow: 0 0 0 transparent;
+    color: color-mix(in srgb, var(--signal) 55%, transparent);
+    text-shadow: 0 0 4px color-mix(in srgb, var(--signal) 18%, transparent);
   }
   50% {
     color: var(--signal);
-    text-shadow: 0 0 12px color-mix(in srgb, var(--signal) 38%, transparent);
+    text-shadow:
+      0 0 8px color-mix(in srgb, var(--signal) 55%, transparent),
+      0 0 18px color-mix(in srgb, var(--signal) 40%, transparent);
   }
 }
 
 .tab-running-hint {
-  animation: tab-running-pulse 1.85s ease-in-out infinite;
+  animation: tab-running-pulse 1.45s ease-in-out infinite;
 }
 
 @media (prefers-reduced-motion: reduce) {
