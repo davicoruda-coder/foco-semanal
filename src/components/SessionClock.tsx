@@ -282,9 +282,9 @@ function MiniRing({
           onClick={onReset}
           title={`Resetar ${label ?? "cronômetro"}`}
           aria-label={`Resetar ${label ?? "cronômetro"}`}
-          className="rounded-full p-1 text-[color-mix(in_srgb,var(--ink)_40%,transparent)] transition hover:bg-[var(--mist)] hover:text-[var(--ink)]"
+          className="rounded-full p-1.5 text-[color-mix(in_srgb,var(--ink)_45%,transparent)] transition hover:bg-[var(--mist)] hover:text-[var(--ink)]"
         >
-          <RotateCcw size={13} strokeWidth={1.75} />
+          <RotateCcw size={18} strokeWidth={2} />
         </button>
       </div>
     </div>
