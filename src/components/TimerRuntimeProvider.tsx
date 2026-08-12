@@ -21,6 +21,8 @@ export type TimerRuntime = {
   /** Timestamp (ms) em que chega a zero, se estiver rodando */
   endsAt: number | null;
   startedAt: string | null;
+  /** Ajuda a remarcar o estado se o id do timer mudar (local → nuvem). */
+  sortOrder?: number;
 };
 
 type FlashKind = "play" | "pause";
@@ -151,7 +153,7 @@ function sameRuntime(
 }
 
 export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
-  const { data, addStudySession } = useApp();
+  const { data, addStudySession, ready: appReady } = useApp();
   const timers = data.timers ?? [];
   const [runtime, setRuntime] = useState<Record<string, TimerRuntime>>({});
   const [stopwatch, setStopwatch] = useState<StopwatchState>(DEFAULT_STOPWATCH);
@@ -182,17 +184,32 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
     writeJson(MODE_KEY, next);
   }, []);
 
-  // Alinha runtime às definições — sem apagar progresso no F5 / sync.
+  // Alinha runtime às definições só depois da conta/dados prontos (evita wipe por IDs temporários).
   useEffect(() => {
-    if (!ready) return;
-    // Evita wipe: na carga a lista pode vir vazia por um instante.
+    if (!ready || !appReady) return;
     if (timers.length === 0) return;
 
     setRuntime((prev) => {
       const next: Record<string, TimerRuntime> = {};
+      const claimed = new Set<string>();
+
       for (const t of timers) {
-        const existing = prev[t.id];
         const full = Math.max(1, t.minutes) * 60;
+        let existing = prev[t.id];
+        if (existing) {
+          claimed.add(t.id);
+        } else {
+          const orphan = Object.entries(prev).find(
+            ([id, r]) =>
+              !claimed.has(id) &&
+              typeof r.sortOrder === "number" &&
+              r.sortOrder === t.sort_order,
+          );
+          if (orphan) {
+            existing = orphan[1];
+            claimed.add(orphan[0]);
+          }
+        }
 
         if (!existing) {
           next[t.id] = {
@@ -200,6 +217,7 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
             running: false,
             endsAt: null,
             startedAt: null,
+            sortOrder: t.sort_order,
           };
           continue;
         }
@@ -213,20 +231,22 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
                   running: false,
                   endsAt: null,
                   startedAt: null,
+                  sortOrder: t.sort_order,
                 }
               : {
                   ...existing,
                   secondsLeft: left,
+                  sortOrder: t.sort_order,
                 };
           continue;
         }
 
-        // Pausado, concluído (0) ou idle: preserva secondsLeft guardado.
         next[t.id] = {
           secondsLeft: Math.max(0, existing.secondsLeft),
           running: false,
           endsAt: null,
           startedAt: existing.startedAt,
+          sortOrder: t.sort_order,
         };
       }
 
@@ -234,7 +254,7 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
       writeStored(next);
       return next;
     });
-  }, [timers, ready]);
+  }, [timers, ready, appReady]);
 
   const anyTimerRunning = useMemo(
     () => Object.values(runtime).some((r) => r.running),
@@ -339,6 +359,7 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
             running: false,
             endsAt: null,
             startedAt: null,
+            sortOrder: t.sort_order,
           },
         };
         writeStored(updated);
@@ -386,9 +407,11 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
             running: false,
             endsAt: null,
             startedAt: null,
+            sortOrder: def?.sort_order,
           } satisfies TimerRuntime);
 
         const left = liveSeconds(current, def?.minutes ?? 25);
+        const sortOrder = def?.sort_order ?? current.sortOrder;
         if (left <= 0 && !current.running) {
           // restart from full
           const full = Math.max(1, def?.minutes ?? 25) * 60;
@@ -400,6 +423,7 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
               running: true,
               endsAt: Date.now() + full * 1000,
               startedAt: new Date().toISOString(),
+              sortOrder,
             },
           };
           writeStored(updated);
@@ -416,12 +440,14 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
                 running: true,
                 endsAt: Date.now() + left * 1000,
                 startedAt: current.startedAt ?? new Date().toISOString(),
+                sortOrder,
               }
             : {
                 secondsLeft: left,
                 running: false,
                 endsAt: null,
                 startedAt: current.startedAt,
+                sortOrder,
               },
         };
         writeStored(updated);
@@ -443,6 +469,7 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
             running: false,
             endsAt: null,
             startedAt: null,
+            sortOrder: def?.sort_order ?? prev[id]?.sortOrder,
           },
         };
         writeStored(updated);
