@@ -61,10 +61,32 @@ const DEFAULT_STOPWATCH: StopwatchState = {
 
 const TimerRuntimeContext = createContext<TimerRuntimeContextValue | null>(null);
 
-function readStored(): Record<string, TimerRuntime> {
-  if (typeof window === "undefined") return {};
+function readJson(key: string): string | null {
+  if (typeof window === "undefined") return null;
   try {
-    const raw = sessionStorage.getItem(STORAGE_KEY);
+    return localStorage.getItem(key) ?? sessionStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+function writeJson(key: string, value: string) {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(key, value);
+    sessionStorage.removeItem(key);
+  } catch {
+    try {
+      sessionStorage.setItem(key, value);
+    } catch {
+      /* ignore */
+    }
+  }
+}
+
+function readStored(): Record<string, TimerRuntime> {
+  try {
+    const raw = readJson(STORAGE_KEY);
     if (!raw) return {};
     return JSON.parse(raw) as Record<string, TimerRuntime>;
   } catch {
@@ -73,18 +95,12 @@ function readStored(): Record<string, TimerRuntime> {
 }
 
 function writeStored(runtime: Record<string, TimerRuntime>) {
-  if (typeof window === "undefined") return;
-  try {
-    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(runtime));
-  } catch {
-    /* ignore */
-  }
+  writeJson(STORAGE_KEY, JSON.stringify(runtime));
 }
 
 function readStopwatch(): StopwatchState {
-  if (typeof window === "undefined") return DEFAULT_STOPWATCH;
   try {
-    const raw = sessionStorage.getItem(STOPWATCH_KEY);
+    const raw = readJson(STOPWATCH_KEY);
     if (!raw) return DEFAULT_STOPWATCH;
     return { ...DEFAULT_STOPWATCH, ...JSON.parse(raw) };
   } catch {
@@ -93,12 +109,7 @@ function readStopwatch(): StopwatchState {
 }
 
 function writeStopwatch(state: StopwatchState) {
-  if (typeof window === "undefined") return;
-  try {
-    sessionStorage.setItem(STOPWATCH_KEY, JSON.stringify(state));
-  } catch {
-    /* ignore */
-  }
+  writeJson(STOPWATCH_KEY, JSON.stringify(state));
 }
 
 function liveStopwatchMs(s: StopwatchState): number {
@@ -114,6 +125,29 @@ function liveSeconds(r: TimerRuntime | undefined, fallbackMinutes: number): numb
     return Math.max(0, Math.ceil((r.endsAt - Date.now()) / 1000));
   }
   return Math.max(0, r.secondsLeft);
+}
+
+function sameRuntime(
+  a: Record<string, TimerRuntime>,
+  b: Record<string, TimerRuntime>,
+): boolean {
+  const aKeys = Object.keys(a);
+  const bKeys = Object.keys(b);
+  if (aKeys.length !== bKeys.length) return false;
+  for (const key of aKeys) {
+    const x = a[key];
+    const y = b[key];
+    if (!y) return false;
+    if (
+      x.secondsLeft !== y.secondsLeft ||
+      x.running !== y.running ||
+      x.endsAt !== y.endsAt ||
+      x.startedAt !== y.startedAt
+    ) {
+      return false;
+    }
+  }
+  return true;
 }
 
 export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
@@ -135,7 +169,7 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     setRuntime(readStored());
     setStopwatch(readStopwatch());
-    const storedMode = sessionStorage.getItem(MODE_KEY);
+    const storedMode = readJson(MODE_KEY);
     if (storedMode === "timers" || storedMode === "stopwatch") {
       setModeState(storedMode);
     }
@@ -145,45 +179,58 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
 
   const setMode = useCallback((next: ClockMode) => {
     setModeState(next);
-    try {
-      sessionStorage.setItem(MODE_KEY, next);
-    } catch {
-      /* ignore */
-    }
+    writeJson(MODE_KEY, next);
   }, []);
 
-  // Sync entries when timer definitions change
+  // Alinha runtime às definições — sem apagar progresso no F5 / sync.
   useEffect(() => {
     if (!ready) return;
+    // Evita wipe: na carga a lista pode vir vazia por um instante.
+    if (timers.length === 0) return;
+
     setRuntime((prev) => {
       const next: Record<string, TimerRuntime> = {};
       for (const t of timers) {
         const existing = prev[t.id];
-        if (existing) {
-          if (existing.running && existing.endsAt) {
-            next[t.id] = {
-              ...existing,
-              secondsLeft: liveSeconds(existing, t.minutes),
-            };
-          } else if (existing.startedAt) {
-            next[t.id] = existing;
-          } else {
-            next[t.id] = {
-              secondsLeft: Math.max(1, t.minutes) * 60,
-              running: false,
-              endsAt: null,
-              startedAt: null,
-            };
-          }
-        } else {
+        const full = Math.max(1, t.minutes) * 60;
+
+        if (!existing) {
           next[t.id] = {
-            secondsLeft: Math.max(1, t.minutes) * 60,
+            secondsLeft: full,
             running: false,
             endsAt: null,
             startedAt: null,
           };
+          continue;
         }
+
+        if (existing.running && existing.endsAt) {
+          const left = liveSeconds(existing, t.minutes);
+          next[t.id] =
+            left <= 0
+              ? {
+                  secondsLeft: 0,
+                  running: false,
+                  endsAt: null,
+                  startedAt: null,
+                }
+              : {
+                  ...existing,
+                  secondsLeft: left,
+                };
+          continue;
+        }
+
+        // Pausado, concluído (0) ou idle: preserva secondsLeft guardado.
+        next[t.id] = {
+          secondsLeft: Math.max(0, existing.secondsLeft),
+          running: false,
+          endsAt: null,
+          startedAt: existing.startedAt,
+        };
       }
+
+      if (sameRuntime(prev, next)) return prev;
       writeStored(next);
       return next;
     });
