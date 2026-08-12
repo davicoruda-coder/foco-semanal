@@ -80,7 +80,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="pt-BR"
-      className={`${syne.variable} ${dmSans.variable} ${plexMono.variable} ${caveat.variable} h-full antialiased`}
+      className={`${syne.variable} ${dmSans.variable} ${plexMono.variable} ${caveat.variable} h-full`}
     >
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />

@@ -53,10 +53,10 @@ function NoteCard({
       }}
     >
       <textarea
-        className={`w-full flex-1 resize-none bg-transparent leading-relaxed outline-none placeholder:opacity-40 [text-rendering:geometricPrecision] [-webkit-font-smoothing:subpixel-antialiased] ${
+        className={`w-full flex-1 resize-none bg-transparent font-normal leading-relaxed outline-none placeholder:opacity-40 ${
           compact
-            ? "min-h-[72px] text-lg font-normal"
-            : "min-h-[60px] text-base font-normal"
+            ? "min-h-[72px] text-lg"
+            : "min-h-[60px] text-base"
         }`}
         placeholder="Escreva…"
         value={noteText(reminder.title)}
@@ -211,7 +211,7 @@ export function ReminderBoard({ compact }: { compact?: boolean }) {
         <h2
           className={
             compact
-              ? "text-xs font-semibold uppercase tracking-[0.14em] opacity-55"
+              ? "text-xs font-semibold uppercase tracking-[0.14em] text-[color-mix(in_srgb,var(--ink)_55%,transparent)]"
               : "font-display pb-0.5 text-2xl font-semibold leading-normal tracking-tight md:text-3xl"
           }
         >

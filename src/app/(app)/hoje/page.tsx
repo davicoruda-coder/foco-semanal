@@ -131,7 +131,7 @@ export default function HojePage() {
                           className={`border-b px-2 py-2 text-center text-xs font-semibold uppercase tracking-wider ${
                             isToday
                               ? "relative z-[1] border-[color-mix(in_srgb,var(--signal)_18%,var(--line))] text-[var(--ink)]"
-                              : "border-[var(--line)] opacity-55"
+                              : "border-[var(--line)] text-[color-mix(in_srgb,var(--ink)_55%,transparent)]"
                           }`}
                           style={
                             isToday
@@ -270,14 +270,14 @@ export default function HojePage() {
                   <col />
                 </colgroup>
                 <thead>
-                  <tr className="bg-[var(--mist)] text-xs uppercase tracking-wider opacity-60">
-                    <th className="border-b border-[var(--line)] px-5 py-3 text-left font-medium">
+                  <tr className="bg-[var(--mist)] text-xs font-medium uppercase tracking-wider text-[color-mix(in_srgb,var(--ink)_55%,transparent)]">
+                    <th className="border-b border-[var(--line)] px-5 py-3 text-left">
                       Matéria
                     </th>
-                    <th className="border-b border-[var(--line)] py-3 pl-2 pr-2 text-left font-medium">
+                    <th className="border-b border-[var(--line)] py-3 pl-2 pr-2 text-left">
                       Conclusão
                     </th>
-                    <th className="border-b border-[var(--line)] px-5 py-3 text-left font-medium">
+                    <th className="border-b border-[var(--line)] px-5 py-3 text-left">
                       Anotações
                     </th>
                   </tr>

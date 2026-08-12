@@ -59,7 +59,7 @@ export function FocusTodayCard() {
       className="surface group block px-3 py-2.5 transition hover:border-[color-mix(in_srgb,var(--signal)_45%,var(--line))]"
     >
       <div className="flex items-baseline justify-between gap-2">
-        <p className="text-xs font-semibold uppercase tracking-wider opacity-50">
+        <p className="text-xs font-semibold uppercase tracking-wider text-[color-mix(in_srgb,var(--ink)_55%,transparent)]">
           Foco hoje
         </p>
         <p className="font-mono-num text-base font-medium tracking-tight">
@@ -85,7 +85,9 @@ export function FocusTodayCard() {
         ))}
       </div>
       {tracking ? (
-        <p className="mt-1 text-xs opacity-40">em andamento · ver estatísticas</p>
+        <p className="mt-1 text-xs text-[color-mix(in_srgb,var(--ink)_45%,transparent)]">
+          em andamento · ver estatísticas
+        </p>
       ) : (
         <p className="mt-1 text-xs font-medium text-[color-mix(in_srgb,var(--signal)_70%,var(--ink))] opacity-0 transition group-hover:opacity-100">
           Ver estatísticas →
