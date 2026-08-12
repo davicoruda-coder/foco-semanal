@@ -242,7 +242,7 @@ export default function HojePage() {
                     </div>
                   </div>
                   <textarea
-                    className="min-h-12 w-full resize-y rounded-[var(--radius-tag)] border border-[var(--line)] bg-[var(--surface)]/70 px-2.5 py-2 text-[15px] text-[color-mix(in_srgb,var(--ink)_72%,transparent)] outline-none focus:border-[var(--signal)] focus:text-[var(--ink)]"
+                    className="min-h-12 w-full resize-y rounded-[var(--radius-tag)] border border-[var(--line)] bg-[var(--surface)]/70 px-2.5 py-2 text-[15px] text-[color-mix(in_srgb,var(--ink)_84%,transparent)] outline-none focus:border-[var(--signal)] focus:text-[var(--ink)]"
                     value={s.notes}
                     placeholder="Anotações…"
                     onChange={(e) =>
@@ -332,7 +332,7 @@ export default function HojePage() {
                         }`}
                       >
                         <textarea
-                          className="min-h-[1.5rem] w-full resize-y break-words rounded-[var(--radius-tag)] border border-transparent bg-transparent px-0 py-0 text-[15px] font-normal leading-snug text-[color-mix(in_srgb,var(--ink)_72%,transparent)] outline-none focus:border-[var(--line)] focus:bg-[var(--surface)] focus:px-2 focus:py-1.5 focus:text-[var(--ink)]"
+                          className="min-h-[1.5rem] w-full resize-y break-words rounded-[var(--radius-tag)] border border-transparent bg-transparent px-0 py-0 text-[15px] font-normal leading-snug text-[color-mix(in_srgb,var(--ink)_84%,transparent)] outline-none focus:border-[var(--line)] focus:bg-[var(--surface)] focus:px-2 focus:py-1.5 focus:text-[var(--ink)]"
                           rows={1}
                           value={s.notes}
                           placeholder="Anotações…"
