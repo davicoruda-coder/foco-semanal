@@ -130,16 +130,16 @@ export default function HojePage() {
                         <div
                           className={`border-b px-2 py-2 text-center text-[11px] font-semibold uppercase tracking-wider ${
                             isToday
-                              ? "relative z-[1] border-[color-mix(in_srgb,var(--signal)_28%,var(--line))] text-[var(--ink)]"
+                              ? "relative z-[1] border-[color-mix(in_srgb,var(--signal)_18%,var(--line))] text-[var(--ink)]"
                               : "border-[var(--line)] opacity-55"
                           }`}
                           style={
                             isToday
                               ? {
                                   background:
-                                    "color-mix(in srgb, var(--signal) 22%, var(--signal-soft))",
+                                    "color-mix(in srgb, var(--signal) 12%, var(--signal-soft))",
                                   boxShadow:
-                                    "inset 0 0 14px color-mix(in srgb, var(--signal) 32%, transparent), 0 0 10px color-mix(in srgb, var(--signal) 18%, transparent)",
+                                    "inset 0 0 10px color-mix(in srgb, var(--signal) 18%, transparent), 0 0 6px color-mix(in srgb, var(--signal) 10%, transparent)",
                                 }
                               : undefined
                           }
