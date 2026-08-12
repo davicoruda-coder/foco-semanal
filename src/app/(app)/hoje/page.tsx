@@ -125,25 +125,18 @@ export default function HojePage() {
                     return (
                       <div
                         key={name}
-                        className={`min-h-36 sm:min-h-44 ${
-                          isToday
-                            ? "bg-[var(--signal-soft)]"
-                            : "bg-[var(--mist)]"
-                        }`}
+                        className="min-h-36 bg-[var(--mist)] sm:min-h-44"
                       >
-                        <div
-                          className={`border-b px-2 py-2 text-center text-[11px] font-semibold uppercase tracking-wider ${
-                            isToday
-                              ? "border-[var(--signal)] text-[var(--signal)]"
-                              : "border-[var(--line)] opacity-55"
-                          }`}
-                        >
-                          {name.slice(0, 3)}
-                          {isToday ? (
-                            <span className="mt-0.5 block text-[9px] font-medium normal-case tracking-normal opacity-80">
-                              hoje
-                            </span>
-                          ) : null}
+                        <div className="flex justify-center border-b border-[var(--line)] px-2 py-2">
+                          <span
+                            className={`rounded-full px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wider ${
+                              isToday
+                                ? "bg-[var(--signal-soft)] text-[var(--signal)]"
+                                : "opacity-55"
+                            }`}
+                          >
+                            {name.slice(0, 3)}
+                          </span>
                         </div>
                         <div className="space-y-1.5 p-2">
                           {blocks.length === 0 && (
