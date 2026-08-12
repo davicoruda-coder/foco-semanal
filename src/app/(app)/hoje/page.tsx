@@ -125,7 +125,7 @@ export default function HojePage() {
                     return (
                       <div
                         key={name}
-                        className={`min-h-36 sm:min-h-44 ${isToday ? "bg-[var(--signal-soft)]/50" : "bg-[var(--surface)]/40"}`}
+                        className={`min-h-36 sm:min-h-44 ${isToday ? "bg-[var(--signal-soft)]/70" : "bg-[var(--mist)]"}`}
                       >
                         <div
                           className={`border-b border-[var(--line)] px-2 py-2 text-center text-[11px] font-semibold uppercase tracking-wider ${

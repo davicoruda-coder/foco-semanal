@@ -62,8 +62,8 @@ function MiniRing({
       <div
         className={`flex items-center gap-3 rounded-[var(--radius)] px-2.5 py-2.5 transition ${
           active || paused
-            ? "bg-[color-mix(in_srgb,var(--mist)_80%,transparent)]"
-            : ""
+            ? "bg-[color-mix(in_srgb,var(--mist)_90%,var(--surface))]"
+            : "bg-[var(--mist)]"
         }`}
         style={
           active
