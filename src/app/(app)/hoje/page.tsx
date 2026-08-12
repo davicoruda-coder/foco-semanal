@@ -228,7 +228,7 @@ export default function HojePage() {
                           <button
                             key={st}
                             type="button"
-                            className={`rounded-full px-3 py-1.5 text-sm font-medium transition ${
+                            className={`rounded-full px-2.5 py-1 text-xs font-medium transition ${
                               active
                                 ? statusClass(st)
                                 : "text-[color-mix(in_srgb,var(--ink)_55%,transparent)]"
@@ -311,7 +311,7 @@ export default function HojePage() {
                               <button
                                 key={st}
                                 type="button"
-                                className={`rounded-full px-3 py-1.5 text-sm font-medium transition ${
+                                className={`rounded-full px-2.5 py-1 text-xs font-medium transition ${
                                   active
                                     ? statusClass(st)
                                     : "text-[color-mix(in_srgb,var(--ink)_55%,transparent)] hover:text-[var(--ink)]"
