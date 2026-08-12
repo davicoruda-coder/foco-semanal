@@ -179,10 +179,6 @@ export default function HojePage() {
             )}
           </section>
 
-          <div className="lg:hidden">
-            <SessionClock />
-          </div>
-
           <section className="surface overflow-hidden p-0">
             <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--line)] px-4 py-3 md:px-5">
               <h2 className="font-display text-base font-semibold tracking-tight md:text-lg">
@@ -344,6 +340,14 @@ export default function HojePage() {
               </table>
             </div>
           </section>
+
+          <div className="space-y-4 lg:hidden">
+            <SessionClock layout="stack" />
+            <FocusTodayCard />
+            <div className="surface p-4">
+              <ReminderBoard compact />
+            </div>
+          </div>
         </div>
 
         <aside className="hidden space-y-4 lg:sticky lg:top-[4.5rem] lg:block lg:max-h-[calc(100vh-5.5rem)] lg:overflow-y-auto lg:self-start">
@@ -353,14 +357,6 @@ export default function HojePage() {
           <SessionClock layout="stack" />
           <FocusTodayCard />
         </aside>
-
-        <div className="surface p-4 lg:hidden">
-          <ReminderBoard compact />
-        </div>
-
-        <div className="lg:hidden">
-          <FocusTodayCard />
-        </div>
       </div>
     </div>
   );
