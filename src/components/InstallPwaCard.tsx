@@ -75,7 +75,7 @@ export function InstallPwaCard() {
   }
 
   return (
-    <section className="surface mt-4 p-4 md:p-5">
+    <section className="surface mt-4 p-4 md:p-5 lg:hidden">
       <h2 className="font-display text-base font-semibold tracking-tight md:text-lg">
         Instalar app
       </h2>

@@ -155,7 +155,7 @@ export default function HojePage() {
                             return (
                               <div
                                 key={b.id}
-                                className="rounded-[var(--radius-tag)] px-2 py-1.5 text-xs font-medium leading-snug"
+                                className="rounded-[var(--radius-tag)] px-2 py-1.5 text-[13px] font-medium leading-snug sm:text-sm"
                                 style={style.style}
                               >
                                 {b.label}
