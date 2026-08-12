@@ -176,17 +176,17 @@ function DayCard({ dayIndex, name }: { dayIndex: number; name: string }) {
                 />
               ))}
             </div>
-            <div className="flex min-w-0 flex-col gap-1.5 sm:flex-row">
+            <div className="grid w-full grid-cols-1 gap-1.5">
               <button
                 type="button"
-                className="btn btn-primary min-w-0 flex-1 px-2 py-1.5 text-xs"
+                className="btn btn-primary w-full px-2 py-1.5 text-xs"
                 onClick={addBlock}
               >
                 Adicionar
               </button>
               <button
                 type="button"
-                className="btn min-w-0 flex-1 px-2 py-1.5 text-xs"
+                className="btn w-full px-2 py-1.5 text-xs"
                 onClick={() => setAdding(false)}
               >
                 Cancelar
