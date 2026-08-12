@@ -81,6 +81,25 @@ export function commitFocusDisplaySnapshot(log?: FocusLog): FocusLog {
   return next;
 }
 
+/** Une dois logs: por hora, fica o maior valor (evita perder tempo entre aparelhos). */
+export function mergeFocusLogs(a: FocusLog, b: FocusLog): FocusLog {
+  const keys = new Set([...Object.keys(a.days), ...Object.keys(b.days)]);
+  const days: Record<string, FocusDay> = {};
+  for (const key of keys) {
+    const da = getDay(a, key);
+    const db = getDay(b, key);
+    const byHour = emptyHours();
+    for (let h = 0; h < 24; h++) {
+      byHour[h] = Math.max(da.byHour[h] ?? 0, db.byHour[h] ?? 0);
+    }
+    days[key] = {
+      byHour,
+      seconds: byHour.reduce((sum, n) => sum + n, 0),
+    };
+  }
+  return { version: 1, days };
+}
+
 /** Zera todo o histórico de tempo de foco neste aparelho. */
 export function clearFocusLog(): FocusLog {
   const empty: FocusLog = { version: 1, days: {} };

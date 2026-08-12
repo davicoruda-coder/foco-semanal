@@ -13,6 +13,7 @@ import {
 import { useApp } from "@/components/AppProvider";
 import { ensureNotificationPermission, notify, playAlarmTone } from "@/lib/audio";
 import { addFocusSeconds, commitFocusDisplaySnapshot } from "@/lib/focus-log";
+import { syncFocusLogWithCloud } from "@/lib/supabase/focus-sync";
 
 export type TimerRuntime = {
   secondsLeft: number;
@@ -233,9 +234,10 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
           addFocusSeconds(deltaSec);
         }
       }
-      // Pause / fim / reset: libera o total consolidado para o card.
+      // Pause / fim / reset: libera o total consolidado e espelha na nuvem.
       commitFocusDisplaySnapshot();
       window.dispatchEvent(new Event("foco-focus-log"));
+      void syncFocusLogWithCloud();
       window.clearInterval(id);
     };
   }, [ready, trackingFocus]);

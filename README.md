@@ -54,7 +54,8 @@ Tema (claro / escuro / automático), notificações, backup JSON e conta na nuve
 
 **Autenticação:** login por e-mail (magic link). Após confirmar, os dados principais ficam na **nuvem** (Supabase).  
 **Backup:** exportar/importar JSON em Ajustes (plano B manual).  
-**Local no aparelho:** histórico de foco/estatísticas e preferências de alarme.
+**Nuvem também:** histórico de foco / Estatísticas / Foco hoje (sincroniza ao pausar ou ao abrir Estatísticas).  
+**Local no aparelho:** timers/cronômetro em andamento, tema e preferências de alarme.
 
 ---
 

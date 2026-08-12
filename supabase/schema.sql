@@ -89,6 +89,16 @@ create table if not exists public.sticky_notes (
   sort_order int not null default 0
 );
 
+-- Histórico de foco (Estatísticas / Foco hoje). Relógios continuam locais.
+create table if not exists public.focus_days (
+  user_id uuid not null references auth.users(id) on delete cascade,
+  day date not null,
+  seconds int not null default 0 check (seconds >= 0),
+  by_hour int[] not null default array_fill(0, array[24]),
+  updated_at timestamptz not null default now(),
+  primary key (user_id, day)
+);
+
 -- RLS
 alter table public.profiles enable row level security;
 alter table public.subjects enable row level security;
@@ -99,6 +109,7 @@ alter table public.study_sessions enable row level security;
 alter table public.reminders enable row level security;
 alter table public.note_columns enable row level security;
 alter table public.sticky_notes enable row level security;
+alter table public.focus_days enable row level security;
 
 create policy "profiles_own" on public.profiles for all using (auth.uid() = id) with check (auth.uid() = id);
 create policy "subjects_own" on public.subjects for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
@@ -109,6 +120,7 @@ create policy "study_sessions_own" on public.study_sessions for all using (auth.
 create policy "reminders_own" on public.reminders for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 create policy "note_columns_own" on public.note_columns for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 create policy "sticky_notes_own" on public.sticky_notes for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+create policy "focus_days_own" on public.focus_days for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
 -- Auto profile + defaults on signup
 create or replace function public.handle_new_user()
