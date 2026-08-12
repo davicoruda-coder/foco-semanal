@@ -218,7 +218,7 @@ export default function HojePage() {
                   className={`space-y-2.5 px-4 py-3.5 ${statusRowClass(s.status)}`}
                 >
                   <div className="flex flex-wrap items-start justify-between gap-2">
-                    <p className="min-w-0 flex-1 text-base font-semibold leading-snug">
+                    <p className="min-w-0 flex-1 text-base font-medium leading-snug">
                       {s.name}
                     </p>
                     <div className="inline-flex shrink-0 items-center gap-0.5 rounded-full border border-[var(--line)] bg-[color-mix(in_srgb,var(--ink)_6%,transparent)] p-0.5">
@@ -228,7 +228,7 @@ export default function HojePage() {
                           <button
                             key={st}
                             type="button"
-                            className={`rounded-full px-2.5 py-1 text-xs font-medium transition ${
+                            className={`rounded-full px-3 py-1.5 text-sm font-medium transition ${
                               active
                                 ? statusClass(st)
                                 : "text-[color-mix(in_srgb,var(--ink)_55%,transparent)]"
@@ -265,8 +265,8 @@ export default function HojePage() {
             <div className="hidden md:block">
               <table className="w-full table-fixed border-separate border-spacing-0 text-left">
                 <colgroup>
-                  <col className="w-[30%]" />
-                  <col className="w-40" />
+                  <col className="w-[28%]" />
+                  <col className="w-48" />
                   <col />
                 </colgroup>
                 <thead>
@@ -289,7 +289,7 @@ export default function HojePage() {
                       className={`transition-colors ${statusRowClass(s.status)}`}
                     >
                       <td
-                        className={`break-words px-5 py-3 align-top text-base font-semibold ${
+                        className={`break-words px-5 py-3.5 align-middle text-base font-medium ${
                           i < subjects.length - 1
                             ? "border-b-2 border-[var(--surface)]"
                             : ""
@@ -298,7 +298,7 @@ export default function HojePage() {
                         {s.name}
                       </td>
                       <td
-                        className={`px-3 py-3 align-top ${
+                        className={`px-3 py-3.5 align-middle ${
                           i < subjects.length - 1
                             ? "border-b-2 border-[var(--surface)]"
                             : ""
@@ -311,7 +311,7 @@ export default function HojePage() {
                               <button
                                 key={st}
                                 type="button"
-                                className={`rounded-full px-2.5 py-1 text-xs font-medium transition ${
+                                className={`rounded-full px-3 py-1.5 text-sm font-medium transition ${
                                   active
                                     ? statusClass(st)
                                     : "text-[color-mix(in_srgb,var(--ink)_55%,transparent)] hover:text-[var(--ink)]"
@@ -325,14 +325,14 @@ export default function HojePage() {
                         </div>
                       </td>
                       <td
-                        className={`px-5 py-3 align-top ${
+                        className={`px-5 py-3.5 align-middle ${
                           i < subjects.length - 1
                             ? "border-b-2 border-[var(--surface)]"
                             : ""
                         }`}
                       >
                         <textarea
-                          className="min-h-14 w-full resize-y break-words rounded-[var(--radius-tag)] border border-transparent bg-transparent px-2 py-1 text-base outline-none focus:border-[var(--line)] focus:bg-[var(--surface)]"
+                          className="min-h-12 w-full resize-y break-words rounded-[var(--radius-tag)] border border-transparent bg-transparent px-2 py-1.5 text-base font-normal leading-snug outline-none focus:border-[var(--line)] focus:bg-[var(--surface)]"
                           value={s.notes}
                           placeholder="Anotações…"
                           onChange={(e) =>
