@@ -110,7 +110,7 @@ export default function MateriasPage() {
             </div>
             <textarea
               className="input mt-3 min-h-20"
-              placeholder="Observações"
+              placeholder="Anotações"
               value={s.notes}
               onChange={(e) => upsertSubject({ ...s, notes: e.target.value })}
             />

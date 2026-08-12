@@ -244,7 +244,7 @@ export default function HojePage() {
                   <textarea
                     className="min-h-12 w-full resize-y rounded-[var(--radius-tag)] border border-[var(--line)] bg-[var(--surface)]/70 px-2.5 py-2 text-sm outline-none focus:border-[var(--signal)]"
                     value={s.notes}
-                    placeholder="Observações…"
+                    placeholder="Anotações…"
                     onChange={(e) =>
                       upsertSubject({ ...s, notes: e.target.value })
                     }
@@ -278,7 +278,7 @@ export default function HojePage() {
                       Conclusão
                     </th>
                     <th className="border-b border-[var(--line)] px-5 py-3 font-medium">
-                      Obs.
+                      Anotações
                     </th>
                   </tr>
                 </thead>
@@ -334,7 +334,7 @@ export default function HojePage() {
                         <textarea
                           className="min-h-14 w-full resize-y break-words rounded-[var(--radius-tag)] border border-transparent bg-transparent px-2 py-1 text-sm outline-none focus:border-[var(--line)] focus:bg-[var(--surface)]"
                           value={s.notes}
-                          placeholder="Observações…"
+                          placeholder="Anotações…"
                           onChange={(e) =>
                             upsertSubject({ ...s, notes: e.target.value })
                           }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
 import { useApp } from "@/components/AppProvider";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
@@ -34,6 +34,15 @@ function DayCard({ dayIndex, name }: { dayIndex: number; name: string }) {
     .filter((b) => b.day === dayIndex)
     .sort((a, b) => a.sort_order - b.sort_order);
 
+  useEffect(() => {
+    if (!adding) return;
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setAdding(false);
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [adding]);
+
   function addBlock() {
     const label = draftLabel.trim() || "Novo bloco";
     upsertWeekBlock({
@@ -47,9 +56,17 @@ function DayCard({ dayIndex, name }: { dayIndex: number; name: string }) {
     setAdding(false);
   }
 
+  function closeAdd() {
+    setDraftLabel("");
+    setDraftColor(defaultBlockColor("estudo"));
+    setAdding(false);
+  }
+
   return (
     <div
-      className={`surface flex min-h-52 min-w-0 flex-col overflow-hidden p-3 ${isToday ? "ring-2 ring-[var(--signal)]" : ""}`}
+      className={`surface relative flex min-h-52 min-w-0 flex-col p-3 ${
+        adding ? "z-20 overflow-visible" : "overflow-hidden"
+      } ${isToday ? "ring-2 ring-[var(--signal)]" : ""}`}
     >
       <ConfirmDialog
         open={Boolean(pendingDelete)}
@@ -167,56 +184,7 @@ function DayCard({ dayIndex, name }: { dayIndex: number; name: string }) {
           );
         })}
 
-        {adding ? (
-          <div className="space-y-2 rounded-[var(--radius-tag)] border border-dashed border-[var(--line)] bg-[var(--surface)]/50 p-2">
-            <input
-              className="input px-2 py-1.5 text-sm"
-              placeholder="Nome do bloco"
-              value={draftLabel}
-              autoFocus
-              onChange={(e) => setDraftLabel(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  addBlock();
-                }
-                if (e.key === "Escape") setAdding(false);
-              }}
-            />
-            <p className="text-[10px] uppercase tracking-wider opacity-50">
-              Cor
-            </p>
-            <div className="flex flex-wrap gap-1">
-              {BLOCK_COLORS.map((c) => (
-                <button
-                  key={c}
-                  type="button"
-                  className={`h-5 w-5 rounded-full border-2 ${
-                    draftColor === c ? "border-[var(--ink)]" : "border-transparent"
-                  }`}
-                  style={{ background: c }}
-                  onClick={() => setDraftColor(c)}
-                />
-              ))}
-            </div>
-            <div className="grid grid-cols-2 gap-1.5">
-              <button
-                type="button"
-                className="btn btn-primary w-full px-1 py-1.5 text-[11px]"
-                onClick={addBlock}
-              >
-                Adicionar
-              </button>
-              <button
-                type="button"
-                className="btn w-full px-1 py-1.5 text-[11px]"
-                onClick={() => setAdding(false)}
-              >
-                Cancelar
-              </button>
-            </div>
-          </div>
-        ) : (
+        <div className="relative">
           <button
             type="button"
             className="flex w-full items-center justify-center gap-1 rounded-[var(--radius-tag)] border border-dashed border-[var(--line)] py-2 text-xs opacity-55 transition hover:opacity-100"
@@ -225,7 +193,74 @@ function DayCard({ dayIndex, name }: { dayIndex: number; name: string }) {
             <Plus size={14} strokeWidth={2} />
             Bloco
           </button>
-        )}
+
+          {adding ? (
+            <>
+              <button
+                type="button"
+                className="fixed inset-0 z-30 cursor-default bg-[color-mix(in_srgb,var(--ink)_18%,transparent)]"
+                aria-label="Fechar formulário"
+                onClick={closeAdd}
+              />
+              <div
+                className="absolute bottom-0 left-1/2 z-40 w-[min(17.5rem,calc(100vw-1.5rem))] -translate-x-1/2 rounded-[var(--radius)] border border-[var(--line)] bg-[var(--surface)] p-3.5 shadow-[var(--shadow-lg)]"
+                role="dialog"
+                aria-label={`Novo bloco em ${name}`}
+              >
+                <p className="mb-2 text-xs font-semibold opacity-60">
+                  Novo bloco · {name}
+                </p>
+                <input
+                  className="input w-full px-3 py-2.5 text-sm"
+                  placeholder="Nome do bloco"
+                  value={draftLabel}
+                  autoFocus
+                  onChange={(e) => setDraftLabel(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      addBlock();
+                    }
+                  }}
+                />
+                <p className="mt-3 text-[10px] uppercase tracking-wider opacity-50">
+                  Cor
+                </p>
+                <div className="mt-1.5 flex flex-wrap gap-1.5">
+                  {BLOCK_COLORS.map((c) => (
+                    <button
+                      key={c}
+                      type="button"
+                      className={`h-6 w-6 rounded-full border-2 ${
+                        draftColor === c
+                          ? "border-[var(--ink)]"
+                          : "border-transparent"
+                      }`}
+                      style={{ background: c }}
+                      onClick={() => setDraftColor(c)}
+                    />
+                  ))}
+                </div>
+                <div className="mt-3.5 grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    className="btn btn-primary w-full px-2 py-2 text-xs"
+                    onClick={addBlock}
+                  >
+                    Adicionar
+                  </button>
+                  <button
+                    type="button"
+                    className="btn w-full px-2 py-2 text-xs"
+                    onClick={closeAdd}
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </div>
+            </>
+          ) : null}
+        </div>
       </div>
     </div>
   );
@@ -245,7 +280,7 @@ export default function SemanaPage() {
         {DAYS.map((name, i) => (
           <div
             key={name}
-            className="w-[min(78vw,17rem)] shrink-0 sm:w-auto sm:min-w-0"
+            className="relative w-[min(78vw,17rem)] shrink-0 sm:w-auto sm:min-w-0"
           >
             <DayCard dayIndex={i} name={name} />
           </div>
