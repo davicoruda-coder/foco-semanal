@@ -265,8 +265,8 @@ export default function HojePage() {
             <div className="hidden md:block">
               <table className="w-full table-fixed border-separate border-spacing-0 text-left">
                 <colgroup>
-                  <col className="w-[28%]" />
-                  <col className="w-48" />
+                  <col className="w-[22%]" />
+                  <col className="w-[8.5rem]" />
                   <col />
                 </colgroup>
                 <thead>
@@ -274,7 +274,7 @@ export default function HojePage() {
                     <th className="border-b border-[var(--line)] px-5 py-3 text-left font-medium">
                       Matéria
                     </th>
-                    <th className="border-b border-[var(--line)] px-3 py-3 text-left font-medium">
+                    <th className="border-b border-[var(--line)] py-3 pl-2 pr-2 text-left font-medium">
                       Conclusão
                     </th>
                     <th className="border-b border-[var(--line)] px-5 py-3 text-left font-medium">
@@ -298,7 +298,7 @@ export default function HojePage() {
                         {s.name}
                       </td>
                       <td
-                        className={`px-3 py-3 align-top ${
+                        className={`py-3 pl-2 pr-2 align-top ${
                           i < subjects.length - 1
                             ? "border-b-2 border-[var(--surface)]"
                             : ""
