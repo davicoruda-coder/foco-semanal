@@ -226,57 +226,64 @@ function MiniRing({
   if (softRing) {
     return (
       <div
-        className={`relative grid place-items-center ${
+        className={`relative ${
           active || paused ? "opacity-100" : "opacity-90"
         }`}
         style={{ width: size, height: size }}
       >
         {ringSvg}
-        <div className="relative z-[1] flex flex-col items-center justify-center gap-1.5">
-          <span
-            className={`font-mono-num font-medium leading-none tracking-tight ${
-              paused ? "timer-paused" : ""
-            }`}
-            style={{
-              fontSize: size > 140 ? "1.75rem" : "1.45rem",
-            }}
-          >
-            {display}
-          </span>
-          <div className="flex items-center justify-center gap-0.5">
-            <button
-              type="button"
-              onClick={onToggle}
-              title={paused ? "Continuar" : active ? "Pausar" : "Iniciar"}
-              aria-label={
-                paused
-                  ? "Continuar cronômetro"
-                  : active
-                    ? "Pausar cronômetro"
-                    : "Iniciar cronômetro"
-              }
-              className="grid size-9 place-items-center rounded-full text-[var(--signal)] transition hover:bg-[color-mix(in_srgb,var(--signal)_10%,transparent)]"
+        {/* Absolute + leve translate: centro óptico do conjunto no meio do anel */}
+        <div className="absolute inset-0 z-[1] flex items-center justify-center">
+          <div className="flex translate-y-1 flex-col items-center gap-1">
+            <span
+              className={`font-mono-num font-medium leading-none tracking-tight ${
+                paused ? "timer-paused" : ""
+              }`}
+              style={{
+                fontSize: size > 140 ? "1.75rem" : "1.45rem",
+              }}
             >
-              {active ? (
-                <Pause size={controlIcon} fill="currentColor" strokeWidth={0} />
-              ) : (
-                <Play
-                  size={controlIcon}
-                  fill="currentColor"
-                  strokeWidth={0}
-                  className="translate-x-px"
-                />
-              )}
-            </button>
-            <button
-              type="button"
-              onClick={onReset}
-              title="Resetar cronômetro"
-              aria-label="Resetar cronômetro"
-              className="grid size-9 place-items-center rounded-full text-[color-mix(in_srgb,var(--ink)_48%,transparent)] transition hover:bg-[var(--mist)] hover:text-[var(--ink)]"
-            >
-              <RotateCcw size={controlIcon - 1} strokeWidth={2} />
-            </button>
+              {display}
+            </span>
+            <div className="grid w-[4.75rem] grid-cols-2 place-items-center">
+              <button
+                type="button"
+                onClick={onToggle}
+                title={paused ? "Continuar" : active ? "Pausar" : "Iniciar"}
+                aria-label={
+                  paused
+                    ? "Continuar cronômetro"
+                    : active
+                      ? "Pausar cronômetro"
+                      : "Iniciar cronômetro"
+                }
+                className="grid size-8 place-items-center rounded-full text-[var(--signal)] transition hover:bg-[color-mix(in_srgb,var(--signal)_10%,transparent)]"
+              >
+                {active ? (
+                  <Pause
+                    size={controlIcon}
+                    fill="currentColor"
+                    strokeWidth={0}
+                  />
+                ) : (
+                  <Play
+                    size={controlIcon}
+                    fill="currentColor"
+                    strokeWidth={0}
+                    className="translate-x-px"
+                  />
+                )}
+              </button>
+              <button
+                type="button"
+                onClick={onReset}
+                title="Resetar cronômetro"
+                aria-label="Resetar cronômetro"
+                className="grid size-8 place-items-center rounded-full text-[color-mix(in_srgb,var(--ink)_48%,transparent)] transition hover:bg-[var(--mist)] hover:text-[var(--ink)]"
+              >
+                <RotateCcw size={controlIcon - 1} strokeWidth={2} />
+              </button>
+            </div>
           </div>
         </div>
         {flash && (
