@@ -57,13 +57,13 @@ function MiniRing({
   const safeAccent = sanitizeCssColor(accent, "var(--signal)");
   // color-mix não passa no sanitize; valor fixo e seguro para o cronômetro
   const ringStroke = softRing
-    ? "color-mix(in srgb, var(--signal) 38%, var(--surface))"
+    ? "color-mix(in srgb, var(--signal) 68%, var(--surface))"
     : safeAccent;
   const r = (size - stroke) / 2;
   const c = 2 * Math.PI * r;
   const dash = c * (1 - Math.min(1, Math.max(0, progress)));
   const iconSize = dense ? 18 : 26;
-  const controlIcon = size > 140 ? 22 : 18;
+  const controlIcon = size > 140 ? 20 : 17;
 
   if (dense) {
     return (
@@ -218,7 +218,6 @@ function MiniRing({
         strokeLinecap="round"
         strokeDasharray={c}
         strokeDashoffset={dash}
-        opacity={softRing ? 0.88 : undefined}
       />
     </svg>
   );
@@ -233,18 +232,18 @@ function MiniRing({
         style={{ width: size, height: size }}
       >
         {ringSvg}
-        <div className="relative z-[1] flex flex-col items-center gap-2.5 pt-1">
+        <div className="relative z-[1] flex flex-col items-center justify-center gap-1.5">
           <span
             className={`font-mono-num font-medium leading-none tracking-tight ${
               paused ? "timer-paused" : ""
             }`}
             style={{
-              fontSize: size > 140 ? "1.85rem" : "1.55rem",
+              fontSize: size > 140 ? "1.75rem" : "1.45rem",
             }}
           >
             {display}
           </span>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center justify-center gap-0.5">
             <button
               type="button"
               onClick={onToggle}
@@ -256,7 +255,7 @@ function MiniRing({
                     ? "Pausar cronômetro"
                     : "Iniciar cronômetro"
               }
-              className="rounded-full p-2 text-[var(--signal)] transition hover:bg-[color-mix(in_srgb,var(--signal)_10%,transparent)]"
+              className="grid size-9 place-items-center rounded-full text-[var(--signal)] transition hover:bg-[color-mix(in_srgb,var(--signal)_10%,transparent)]"
             >
               {active ? (
                 <Pause size={controlIcon} fill="currentColor" strokeWidth={0} />
@@ -274,9 +273,9 @@ function MiniRing({
               onClick={onReset}
               title="Resetar cronômetro"
               aria-label="Resetar cronômetro"
-              className="rounded-full p-2 text-[color-mix(in_srgb,var(--ink)_42%,transparent)] transition hover:bg-[var(--mist)] hover:text-[var(--ink)]"
+              className="grid size-9 place-items-center rounded-full text-[color-mix(in_srgb,var(--ink)_48%,transparent)] transition hover:bg-[var(--mist)] hover:text-[var(--ink)]"
             >
-              <RotateCcw size={controlIcon - 2} strokeWidth={2} />
+              <RotateCcw size={controlIcon - 1} strokeWidth={2} />
             </button>
           </div>
         </div>
