@@ -375,11 +375,7 @@ export function SessionClock({
             display={formatTime(stopwatchSeconds)}
             size={stack ? 170 : 128}
             stroke={stack ? 10 : 8}
-            progress={
-              stopwatchSeconds > 0 || stopwatch.running
-                ? (stopwatchSeconds % 60) / 60
-                : 0
-            }
+            progress={1}
             accent="var(--signal)"
             active={stopwatch.running}
             paused={swPaused}
