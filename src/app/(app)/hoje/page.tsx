@@ -128,7 +128,7 @@ export default function HojePage() {
                         className="min-h-36 bg-[var(--mist)] sm:min-h-44"
                       >
                         <div
-                          className={`border-b px-2 py-2 text-center text-[11px] font-semibold uppercase tracking-wider ${
+                          className={`border-b px-2 py-2 text-center text-xs font-semibold uppercase tracking-wider ${
                             isToday
                               ? "relative z-[1] border-[color-mix(in_srgb,var(--signal)_18%,var(--line))] text-[var(--ink)]"
                               : "border-[var(--line)] opacity-55"
@@ -148,14 +148,14 @@ export default function HojePage() {
                         </div>
                         <div className="space-y-1.5 p-2">
                           {blocks.length === 0 && (
-                            <p className="px-1 text-[11px] opacity-40">—</p>
+                            <p className="px-1 text-xs opacity-40">—</p>
                           )}
                           {blocks.map((b) => {
                             const style = blockStyle(b, { muted: !isToday });
                             return (
                               <div
                                 key={b.id}
-                                className="rounded-[var(--radius-tag)] px-2 py-1.5 text-[13px] font-medium leading-snug sm:text-sm"
+                                className="rounded-[var(--radius-tag)] px-2 py-1.5 text-sm font-medium leading-snug"
                                 style={style.style}
                               >
                                 {b.label}
@@ -218,7 +218,7 @@ export default function HojePage() {
                   className={`space-y-2.5 px-4 py-3.5 ${statusRowClass(s.status)}`}
                 >
                   <div className="flex flex-wrap items-start justify-between gap-2">
-                    <p className="min-w-0 flex-1 text-[15px] font-semibold leading-snug">
+                    <p className="min-w-0 flex-1 text-sm font-semibold leading-snug">
                       {s.name}
                     </p>
                     <div className="inline-flex shrink-0 items-center gap-0.5 rounded-full border border-[var(--line)] bg-[color-mix(in_srgb,var(--ink)_6%,transparent)] p-0.5">
@@ -289,7 +289,7 @@ export default function HojePage() {
                       className={`transition-colors ${statusRowClass(s.status)}`}
                     >
                       <td
-                        className={`break-words px-5 py-3 align-top font-medium ${
+                        className={`break-words px-5 py-3 align-top text-sm font-semibold ${
                           i < subjects.length - 1
                             ? "border-b-2 border-[var(--surface)]"
                             : ""

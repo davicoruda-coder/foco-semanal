@@ -55,8 +55,8 @@ function NoteCard({
       <textarea
         className={`w-full flex-1 resize-none bg-transparent leading-relaxed outline-none placeholder:opacity-40 [text-rendering:geometricPrecision] [-webkit-font-smoothing:subpixel-antialiased] ${
           compact
-            ? "min-h-[72px] text-lg font-normal"
-            : "min-h-[60px] text-sm font-normal"
+            ? "min-h-[72px] text-sm font-medium"
+            : "min-h-[60px] text-base font-normal"
         }`}
         placeholder="Escreva…"
         value={noteText(reminder.title)}
@@ -68,9 +68,7 @@ function NoteCard({
 
       {reminder.has_alarm && !alarmOpen && (
         <p
-          className={`font-mono-num opacity-70 ${
-            compact ? "text-xs" : "text-[10px]"
-          }`}
+          className="font-mono-num text-xs opacity-70"
         >
           ⏰{" "}
           {new Date(reminder.notify_at).toLocaleString("pt-BR", {

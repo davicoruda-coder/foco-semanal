@@ -161,7 +161,7 @@ function MiniRing({
         <div className="min-w-0 flex-1">
           {label ? (
             <p
-              className="truncate text-xs font-medium"
+              className="truncate text-sm font-medium"
               style={{
                 color: active
                   ? safeAccent
