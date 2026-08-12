@@ -221,14 +221,14 @@ export default function HojePage() {
                     <p className="min-w-0 flex-1 text-base font-medium leading-snug">
                       {s.name}
                     </p>
-                    <div className="inline-flex shrink-0 items-center gap-0.5 rounded-full border border-[var(--line)] bg-[color-mix(in_srgb,var(--ink)_6%,transparent)] p-0.5">
+                    <div className="inline-flex shrink-0 items-center gap-0.5 rounded-full border border-[var(--line)] bg-[color-mix(in_srgb,var(--ink)_6%,transparent)] p-1">
                       {(["ok", "prox"] as SubjectStatus[]).map((st) => {
                         const active = s.status === st;
                         return (
                           <button
                             key={st}
                             type="button"
-                            className={`rounded-full px-2.5 py-1.5 text-xs font-medium transition ${
+                            className={`rounded-full px-2.5 py-2 text-xs font-medium transition ${
                               active
                                 ? statusClass(st)
                                 : "text-[color-mix(in_srgb,var(--ink)_55%,transparent)]"
@@ -242,7 +242,7 @@ export default function HojePage() {
                     </div>
                   </div>
                   <textarea
-                    className="min-h-12 w-full resize-y rounded-[var(--radius-tag)] border border-[var(--line)] bg-[var(--surface)]/70 px-2.5 py-2 text-base outline-none focus:border-[var(--signal)]"
+                    className="min-h-12 w-full resize-y rounded-[var(--radius-tag)] border border-[var(--line)] bg-[var(--surface)]/70 px-2.5 py-2 text-sm outline-none focus:border-[var(--signal)]"
                     value={s.notes}
                     placeholder="Anotações…"
                     onChange={(e) =>
@@ -304,14 +304,14 @@ export default function HojePage() {
                             : ""
                         }`}
                       >
-                        <div className="inline-flex items-center gap-0.5 rounded-full border border-[var(--line)] bg-[color-mix(in_srgb,var(--ink)_6%,transparent)] p-0.5">
+                        <div className="inline-flex items-center gap-0.5 rounded-full border border-[var(--line)] bg-[color-mix(in_srgb,var(--ink)_6%,transparent)] p-1">
                           {(["ok", "prox"] as SubjectStatus[]).map((st) => {
                             const active = s.status === st;
                             return (
                               <button
                                 key={st}
                                 type="button"
-                                className={`rounded-full px-2.5 py-1.5 text-xs font-medium transition ${
+                                className={`rounded-full px-2.5 py-2 text-xs font-medium transition ${
                                   active
                                     ? statusClass(st)
                                     : "text-[color-mix(in_srgb,var(--ink)_55%,transparent)] hover:text-[var(--ink)]"
@@ -332,7 +332,7 @@ export default function HojePage() {
                         }`}
                       >
                         <textarea
-                          className="min-h-[1.5rem] w-full resize-y break-words rounded-[var(--radius-tag)] border border-transparent bg-transparent px-0 py-0 text-base font-normal leading-snug outline-none focus:border-[var(--line)] focus:bg-[var(--surface)] focus:px-2 focus:py-1.5"
+                          className="min-h-[1.5rem] w-full resize-y break-words rounded-[var(--radius-tag)] border border-transparent bg-transparent px-0 py-0 text-sm font-normal leading-snug outline-none focus:border-[var(--line)] focus:bg-[var(--surface)] focus:px-2 focus:py-1.5"
                           rows={1}
                           value={s.notes}
                           placeholder="Anotações…"
