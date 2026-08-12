@@ -271,13 +271,13 @@ export default function HojePage() {
                 </colgroup>
                 <thead>
                   <tr className="bg-[var(--mist)] text-xs uppercase tracking-wider opacity-60">
-                    <th className="border-b border-[var(--line)] px-5 py-3 font-medium">
+                    <th className="border-b border-[var(--line)] px-5 py-3 text-left font-medium">
                       Matéria
                     </th>
-                    <th className="border-b border-[var(--line)] px-3 py-3 font-medium">
+                    <th className="border-b border-[var(--line)] px-3 py-3 text-left font-medium">
                       Conclusão
                     </th>
-                    <th className="border-b border-[var(--line)] px-5 py-3 font-medium">
+                    <th className="border-b border-[var(--line)] px-5 py-3 text-left font-medium">
                       Anotações
                     </th>
                   </tr>
@@ -289,7 +289,7 @@ export default function HojePage() {
                       className={`transition-colors ${statusRowClass(s.status)}`}
                     >
                       <td
-                        className={`break-words px-5 py-3.5 align-middle text-base font-medium ${
+                        className={`break-words px-5 py-3 align-top text-base font-medium leading-snug ${
                           i < subjects.length - 1
                             ? "border-b-2 border-[var(--surface)]"
                             : ""
@@ -298,7 +298,7 @@ export default function HojePage() {
                         {s.name}
                       </td>
                       <td
-                        className={`px-3 py-3.5 align-middle ${
+                        className={`px-3 py-3 align-top ${
                           i < subjects.length - 1
                             ? "border-b-2 border-[var(--surface)]"
                             : ""
@@ -325,14 +325,15 @@ export default function HojePage() {
                         </div>
                       </td>
                       <td
-                        className={`px-5 py-3.5 align-middle ${
+                        className={`px-5 py-3 align-top ${
                           i < subjects.length - 1
                             ? "border-b-2 border-[var(--surface)]"
                             : ""
                         }`}
                       >
                         <textarea
-                          className="min-h-12 w-full resize-y break-words rounded-[var(--radius-tag)] border border-transparent bg-transparent px-2 py-1.5 text-base font-normal leading-snug outline-none focus:border-[var(--line)] focus:bg-[var(--surface)]"
+                          className="min-h-[1.5rem] w-full resize-y break-words rounded-[var(--radius-tag)] border border-transparent bg-transparent px-0 py-0 text-base font-normal leading-snug outline-none focus:border-[var(--line)] focus:bg-[var(--surface)] focus:px-2 focus:py-1.5"
+                          rows={1}
                           value={s.notes}
                           placeholder="Anotações…"
                           onChange={(e) =>
