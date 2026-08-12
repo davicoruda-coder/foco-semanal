@@ -127,7 +127,7 @@ export default function HojePage() {
                         key={name}
                         className={`min-h-36 sm:min-h-44 ${
                           isToday
-                            ? "bg-[color-mix(in_srgb,var(--signal-soft)_72%,var(--surface))]"
+                            ? "bg-[color-mix(in_srgb,var(--signal)_14%,var(--signal-soft))]"
                             : "bg-[var(--mist)]"
                         }`}
                       >
