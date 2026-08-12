@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Caveat, DM_Sans, IBM_Plex_Mono, Syne } from "next/font/google";
 import { AppProvider } from "@/components/AppProvider";
 import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
@@ -37,10 +37,23 @@ export const metadata: Metadata = {
     statusBarStyle: "default",
     title: "Foco",
   },
+  formatDetection: {
+    telephone: false,
+  },
   icons: {
     icon: [{ url: "/favicon.png", sizes: "32x32", type: "image/png" }],
     apple: [{ url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" }],
   },
+};
+
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#6d5ef8" },
+    { media: "(prefers-color-scheme: dark)", color: "#15161e" },
+  ],
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
 };
 
 const THEME_INIT_SCRIPT = `

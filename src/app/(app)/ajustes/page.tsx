@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Bell, Download, Moon, Sun, SunMoon, Upload } from "lucide-react";
 import { useApp } from "@/components/AppProvider";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { InstallPwaCard } from "@/components/InstallPwaCard";
 import { ensureNotificationPermission } from "@/lib/audio";
 import type { ThemePref } from "@/lib/types";
 
@@ -124,6 +125,8 @@ export default function AjustesPage() {
         </h2>
         <p className="mt-1 text-xs opacity-55">
           Alarme ao terminar um temporizador e avisos de lembretes com sino.
+          Funcionam com o app/aba abertos. No celular, o PWA instalado costuma
+          ser mais estável que o navegador.
         </p>
         <div className="mt-3 flex flex-wrap items-center gap-2">
           {notifPermission === "granted" ? (
@@ -172,6 +175,8 @@ export default function AjustesPage() {
         )}
         {notifMsg && <p className="mt-2 text-sm opacity-70">{notifMsg}</p>}
       </section>
+
+      <InstallPwaCard />
 
       <section className="surface mt-4 p-4 md:p-5">
         <h2 className="font-display text-base font-semibold tracking-tight md:text-lg">

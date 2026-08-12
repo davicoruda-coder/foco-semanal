@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   CalendarDays,
   ChevronDown,
@@ -24,7 +24,16 @@ export default function HojePage() {
   const { data, upsertSubject, setSubjectStatus } = useApp();
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [weekOverride, setWeekOverride] = useState<boolean | null>(null);
+  const [narrow, setNarrow] = useState(false);
   const day = todayIndex();
+
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 767px)");
+    const sync = () => setNarrow(mq.matches);
+    sync();
+    mq.addEventListener("change", sync);
+    return () => mq.removeEventListener("change", sync);
+  }, []);
 
   const subjects = useMemo(
     () =>
@@ -42,8 +51,10 @@ export default function HojePage() {
     [data.week_blocks, day],
   );
 
-  const autoCompact = subjects.length >= COMPACT_WEEK_THRESHOLD;
+  const autoCompact =
+    subjects.length >= COMPACT_WEEK_THRESHOLD || narrow;
   const showFullWeek = weekOverride ?? !autoCompact;
+  const showWeekToggle = autoCompact || weekOverride !== null;
 
   const weekDays = DAYS.map((name, i) => ({ name, i }));
 
@@ -55,8 +66,8 @@ export default function HojePage() {
         onClose={() => setCalendarOpen(false)}
       />
 
-      <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_300px] xl:grid-cols-[minmax(0,1fr)_320px]">
-        <div className="min-w-0 space-y-5">
+      <div className="grid items-start gap-4 sm:gap-5 lg:grid-cols-[minmax(0,1fr)_300px] xl:grid-cols-[minmax(0,1fr)_320px]">
+        <div className="min-w-0 space-y-4 sm:space-y-5">
           <section className="surface overflow-hidden p-0">
             <div
               className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 text-white md:px-5"
@@ -78,7 +89,7 @@ export default function HojePage() {
                   month: "2-digit",
                 })}`}
               </button>
-              {autoCompact && (
+              {showWeekToggle && (
                 <button
                   type="button"
                   title={
@@ -104,8 +115,8 @@ export default function HojePage() {
             </div>
 
             {showFullWeek ? (
-              <div className="overflow-x-auto">
-                <div className="grid min-w-[720px] grid-cols-7 divide-x divide-[var(--line)]">
+              <div className="-mx-0 overflow-x-auto overscroll-x-contain">
+                <div className="grid min-w-[640px] grid-cols-7 divide-x divide-[var(--line)] sm:min-w-[720px]">
                   {weekDays.map(({ name, i }) => {
                     const blocks = data.week_blocks
                       .filter((b) => b.day === i)
@@ -114,7 +125,7 @@ export default function HojePage() {
                     return (
                       <div
                         key={name}
-                        className={`min-h-44 ${isToday ? "bg-[var(--signal-soft)]/50" : "bg-[var(--surface)]/40"}`}
+                        className={`min-h-36 sm:min-h-44 ${isToday ? "bg-[var(--signal-soft)]/50" : "bg-[var(--surface)]/40"}`}
                       >
                         <div
                           className={`border-b border-[var(--line)] px-2 py-2 text-center text-[11px] font-semibold uppercase tracking-wider ${
@@ -187,22 +198,74 @@ export default function HojePage() {
               </Link>
             </div>
 
-            <div>
+            {/* Mobile: cards empilhados */}
+            <div className="divide-y divide-[var(--line)] md:hidden">
+              {subjects.map((s) => (
+                <div
+                  key={s.id}
+                  className={`space-y-2.5 px-4 py-3.5 ${statusRowClass(s.status)}`}
+                >
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <p className="min-w-0 flex-1 text-[15px] font-semibold leading-snug">
+                      {s.name}
+                    </p>
+                    <div className="inline-flex shrink-0 items-center gap-0.5 rounded-full border border-[var(--line)] bg-[color-mix(in_srgb,var(--ink)_6%,transparent)] p-0.5">
+                      {(["ok", "prox"] as SubjectStatus[]).map((st) => {
+                        const active = s.status === st;
+                        return (
+                          <button
+                            key={st}
+                            type="button"
+                            className={`rounded-full px-2.5 py-1 text-xs font-medium transition ${
+                              active
+                                ? statusClass(st)
+                                : "text-[color-mix(in_srgb,var(--ink)_55%,transparent)]"
+                            }`}
+                            onClick={() => setSubjectStatus(s.id, st)}
+                          >
+                            {STATUS_LABEL[st]}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                  <textarea
+                    className="min-h-12 w-full resize-y rounded-[var(--radius-tag)] border border-[var(--line)] bg-[var(--surface)]/70 px-2.5 py-2 text-sm outline-none focus:border-[var(--signal)]"
+                    value={s.notes}
+                    placeholder="Observações…"
+                    onChange={(e) =>
+                      upsertSubject({ ...s, notes: e.target.value })
+                    }
+                  />
+                </div>
+              ))}
+              {subjects.length === 0 && (
+                <p className="px-4 py-8 text-sm opacity-55">
+                  Nenhuma matéria —{" "}
+                  <Link href="/materias" className="text-[var(--signal)]">
+                    adicionar
+                  </Link>
+                </p>
+              )}
+            </div>
+
+            {/* Desktop: tabela */}
+            <div className="hidden md:block">
               <table className="w-full table-fixed border-separate border-spacing-0 text-left">
                 <colgroup>
                   <col className="w-[30%]" />
-                  <col className="w-[26%] sm:w-40" />
+                  <col className="w-40" />
                   <col />
                 </colgroup>
                 <thead>
                   <tr className="bg-[var(--mist)] text-xs uppercase tracking-wider opacity-60">
-                    <th className="border-b border-[var(--line)] px-3 py-3 font-medium md:px-5">
+                    <th className="border-b border-[var(--line)] px-5 py-3 font-medium">
                       Matéria
                     </th>
-                    <th className="border-b border-[var(--line)] px-2 py-3 font-medium md:px-3">
+                    <th className="border-b border-[var(--line)] px-3 py-3 font-medium">
                       Conclusão
                     </th>
-                    <th className="border-b border-[var(--line)] px-3 py-3 font-medium md:px-5">
+                    <th className="border-b border-[var(--line)] px-5 py-3 font-medium">
                       Obs.
                     </th>
                   </tr>
@@ -214,7 +277,7 @@ export default function HojePage() {
                       className={`transition-colors ${statusRowClass(s.status)}`}
                     >
                       <td
-                        className={`break-words px-3 py-3 align-top font-medium md:px-5 ${
+                        className={`break-words px-5 py-3 align-top font-medium ${
                           i < subjects.length - 1
                             ? "border-b-2 border-[var(--surface)]"
                             : ""
@@ -223,7 +286,7 @@ export default function HojePage() {
                         {s.name}
                       </td>
                       <td
-                        className={`px-2 py-3 align-top md:px-3 ${
+                        className={`px-3 py-3 align-top ${
                           i < subjects.length - 1
                             ? "border-b-2 border-[var(--surface)]"
                             : ""
@@ -250,7 +313,7 @@ export default function HojePage() {
                         </div>
                       </td>
                       <td
-                        className={`px-3 py-3 align-top md:px-5 ${
+                        className={`px-5 py-3 align-top ${
                           i < subjects.length - 1
                             ? "border-b-2 border-[var(--surface)]"
                             : ""

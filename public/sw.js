@@ -1,18 +1,28 @@
 /* Foco Semanal — service worker (demo / PWA) */
-const CACHE = "foco-semanal-v3";
-const PRECACHE = ["/icons/icon-192.png", "/icons/icon-512.png"];
+const CACHE = "foco-semanal-v4";
+const PRECACHE = [
+  "/icons/icon-192.png",
+  "/icons/icon-512.png",
+  "/icons/icon-maskable-512.png",
+];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches.open(CACHE).then((cache) => cache.addAll(PRECACHE)).then(() => self.skipWaiting()),
+    caches
+      .open(CACHE)
+      .then((cache) => cache.addAll(PRECACHE))
+      .then(() => self.skipWaiting()),
   );
 });
 
 self.addEventListener("activate", (event) => {
   event.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))),
-    ).then(() => self.clients.claim()),
+    caches
+      .keys()
+      .then((keys) =>
+        Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))),
+      )
+      .then(() => self.clients.claim()),
   );
 });
 
@@ -34,7 +44,11 @@ self.addEventListener("fetch", (event) => {
       (cached) =>
         cached ||
         fetch(request).then((res) => {
-          if (res.ok && (url.pathname.startsWith("/_next/") || url.pathname.startsWith("/icons/"))) {
+          if (
+            res.ok &&
+            (url.pathname.startsWith("/_next/") ||
+              url.pathname.startsWith("/icons/"))
+          ) {
             const copy = res.clone();
             caches.open(CACHE).then((c) => c.put(request, copy));
           }

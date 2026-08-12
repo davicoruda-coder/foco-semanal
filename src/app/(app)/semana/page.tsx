@@ -218,9 +218,14 @@ export default function SemanaPage() {
         Edite direto em cada dia · escolha a cor do bloco.
       </p>
 
-      <div className="mt-8 grid gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-7">
+      <div className="mt-6 flex gap-3 overflow-x-auto overscroll-x-contain pb-2 sm:mt-8 sm:grid sm:grid-cols-2 sm:overflow-visible sm:pb-0 md:grid-cols-3 lg:grid-cols-7">
         {DAYS.map((name, i) => (
-          <DayCard key={name} dayIndex={i} name={name} />
+          <div
+            key={name}
+            className="w-[min(78vw,17rem)] shrink-0 sm:w-auto sm:min-w-0"
+          >
+            <DayCard dayIndex={i} name={name} />
+          </div>
         ))}
       </div>
     </div>

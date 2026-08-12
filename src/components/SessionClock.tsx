@@ -432,10 +432,10 @@ export function SessionClock({
         <div
           className={`grid items-start gap-3 px-3 py-5 sm:gap-4 sm:px-6 md:px-8 ${
             timers.length === 1
-              ? "grid-cols-1"
+              ? "grid-cols-1 place-items-center"
               : timers.length === 2
                 ? "grid-cols-2"
-                : "grid-cols-3"
+                : "grid-cols-3 max-sm:flex max-sm:snap-x max-sm:overflow-x-auto max-sm:pb-1"
           }`}
         >
           {timers.map((t) => {
@@ -449,21 +449,29 @@ export function SessionClock({
               seconds < total &&
               Boolean(r?.startedAt);
             return (
-              <MiniRing
+              <div
                 key={t.id}
-                display={formatTime(seconds)}
-                label={t.name}
-                size={size}
-                stroke={7}
-                progress={1 - seconds / total}
-                accent={t.accent}
-                active={running}
-                paused={paused}
-                flash={flash?.id === t.id ? flash.kind : null}
-                flashKey={flash?.id === t.id ? flash.key : undefined}
-                onToggle={() => toggleTimer(t.id)}
-                onReset={() => resetTimer(t.id)}
-              />
+                className={
+                  timers.length >= 3
+                    ? "max-sm:snap-start max-sm:shrink-0 max-sm:px-1"
+                    : undefined
+                }
+              >
+                <MiniRing
+                  display={formatTime(seconds)}
+                  label={t.name}
+                  size={size}
+                  stroke={7}
+                  progress={1 - seconds / total}
+                  accent={t.accent}
+                  active={running}
+                  paused={paused}
+                  flash={flash?.id === t.id ? flash.kind : null}
+                  flashKey={flash?.id === t.id ? flash.key : undefined}
+                  onToggle={() => toggleTimer(t.id)}
+                  onReset={() => resetTimer(t.id)}
+                />
+              </div>
             );
           })}
         </div>

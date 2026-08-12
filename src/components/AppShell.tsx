@@ -38,8 +38,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="relative z-0 min-h-screen">
-      <header className="sticky top-0 z-20 border-b border-[var(--line)] bg-[var(--surface)]/80 backdrop-blur-xl">
+    <div className="relative z-0 min-h-screen pb-[env(safe-area-inset-bottom)]">
+      <header className="sticky top-0 z-20 border-b border-[var(--line)] bg-[var(--surface)]/80 pt-[env(safe-area-inset-top)] backdrop-blur-xl">
         <div className="mx-auto flex h-14 max-w-7xl items-center gap-2 px-3 sm:gap-3 sm:px-5 md:px-8">
           <Link
             href="/hoje"
@@ -61,7 +61,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </span>
           </Link>
 
-          <nav className="ml-auto flex max-w-[calc(100%-2.5rem)] items-center gap-0.5 overflow-x-auto sm:max-w-none sm:gap-1">
+          <nav className="ml-auto flex items-center gap-0.5 sm:gap-1">
             {NAV.map(({ href, label, icon: Icon }) => {
               const active = pathname.startsWith(href);
               return (
@@ -71,7 +71,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   title={label}
                   aria-label={label}
                   aria-current={active ? "page" : undefined}
-                  className={`grid h-9 w-9 place-items-center rounded-[var(--radius-btn)] transition sm:h-10 sm:w-10 ${
+                  className={`grid h-10 w-10 place-items-center rounded-[var(--radius-btn)] transition ${
                     active
                       ? "bg-[var(--signal-soft)] text-[var(--signal)]"
                       : "text-[color-mix(in_srgb,var(--ink)_55%,transparent)] hover:bg-[var(--mist)] hover:text-[var(--ink)]"
@@ -86,7 +86,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               title="Ajustes"
               aria-label="Ajustes"
               aria-current={onAjustes ? "page" : undefined}
-              className={`grid h-9 w-9 place-items-center rounded-[var(--radius-btn)] transition sm:h-10 sm:w-10 ${
+              className={`grid h-10 w-10 place-items-center rounded-[var(--radius-btn)] transition ${
                 onAjustes
                   ? "bg-[var(--signal-soft)] text-[var(--signal)]"
                   : "text-[color-mix(in_srgb,var(--ink)_55%,transparent)] hover:bg-[var(--mist)] hover:text-[var(--ink)]"
@@ -98,7 +98,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       </header>
 
-      <main className="mx-auto max-w-7xl px-4 pb-10 pt-5 sm:px-5 md:px-8 md:pt-6">
+      <main className="mx-auto max-w-7xl px-3 pb-10 pt-4 sm:px-5 sm:pt-5 md:px-8 md:pt-6">
         {children}
       </main>
     </div>
