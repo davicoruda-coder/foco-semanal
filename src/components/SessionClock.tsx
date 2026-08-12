@@ -24,6 +24,8 @@ type RingProps = {
   onToggle: () => void;
   onReset: () => void;
   dense?: boolean;
+  /** Anel mais suave (cronômetro); cor controlada internamente. */
+  softRing?: boolean;
 };
 
 function formatTime(totalSeconds: number) {
@@ -50,12 +52,18 @@ function MiniRing({
   onToggle,
   onReset,
   dense,
+  softRing,
 }: RingProps) {
   const safeAccent = sanitizeCssColor(accent, "var(--signal)");
+  // color-mix não passa no sanitize; valor fixo e seguro para o cronômetro
+  const ringStroke = softRing
+    ? "color-mix(in srgb, var(--signal) 38%, var(--surface))"
+    : safeAccent;
   const r = (size - stroke) / 2;
   const c = 2 * Math.PI * r;
   const dash = c * (1 - Math.min(1, Math.max(0, progress)));
   const iconSize = dense ? 18 : 26;
+  const controlIcon = size > 140 ? 22 : 18;
 
   if (dense) {
     return (
@@ -106,7 +114,7 @@ function MiniRing({
               cy={size / 2}
               r={r}
               fill="none"
-              stroke={safeAccent}
+              stroke={ringStroke}
               strokeWidth={stroke}
               strokeLinecap="round"
               strokeDasharray={c}
@@ -115,7 +123,7 @@ function MiniRing({
           </svg>
           <span
             className="relative z-[1] grid place-items-center"
-            style={{ color: safeAccent }}
+            style={{ color: softRing ? ringStroke : safeAccent }}
           >
             {active ? (
               <Pause size={20} fill="currentColor" strokeWidth={0} />
@@ -185,6 +193,117 @@ function MiniRing({
     );
   }
 
+  const ringSvg = (
+    <svg
+      width={size}
+      height={size}
+      className="pointer-events-none absolute inset-0 -rotate-90"
+    >
+      <circle
+        cx={size / 2}
+        cy={size / 2}
+        r={r}
+        fill="none"
+        stroke="color-mix(in srgb, var(--ink) 8%, transparent)"
+        strokeWidth={stroke}
+      />
+      <circle
+        className="timer-ring"
+        cx={size / 2}
+        cy={size / 2}
+        r={r}
+        fill="none"
+        stroke={ringStroke}
+        strokeWidth={stroke}
+        strokeLinecap="round"
+        strokeDasharray={c}
+        strokeDashoffset={dash}
+        opacity={softRing ? 0.88 : undefined}
+      />
+    </svg>
+  );
+
+  // Cronômetro: tempo + play/pause e reset dentro do círculo
+  if (softRing) {
+    return (
+      <div
+        className={`relative grid place-items-center ${
+          active || paused ? "opacity-100" : "opacity-90"
+        }`}
+        style={{ width: size, height: size }}
+      >
+        {ringSvg}
+        <div className="relative z-[1] flex flex-col items-center gap-2.5 pt-1">
+          <span
+            className={`font-mono-num font-medium leading-none tracking-tight ${
+              paused ? "timer-paused" : ""
+            }`}
+            style={{
+              fontSize: size > 140 ? "1.85rem" : "1.55rem",
+            }}
+          >
+            {display}
+          </span>
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={onToggle}
+              title={paused ? "Continuar" : active ? "Pausar" : "Iniciar"}
+              aria-label={
+                paused
+                  ? "Continuar cronômetro"
+                  : active
+                    ? "Pausar cronômetro"
+                    : "Iniciar cronômetro"
+              }
+              className="rounded-full p-2 text-[var(--signal)] transition hover:bg-[color-mix(in_srgb,var(--signal)_10%,transparent)]"
+            >
+              {active ? (
+                <Pause size={controlIcon} fill="currentColor" strokeWidth={0} />
+              ) : (
+                <Play
+                  size={controlIcon}
+                  fill="currentColor"
+                  strokeWidth={0}
+                  className="translate-x-px"
+                />
+              )}
+            </button>
+            <button
+              type="button"
+              onClick={onReset}
+              title="Resetar cronômetro"
+              aria-label="Resetar cronômetro"
+              className="rounded-full p-2 text-[color-mix(in_srgb,var(--ink)_42%,transparent)] transition hover:bg-[var(--mist)] hover:text-[var(--ink)]"
+            >
+              <RotateCcw size={controlIcon - 2} strokeWidth={2} />
+            </button>
+          </div>
+        </div>
+        {flash && (
+          <span
+            key={flashKey}
+            className="timer-flash absolute inset-0 z-[2] grid place-items-center"
+            style={{ color: safeAccent }}
+          >
+            <span className="grid place-items-center rounded-full bg-[var(--surface)]/85 p-2 shadow-sm">
+              {flash === "pause" ? (
+                <Pause size={iconSize} fill="currentColor" strokeWidth={0} />
+              ) : (
+                <Play
+                  size={iconSize}
+                  fill="currentColor"
+                  strokeWidth={0}
+                  className="translate-x-px"
+                />
+              )}
+            </span>
+          </span>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="flex w-full flex-col items-center gap-2">
       <button
@@ -203,32 +322,7 @@ function MiniRing({
         }`}
         style={{ width: size, height: size }}
       >
-        <svg
-          width={size}
-          height={size}
-          className="pointer-events-none absolute inset-0 -rotate-90"
-        >
-          <circle
-            cx={size / 2}
-            cy={size / 2}
-            r={r}
-            fill="none"
-            stroke="color-mix(in srgb, var(--ink) 8%, transparent)"
-            strokeWidth={stroke}
-          />
-          <circle
-            className="timer-ring"
-            cx={size / 2}
-            cy={size / 2}
-            r={r}
-            fill="none"
-            stroke={safeAccent}
-            strokeWidth={stroke}
-            strokeLinecap="round"
-            strokeDasharray={c}
-            strokeDashoffset={dash}
-          />
-        </svg>
+        {ringSvg}
 
         <span
           className={`font-mono-num relative z-[1] grid h-full w-full place-items-center font-medium leading-none ${
@@ -374,9 +468,10 @@ export function SessionClock({
           <MiniRing
             display={formatTime(stopwatchSeconds)}
             size={stack ? 170 : 128}
-            stroke={stack ? 10 : 8}
+            stroke={stack ? 6 : 4.5}
             progress={1}
             accent="var(--signal)"
+            softRing
             active={stopwatch.running}
             paused={swPaused}
             flash={flash?.id === "stopwatch" ? flash.kind : null}
