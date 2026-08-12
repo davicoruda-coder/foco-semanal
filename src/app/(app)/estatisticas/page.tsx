@@ -7,6 +7,7 @@ import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { FocusBarChart } from "@/components/FocusBarChart";
 import {
   clearFocusLog,
+  commitFocusDisplaySnapshot,
   dateKey,
   formatFocusDuration,
   getDay,
@@ -43,7 +44,12 @@ export default function EstatisticasPage() {
   const [confirmReset, setConfirmReset] = useState(false);
 
   useEffect(() => {
-    const refresh = () => setLog(loadFocusLog());
+    const refresh = () => {
+      const next = loadFocusLog();
+      // Abrir Estatísticas consolida o andamento no card Foco hoje.
+      commitFocusDisplaySnapshot(next);
+      setLog(next);
+    };
     refresh();
     window.addEventListener("foco-focus-log", refresh);
     const onVis = () => {

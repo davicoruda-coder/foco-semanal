@@ -8,11 +8,11 @@ import {
   dateKey,
   formatFocusDuration,
   getDay,
-  loadFocusLog,
+  loadFocusDisplaySnapshot,
   type FocusLog,
 } from "@/lib/focus-log";
 
-/** Mini-card "Foco hoje": total consolidado (só atualiza ao pausar/finalizar). */
+/** Mini-card "Foco hoje": total consolidado (pause/fim/reset ou ao abrir Estatísticas). */
 export function FocusTodayCard() {
   const { data } = useApp();
   const { runtime, stopwatch } = useTimerRuntime();
@@ -28,22 +28,23 @@ export function FocusTodayCard() {
   const tracking =
     Boolean(session && runtime[session.id]?.running) || stopwatch.running;
 
+  // Sempre lê o snapshot — não o log ao vivo (evita update ao voltar de Semana/Matérias).
   useEffect(() => {
-    setLog(loadFocusLog());
+    setLog(loadFocusDisplaySnapshot());
   }, []);
 
-  // Congela enquanto Sessão/Cronômetro rodam; atualiza só ao pausar ou finalizar.
+  // Ao pausar/finalizar/resetar, o provider commitou o snapshot; recarrega.
   useEffect(() => {
     if (wasTracking.current && !tracking) {
-      setLog(loadFocusLog());
+      setLog(loadFocusDisplaySnapshot());
     }
     wasTracking.current = tracking;
   }, [tracking]);
 
-  // Após reset do histórico (ou outra mudança externa), atualiza se não estiver contando.
   useEffect(() => {
     const onLog = () => {
-      if (!wasTracking.current) setLog(loadFocusLog());
+      // Enquanto conta, ignora ticks; após pause/fim (ou commit via Estatísticas) atualiza.
+      if (!wasTracking.current) setLog(loadFocusDisplaySnapshot());
     };
     window.addEventListener("foco-focus-log", onLog);
     return () => window.removeEventListener("foco-focus-log", onLog);

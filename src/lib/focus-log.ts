@@ -1,6 +1,8 @@
 /** Log de tempo de foco (Sessão + cronômetro em play). Local-first. */
 
 const STORAGE_KEY = "foco_semanal_focus_log_v1";
+/** Snapshot do card "Foco hoje" — só muda em pause/fim/reset ou ao abrir Estatísticas. */
+const DISPLAY_KEY = "foco_semanal_focus_display_v1";
 
 export type FocusDay = {
   /** Total do dia em segundos */
@@ -49,10 +51,41 @@ export function saveFocusLog(log: FocusLog) {
   }
 }
 
+/** Valor congelado exibido no card Foco hoje. */
+export function loadFocusDisplaySnapshot(): FocusLog {
+  if (typeof window === "undefined") return { version: 1, days: {} };
+  try {
+    const raw = localStorage.getItem(DISPLAY_KEY);
+    if (!raw) return loadFocusLog();
+    const parsed = JSON.parse(raw) as FocusLog;
+    if (!parsed?.days) return loadFocusLog();
+    return { version: 1, days: parsed.days };
+  } catch {
+    return loadFocusLog();
+  }
+}
+
+export function saveFocusDisplaySnapshot(log: FocusLog) {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(DISPLAY_KEY, JSON.stringify(log));
+  } catch {
+    /* ignore */
+  }
+}
+
+/** Copia o log real para o snapshot do card (pause/fim/reset ou Estatísticas). */
+export function commitFocusDisplaySnapshot(log?: FocusLog): FocusLog {
+  const next = log ?? loadFocusLog();
+  saveFocusDisplaySnapshot(next);
+  return next;
+}
+
 /** Zera todo o histórico de tempo de foco neste aparelho. */
 export function clearFocusLog(): FocusLog {
   const empty: FocusLog = { version: 1, days: {} };
   saveFocusLog(empty);
+  saveFocusDisplaySnapshot(empty);
   return empty;
 }
 

@@ -12,7 +12,7 @@ import {
 } from "react";
 import { useApp } from "@/components/AppProvider";
 import { ensureNotificationPermission, notify, playAlarmTone } from "@/lib/audio";
-import { addFocusSeconds } from "@/lib/focus-log";
+import { addFocusSeconds, commitFocusDisplaySnapshot } from "@/lib/focus-log";
 
 export type TimerRuntime = {
   secondsLeft: number;
@@ -210,6 +210,8 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
       focusLastRef.current = null;
       return;
     }
+    // Congela o card "Foco hoje" no total atual; o log real continua acumulando.
+    commitFocusDisplaySnapshot();
     focusLastRef.current = Date.now();
     const id = window.setInterval(() => {
       const now = Date.now();
@@ -229,9 +231,11 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
         const deltaSec = Math.floor((now - last) / 1000);
         if (deltaSec > 0) {
           addFocusSeconds(deltaSec);
-          window.dispatchEvent(new Event("foco-focus-log"));
         }
       }
+      // Pause / fim / reset: libera o total consolidado para o card.
+      commitFocusDisplaySnapshot();
+      window.dispatchEvent(new Event("foco-focus-log"));
       window.clearInterval(id);
     };
   }, [ready, trackingFocus]);
