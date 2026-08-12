@@ -17,6 +17,10 @@ import {
   yearSeries,
   type FocusLog,
 } from "@/lib/focus-log";
+import {
+  clearFocusLogCloud,
+  syncFocusLogWithCloud,
+} from "@/lib/supabase/focus-sync";
 import { DAYS } from "@/lib/types";
 
 type Range = "dia" | "semana" | "mes" | "ano";
@@ -37,32 +41,54 @@ const MONTHS_SHORT = [
 ];
 
 export default function EstatisticasPage() {
-  const { data } = useApp();
+  const { data, user } = useApp();
   const { runtime, stopwatch } = useTimerRuntime();
   const [range, setRange] = useState<Range>("semana");
   const [log, setLog] = useState<FocusLog>({ version: 1, days: {} });
   const [confirmReset, setConfirmReset] = useState(false);
+  const [syncing, setSyncing] = useState(false);
+  const [syncHint, setSyncHint] = useState<string | null>(null);
 
   useEffect(() => {
-    const refresh = () => {
+    const applyLocal = () => {
       const next = loadFocusLog();
-      // Abrir Estatísticas consolida o andamento no card Foco hoje.
       commitFocusDisplaySnapshot(next);
       setLog(next);
     };
-    refresh();
-    window.addEventListener("foco-focus-log", refresh);
+
+    const syncCloud = async () => {
+      if (!user) {
+        applyLocal();
+        return;
+      }
+      setSyncing(true);
+      setSyncHint("Sincronizando com a nuvem…");
+      try {
+        const merged = await syncFocusLogWithCloud();
+        setLog(merged);
+        setSyncHint("Atualizado da nuvem");
+      } catch {
+        applyLocal();
+        setSyncHint("Sem conexão — mostrando dados deste aparelho");
+      } finally {
+        setSyncing(false);
+      }
+    };
+
+    applyLocal();
+    void syncCloud();
+
+    const onLog = () => applyLocal();
+    window.addEventListener("foco-focus-log", onLog);
     const onVis = () => {
-      if (document.visibilityState === "visible") refresh();
+      if (document.visibilityState === "visible") void syncCloud();
     };
     document.addEventListener("visibilitychange", onVis);
-    window.addEventListener("focus", refresh);
     return () => {
-      window.removeEventListener("foco-focus-log", refresh);
+      window.removeEventListener("foco-focus-log", onLog);
       document.removeEventListener("visibilitychange", onVis);
-      window.removeEventListener("focus", refresh);
     };
-  }, []);
+  }, [user]);
 
   const session = useMemo(
     () =>
@@ -120,11 +146,12 @@ export default function EstatisticasPage() {
           ? monthTotal
           : yearTotal;
 
-  function resetHistory() {
+  async function resetHistory() {
     const empty = clearFocusLog();
     setLog(empty);
     window.dispatchEvent(new Event("foco-focus-log"));
     setConfirmReset(false);
+    await clearFocusLogCloud();
   }
 
   return (
@@ -132,11 +159,11 @@ export default function EstatisticasPage() {
       <ConfirmDialog
         open={confirmReset}
         title="Resetar histórico de tempo?"
-        message="Isso apaga todo o tempo registrado (dia, semana, mês e ano) neste aparelho. Os temporizadores em si não mudam. Esta ação não pode ser desfeita."
+        message="Isso apaga todo o tempo registrado (dia, semana, mês e ano) neste aparelho e na nuvem. Os temporizadores em si não mudam. Esta ação não pode ser desfeita."
         confirmLabel="Sim, resetar"
         cancelLabel="Cancelar"
         onCancel={() => setConfirmReset(false)}
-        onConfirm={resetHistory}
+        onConfirm={() => void resetHistory()}
       />
 
       <h1 className="font-display pb-0.5 text-2xl font-semibold leading-normal tracking-tight md:text-3xl">
@@ -146,20 +173,28 @@ export default function EstatisticasPage() {
         Tempo contado só enquanto a{" "}
         <span className="font-medium text-[var(--signal)]">Sessão</span> ou o{" "}
         <span className="font-medium text-[var(--signal)]">Cronômetro</span>{" "}
-        estiverem em play.
+        estiverem em play. O histórico sincroniza na nuvem ao pausar ou ao abrir
+        esta página.
       </p>
 
-      <div className="mt-3 flex items-center gap-2 text-xs">
-        <span
-          className={`inline-flex h-2 w-2 rounded-full ${
-            tracking
-              ? "bg-[var(--ok)]"
-              : "bg-[color-mix(in_srgb,var(--ink)_25%,transparent)]"
-          }`}
-        />
-        <span className="opacity-60">
-          {tracking ? "Registrando agora…" : "Pausado — não está contando"}
+      <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
+        <span className="inline-flex items-center gap-2">
+          <span
+            className={`inline-flex h-2 w-2 rounded-full ${
+              tracking
+                ? "bg-[var(--ok)]"
+                : "bg-[color-mix(in_srgb,var(--ink)_25%,transparent)]"
+            }`}
+          />
+          <span className="opacity-60">
+            {tracking ? "Registrando agora…" : "Pausado — não está contando"}
+          </span>
         </span>
+        {user ? (
+          <span className="opacity-50">
+            {syncing ? "Sincronizando…" : syncHint}
+          </span>
+        ) : null}
       </div>
 
       <div className="mt-5 flex flex-wrap gap-1.5 rounded-full bg-[color-mix(in_srgb,var(--ink)_7%,transparent)] p-1">
@@ -228,7 +263,29 @@ export default function EstatisticasPage() {
         </div>
       </section>
 
-      <div className="mt-6 flex justify-end">
+      <div className="mt-6 flex flex-wrap items-center justify-end gap-2">
+        {user ? (
+          <button
+            type="button"
+            className="btn"
+            disabled={syncing}
+            onClick={() => {
+              setSyncing(true);
+              setSyncHint("Sincronizando com a nuvem…");
+              void syncFocusLogWithCloud()
+                .then((merged) => {
+                  setLog(merged);
+                  setSyncHint("Atualizado da nuvem");
+                })
+                .catch(() => {
+                  setSyncHint("Falha ao sincronizar");
+                })
+                .finally(() => setSyncing(false));
+            }}
+          >
+            Atualizar da nuvem
+          </button>
+        ) : null}
         <button
           type="button"
           className="btn text-[var(--warn)]"
