@@ -425,6 +425,7 @@ export function SessionClock({
         ? 88
         : 76;
   const swPaused = !stopwatch.running && stopwatch.accumulatedMs > 0;
+  const anyTimerRunning = Object.values(runtime).some((r) => r.running);
 
   return (
     <div className="surface overflow-hidden p-0">
@@ -441,6 +442,10 @@ export function SessionClock({
             ] as const
           ).map(([value, label]) => {
             const active = mode === value;
+            const runningHidden =
+              !active &&
+              ((value === "stopwatch" && stopwatch.running) ||
+                (value === "timers" && anyTimerRunning));
             return (
               <button
                 key={value}
@@ -449,8 +454,17 @@ export function SessionClock({
                 className={`rounded-full px-2.5 py-1 text-xs font-medium transition sm:px-3 sm:py-1.5 ${
                   active
                     ? "bg-[var(--surface)] text-[var(--signal)] shadow-sm"
-                    : "text-[color-mix(in_srgb,var(--ink)_55%,transparent)] hover:text-[var(--ink)]"
+                    : runningHidden
+                      ? "tab-running-hint"
+                      : "text-[color-mix(in_srgb,var(--ink)_55%,transparent)] hover:text-[var(--ink)]"
                 }`}
+                title={
+                  runningHidden
+                    ? value === "stopwatch"
+                      ? "Cronômetro em andamento"
+                      : "Timer em andamento"
+                    : undefined
+                }
               >
                 {label}
               </button>
