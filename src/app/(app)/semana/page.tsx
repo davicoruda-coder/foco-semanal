@@ -48,7 +48,7 @@ function DayCard({ dayIndex, name }: { dayIndex: number; name: string }) {
 
   return (
     <div
-      className={`surface flex min-h-52 flex-col p-3 ${isToday ? "ring-2 ring-[var(--signal)]" : ""}`}
+      className={`surface flex min-h-52 min-w-0 flex-col overflow-hidden p-3 ${isToday ? "ring-2 ring-[var(--signal)]" : ""}`}
     >
       <ConfirmDialog
         open={Boolean(pendingDelete)}
@@ -176,17 +176,17 @@ function DayCard({ dayIndex, name }: { dayIndex: number; name: string }) {
                 />
               ))}
             </div>
-            <div className="flex gap-1">
+            <div className="flex min-w-0 flex-col gap-1.5 sm:flex-row">
               <button
                 type="button"
-                className="btn btn-primary flex-1 px-2 py-1.5 text-xs"
+                className="btn btn-primary min-w-0 flex-1 px-2 py-1.5 text-xs"
                 onClick={addBlock}
               >
                 Adicionar
               </button>
               <button
                 type="button"
-                className="btn px-2 py-1.5 text-xs"
+                className="btn min-w-0 flex-1 px-2 py-1.5 text-xs"
                 onClick={() => setAdding(false)}
               >
                 Cancelar
