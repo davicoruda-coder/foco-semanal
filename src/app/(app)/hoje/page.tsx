@@ -289,7 +289,7 @@ export default function HojePage() {
                       className={`transition-colors ${statusRowClass(s.status)}`}
                     >
                       <td
-                        className={`break-words px-5 py-3 align-top text-base font-medium leading-snug ${
+                        className={`break-words px-5 py-3 align-middle text-base font-medium leading-snug ${
                           i < subjects.length - 1
                             ? "border-b-2 border-[var(--surface)]"
                             : ""
@@ -298,7 +298,7 @@ export default function HojePage() {
                         {s.name}
                       </td>
                       <td
-                        className={`py-3 pl-2 pr-2 align-top ${
+                        className={`py-3 pl-2 pr-2 align-middle ${
                           i < subjects.length - 1
                             ? "border-b-2 border-[var(--surface)]"
                             : ""
@@ -325,7 +325,7 @@ export default function HojePage() {
                         </div>
                       </td>
                       <td
-                        className={`px-5 py-3 align-top ${
+                        className={`px-5 py-3 align-middle ${
                           i < subjects.length - 1
                             ? "border-b-2 border-[var(--surface)]"
                             : ""
