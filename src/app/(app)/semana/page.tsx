@@ -27,6 +27,7 @@ function DayCard({ dayIndex, name }: { dayIndex: number; name: string }) {
   const [draftColor, setDraftColor] = useState(defaultBlockColor("estudo"));
   const [colorFor, setColorFor] = useState<string | null>(null);
   const [pendingDelete, setPendingDelete] = useState<WeekBlock | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   const isToday = dayIndex === todayIndex();
   const blocks = data.week_blocks
@@ -75,45 +76,67 @@ function DayCard({ dayIndex, name }: { dayIndex: number; name: string }) {
       <div className="flex-1 space-y-2">
         {blocks.map((b) => {
           const style = blockStyle(b);
+          const editing = editingId === b.id;
           return (
             <div key={b.id} className="space-y-1">
               <div
-                className="group relative rounded-[var(--radius-tag)] px-2 py-2 text-sm"
+                className={`rounded-[var(--radius-tag)] px-2 py-2 text-sm ${
+                  editing ? "ring-2 ring-[var(--signal)]/35" : ""
+                }`}
                 style={style.style}
               >
-                <input
-                  className="w-full bg-transparent pr-12 outline-none"
-                  value={b.label}
-                  onChange={(e) =>
-                    upsertWeekBlock({ ...b, label: e.target.value })
-                  }
-                />
-                <div className="absolute right-1 top-1 flex gap-0.5">
-                  <button
-                    type="button"
-                    className="rounded bg-[var(--surface)]/70 p-1 opacity-70 hover:opacity-100"
-                    title="Cor"
-                    aria-label="Escolher cor"
-                    onClick={() =>
-                      setColorFor((id) => (id === b.id ? null : b.id))
+                <div className="flex items-start gap-1">
+                  <textarea
+                    className={`min-w-0 flex-1 resize-none bg-transparent outline-none ${
+                      editing
+                        ? "min-h-14"
+                        : "h-5 overflow-hidden whitespace-nowrap"
+                    }`}
+                    rows={
+                      editing
+                        ? Math.min(4, Math.max(2, Math.ceil(b.label.length / 12)))
+                        : 1
                     }
-                  >
-                    <span
-                      className="block h-3 w-3 rounded-full border border-black/20"
-                      style={{
-                        background: b.color || defaultBlockColor(b.type),
-                      }}
-                    />
-                  </button>
-                  <button
-                    type="button"
-                    className="rounded bg-[var(--surface)]/70 p-1 opacity-70 hover:text-[var(--warn)] hover:opacity-100"
-                    title="Excluir"
-                    aria-label="Excluir"
-                    onClick={() => setPendingDelete(b)}
-                  >
-                    <Trash2 size={12} strokeWidth={1.75} />
-                  </button>
+                    value={b.label}
+                    onFocus={() => setEditingId(b.id)}
+                    onBlur={() => {
+                      window.setTimeout(() => {
+                        setEditingId((id) => (id === b.id ? null : id));
+                      }, 120);
+                    }}
+                    onChange={(e) =>
+                      upsertWeekBlock({ ...b, label: e.target.value })
+                    }
+                  />
+                  <div className="flex shrink-0 gap-0.5 pt-0.5">
+                    <button
+                      type="button"
+                      className="rounded bg-[var(--surface)]/70 p-1 opacity-70 hover:opacity-100"
+                      title="Cor"
+                      aria-label="Escolher cor"
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() =>
+                        setColorFor((id) => (id === b.id ? null : b.id))
+                      }
+                    >
+                      <span
+                        className="block h-3 w-3 rounded-full border border-black/20"
+                        style={{
+                          background: b.color || defaultBlockColor(b.type),
+                        }}
+                      />
+                    </button>
+                    <button
+                      type="button"
+                      className="rounded bg-[var(--surface)]/70 p-1 opacity-70 hover:text-[var(--warn)] hover:opacity-100"
+                      title="Excluir"
+                      aria-label="Excluir"
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => setPendingDelete(b)}
+                    >
+                      <Trash2 size={12} strokeWidth={1.75} />
+                    </button>
+                  </div>
                 </div>
               </div>
               {colorFor === b.id && (
@@ -176,17 +199,17 @@ function DayCard({ dayIndex, name }: { dayIndex: number; name: string }) {
                 />
               ))}
             </div>
-            <div className="grid w-full grid-cols-1 gap-1.5">
+            <div className="grid grid-cols-2 gap-1.5">
               <button
                 type="button"
-                className="btn btn-primary w-full px-2 py-1.5 text-xs"
+                className="btn btn-primary w-full px-1 py-1.5 text-[11px]"
                 onClick={addBlock}
               >
                 Adicionar
               </button>
               <button
                 type="button"
-                className="btn w-full px-2 py-1.5 text-xs"
+                className="btn w-full px-1 py-1.5 text-[11px]"
                 onClick={() => setAdding(false)}
               >
                 Cancelar
