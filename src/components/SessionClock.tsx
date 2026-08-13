@@ -473,7 +473,7 @@ export function SessionClock({
         </div>
         {mode === "timers" ? (
           <Link
-            href="/temporizadores"
+            href="/temporizadores?from=hoje"
             title="Gerenciar temporizadores"
             aria-label="Gerenciar temporizadores"
             className="shrink-0 rounded-full p-1.5 text-[color-mix(in_srgb,var(--ink)_45%,transparent)] transition hover:bg-[var(--mist)] hover:text-[var(--signal)]"
@@ -504,7 +504,7 @@ export function SessionClock({
       ) : timers.length === 0 ? (
         <div className="px-5 py-8 text-center text-sm opacity-60">
           Nenhum temporizador.{" "}
-          <Link href="/temporizadores" className="text-[var(--signal)]">
+          <Link href="/temporizadores?from=hoje" className="text-[var(--signal)]">
             Adicionar
           </Link>
         </div>

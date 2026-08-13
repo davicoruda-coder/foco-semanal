@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Trash2 } from "lucide-react";
 import { useApp } from "@/components/AppProvider";
+import { BackToHoje } from "@/components/BackToHoje";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { STATUS_LABEL, type SubjectStatus } from "@/lib/types";
 import { statusClass, statusRowClass } from "@/lib/utils";
@@ -54,6 +55,7 @@ export default function MateriasPage() {
           setPendingDelete(null);
         }}
       />
+      <BackToHoje />
       <h1 className="font-display pb-0.5 text-2xl font-semibold leading-normal tracking-tight md:text-3xl">
         Matérias
       </h1>

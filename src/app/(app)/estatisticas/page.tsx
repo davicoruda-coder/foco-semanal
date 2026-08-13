@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useApp } from "@/components/AppProvider";
 import { useTimerRuntime } from "@/components/TimerRuntimeProvider";
+import { BackToHoje } from "@/components/BackToHoje";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { FocusBarChart } from "@/components/FocusBarChart";
 import {
@@ -166,6 +167,7 @@ export default function EstatisticasPage() {
         onConfirm={() => void resetHistory()}
       />
 
+      <BackToHoje />
       <h1 className="font-display pb-0.5 text-2xl font-semibold leading-normal tracking-tight md:text-3xl">
         Estatísticas
       </h1>

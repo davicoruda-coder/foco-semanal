@@ -201,7 +201,7 @@ export default function HojePage() {
                 Ciclo de Estudos
               </h2>
               <Link
-                href="/materias"
+                href="/materias?from=hoje"
                 title="Gerenciar matérias"
                 aria-label="Gerenciar matérias"
                 className="rounded-full p-1.5 text-[color-mix(in_srgb,var(--ink)_45%,transparent)] transition hover:bg-[var(--mist)] hover:text-[var(--signal)]"
@@ -254,7 +254,7 @@ export default function HojePage() {
               {subjects.length === 0 && (
                 <p className="px-4 py-8 text-sm opacity-55">
                   Nenhuma matéria —{" "}
-                  <Link href="/materias" className="text-[var(--signal)]">
+                  <Link href="/materias?from=hoje" className="text-[var(--signal)]">
                     adicionar
                   </Link>
                 </p>
@@ -349,7 +349,7 @@ export default function HojePage() {
                     <tr>
                       <td colSpan={3} className="px-5 py-8 text-sm opacity-55">
                         Nenhuma matéria —{" "}
-                        <Link href="/materias" className="text-[var(--signal)]">
+                        <Link href="/materias?from=hoje" className="text-[var(--signal)]">
                           adicionar
                         </Link>
                       </td>

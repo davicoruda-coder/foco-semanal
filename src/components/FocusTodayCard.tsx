@@ -55,7 +55,7 @@ export function FocusTodayCard() {
 
   return (
     <Link
-      href="/estatisticas"
+      href="/estatisticas?from=hoje"
       className="surface group block px-3 py-2.5 transition hover:border-[color-mix(in_srgb,var(--signal)_45%,var(--line))]"
     >
       <div className="flex items-baseline justify-between gap-2">
