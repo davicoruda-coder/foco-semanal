@@ -23,6 +23,7 @@ import {
   syncFocusLogWithCloud,
 } from "@/lib/supabase/focus-sync";
 import { DAYS } from "@/lib/types";
+import { todayIndex } from "@/lib/utils";
 
 type Range = "dia" | "semana" | "mes" | "ano";
 
@@ -110,31 +111,40 @@ export default function EstatisticasPage() {
   const yearTotal = year.reduce((a, b) => a + b.seconds, 0);
 
   const bars = useMemo(() => {
+    const now = new Date();
     if (range === "dia") {
+      const hour = now.getHours();
       return today.byHour.map((seconds, h) => ({
         label: String(h).padStart(2, "0"),
         value: seconds,
         hint: `${String(h).padStart(2, "0")}h — ${formatFocusDuration(seconds)}`,
+        emphasis: h === hour,
       }));
     }
     if (range === "semana") {
+      const todayI = todayIndex();
       return week.map((d, i) => ({
         label: DAYS[i].slice(0, 3),
         value: d.seconds,
         hint: `${DAYS[i]} — ${formatFocusDuration(d.seconds)}`,
+        emphasis: i === todayI,
       }));
     }
     if (range === "mes") {
+      const todayN = now.getDate();
       return month.map((d) => ({
         label: String(d.date.getDate()),
         value: d.seconds,
         hint: `${d.date.getDate()}/${d.date.getMonth() + 1} — ${formatFocusDuration(d.seconds)}`,
+        emphasis: d.date.getDate() === todayN,
       }));
     }
+    const monthI = now.getMonth();
     return year.map((m) => ({
       label: MONTHS_SHORT[m.month],
       value: m.seconds,
       hint: `${MONTHS_SHORT[m.month]} — ${formatFocusDuration(m.seconds)}`,
+      emphasis: m.month === monthI,
     }));
   }, [range, today, week, month, year]);
 
@@ -239,8 +249,8 @@ export default function EstatisticasPage() {
       </section>
 
       <section className="mt-4 grid gap-3 sm:grid-cols-3">
-        <div className="surface p-4">
-          <p className="text-[11px] font-semibold uppercase tracking-wider opacity-50">
+        <div className="surface border-[color-mix(in_srgb,var(--signal)_42%,var(--line))] bg-[var(--signal-soft)] p-4">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-[var(--signal)]">
             Hoje
           </p>
           <p className="font-mono-num mt-1 text-lg font-medium">

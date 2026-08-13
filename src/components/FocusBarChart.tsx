@@ -4,6 +4,8 @@ type Bar = {
   label: string;
   value: number;
   hint?: string;
+  /** Destaque do dia/hora/mês atual */
+  emphasis?: boolean;
 };
 
 export function FocusBarChart({
@@ -32,28 +34,43 @@ export function FocusBarChart({
         {bars.map((b, i) => {
           const pct = Math.max((b.value / max) * 100, b.value > 0 ? 4 : 0);
           const showLabel =
-            !dense || i % Math.ceil(bars.length / 8) === 0 || i === bars.length - 1;
+            !dense ||
+            b.emphasis ||
+            i % Math.ceil(bars.length / 8) === 0 ||
+            i === bars.length - 1;
           return (
             <div
               key={`${b.label}-${i}`}
               className="relative flex h-full min-w-0 flex-1 flex-col items-center justify-end"
               title={b.hint ?? `${b.label}: ${b.value}`}
             >
-              {/* trilha de fundo — sempre visível */}
               <div
-                className="absolute inset-x-[12%] bottom-0 rounded-t-[6px] bg-[color-mix(in_srgb,var(--ink)_8%,transparent)]"
-                style={{ height: "100%" }}
+                className="absolute inset-x-[12%] bottom-0 rounded-t-[6px]"
+                style={{
+                  height: "100%",
+                  background: b.emphasis
+                    ? "color-mix(in srgb, var(--signal) 18%, transparent)"
+                    : "color-mix(in srgb, var(--ink) 8%, transparent)",
+                }}
               />
               <div
-                className="relative z-[1] w-[76%] rounded-t-[6px] bg-[var(--signal)] transition-[height] duration-300"
+                className="relative z-[1] rounded-t-[6px] transition-[height] duration-300"
                 style={{
+                  width: b.emphasis ? "82%" : "76%",
                   height: `${pct}%`,
-                  opacity: b.value > 0 ? 1 : 0,
+                  opacity: b.value > 0 ? (b.emphasis ? 1 : 0.62) : 0,
                   minHeight: b.value > 0 ? 4 : 0,
+                  background: "var(--signal)",
                 }}
               />
               {showLabel && (
-                <span className="pointer-events-none absolute -bottom-5 text-[10px] font-medium opacity-45 sm:text-[11px]">
+                <span
+                  className={`pointer-events-none absolute -bottom-5 text-[10px] sm:text-[11px] ${
+                    b.emphasis
+                      ? "font-semibold text-[var(--signal)]"
+                      : "font-medium opacity-45"
+                  }`}
+                >
                   {b.label}
                 </span>
               )}
