@@ -109,7 +109,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 href={href}
                 aria-label={label}
                 aria-current={active ? "page" : undefined}
-                className={`flex flex-col items-center justify-center gap-0.5 rounded-[var(--radius-btn)] text-[10px] font-medium ${
+                className={`flex flex-col items-center justify-center gap-0.5 rounded-[var(--radius-btn)] text-[10px] font-medium transition-colors ${
                   active
                     ? "text-[var(--signal)]"
                     : "text-[color-mix(in_srgb,var(--ink)_50%,transparent)]"

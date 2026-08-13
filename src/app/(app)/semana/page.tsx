@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
 import { useApp } from "@/components/AppProvider";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { useOpenTransition } from "@/lib/use-open-transition";
 import { DAYS, type BlockType, type WeekBlock } from "@/lib/types";
 import {
   BLOCK_COLORS,
@@ -30,6 +31,8 @@ function DayCard({ dayIndex, name }: { dayIndex: number; name: string }) {
   const [editingId, setEditingId] = useState<string | null>(null);
 
   const isToday = dayIndex === todayIndex();
+  const { shown: addingShown, leaving: addingLeaving } =
+    useOpenTransition(adding);
   const blocks = data.week_blocks
     .filter((b) => b.day === dayIndex)
     .sort((a, b) => a.sort_order - b.sort_order);
@@ -65,7 +68,7 @@ function DayCard({ dayIndex, name }: { dayIndex: number; name: string }) {
   return (
     <div
       className={`surface relative flex min-h-52 min-w-0 flex-col p-3 ${
-        adding ? "z-20 overflow-visible" : "overflow-hidden"
+        addingShown ? "z-20 overflow-visible" : "overflow-hidden"
       } ${isToday ? "ring-2 ring-[var(--signal)]" : ""}`}
     >
       <ConfirmDialog
@@ -157,7 +160,7 @@ function DayCard({ dayIndex, name }: { dayIndex: number; name: string }) {
                 </div>
               </div>
               {colorFor === b.id && (
-                <div className="flex flex-wrap gap-1 px-0.5">
+                <div className="panel-in flex flex-wrap gap-1 px-0.5">
                   {BLOCK_COLORS.map((c) => (
                     <button
                       key={c}
@@ -194,19 +197,26 @@ function DayCard({ dayIndex, name }: { dayIndex: number; name: string }) {
             Bloco
           </button>
 
-          {adding ? (
+          {addingShown ? (
             <>
               <button
                 type="button"
-                className="fixed inset-0 z-30 cursor-default bg-[color-mix(in_srgb,var(--ink)_18%,transparent)]"
+                className={`scrim-fade fixed inset-0 z-30 cursor-default bg-[color-mix(in_srgb,var(--ink)_18%,transparent)] ${
+                  addingLeaving ? "is-leaving" : ""
+                }`}
                 aria-label="Fechar formulário"
                 onClick={closeAdd}
               />
               <div
-                className="absolute bottom-0 left-1/2 z-40 w-[min(17.5rem,calc(100vw-1.5rem))] -translate-x-1/2 rounded-[var(--radius)] border border-[var(--line)] bg-[var(--surface)] p-3.5 shadow-[var(--shadow-lg)]"
+                className="absolute bottom-0 left-1/2 z-40 w-[min(17.5rem,calc(100vw-1.5rem))] -translate-x-1/2"
                 role="dialog"
                 aria-label={`Novo bloco em ${name}`}
               >
+                <div
+                  className={`rounded-[var(--radius)] border border-[var(--line)] bg-[var(--surface)] p-3.5 shadow-[var(--shadow-lg)] ${
+                    addingLeaving ? "panel-out" : "panel-in"
+                  }`}
+                >
                 <p className="mb-2 text-xs font-semibold opacity-60">
                   Novo bloco · {name}
                 </p>
@@ -256,6 +266,7 @@ function DayCard({ dayIndex, name }: { dayIndex: number; name: string }) {
                   >
                     Cancelar
                   </button>
+                </div>
                 </div>
               </div>
             </>

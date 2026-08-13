@@ -232,7 +232,7 @@ export function ReminderBoard({ compact }: { compact?: boolean }) {
       </div>
 
       {pickingColor && (
-        <div className="mb-2 rounded-[var(--radius-tag)] border border-[var(--line)] bg-[var(--surface)]/80 p-2">
+        <div className="panel-in mb-2 rounded-[var(--radius-tag)] border border-[var(--line)] bg-[var(--surface)]/80 p-2">
           <p className="mb-1.5 text-[11px] opacity-60">Escolha a cor</p>
           <div className="flex flex-wrap items-center gap-1.5">
             {NOTE_COLORS.map((c) => (

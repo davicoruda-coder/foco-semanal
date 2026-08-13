@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
+import { DialogFrame } from "@/components/DialogFrame";
 import { brazilHolidays, dateKey } from "@/lib/holidays";
 
 const WEEKDAYS = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"];
@@ -74,8 +75,6 @@ export function MonthCalendarDialog({
     [cells],
   );
 
-  if (!open) return null;
-
   const todayKey = dateKey(today);
 
   function shift(delta: number) {
@@ -85,17 +84,12 @@ export function MonthCalendarDialog({
   }
 
   return (
-    <div
-      className="fixed inset-0 z-50 grid place-items-center bg-black/45 p-4 backdrop-blur-sm"
-      role="dialog"
-      aria-modal
-      aria-label="Calendário"
-      onClick={onClose}
+    <DialogFrame
+      open={open}
+      onClose={onClose}
+      label="Calendário"
+      cardClassName="surface w-full max-w-md overflow-hidden p-0"
     >
-      <div
-        className="surface w-full max-w-md overflow-hidden p-0"
-        onClick={(e) => e.stopPropagation()}
-      >
         <div className="flex items-center justify-between gap-2 border-b border-[var(--line)] px-4 py-3">
           <button
             type="button"
@@ -186,7 +180,6 @@ export function MonthCalendarDialog({
             </p>
           )}
         </div>
-      </div>
-    </div>
+    </DialogFrame>
   );
 }

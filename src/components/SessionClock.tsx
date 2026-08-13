@@ -483,6 +483,7 @@ export function SessionClock({
         ) : null}
       </div>
 
+      <div key={mode} className="fade-in">
       {mode === "stopwatch" ? (
         <div className={`flex justify-center ${stack ? "px-3 py-6" : "px-3 py-6"}`}>
           <MiniRing
@@ -587,6 +588,7 @@ export function SessionClock({
           })}
         </div>
       )}
+      </div>
     </div>
   );
 }

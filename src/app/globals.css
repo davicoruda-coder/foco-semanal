@@ -312,9 +312,139 @@ a {
   animation: tab-running-pulse 1.45s ease-in-out infinite;
 }
 
+@keyframes page-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.page-enter {
+  animation: page-in 200ms ease-out both;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+.fade-in {
+  animation: fade-in 180ms ease-out both;
+}
+
+.scrim-fade {
+  animation: fade-in 180ms ease-out both;
+}
+
+.scrim-fade.is-leaving {
+  animation: fade-out 140ms ease-in both;
+}
+
+@keyframes dialog-overlay-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes dialog-overlay-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes dialog-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes dialog-card-out {
+  from {
+    opacity: 1;
+    transform: none;
+  }
+  to {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+}
+
+.dialog-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: color-mix(in srgb, var(--ink) 42%, transparent);
+  animation: dialog-overlay-in 180ms ease-out both;
+}
+
+.dialog-overlay.is-leaving {
+  animation: dialog-overlay-out 140ms ease-in both;
+}
+
+.dialog-card {
+  animation: dialog-card-in 200ms ease-out both;
+}
+
+.dialog-card.is-leaving {
+  animation: dialog-card-out 140ms ease-in both;
+}
+
+.panel-in {
+  animation: dialog-card-in 180ms ease-out both;
+}
+
+.panel-out {
+  animation: dialog-card-out 140ms ease-in both;
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .page-enter,
+  .fade-in,
+  .scrim-fade,
+  .scrim-fade.is-leaving,
+  .dialog-overlay,
+  .dialog-overlay.is-leaving,
+  .dialog-card,
+  .dialog-card.is-leaving,
+  .panel-in,
+  .panel-out,
   .tab-running-hint {
     animation: none;
+  }
+
+  .tab-running-hint {
     color: var(--signal);
   }
 }
