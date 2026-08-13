@@ -9,21 +9,35 @@ App de organização de estudos: grade da semana, ciclo de matérias, timers, le
 
 ## Prévia
 
+### Hoje
+
+Grade da semana, ciclo de matérias, lembretes, timers e foco do dia.
+
+![Tela Hoje](docs/screenshots/01-hoje.png)
+
+### Estatísticas
+
+Tempo de estudo (Sessão + cronômetro) — dia, semana, mês e ano, com sync na nuvem.
+
+![Estatísticas](docs/screenshots/02-estatisticas.png)
+
+### Matérias
+
+Status Ok / Próximo, anotações e ordem do ciclo.
+
+![Matérias](docs/screenshots/03-materias.png)
+
 ### Ajustes
 
-Tema (claro / escuro / automático), notificações, backup JSON e conta na nuvem.
+Tema, notificações, backup JSON e conta.
 
-![Ajustes](docs/screenshots/01-ajustes.png)
+![Ajustes](docs/screenshots/04-ajustes.png)
 
-### Tema escuro
+### Celular (PWA)
 
-Tela principal (Hoje), estatísticas e ciclo de matérias.
+A mesma tela principal no telefone.
 
-![Hoje no tema escuro](docs/screenshots/02-hoje-escuro.png)
-
-![Estatísticas no tema escuro](docs/screenshots/03-estatisticas-escuro.png)
-
-![Matérias no tema escuro](docs/screenshots/04-materias-escuro.png)
+![Hoje no celular](docs/screenshots/05-hoje-mobile.png)
 
 ---
 
