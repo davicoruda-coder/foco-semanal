@@ -9,35 +9,21 @@ App de organização de estudos: grade da semana, ciclo de matérias, timers, le
 
 ## Prévia
 
-### Tela principal (Hoje)
-
-Grade semanal, ciclo de matérias (Ok / Próximo), lembretes, timers e resumo de foco do dia.
-
-![Tela Hoje](docs/screenshots/01-hoje.png)
-
-### Temporizadores
-
-Gerencie sessões (nome, minutos, cores) e o alarme (volume + toques).
-
-![Temporizadores](docs/screenshots/02-temporizadores.png)
-
-### Estatísticas
-
-Tempo de estudo contado enquanto Sessão ou Cronômetro estão em play — dia, semana, mês e ano.
-
-![Estatísticas](docs/screenshots/06-estatisticas.png)
-
 ### Ajustes
 
 Tema (claro / escuro / automático), notificações, backup JSON e conta na nuvem.
 
-![Ajustes](docs/screenshots/03-ajustes.png)
+![Ajustes](docs/screenshots/01-ajustes.png)
 
-### Tema claro
+### Tema escuro
 
-![Ajustes no tema claro](docs/screenshots/04-ajustes-claro.png)
+Tela principal (Hoje), estatísticas e ciclo de matérias.
 
-![Ciclo no tema claro](docs/screenshots/07-ciclo-claro.png)
+![Hoje no tema escuro](docs/screenshots/02-hoje-escuro.png)
+
+![Estatísticas no tema escuro](docs/screenshots/03-estatisticas-escuro.png)
+
+![Matérias no tema escuro](docs/screenshots/04-materias-escuro.png)
 
 ---
 
