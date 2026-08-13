@@ -249,7 +249,11 @@ export default function EstatisticasPage() {
       </section>
 
       <section className="mt-4 grid gap-3 sm:grid-cols-3">
-        <div className="surface border-[color-mix(in_srgb,var(--signal)_42%,var(--line))] bg-[var(--signal-soft)] p-4">
+        <div className="surface relative overflow-hidden border-[color-mix(in_srgb,var(--signal)_55%,transparent)] bg-[color-mix(in_srgb,var(--signal)_16%,var(--surface))] p-4 pl-5">
+          <span
+            className="absolute inset-y-0 left-0 w-1 bg-[var(--signal)]"
+            aria-hidden
+          />
           <p className="text-[11px] font-semibold uppercase tracking-wider text-[var(--signal)]">
             Hoje
           </p>
