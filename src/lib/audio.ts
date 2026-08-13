@@ -63,6 +63,16 @@ type Note = {
   type?: OscillatorType;
 };
 
+function createLimiter(ctx: AudioContext) {
+  const limiter = ctx.createDynamicsCompressor();
+  limiter.threshold.value = -1.8;
+  limiter.knee.value = 4;
+  limiter.ratio.value = 18;
+  limiter.attack.value = 0.002;
+  limiter.release.value = 0.08;
+  return limiter;
+}
+
 function scheduleNotes(
   ctx: AudioContext,
   master: GainNode,
@@ -78,7 +88,7 @@ function scheduleNotes(
     osc.type = n.type ?? "sine";
     osc.frequency.value = n.freq;
     const t0 = ctx.currentTime + n.start;
-    const peak = n.peak ?? 0.22;
+    const peak = n.peak ?? 0.5;
     gain.gain.setValueAtTime(0.0001, t0);
     gain.gain.exponentialRampToValueAtTime(Math.max(0.0002, peak), t0 + 0.02);
     gain.gain.exponentialRampToValueAtTime(0.0001, t0 + n.dur);
@@ -93,22 +103,22 @@ function notesForTone(tone: AlarmToneId): Note[] {
   switch (tone) {
     case "duplo":
       return [
-        { freq: 880, start: 0, dur: 0.12, peak: 0.28, type: "triangle" },
-        { freq: 880, start: 0.22, dur: 0.12, peak: 0.28, type: "triangle" },
+        { freq: 880, start: 0, dur: 0.12, peak: 0.62, type: "triangle" },
+        { freq: 880, start: 0.22, dur: 0.12, peak: 0.62, type: "triangle" },
       ];
     case "campainha":
       return [
-        { freq: 988, start: 0, dur: 0.18, peak: 0.26, type: "sine" },
-        { freq: 784, start: 0.16, dur: 0.2, peak: 0.24, type: "sine" },
-        { freq: 659, start: 0.34, dur: 0.28, peak: 0.22, type: "sine" },
-        { freq: 523, start: 0.55, dur: 0.35, peak: 0.2, type: "triangle" },
+        { freq: 988, start: 0, dur: 0.18, peak: 0.55, type: "sine" },
+        { freq: 784, start: 0.16, dur: 0.2, peak: 0.52, type: "sine" },
+        { freq: 659, start: 0.34, dur: 0.28, peak: 0.48, type: "sine" },
+        { freq: 523, start: 0.55, dur: 0.35, peak: 0.45, type: "triangle" },
       ];
     case "acorde":
     default:
       return [
-        { freq: 523.25, start: 0, dur: 0.35, peak: 0.2 },
-        { freq: 659.25, start: 0.15, dur: 0.35, peak: 0.2 },
-        { freq: 783.99, start: 0.3, dur: 0.4, peak: 0.2 },
+        { freq: 523.25, start: 0, dur: 0.35, peak: 0.48 },
+        { freq: 659.25, start: 0.15, dur: 0.35, peak: 0.48 },
+        { freq: 783.99, start: 0.3, dur: 0.4, peak: 0.48 },
       ];
   }
 }
@@ -127,7 +137,9 @@ export function playAlarmTone(opts?: Partial<AlarmPrefs>) {
 
     const ctx = new AudioContext();
     const master = ctx.createGain();
-    master.connect(ctx.destination);
+    const limiter = createLimiter(ctx);
+    master.connect(limiter);
+    limiter.connect(ctx.destination);
     scheduleNotes(ctx, master, notesForTone(prefs.tone), prefs.volume);
     window.setTimeout(
       () => void ctx.close(),
