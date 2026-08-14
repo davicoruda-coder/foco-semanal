@@ -17,16 +17,19 @@ export function FocusBarChart({
   bars: Bar[];
   height?: number;
 }) {
-  const [selected, setSelected] = useState<number | null>(null);
+  const [hovered, setHovered] = useState<number | null>(null);
+  const [pinned, setPinned] = useState<number | null>(null);
   const max = Math.max(1, ...bars.map((b) => b.value));
   const hasData = bars.some((b) => b.value > 0);
   const dense = bars.length > 14;
 
   useEffect(() => {
-    setSelected(null);
+    setHovered(null);
+    setPinned(null);
   }, [bars]);
 
-  const active = selected != null ? bars[selected] : null;
+  const activeIdx = pinned ?? hovered;
+  const active = activeIdx != null ? bars[activeIdx] : null;
 
   return (
     <div className="w-full">
@@ -41,6 +44,9 @@ export function FocusBarChart({
         style={{ height }}
         role="list"
         aria-label="Gráfico de foco"
+        onPointerLeave={(e) => {
+          if (e.pointerType === "mouse") setHovered(null);
+        }}
       >
         {bars.map((b, i) => {
           const pct = Math.max((b.value / max) * 100, b.value > 0 ? 4 : 0);
@@ -49,34 +55,41 @@ export function FocusBarChart({
             b.emphasis ||
             i % Math.ceil(bars.length / 8) === 0 ||
             i === bars.length - 1;
-          const isSelected = selected === i;
+          const isActive = activeIdx === i;
           return (
             <button
               key={`${b.label}-${i}`}
               type="button"
               role="listitem"
-              aria-pressed={isSelected}
+              aria-pressed={pinned === i}
               aria-label={b.hint ?? `${b.label}: ${b.value}`}
               className={`relative flex h-full min-w-0 flex-1 cursor-pointer flex-col items-center justify-end rounded-t-[6px] border-0 bg-transparent p-0 outline-none transition [-webkit-tap-highlight-color:transparent] focus-visible:ring-2 focus-visible:ring-[var(--signal)] focus-visible:ring-offset-2 ${
-                isSelected ? "bg-[color-mix(in_srgb,var(--signal)_10%,transparent)]" : ""
+                isActive
+                  ? "bg-[color-mix(in_srgb,var(--signal)_10%,transparent)]"
+                  : ""
               }`}
-              onClick={() => setSelected((cur) => (cur === i ? null : i))}
+              onPointerEnter={(e) => {
+                if (e.pointerType === "mouse") setHovered(i);
+              }}
+              onClick={() => setPinned((cur) => (cur === i ? null : i))}
             >
               <div
                 className="absolute inset-x-[12%] bottom-0 rounded-t-[6px]"
                 style={{
                   height: "100%",
-                  background: b.emphasis || isSelected
-                    ? "color-mix(in srgb, var(--signal) 18%, transparent)"
-                    : "color-mix(in srgb, var(--ink) 8%, transparent)",
+                  background:
+                    b.emphasis || isActive
+                      ? "color-mix(in srgb, var(--signal) 18%, transparent)"
+                      : "color-mix(in srgb, var(--ink) 8%, transparent)",
                 }}
               />
               <div
                 className="relative z-[1] rounded-t-[6px] transition-[height,opacity] duration-300"
                 style={{
-                  width: b.emphasis || isSelected ? "82%" : "76%",
+                  width: b.emphasis || isActive ? "82%" : "76%",
                   height: `${pct}%`,
-                  opacity: b.value > 0 ? (b.emphasis || isSelected ? 1 : 0.62) : 0,
+                  opacity:
+                    b.value > 0 ? (b.emphasis || isActive ? 1 : 0.62) : 0,
                   minHeight: b.value > 0 ? 4 : 0,
                   background: "var(--signal)",
                 }}
@@ -84,7 +97,7 @@ export function FocusBarChart({
               {showLabel && (
                 <span
                   className={`pointer-events-none absolute -bottom-5 text-[10px] sm:text-[11px] ${
-                    b.emphasis || isSelected
+                    b.emphasis || isActive
                       ? "font-semibold text-[var(--signal)]"
                       : "font-medium opacity-45"
                   }`}
@@ -107,7 +120,7 @@ export function FocusBarChart({
       >
         {active
           ? (active.hint ?? `${active.label}: ${active.value}`)
-          : "Toque ou clique em uma barra para ver o tempo"}
+          : "Passe o mouse ou toque em uma barra para ver o tempo"}
       </p>
     </div>
   );
