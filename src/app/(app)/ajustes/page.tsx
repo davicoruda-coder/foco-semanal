@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Bell, Download, Moon, Sun, SunMoon, Upload } from "lucide-react";
+import { Bell, Download, KeyRound, Moon, Sun, SunMoon, Upload } from "lucide-react";
 import { useApp } from "@/components/AppProvider";
 import { AccessManagement } from "@/components/AccessManagement";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
@@ -32,10 +32,51 @@ export default function AjustesPage() {
   const [cloudWipeBusy, setCloudWipeBusy] = useState(false);
   const [cloudWipeMsg, setCloudWipeMsg] = useState<string | null>(null);
   const [confirmLogout, setConfirmLogout] = useState(false);
+  const [passwordFormOpen, setPasswordFormOpen] = useState(false);
+  const [password, setPassword] = useState("");
+  const [passwordConfirm, setPasswordConfirm] = useState("");
+  const [passwordBusy, setPasswordBusy] = useState(false);
+  const [passwordMsg, setPasswordMsg] = useState<string | null>(null);
+  const [passwordErr, setPasswordErr] = useState<string | null>(null);
   const [notifPermission, setNotifPermission] = useState<
     NotificationPermission | "unsupported"
   >("default");
   const [notifMsg, setNotifMsg] = useState<string | null>(null);
+
+  async function savePassword(e: React.FormEvent) {
+    e.preventDefault();
+    if (password.length < 6) {
+      setPasswordErr("A senha precisa ter pelo menos 6 caracteres.");
+      setPasswordMsg(null);
+      return;
+    }
+    if (password !== passwordConfirm) {
+      setPasswordErr("As senhas não coincidem.");
+      setPasswordMsg(null);
+      return;
+    }
+    setPasswordBusy(true);
+    setPasswordErr(null);
+    setPasswordMsg(null);
+    try {
+      const { createClient } = await import("@/lib/supabase/client");
+      const supabase = createClient();
+      const { error } = await supabase.auth.updateUser({ password });
+      if (error) {
+        setPasswordErr(error.message);
+        setPasswordBusy(false);
+        return;
+      }
+      setPassword("");
+      setPasswordConfirm("");
+      setPasswordFormOpen(false);
+      setPasswordMsg("Senha salva. Use-a para entrar em outro aparelho.");
+      setPasswordBusy(false);
+    } catch {
+      setPasswordErr("Não foi possível salvar a senha.");
+      setPasswordBusy(false);
+    }
+  }
 
   useEffect(() => {
     if (typeof window === "undefined" || !("Notification" in window)) {
@@ -67,7 +108,7 @@ export default function AjustesPage() {
       <ConfirmDialog
         open={confirmLogout}
         title="Sair da conta?"
-        message="Você precisará abrir o link do e-mail de novo para entrar. Os dados na nuvem continuam salvos."
+        message="Você precisará do e-mail e da senha para entrar de novo. Os dados na nuvem continuam salvos."
         confirmLabel="Sim, sair"
         cancelLabel="Cancelar"
         onCancel={() => setConfirmLogout(false)}
@@ -241,6 +282,78 @@ export default function AjustesPage() {
         </div>
 
         <div className="mt-4 space-y-3">
+          {cloud && (
+            <div>
+              {!passwordFormOpen ? (
+                <button
+                  type="button"
+                  className="btn"
+                  onClick={() => {
+                    setPasswordFormOpen(true);
+                    setPasswordErr(null);
+                    setPasswordMsg(null);
+                  }}
+                >
+                  <KeyRound size={16} strokeWidth={1.75} />
+                  Definir / alterar senha
+                </button>
+              ) : (
+                <form className="space-y-2" onSubmit={(e) => void savePassword(e)}>
+                  <p className="text-xs opacity-55">
+                    Defina a senha para entrar neste e-mail em outro aparelho.
+                  </p>
+                  <input
+                    className="input w-full"
+                    type="password"
+                    autoComplete="new-password"
+                    required
+                    minLength={6}
+                    placeholder="Nova senha"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                  />
+                  <input
+                    className="input w-full"
+                    type="password"
+                    autoComplete="new-password"
+                    required
+                    minLength={6}
+                    placeholder="Confirmar senha"
+                    value={passwordConfirm}
+                    onChange={(e) => setPasswordConfirm(e.target.value)}
+                  />
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      type="submit"
+                      className="btn btn-primary"
+                      disabled={passwordBusy}
+                    >
+                      {passwordBusy ? "Salvando…" : "Salvar senha"}
+                    </button>
+                    <button
+                      type="button"
+                      className="btn"
+                      disabled={passwordBusy}
+                      onClick={() => {
+                        setPasswordFormOpen(false);
+                        setPassword("");
+                        setPasswordConfirm("");
+                        setPasswordErr(null);
+                      }}
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+                </form>
+              )}
+              {passwordErr && (
+                <p className="mt-2 text-sm text-[var(--warn)]">{passwordErr}</p>
+              )}
+              {passwordMsg && (
+                <p className="mt-2 text-sm opacity-70">{passwordMsg}</p>
+              )}
+            </div>
+          )}
           <button type="button" className="btn" onClick={() => setConfirmLogout(true)}>
             Sair
           </button>
