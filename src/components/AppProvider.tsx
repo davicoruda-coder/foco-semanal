@@ -25,6 +25,7 @@ import {
   loadCloudData,
   saveCloudData,
 } from "@/lib/supabase/sync";
+import { checkCurrentUserAccess } from "@/lib/supabase/access";
 import type {
   AppData,
   FocusTimer,
@@ -153,6 +154,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
     ) {
       const { createClient } = await import("@/lib/supabase/client");
       const supabase = createClient();
+      const access = await checkCurrentUserAccess(supabase);
+      if (access.configured && !access.allowed) {
+        await supabase.auth.signOut();
+        if (!cancelled) clearSession();
+        return;
+      }
       const localSnapshot = loadDemoData();
       const localPref = getStoredPref();
       // Limpa flag antiga; migrate só se a nuvem estiver vazia (nunca sobrescreve).

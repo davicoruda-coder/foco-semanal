@@ -11,7 +11,10 @@ App com **login obrigatório** por **magic link** (e-mail). Dados principais fic
    - Project URL  
    - Publishable / anon key
 3. **SQL Editor** — rode [`supabase/schema.sql`](supabase/schema.sql).  
-   Se já tinha o schema antigo, rode também [`supabase/migrate-theme-auto.sql`](supabase/migrate-theme-auto.sql) (tema Automático).
+   Se o projeto já existia, rode também:
+   - [`supabase/migrate-theme-auto.sql`](supabase/migrate-theme-auto.sql)
+   - [`supabase/migrate-focus-days.sql`](supabase/migrate-focus-days.sql)
+   - [`supabase/migrate-access-control.sql`](supabase/migrate-access-control.sql)
 4. **Authentication → Providers → Email** — habilitado (Magic link / OTP).
 5. **Authentication → URL Configuration**:
    - Site URL: `https://foco.davicosystems.ia.br` (ou sua URL da Vercel)
@@ -39,17 +42,23 @@ Sempre disponível: **Exportar / Importar** em Ajustes (backup JSON).
 ```env
 NEXT_PUBLIC_SUPABASE_URL=https://xxxx.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=sb_publishable_...   # ou eyJ...
+# Settings → API Keys → service_role (somente servidor; nunca NEXT_PUBLIC_)
+SUPABASE_SERVICE_ROLE_KEY=...
 ```
 
 Cole **sem Enter no final**. Na Vercel, faça **Redeploy** depois de alterar.
+A `SUPABASE_SERVICE_ROLE_KEY` é usada somente pela rota protegida que envia
+convites. Não coloque essa chave em código, GitHub ou variável `NEXT_PUBLIC_`.
 
 ---
 
 ## 3. Como a pessoa usa
 
-1. Abre o app → informa o e-mail → abre o link de confirmação.
-2. Entra no app; alterações salvam na nuvem automaticamente.
-3. Em **Ajustes**: tema, notificações, backup JSON, sair da conta, apagar dados na nuvem.
+1. O proprietário libera/convida o e-mail em **Ajustes → Acessos**.
+2. A pessoa abre o convite e define uma senha.
+3. Nos próximos acessos, entra com e-mail + senha; a sessão fica salva no aparelho.
+4. “Esqueci minha senha” envia um link seguro para definir outra.
+5. Alterações salvam na nuvem automaticamente.
 
 ---
 

@@ -15,3 +15,9 @@ export function getSupabaseEnv(): { url: string; key: string } | null {
 export function isSupabaseConfigured() {
   return getSupabaseEnv() !== null;
 }
+
+/** Somente no servidor. Nunca use NEXT_PUBLIC_ nesta chave. */
+export function getSupabaseServiceRoleKey(): string | null {
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim() ?? "";
+  return key || null;
+}

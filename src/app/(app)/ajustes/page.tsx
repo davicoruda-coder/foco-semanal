@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Bell, Download, Moon, Sun, SunMoon, Upload } from "lucide-react";
 import { useApp } from "@/components/AppProvider";
+import { AccessManagement } from "@/components/AccessManagement";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { InstallPwaCard } from "@/components/InstallPwaCard";
 import { ensureNotificationPermission } from "@/lib/audio";
@@ -212,6 +213,8 @@ export default function AjustesPage() {
           <p className="mt-3 text-sm opacity-70">{backupMsg}</p>
         )}
       </section>
+
+      <AccessManagement />
 
       <section className="surface mt-4 p-4 md:p-5">
         <h2 className="font-display text-base font-semibold tracking-tight md:text-lg">

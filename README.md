@@ -52,7 +52,7 @@ A mesma tela principal no telefone.
 | **Temporizadores** | Vários timers, cronômetro, volume e 3 toques de alarme |
 | **Ajustes** | Tema, notificações do navegador, backup e conta |
 
-**Autenticação:** login por e-mail (magic link). Após confirmar, os dados principais ficam na **nuvem** (Supabase).  
+**Autenticação:** acesso por convite, e-mail e senha, com recuperação por link. Só e-mails autorizados entram. Os dados principais ficam na **nuvem** (Supabase).
 **Backup:** exportar/importar JSON em Ajustes (plano B manual).  
 **Nuvem também:** histórico de foco / Estatísticas / Foco hoje (sincroniza ao pausar ou ao abrir Estatísticas).  
 **Local no aparelho:** timers/cronômetro em andamento (sobrevivem ao F5), tema e preferências de alarme.
