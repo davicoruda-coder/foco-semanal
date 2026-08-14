@@ -9,6 +9,30 @@ function validEmail(value: unknown): value is string {
   );
 }
 
+function validPassword(value: unknown): value is string {
+  return typeof value === "string" && value.length >= 6;
+}
+
+async function findAuthUserId(
+  admin: NonNullable<ReturnType<typeof createAdminClient>>,
+  email: string,
+) {
+  let page = 1;
+  for (;;) {
+    const { data, error } = await admin.auth.admin.listUsers({
+      page,
+      perPage: 200,
+    });
+    if (error) return null;
+    const match = data.users.find(
+      (user) => user.email?.toLowerCase() === email,
+    );
+    if (match) return match.id;
+    if (data.users.length < 200) return null;
+    page += 1;
+  }
+}
+
 export async function POST(request: Request) {
   const supabase = await createClient();
   const { data: authData } = await supabase.auth.getUser();
@@ -25,11 +49,19 @@ export async function POST(request: Request) {
 
   const body = (await request.json().catch(() => null)) as {
     email?: unknown;
+    password?: unknown;
   } | null;
   if (!validEmail(body?.email)) {
     return NextResponse.json({ error: "E-mail inválido." }, { status: 400 });
   }
+  if (!validPassword(body?.password)) {
+    return NextResponse.json(
+      { error: "A senha temporária precisa ter pelo menos 6 caracteres." },
+      { status: 400 },
+    );
+  }
   const email = body.email.trim().toLowerCase();
+  const password = body.password;
 
   const { error: allowError } = await supabase.from("access_allowlist").upsert(
     {
@@ -47,47 +79,61 @@ export async function POST(request: Request) {
 
   const admin = createAdminClient();
   if (!admin) {
-    return NextResponse.json({
-      ok: true,
-      invited: false,
-      message:
-        "E-mail liberado. Configure SUPABASE_SERVICE_ROLE_KEY na Vercel para enviar convites automaticamente.",
-    });
+    return NextResponse.json(
+      {
+        error:
+          "Configure SUPABASE_SERVICE_ROLE_KEY na Vercel para criar a senha temporária.",
+      },
+      { status: 500 },
+    );
   }
 
-  const origin = new URL(request.url).origin;
-  const redirectTo = `${origin}/auth/callback?next=/redefinir-senha`;
-  const { error: inviteError } = await admin.auth.admin.inviteUserByEmail(
+  const { error: createError } = await admin.auth.admin.createUser({
     email,
-    { redirectTo },
-  );
-
-  if (!inviteError) {
-    await supabase.from("access_requests").delete().eq("email", email);
-    return NextResponse.json({
-      ok: true,
-      invited: true,
-      message: "Acesso liberado e convite enviado.",
-    });
-  }
-
-  // Se a conta já existe, envia recuperação para definir/trocar a senha.
-  const { error: resetError } = await admin.auth.resetPasswordForEmail(email, {
-    redirectTo,
+    password,
+    email_confirm: true,
   });
-  if (!resetError) {
-    await supabase.from("access_requests").delete().eq("email", email);
-    return NextResponse.json({
-      ok: true,
-      invited: true,
-      message: "Acesso liberado e link para definir a senha enviado.",
-    });
+
+  if (createError) {
+    const already =
+      createError.message.toLowerCase().includes("already") ||
+      createError.message.toLowerCase().includes("registered");
+    if (!already) {
+      return NextResponse.json(
+        { error: createError.message || "Não foi possível criar o usuário." },
+        { status: 500 },
+      );
+    }
+
+    const userId = await findAuthUserId(admin, email);
+    if (!userId) {
+      return NextResponse.json(
+        {
+          error:
+            "E-mail liberado, mas não foi possível atualizar a senha da conta existente.",
+        },
+        { status: 500 },
+      );
+    }
+
+    const { error: updateError } = await admin.auth.admin.updateUserById(
+      userId,
+      { password },
+    );
+    if (updateError) {
+      return NextResponse.json(
+        { error: updateError.message || "Não foi possível atualizar a senha." },
+        { status: 500 },
+      );
+    }
   }
+
+  await supabase.from("access_requests").delete().eq("email", email);
 
   return NextResponse.json({
     ok: true,
-    invited: false,
+    invited: true,
     message:
-      "E-mail liberado, mas o convite não pôde ser enviado. A pessoa pode usar “Primeiro acesso” na tela de login.",
+      "Acesso liberado com senha temporária. A pessoa entra com e-mail e essa senha, e pode trocar em Ajustes.",
   });
 }

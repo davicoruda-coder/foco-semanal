@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { MailPlus, RefreshCw, Trash2, UserCheck } from "lucide-react";
+import { Eye, EyeOff, MailPlus, RefreshCw, Trash2, UserCheck } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
 type AllowedEmail = {
@@ -29,6 +29,8 @@ export function AccessManagement() {
   const [allowed, setAllowed] = useState<AllowedEmail[]>([]);
   const [requests, setRequests] = useState<AccessRequest[]>([]);
   const [email, setEmail] = useState("");
+  const [tempPassword, setTempPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [busyEmail, setBusyEmail] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
 
@@ -64,16 +66,21 @@ export function AccessManagement() {
     return () => window.clearTimeout(id);
   }, [load]);
 
-  async function invite(rawEmail: string) {
+  async function invite(rawEmail: string, rawPassword: string) {
     const normalized = rawEmail.trim().toLowerCase();
+    const password = rawPassword;
     if (!normalized) return;
+    if (password.length < 6) {
+      setMessage("A senha temporária precisa ter pelo menos 6 caracteres.");
+      return;
+    }
     setBusyEmail(normalized);
     setMessage(null);
     try {
       const response = await fetch("/api/access/invite", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ email: normalized }),
+        body: JSON.stringify({ email: normalized, password }),
       });
       const result = (await response.json()) as {
         error?: string;
@@ -81,6 +88,7 @@ export function AccessManagement() {
       };
       if (!response.ok) throw new Error(result.error ?? "Falha ao liberar.");
       setEmail("");
+      setTempPassword("");
       setMessage(result.message ?? "Acesso liberado.");
       await load();
     } catch (error) {
@@ -119,7 +127,8 @@ export function AccessManagement() {
             Acessos
           </h2>
           <p className="mt-1 text-xs opacity-55">
-            Só os e-mails desta lista podem usar o Foco.
+            Só os e-mails desta lista podem usar o Foco. Informe uma senha
+            temporária; a pessoa pode trocar depois em Ajustes.
           </p>
         </div>
         <button
@@ -154,10 +163,16 @@ export function AccessManagement() {
                   type="button"
                   className="btn btn-primary px-3 py-2 text-xs"
                   disabled={busyEmail === request.email}
-                  onClick={() => void invite(request.email)}
+                  onClick={() => {
+                    setEmail(request.email);
+                    setTempPassword("");
+                    setMessage(
+                      "Defina a senha temporária abaixo e clique em Liberar acesso.",
+                    );
+                  }}
                 >
                   <UserCheck size={14} />
-                  Liberar
+                  Preparar
                 </button>
               </div>
             ))}
@@ -166,23 +181,48 @@ export function AccessManagement() {
       )}
 
       <form
-        className="mt-4 flex flex-col gap-2 sm:flex-row"
+        className="mt-4 space-y-2"
         onSubmit={(event) => {
           event.preventDefault();
-          void invite(email);
+          void invite(email, tempPassword);
         }}
       >
         <input
-          className="input min-w-0 flex-1"
+          className="input w-full"
           type="email"
           required
           placeholder="E-mail para liberar"
           value={email}
           onChange={(event) => setEmail(event.target.value)}
         />
-        <button type="submit" className="btn btn-primary" disabled={Boolean(busyEmail)}>
+        <div className="relative">
+          <input
+            className="input w-full pr-11"
+            type={showPassword ? "text" : "password"}
+            required
+            minLength={6}
+            autoComplete="new-password"
+            placeholder="Senha temporária"
+            value={tempPassword}
+            onChange={(event) => setTempPassword(event.target.value)}
+          />
+          <button
+            type="button"
+            title={showPassword ? "Ocultar senha" : "Mostrar senha"}
+            aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
+            className="absolute inset-y-0 right-1 grid w-10 place-items-center opacity-50 transition hover:opacity-100"
+            onClick={() => setShowPassword((value) => !value)}
+          >
+            {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+          </button>
+        </div>
+        <button
+          type="submit"
+          className="btn btn-primary w-full sm:w-auto"
+          disabled={Boolean(busyEmail)}
+        >
           <MailPlus size={16} />
-          Liberar e convidar
+          Liberar acesso
         </button>
       </form>
 

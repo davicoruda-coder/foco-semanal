@@ -47,18 +47,19 @@ SUPABASE_SERVICE_ROLE_KEY=...
 ```
 
 Cole **sem Enter no final**. Na Vercel, faça **Redeploy** depois de alterar.
-A `SUPABASE_SERVICE_ROLE_KEY` é usada somente pela rota protegida que envia
-convites. Não coloque essa chave em código, GitHub ou variável `NEXT_PUBLIC_`.
+A `SUPABASE_SERVICE_ROLE_KEY` é usada somente pela rota protegida que cria
+acesso com senha temporária. Não coloque essa chave em código, GitHub ou variável `NEXT_PUBLIC_`.
 
 ---
 
 ## 3. Como a pessoa usa
 
-1. O proprietário libera/convida o e-mail em **Ajustes → Acessos**.
-2. A pessoa abre o convite e define uma senha.
-3. Nos próximos acessos, entra com e-mail + senha; a sessão fica salva no aparelho.
-4. “Esqueci minha senha” envia um link seguro para definir outra.
-5. Alterações salvam na nuvem automaticamente.
+1. O proprietário libera o e-mail em **Ajustes → Acessos** com uma senha temporária.
+2. A pessoa entra com e-mail + essa senha; a sessão fica salva no aparelho.
+3. Em **Ajustes → Conta**, pode definir/alterar a senha.
+4. “Esqueci minha senha” na tela de login envia um link seguro para outra senha.
+5. Quem quiser conhecer o app pode solicitar demonstração pelo WhatsApp na tela de login.
+6. Alterações salvam na nuvem automaticamente.
 
 ---
 
