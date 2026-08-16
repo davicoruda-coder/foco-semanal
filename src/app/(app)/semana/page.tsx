@@ -319,60 +319,86 @@ function DayCard({
                 onDragBlock(null);
               }}
             >
-              <div
-                className={`rounded-[var(--radius-tag)] px-2 py-2 text-sm ${
-                  editing ? "ring-2 ring-[var(--signal)]/35" : ""
-                }`}
-                style={style.style}
-              >
-                <div className="flex items-start gap-1">
-                  <button
-                    type="button"
-                    className="-ml-0.5 shrink-0 cursor-grab rounded p-1 opacity-55 hover:opacity-100 active:cursor-grabbing"
-                    title="Arrastar ou tocar para mover"
-                    aria-label="Mover bloco"
-                    aria-expanded={moveFor === b.id}
-                    onPointerDown={() => setDragArmed(b.id)}
-                    onPointerUp={() => setDragArmed(null)}
-                    onPointerCancel={() => setDragArmed(null)}
-                    onClick={() =>
-                      setMoveFor((id) => (id === b.id ? null : b.id))
-                    }
-                  >
-                    <GripVertical size={15} strokeWidth={2} />
-                  </button>
+              {editing ? (
+                <div
+                  className="rounded-[var(--radius-tag)] p-2.5 ring-2 ring-[var(--signal)]/40"
+                  style={style.style}
+                >
                   <textarea
-                    className={`min-w-0 flex-1 resize-none bg-transparent outline-none ${
-                      editing
-                        ? "min-h-14"
-                        : "h-5 overflow-hidden whitespace-nowrap"
-                    }`}
-                    rows={
-                      editing
-                        ? Math.min(4, Math.max(2, Math.ceil(b.label.length / 12)))
-                        : 1
-                    }
+                    autoFocus
+                    className="min-h-20 w-full resize-y break-words bg-transparent text-sm leading-snug outline-none"
+                    rows={3}
                     value={b.label}
-                    onFocus={() => setEditingId(b.id)}
-                    onBlur={() => {
-                      window.setTimeout(() => {
-                        setEditingId((id) => (id === b.id ? null : id));
-                      }, 120);
-                    }}
                     onChange={(e) =>
                       upsertWeekBlock({ ...b, label: e.target.value })
                     }
+                    onKeyDown={(e) => {
+                      if (e.key === "Escape") {
+                        e.preventDefault();
+                        setEditingId(null);
+                      }
+                    }}
+                    onBlur={() => {
+                      window.setTimeout(() => {
+                        setEditingId((id) => (id === b.id ? null : id));
+                      }, 150);
+                    }}
                   />
-                  <div className="flex shrink-0 gap-0.5 pt-0.5">
+                  <div className="mt-2 flex items-center justify-between gap-1">
+                    <p className="text-[10px] opacity-55">Esc ou fora para fechar</p>
                     <button
                       type="button"
-                      className="rounded bg-[var(--surface)]/70 p-1 opacity-70 hover:opacity-100"
+                      className="rounded-md bg-[var(--surface)]/80 px-2.5 py-1 text-xs font-medium"
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => setEditingId(null)}
+                    >
+                      Pronto
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div
+                  className="rounded-[var(--radius-tag)] px-1.5 py-1.5 text-sm"
+                  style={style.style}
+                >
+                  <div className="flex items-center gap-0.5">
+                    <button
+                      type="button"
+                      className="shrink-0 cursor-grab rounded p-1 opacity-55 hover:opacity-100 active:cursor-grabbing"
+                      title="Arrastar ou tocar para mover"
+                      aria-label="Mover bloco"
+                      aria-expanded={moveFor === b.id}
+                      onPointerDown={() => setDragArmed(b.id)}
+                      onPointerUp={() => setDragArmed(null)}
+                      onPointerCancel={() => setDragArmed(null)}
+                      onClick={() => {
+                        setColorFor(null);
+                        setMoveFor((id) => (id === b.id ? null : b.id));
+                      }}
+                    >
+                      <GripVertical size={15} strokeWidth={2} />
+                    </button>
+                    <button
+                      type="button"
+                      className="min-w-0 flex-1 truncate rounded px-1 py-1 text-left text-sm leading-snug"
+                      title="Editar nome"
+                      onClick={() => {
+                        setMoveFor(null);
+                        setColorFor(null);
+                        setEditingId(b.id);
+                      }}
+                    >
+                      {b.label || "Sem nome"}
+                    </button>
+                    <button
+                      type="button"
+                      className="shrink-0 rounded bg-[var(--surface)]/70 p-1 opacity-70 hover:opacity-100"
                       title="Cor"
                       aria-label="Escolher cor"
-                      onMouseDown={(e) => e.preventDefault()}
-                      onClick={() =>
-                        setColorFor((id) => (id === b.id ? null : b.id))
-                      }
+                      onClick={() => {
+                        setMoveFor(null);
+                        setColorFor((id) => (id === b.id ? null : b.id));
+                      }}
                     >
                       <span
                         className="block h-3.5 w-3.5 rounded-full border border-black/20"
@@ -383,18 +409,17 @@ function DayCard({
                     </button>
                     <button
                       type="button"
-                      className="rounded bg-[var(--surface)]/70 p-1 opacity-70 hover:text-[var(--warn)] hover:opacity-100"
+                      className="shrink-0 rounded bg-[var(--surface)]/70 p-1 opacity-70 hover:text-[var(--warn)] hover:opacity-100"
                       title="Excluir"
                       aria-label="Excluir"
-                      onMouseDown={(e) => e.preventDefault()}
                       onClick={() => setPendingDelete(b)}
                     >
                       <Trash2 size={13} strokeWidth={1.75} />
                     </button>
                   </div>
                 </div>
-              </div>
-              {moveFor === b.id && (
+              )}
+              {!editing && moveFor === b.id && (
                 <div className="panel-in flex gap-1.5 px-0.5">
                   <button
                     type="button"
@@ -418,7 +443,7 @@ function DayCard({
                   </button>
                 </div>
               )}
-              {colorFor === b.id && (
+              {!editing && colorFor === b.id && (
                 <div className="panel-in">
                   <ColorSwatches
                     value={b.color || defaultBlockColor(b.type)}
@@ -527,7 +552,7 @@ export default function SemanaPage() {
         Semana
       </h1>
       <p className="mt-2 opacity-65">
-        Edite, escolha a cor e reordene os blocos (arraste ou use as setas).
+        Toque no nome para editar · use a alça para reordenar · escolha a cor.
       </p>
 
       <div className="mt-6 flex gap-3 overflow-x-auto overscroll-x-contain pb-2 sm:mt-8 sm:grid sm:grid-cols-2 sm:overflow-visible sm:pb-0 md:grid-cols-3 lg:grid-cols-7">
