@@ -344,10 +344,10 @@ function DayCard({
                       }, 150);
                     }}
                   />
-                  <div className="mt-2 flex justify-end">
+                  <div className="mt-1.5 flex justify-end">
                     <button
                       type="button"
-                      className="btn btn-primary px-3 py-1.5 text-xs"
+                      className="rounded-full bg-[#14201a] px-3 py-1 text-[11px] font-semibold text-white/95 transition hover:bg-[#14201a]/85"
                       onMouseDown={(e) => e.preventDefault()}
                       onClick={() => setEditingId(null)}
                     >
@@ -363,7 +363,7 @@ function DayCard({
                   <div className="flex items-center gap-0.5">
                     <button
                       type="button"
-                      className="shrink-0 cursor-grab rounded p-1 opacity-55 hover:opacity-100 active:cursor-grabbing"
+                      className="shrink-0 cursor-grab rounded p-1 opacity-70 hover:opacity-100 active:cursor-grabbing"
                       title="Arrastar ou tocar para mover"
                       aria-label="Mover bloco"
                       aria-expanded={moveFor === b.id}
@@ -391,7 +391,7 @@ function DayCard({
                     </button>
                     <button
                       type="button"
-                      className="shrink-0 rounded bg-[var(--surface)]/70 p-1 opacity-70 hover:opacity-100"
+                      className="shrink-0 rounded-md bg-black/[0.08] p-1 transition hover:bg-black/20"
                       title="Cor"
                       aria-label="Escolher cor"
                       onClick={() => {
@@ -408,7 +408,7 @@ function DayCard({
                     </button>
                     <button
                       type="button"
-                      className="shrink-0 rounded bg-[var(--surface)]/70 p-1 opacity-70 hover:text-[var(--warn)] hover:opacity-100"
+                      className="shrink-0 rounded-md bg-black/[0.08] p-1 transition hover:bg-black/20"
                       title="Excluir"
                       aria-label="Excluir"
                       onClick={() => setPendingDelete(b)}
