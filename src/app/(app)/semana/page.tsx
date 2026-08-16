@@ -75,6 +75,8 @@ function DayCard({
   const [draftLabel, setDraftLabel] = useState("");
   const [draftColor, setDraftColor] = useState(defaultBlockColor("estudo"));
   const [colorFor, setColorFor] = useState<string | null>(null);
+  const [moveFor, setMoveFor] = useState<string | null>(null);
+  const [dragArmed, setDragArmed] = useState<string | null>(null);
   const [pendingDelete, setPendingDelete] = useState<WeekBlock | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [dropHighlight, setDropHighlight] = useState(false);
@@ -282,6 +284,19 @@ function DayCard({
             <div
               key={b.id}
               className={`space-y-1 ${isDragging ? "opacity-45" : ""}`}
+              draggable={dragArmed === b.id}
+              onDragStart={(e) => {
+                e.dataTransfer.effectAllowed = "move";
+                e.dataTransfer.setData(DRAG_MIME, b.id);
+                e.dataTransfer.setData("text/plain", b.id);
+                onDragBlock(b.id);
+                setColorFor(null);
+              }}
+              onDragEnd={() => {
+                setDragArmed(null);
+                onDragBlock(null);
+                setDropHighlight(false);
+              }}
               onDragOver={(e) => {
                 if (!draggingId || draggingId === b.id) return;
                 e.preventDefault();
@@ -313,23 +328,18 @@ function DayCard({
                 <div className="flex items-start gap-1">
                   <button
                     type="button"
-                    className="mt-0.5 touch-none rounded p-1 opacity-55 hover:opacity-100"
-                    title="Arrastar para reordenar"
-                    aria-label="Arrastar bloco"
-                    draggable
-                    onDragStart={(e) => {
-                      e.dataTransfer.effectAllowed = "move";
-                      e.dataTransfer.setData(DRAG_MIME, b.id);
-                      e.dataTransfer.setData("text/plain", b.id);
-                      onDragBlock(b.id);
-                      setColorFor(null);
-                    }}
-                    onDragEnd={() => {
-                      onDragBlock(null);
-                      setDropHighlight(false);
-                    }}
+                    className="-ml-0.5 shrink-0 cursor-grab rounded p-1 opacity-55 hover:opacity-100 active:cursor-grabbing"
+                    title="Arrastar ou tocar para mover"
+                    aria-label="Mover bloco"
+                    aria-expanded={moveFor === b.id}
+                    onPointerDown={() => setDragArmed(b.id)}
+                    onPointerUp={() => setDragArmed(null)}
+                    onPointerCancel={() => setDragArmed(null)}
+                    onClick={() =>
+                      setMoveFor((id) => (id === b.id ? null : b.id))
+                    }
                   >
-                    <GripVertical size={16} strokeWidth={2} />
+                    <GripVertical size={15} strokeWidth={2} />
                   </button>
                   <textarea
                     className={`min-w-0 flex-1 resize-none bg-transparent outline-none ${
@@ -353,63 +363,61 @@ function DayCard({
                       upsertWeekBlock({ ...b, label: e.target.value })
                     }
                   />
-                  <div className="flex shrink-0 flex-col gap-0.5 pt-0.5">
-                    <div className="flex gap-0.5">
-                      <button
-                        type="button"
-                        className="rounded bg-[var(--surface)]/70 p-1.5 opacity-70 hover:opacity-100 disabled:opacity-30"
-                        title="Subir"
-                        aria-label="Subir bloco"
-                        disabled={index === 0}
-                        onMouseDown={(e) => e.preventDefault()}
-                        onClick={() => moveBlockBy(b.id, -1)}
-                      >
-                        <ChevronUp size={14} strokeWidth={2} />
-                      </button>
-                      <button
-                        type="button"
-                        className="rounded bg-[var(--surface)]/70 p-1.5 opacity-70 hover:opacity-100 disabled:opacity-30"
-                        title="Descer"
-                        aria-label="Descer bloco"
-                        disabled={index === blocks.length - 1}
-                        onMouseDown={(e) => e.preventDefault()}
-                        onClick={() => moveBlockBy(b.id, 1)}
-                      >
-                        <ChevronDown size={14} strokeWidth={2} />
-                      </button>
-                    </div>
-                    <div className="flex gap-0.5">
-                      <button
-                        type="button"
-                        className="rounded bg-[var(--surface)]/70 p-1.5 opacity-70 hover:opacity-100"
-                        title="Cor"
-                        aria-label="Escolher cor"
-                        onMouseDown={(e) => e.preventDefault()}
-                        onClick={() =>
-                          setColorFor((id) => (id === b.id ? null : b.id))
-                        }
-                      >
-                        <span
-                          className="block h-4 w-4 rounded-full border border-black/20 sm:h-3.5 sm:w-3.5"
-                          style={{
-                            background: b.color || defaultBlockColor(b.type),
-                          }}
-                        />
-                      </button>
-                      <button
-                        type="button"
-                        className="rounded bg-[var(--surface)]/70 p-1.5 opacity-70 hover:text-[var(--warn)] hover:opacity-100"
-                        title="Excluir"
-                        aria-label="Excluir"
-                        onMouseDown={(e) => e.preventDefault()}
-                        onClick={() => setPendingDelete(b)}
-                      >
-                        <Trash2 size={14} strokeWidth={1.75} />
-                      </button>
-                    </div>
+                  <div className="flex shrink-0 gap-0.5 pt-0.5">
+                    <button
+                      type="button"
+                      className="rounded bg-[var(--surface)]/70 p-1 opacity-70 hover:opacity-100"
+                      title="Cor"
+                      aria-label="Escolher cor"
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() =>
+                        setColorFor((id) => (id === b.id ? null : b.id))
+                      }
+                    >
+                      <span
+                        className="block h-3.5 w-3.5 rounded-full border border-black/20"
+                        style={{
+                          background: b.color || defaultBlockColor(b.type),
+                        }}
+                      />
+                    </button>
+                    <button
+                      type="button"
+                      className="rounded bg-[var(--surface)]/70 p-1 opacity-70 hover:text-[var(--warn)] hover:opacity-100"
+                      title="Excluir"
+                      aria-label="Excluir"
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => setPendingDelete(b)}
+                    >
+                      <Trash2 size={13} strokeWidth={1.75} />
+                    </button>
                   </div>
                 </div>
               </div>
+              {moveFor === b.id && (
+                <div className="panel-in flex gap-1.5 px-0.5">
+                  <button
+                    type="button"
+                    className="btn flex-1 justify-center px-2 py-2 text-xs disabled:opacity-35"
+                    title="Subir"
+                    aria-label="Subir bloco"
+                    disabled={index === 0}
+                    onClick={() => moveBlockBy(b.id, -1)}
+                  >
+                    <ChevronUp size={16} strokeWidth={2} />
+                  </button>
+                  <button
+                    type="button"
+                    className="btn flex-1 justify-center px-2 py-2 text-xs disabled:opacity-35"
+                    title="Descer"
+                    aria-label="Descer bloco"
+                    disabled={index === blocks.length - 1}
+                    onClick={() => moveBlockBy(b.id, 1)}
+                  >
+                    <ChevronDown size={16} strokeWidth={2} />
+                  </button>
+                </div>
+              )}
               {colorFor === b.id && (
                 <div className="panel-in">
                   <ColorSwatches
