@@ -1,11 +1,13 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { Download } from "lucide-react";
 import { useApp } from "@/components/AppProvider";
 import { useTimerRuntime } from "@/components/TimerRuntimeProvider";
 import { BackToHoje } from "@/components/BackToHoje";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { FocusBarChart } from "@/components/FocusBarChart";
+import { downloadFocusReport } from "@/lib/focus-report";
 import {
   clearFocusLog,
   commitFocusDisplaySnapshot,
@@ -27,6 +29,13 @@ import { todayIndex } from "@/lib/utils";
 
 type Range = "dia" | "semana" | "mes" | "ano";
 
+const REPORT_BUTTON_LABEL: Record<Range, string> = {
+  dia: "Baixar PDF do dia",
+  semana: "Baixar PDF da semana",
+  mes: "Baixar PDF do mês",
+  ano: "Baixar PDF do ano",
+};
+
 const MONTHS_SHORT = [
   "Jan",
   "Fev",
@@ -42,6 +51,21 @@ const MONTHS_SHORT = [
   "Dez",
 ];
 
+const MONTHS_LONG = [
+  "Janeiro",
+  "Fevereiro",
+  "Março",
+  "Abril",
+  "Maio",
+  "Junho",
+  "Julho",
+  "Agosto",
+  "Setembro",
+  "Outubro",
+  "Novembro",
+  "Dezembro",
+];
+
 export default function EstatisticasPage() {
   const { data, user } = useApp();
   const { runtime, stopwatch } = useTimerRuntime();
@@ -50,6 +74,7 @@ export default function EstatisticasPage() {
   const [confirmReset, setConfirmReset] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [syncHint, setSyncHint] = useState<string | null>(null);
+  const [downloadingReport, setDownloadingReport] = useState(false);
 
   useEffect(() => {
     const applyLocal = () => {
@@ -156,6 +181,75 @@ export default function EstatisticasPage() {
         : range === "mes"
           ? monthTotal
           : yearTotal;
+
+  const report = useMemo(() => {
+    const now = new Date();
+    const shortDate = (date: Date) =>
+      new Intl.DateTimeFormat("pt-BR").format(date);
+
+    if (range === "dia") {
+      return {
+        period: `Dia — ${shortDate(now)}`,
+        filename: `relatorio-foco-dia-${dateKey(now)}.pdf`,
+        rows: today.byHour.map((seconds, hour) => ({
+          label: `${String(hour).padStart(2, "0")}:00–${String(hour).padStart(2, "0")}:59`,
+          seconds,
+        })),
+      };
+    }
+
+    if (range === "semana") {
+      const first = week[0]?.date ?? now;
+      const last = week[week.length - 1]?.date ?? now;
+      return {
+        period: `Semana — ${shortDate(first)} a ${shortDate(last)}`,
+        filename: `relatorio-foco-semana-${dateKey(first)}.pdf`,
+        rows: week.map((day, index) => ({
+          label: `${DAYS[index]} — ${shortDate(day.date)}`,
+          seconds: day.seconds,
+        })),
+      };
+    }
+
+    if (range === "mes") {
+      return {
+        period: `${MONTHS_LONG[now.getMonth()]} de ${now.getFullYear()}`,
+        filename: `relatorio-foco-mes-${now.getFullYear()}-${String(
+          now.getMonth() + 1,
+        ).padStart(2, "0")}.pdf`,
+        rows: month.map((day) => ({
+          label: shortDate(day.date),
+          seconds: day.seconds,
+        })),
+      };
+    }
+
+    return {
+      period: `Ano de ${now.getFullYear()}`,
+      filename: `relatorio-foco-ano-${now.getFullYear()}.pdf`,
+      rows: year.map((item) => ({
+        label: MONTHS_LONG[item.month],
+        seconds: item.seconds,
+      })),
+    };
+  }, [range, today, week, month, year]);
+
+  async function downloadReport() {
+    setDownloadingReport(true);
+    try {
+      await downloadFocusReport({
+        period: report.period,
+        totalSeconds: headline,
+        rows: report.rows,
+        filename: report.filename,
+      });
+    } catch (error) {
+      console.error("[foco] falha ao gerar relatório:", error);
+      window.alert("Não foi possível gerar o PDF. Tente novamente.");
+    } finally {
+      setDownloadingReport(false);
+    }
+  }
 
   async function resetHistory() {
     const empty = clearFocusLog();
@@ -280,6 +374,15 @@ export default function EstatisticasPage() {
       </section>
 
       <div className="mt-6 flex flex-wrap items-center justify-end gap-2">
+        <button
+          type="button"
+          className="btn btn-primary"
+          disabled={downloadingReport}
+          onClick={() => void downloadReport()}
+        >
+          <Download size={16} strokeWidth={2} />
+          {downloadingReport ? "Gerando PDF…" : REPORT_BUTTON_LABEL[range]}
+        </button>
         {user ? (
           <button
             type="button"

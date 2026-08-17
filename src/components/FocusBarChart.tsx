@@ -110,18 +110,14 @@ export function FocusBarChart({
         })}
       </div>
       <div className="h-5" aria-hidden />
-      <p
-        className={`min-h-[1.25rem] text-center text-sm transition ${
-          active
-            ? "font-medium text-[var(--ink)]"
-            : "text-[color-mix(in_srgb,var(--ink)_45%,transparent)]"
-        }`}
-        aria-live="polite"
-      >
-        {active
-          ? (active.hint ?? `${active.label}: ${active.value}`)
-          : "Passe o mouse ou toque em uma barra para ver o tempo"}
-      </p>
+      {active ? (
+        <p
+          className="min-h-[1.25rem] text-center text-sm font-medium text-[var(--ink)] transition"
+          aria-live="polite"
+        >
+          {active.hint ?? `${active.label}: ${active.value}`}
+        </p>
+      ) : null}
     </div>
   );
 }
