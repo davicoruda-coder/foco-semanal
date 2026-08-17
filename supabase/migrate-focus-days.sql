@@ -14,7 +14,9 @@ alter table public.focus_days enable row level security;
 
 drop policy if exists "focus_days_own" on public.focus_days;
 create policy "focus_days_own" on public.focus_days
-  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+  for all to authenticated
+  using (auth.uid() = user_id and public.current_user_has_access())
+  with check (auth.uid() = user_id and public.current_user_has_access());
 
 create index if not exists focus_days_user_day_idx
   on public.focus_days (user_id, day desc);

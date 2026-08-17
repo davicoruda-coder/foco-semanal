@@ -179,18 +179,18 @@ alter table public.focus_days enable row level security;
 alter table public.access_allowlist enable row level security;
 alter table public.access_requests enable row level security;
 
-create policy "profiles_own" on public.profiles for all using (auth.uid() = id and public.current_user_has_access()) with check (auth.uid() = id and public.current_user_has_access());
-create policy "subjects_own" on public.subjects for all using (auth.uid() = user_id and public.current_user_has_access()) with check (auth.uid() = user_id and public.current_user_has_access());
-create policy "week_blocks_own" on public.week_blocks for all using (auth.uid() = user_id and public.current_user_has_access()) with check (auth.uid() = user_id and public.current_user_has_access());
-create policy "session_settings_own" on public.session_settings for all using (auth.uid() = user_id and public.current_user_has_access()) with check (auth.uid() = user_id and public.current_user_has_access());
-create policy "focus_timers_own" on public.focus_timers for all using (auth.uid() = user_id and public.current_user_has_access()) with check (auth.uid() = user_id and public.current_user_has_access());
-create policy "study_sessions_own" on public.study_sessions for all using (auth.uid() = user_id and public.current_user_has_access()) with check (auth.uid() = user_id and public.current_user_has_access());
-create policy "reminders_own" on public.reminders for all using (auth.uid() = user_id and public.current_user_has_access()) with check (auth.uid() = user_id and public.current_user_has_access());
-create policy "note_columns_own" on public.note_columns for all using (auth.uid() = user_id and public.current_user_has_access()) with check (auth.uid() = user_id and public.current_user_has_access());
-create policy "sticky_notes_own" on public.sticky_notes for all using (auth.uid() = user_id and public.current_user_has_access()) with check (auth.uid() = user_id and public.current_user_has_access());
-create policy "focus_days_own" on public.focus_days for all using (auth.uid() = user_id and public.current_user_has_access()) with check (auth.uid() = user_id and public.current_user_has_access());
-create policy "access_allowlist_admin" on public.access_allowlist for all using (public.current_user_is_access_admin()) with check (public.current_user_is_access_admin());
-create policy "access_requests_admin" on public.access_requests for all using (public.current_user_is_access_admin()) with check (public.current_user_is_access_admin());
+create policy "profiles_own" on public.profiles for all to authenticated using (auth.uid() = id and public.current_user_has_access()) with check (auth.uid() = id and public.current_user_has_access());
+create policy "subjects_own" on public.subjects for all to authenticated using (auth.uid() = user_id and public.current_user_has_access()) with check (auth.uid() = user_id and public.current_user_has_access());
+create policy "week_blocks_own" on public.week_blocks for all to authenticated using (auth.uid() = user_id and public.current_user_has_access()) with check (auth.uid() = user_id and public.current_user_has_access());
+create policy "session_settings_own" on public.session_settings for all to authenticated using (auth.uid() = user_id and public.current_user_has_access()) with check (auth.uid() = user_id and public.current_user_has_access());
+create policy "focus_timers_own" on public.focus_timers for all to authenticated using (auth.uid() = user_id and public.current_user_has_access()) with check (auth.uid() = user_id and public.current_user_has_access());
+create policy "study_sessions_own" on public.study_sessions for all to authenticated using (auth.uid() = user_id and public.current_user_has_access()) with check (auth.uid() = user_id and public.current_user_has_access());
+create policy "reminders_own" on public.reminders for all to authenticated using (auth.uid() = user_id and public.current_user_has_access()) with check (auth.uid() = user_id and public.current_user_has_access());
+create policy "note_columns_own" on public.note_columns for all to authenticated using (auth.uid() = user_id and public.current_user_has_access()) with check (auth.uid() = user_id and public.current_user_has_access());
+create policy "sticky_notes_own" on public.sticky_notes for all to authenticated using (auth.uid() = user_id and public.current_user_has_access()) with check (auth.uid() = user_id and public.current_user_has_access());
+create policy "focus_days_own" on public.focus_days for all to authenticated using (auth.uid() = user_id and public.current_user_has_access()) with check (auth.uid() = user_id and public.current_user_has_access());
+create policy "access_allowlist_admin" on public.access_allowlist for all to authenticated using (public.current_user_is_access_admin()) with check (public.current_user_is_access_admin());
+create policy "access_requests_admin" on public.access_requests for all to authenticated using (public.current_user_is_access_admin()) with check (public.current_user_is_access_admin());
 
 -- Auto profile + defaults on signup
 create or replace function public.handle_new_user()

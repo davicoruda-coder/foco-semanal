@@ -5,7 +5,8 @@ function isMissingAccessMigration(error: { code?: string; message?: string } | n
   return (
     text.includes("pgrst202") ||
     text.includes("could not find the function") ||
-    text.includes("is_email_allowed")
+    text.includes("is_email_allowed") ||
+    text.includes("current_user_has_access")
   );
 }
 
@@ -30,14 +31,8 @@ export async function checkCurrentUserAccess(
 ): Promise<{ allowed: boolean; configured: boolean }> {
   const { data, error } = await supabase.rpc("current_user_has_access");
   if (error) {
-    const text = `${error.code ?? ""} ${error.message ?? ""}`.toLowerCase();
-    if (
-      text.includes("pgrst202") ||
-      text.includes("could not find the function") ||
-      text.includes("current_user_has_access")
-    ) {
-      // Compatibilidade entre o deploy do código e a execução da migração SQL.
-      return { allowed: true, configured: false };
+    if (isMissingAccessMigration(error)) {
+      return { allowed: false, configured: false };
     }
     throw error;
   }

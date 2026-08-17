@@ -15,6 +15,7 @@ App com **login obrigatório** por **magic link** (e-mail). Dados principais fic
    - [`supabase/migrate-theme-auto.sql`](supabase/migrate-theme-auto.sql)
    - [`supabase/migrate-focus-days.sql`](supabase/migrate-focus-days.sql)
    - [`supabase/migrate-access-control.sql`](supabase/migrate-access-control.sql)
+   - [`supabase/migrate-focus-days-allowlist.sql`](supabase/migrate-focus-days-allowlist.sql)
 4. **Authentication → Providers → Email** — habilitado (Magic link / OTP).
 5. **Authentication → URL Configuration**:
    - Site URL: `https://foco.davicosystems.ia.br` (ou sua URL da Vercel)

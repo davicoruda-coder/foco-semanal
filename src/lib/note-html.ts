@@ -1,23 +1,28 @@
-/** Helpers for sticky-note HTML stored in reminder.title */
-
-const ALLOWED = new Set(["B", "STRONG", "I", "EM", "BR", "DIV", "SPAN", "P"]);
-
-export function plainTextFromHtml(html: string): string {
-  if (!html) return "";
-  if (!looksLikeHtml(html)) return html;
-  if (typeof document === "undefined") {
-    return html.replace(/<[^>]+>/g, "");
-  }
-  const el = document.createElement("div");
-  el.innerHTML = html;
-  return el.textContent || "";
-}
+/** Converte HTML antigo de lembretes em texto puro, sem executar markup. */
 
 export function looksLikeHtml(value: string): boolean {
   return /<[a-z][\s\S]*>/i.test(value);
 }
 
-/** Escape plain text for safe contentEditable seed. */
+function stripTags(html: string): string {
+  return html
+    .replace(/<script[\s\S]*?<\/script>/gi, "")
+    .replace(/<style[\s\S]*?<\/style>/gi, "")
+    .replace(/<[^>]+>/g, "")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"');
+}
+
+export function plainTextFromHtml(html: string): string {
+  if (!html) return "";
+  if (typeof DOMParser === "undefined") return stripTags(html);
+  const doc = new DOMParser().parseFromString(html, "text/html");
+  return doc.body?.textContent ?? "";
+}
+
 export function escapeHtml(text: string): string {
   return text
     .replace(/&/g, "&amp;")
@@ -26,49 +31,12 @@ export function escapeHtml(text: string): string {
     .replace(/"/g, "&quot;");
 }
 
+/** Texto seguro para exibir; HTML antigo vira texto puro. */
 export function noteHtmlFromStored(value: string): string {
   if (!value) return "";
-  if (!looksLikeHtml(value)) {
-    return escapeHtml(value).replace(/\n/g, "<br>");
-  }
-  return sanitizeNoteHtml(value);
+  return escapeHtml(plainTextFromHtml(value)).replace(/\n/g, "<br>");
 }
 
-/** Strip scripts/attrs; keep basic formatting tags only. */
 export function sanitizeNoteHtml(html: string): string {
-  if (typeof document === "undefined") {
-    return html.replace(/<(?!\/?(?:b|strong|i|em|br|div|span|p)\b)[^>]*>/gi, "");
-  }
-  const root = document.createElement("div");
-  root.innerHTML = html;
-
-  function clean(node: Node) {
-    if (node.nodeType === Node.TEXT_NODE) return;
-    if (node.nodeType !== Node.ELEMENT_NODE) {
-      node.parentNode?.removeChild(node);
-      return;
-    }
-    const el = node as HTMLElement;
-    if (!ALLOWED.has(el.tagName)) {
-      const parent = el.parentNode;
-      if (!parent) return;
-      while (el.firstChild) parent.insertBefore(el.firstChild, el);
-      parent.removeChild(el);
-      return;
-    }
-    [...el.attributes].forEach((attr) => {
-      const name = attr.name.toLowerCase();
-      if (name === "style" && el.tagName === "SPAN") {
-        const size = el.style.fontSize;
-        el.removeAttribute("style");
-        if (size) el.style.fontSize = size;
-        return;
-      }
-      el.removeAttribute(attr.name);
-    });
-    [...el.childNodes].forEach(clean);
-  }
-
-  [...root.childNodes].forEach(clean);
-  return root.innerHTML;
+  return escapeHtml(plainTextFromHtml(html));
 }

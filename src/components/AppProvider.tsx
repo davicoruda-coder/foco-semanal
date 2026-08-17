@@ -19,6 +19,7 @@ import {
   setDemoUser,
   setGuestMode,
 } from "@/lib/demo-store";
+import { parseBackupJson } from "@/lib/backup";
 import { isSupabaseConfigured } from "@/lib/env";
 import {
   isCloudDataEmpty,
@@ -155,7 +156,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const { createClient } = await import("@/lib/supabase/client");
       const supabase = createClient();
       const access = await checkCurrentUserAccess(supabase);
-      if (access.configured && !access.allowed) {
+      if (!access.allowed) {
         await supabase.auth.signOut();
         if (!cancelled) clearSession();
         return;
@@ -413,46 +414,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [themePref, data]);
 
   const importBackup = useCallback((json: string) => {
-    try {
-      const parsed = JSON.parse(json) as {
-        data?: AppData;
-        theme?: ThemePref;
-        user?: User | null;
-      };
-      if (!parsed?.data || !Array.isArray(parsed.data.subjects)) {
-        return { ok: false as const, error: "Arquivo inválido: falta data.subjects." };
-      }
-      const imported: AppData = {
-        ...createDefaultData(),
-        ...parsed.data,
-        subjects: parsed.data.subjects ?? [],
-        week_blocks: parsed.data.week_blocks ?? [],
-        reminders: parsed.data.reminders ?? [],
-        note_columns: parsed.data.note_columns ?? [],
-        sticky_notes: parsed.data.sticky_notes ?? [],
-        study_sessions: parsed.data.study_sessions ?? [],
-        session_settings:
-          parsed.data.session_settings ?? createDefaultData().session_settings,
-        timers: parsed.data.timers?.length
-          ? parsed.data.timers
-          : createDefaultData().timers,
-      };
-      saveDemoData(imported);
-      setDataState(imported);
-      if (cloudRef.current) {
-        persistCloud(imported, themeRef.current);
-      }
-      if (
-        parsed.theme === "light" ||
-        parsed.theme === "dark" ||
-        parsed.theme === "auto"
-      ) {
-        setTheme(parsed.theme);
-      }
-      return { ok: true as const };
-    } catch {
-      return { ok: false as const, error: "JSON inválido." };
+    const parsed = parseBackupJson(json);
+    if (!parsed.ok) return parsed;
+    const imported = parsed.data;
+    saveDemoData(imported);
+    setDataState(imported);
+    if (cloudRef.current) {
+      persistCloud(imported, parsed.theme ?? themeRef.current);
     }
+    if (parsed.theme) setTheme(parsed.theme);
+    return { ok: true as const };
   }, [setTheme, persistCloud]);
 
   const resetCloudData = useCallback(async () => {

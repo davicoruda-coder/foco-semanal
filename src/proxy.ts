@@ -1,8 +1,24 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { getSupabaseEnv } from "@/lib/env";
+import { safeNextPath } from "@/lib/safe-path";
 
-/** Refreshes the auth session cookie on each request (Supabase SSR). */
+const PUBLIC_PATHS = new Set([
+  "/login",
+  "/auth/callback",
+  "/redefinir-senha",
+  "/manifest.webmanifest",
+  "/sw.js",
+]);
+
+function isPublicPath(pathname: string) {
+  if (PUBLIC_PATHS.has(pathname)) return true;
+  if (pathname.startsWith("/api/")) return true;
+  if (pathname.startsWith("/_next/")) return true;
+  return false;
+}
+
+/** Refreshes the auth session cookie and blocks unauthenticated app pages. */
 export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });
   const env = getSupabaseEnv();
@@ -25,8 +41,28 @@ export async function proxy(request: NextRequest) {
     },
   });
 
-  // getUser validates the JWT; also refreshes the session if needed.
-  await supabase.auth.getUser();
+  const { data } = await supabase.auth.getUser();
+  const { pathname, search } = request.nextUrl;
+  const user = data.user;
+
+  if (!isPublicPath(pathname) && !user) {
+    const login = request.nextUrl.clone();
+    login.pathname = "/login";
+    login.search = "";
+    const next = `${pathname}${search}`;
+    if (next && next !== "/") {
+      login.searchParams.set("next", next);
+    }
+    return NextResponse.redirect(login);
+  }
+
+  if (pathname === "/login" && user) {
+    const dest = request.nextUrl.clone();
+    dest.pathname = safeNextPath(request.nextUrl.searchParams.get("next"));
+    dest.search = "";
+    return NextResponse.redirect(dest);
+  }
+
   return response;
 }
 

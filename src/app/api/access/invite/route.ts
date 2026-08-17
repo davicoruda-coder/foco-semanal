@@ -10,7 +10,7 @@ function validEmail(value: unknown): value is string {
 }
 
 function validPassword(value: unknown): value is string {
-  return typeof value === "string" && value.length >= 6;
+  return typeof value === "string" && value.length >= 6 && value.length <= 72;
 }
 
 async function findAuthUserId(
@@ -79,11 +79,9 @@ export async function POST(request: Request) {
 
   const admin = createAdminClient();
   if (!admin) {
+    console.error("[foco] invite: SUPABASE_SERVICE_ROLE_KEY ausente");
     return NextResponse.json(
-      {
-        error:
-          "Configure SUPABASE_SERVICE_ROLE_KEY na Vercel para criar a senha temporária.",
-      },
+      { error: "Não foi possível criar a senha temporária." },
       { status: 500 },
     );
   }
@@ -99,14 +97,16 @@ export async function POST(request: Request) {
       createError.message.toLowerCase().includes("already") ||
       createError.message.toLowerCase().includes("registered");
     if (!already) {
+      console.error("[foco] invite createUser:", createError.message);
       return NextResponse.json(
-        { error: createError.message || "Não foi possível criar o usuário." },
+        { error: "Não foi possível criar o usuário." },
         { status: 500 },
       );
     }
 
     const userId = await findAuthUserId(admin, email);
     if (!userId) {
+      console.error("[foco] invite: conta existente não encontrada", email);
       return NextResponse.json(
         {
           error:
@@ -121,8 +121,9 @@ export async function POST(request: Request) {
       { password },
     );
     if (updateError) {
+      console.error("[foco] invite updateUser:", updateError.message);
       return NextResponse.json(
-        { error: updateError.message || "Não foi possível atualizar a senha." },
+        { error: "Não foi possível atualizar a senha." },
         { status: 500 },
       );
     }

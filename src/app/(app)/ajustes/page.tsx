@@ -7,6 +7,7 @@ import { AccessManagement } from "@/components/AccessManagement";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { InstallPwaCard } from "@/components/InstallPwaCard";
 import { ensureNotificationPermission } from "@/lib/audio";
+import { backupFileError } from "@/lib/backup";
 import type { ThemePref } from "@/lib/types";
 
 const OPTIONS: { value: ThemePref; label: string; icon: typeof Sun }[] = [
@@ -98,6 +99,11 @@ export default function AjustesPage() {
   }
 
   async function onImportFile(file: File) {
+    const fileError = backupFileError(file);
+    if (fileError) {
+      setBackupMsg(fileError);
+      return;
+    }
     const text = await file.text();
     const result = importBackup(text);
     setBackupMsg(result.ok ? "Backup restaurado." : result.error);

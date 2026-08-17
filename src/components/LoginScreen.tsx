@@ -61,10 +61,7 @@ export function LoginScreen() {
         password,
       });
       if (error) {
-        const invalid = error.message.toLowerCase().includes("invalid login");
-        throw new Error(
-          invalid ? "E-mail ou senha incorretos." : error.message,
-        );
+        throw new Error("E-mail ou senha incorretos.");
       }
       setBusy(false);
     } catch (error) {
