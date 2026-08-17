@@ -357,29 +357,13 @@ function DayCard({
                 </div>
               ) : (
                 <div
-                  className="rounded-[var(--radius-tag)] px-1.5 py-1.5 text-sm"
+                  className="group relative rounded-[var(--radius-tag)] px-1.5 py-1.5 text-sm"
                   style={style.style}
                 >
-                  <div className="flex items-center gap-0.5 sm:items-start">
+                  <div className="flex items-center gap-0.5">
                     <button
                       type="button"
-                      className="shrink-0 cursor-grab rounded p-1 opacity-70 hover:opacity-100 active:cursor-grabbing"
-                      title="Arrastar ou tocar para mover"
-                      aria-label="Mover bloco"
-                      aria-expanded={moveFor === b.id}
-                      onPointerDown={() => setDragArmed(b.id)}
-                      onPointerUp={() => setDragArmed(null)}
-                      onPointerCancel={() => setDragArmed(null)}
-                      onClick={() => {
-                        setColorFor(null);
-                        setMoveFor((id) => (id === b.id ? null : b.id));
-                      }}
-                    >
-                      <GripVertical size={15} strokeWidth={2} />
-                    </button>
-                    <button
-                      type="button"
-                      className="min-w-0 flex-1 truncate rounded px-1 py-1 text-left text-sm leading-snug sm:overflow-visible sm:whitespace-normal sm:break-words sm:hyphens-auto sm:text-clip"
+                      className="min-w-0 flex-1 whitespace-normal break-words rounded px-1 py-1 text-left text-sm leading-snug"
                       lang="pt-BR"
                       title={b.label || "Sem nome"}
                       onClick={() => {
@@ -390,32 +374,57 @@ function DayCard({
                     >
                       {b.label || "Sem nome"}
                     </button>
-                    <button
-                      type="button"
-                      className="shrink-0 rounded-md bg-black/[0.08] p-1 transition hover:bg-black/20"
-                      title="Cor"
-                      aria-label="Escolher cor"
-                      onClick={() => {
-                        setMoveFor(null);
-                        setColorFor((id) => (id === b.id ? null : b.id));
-                      }}
+                    <div
+                      className={`contents lg:absolute lg:right-1 lg:top-1 lg:z-10 lg:flex lg:items-center lg:gap-0.5 lg:rounded-lg lg:px-1 lg:py-0.5 lg:shadow-[0_1px_8px_rgba(0,0,0,0.16)] lg:transition-opacity ${
+                        moveFor === b.id || colorFor === b.id
+                          ? "lg:opacity-100"
+                          : "lg:opacity-0 lg:group-hover:opacity-100 lg:group-focus-within:opacity-100"
+                      }`}
+                      style={{ background: style.style?.background }}
                     >
-                      <span
-                        className="block h-3.5 w-3.5 rounded-full border border-black/20"
-                        style={{
-                          background: b.color || defaultBlockColor(b.type),
+                      <button
+                        type="button"
+                        className="order-first shrink-0 cursor-grab rounded p-1 opacity-70 hover:opacity-100 active:cursor-grabbing lg:order-none"
+                        title="Arrastar ou tocar para mover"
+                        aria-label="Mover bloco"
+                        aria-expanded={moveFor === b.id}
+                        onPointerDown={() => setDragArmed(b.id)}
+                        onPointerUp={() => setDragArmed(null)}
+                        onPointerCancel={() => setDragArmed(null)}
+                        onClick={() => {
+                          setColorFor(null);
+                          setMoveFor((id) => (id === b.id ? null : b.id));
                         }}
-                      />
-                    </button>
-                    <button
-                      type="button"
-                      className="shrink-0 rounded-md bg-black/[0.08] p-1 transition hover:bg-black/20"
-                      title="Excluir"
-                      aria-label="Excluir"
-                      onClick={() => setPendingDelete(b)}
-                    >
-                      <Trash2 size={13} strokeWidth={1.75} />
-                    </button>
+                      >
+                        <GripVertical size={15} strokeWidth={2} />
+                      </button>
+                      <button
+                        type="button"
+                        className="shrink-0 rounded-md bg-black/[0.08] p-1 transition hover:bg-black/20"
+                        title="Cor"
+                        aria-label="Escolher cor"
+                        onClick={() => {
+                          setMoveFor(null);
+                          setColorFor((id) => (id === b.id ? null : b.id));
+                        }}
+                      >
+                        <span
+                          className="block h-3.5 w-3.5 rounded-full border border-black/20"
+                          style={{
+                            background: b.color || defaultBlockColor(b.type),
+                          }}
+                        />
+                      </button>
+                      <button
+                        type="button"
+                        className="shrink-0 rounded-md bg-black/[0.08] p-1 transition hover:bg-black/20"
+                        title="Excluir"
+                        aria-label="Excluir"
+                        onClick={() => setPendingDelete(b)}
+                      >
+                        <Trash2 size={13} strokeWidth={1.75} />
+                      </button>
+                    </div>
                   </div>
                 </div>
               )}
@@ -552,7 +561,8 @@ export default function SemanaPage() {
         Semana
       </h1>
       <p className="mt-2 opacity-65">
-        Toque no nome para editar · use a alça para reordenar · escolha a cor.
+        Toque no nome para editar · passe o mouse no bloco (ou use a alça no
+        celular) para reordenar e trocar a cor.
       </p>
 
       <div className="mt-6 flex gap-3 overflow-x-auto overscroll-x-contain pb-2 sm:mt-8 sm:grid sm:grid-cols-2 sm:overflow-visible sm:pb-0 md:grid-cols-3 lg:grid-cols-7">
