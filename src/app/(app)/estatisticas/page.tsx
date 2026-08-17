@@ -352,12 +352,8 @@ export default function EstatisticasPage() {
       <h1 className="font-display pb-0.5 text-2xl font-semibold leading-normal tracking-tight md:text-3xl">
         Estatísticas
       </h1>
-      <p className="mt-1 text-sm opacity-60">
-        Tempo contado só enquanto a{" "}
-        <span className="font-medium text-[var(--signal)]">Sessão</span> ou o{" "}
-        <span className="font-medium text-[var(--signal)]">Cronômetro</span>{" "}
-        estiverem em play. O histórico sincroniza na nuvem ao pausar ou ao abrir
-        esta página.
+      <p className="mt-2 opacity-65">
+        Tempo de foco por dia, semana, mês e ano.
       </p>
 
       <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
