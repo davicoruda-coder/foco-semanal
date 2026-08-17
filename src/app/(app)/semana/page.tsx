@@ -360,7 +360,7 @@ function DayCard({
                   className="rounded-[var(--radius-tag)] px-1.5 py-1.5 text-sm"
                   style={style.style}
                 >
-                  <div className="flex items-center gap-0.5">
+                  <div className="flex items-center gap-0.5 sm:items-start">
                     <button
                       type="button"
                       className="shrink-0 cursor-grab rounded p-1 opacity-70 hover:opacity-100 active:cursor-grabbing"
@@ -379,8 +379,9 @@ function DayCard({
                     </button>
                     <button
                       type="button"
-                      className="min-w-0 flex-1 truncate rounded px-1 py-1 text-left text-sm leading-snug"
-                      title="Editar nome"
+                      className="min-w-0 flex-1 truncate rounded px-1 py-1 text-left text-sm leading-snug sm:overflow-visible sm:whitespace-normal sm:break-words sm:hyphens-auto sm:text-clip"
+                      lang="pt-BR"
+                      title={b.label || "Sem nome"}
                       onClick={() => {
                         setMoveFor(null);
                         setColorFor(null);
@@ -546,7 +547,7 @@ export default function SemanaPage() {
   const [draggingId, setDraggingId] = useState<string | null>(null);
 
   return (
-    <div className="mx-auto max-w-6xl">
+    <div className="mx-auto max-w-6xl lg:max-w-none">
       <h1 className="font-display pb-0.5 text-2xl font-semibold leading-normal tracking-tight md:text-3xl">
         Semana
       </h1>
