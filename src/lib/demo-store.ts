@@ -30,17 +30,10 @@ export function createDefaultData(): AppData {
       },
       {
         id: id("tmr"),
-        name: "Estudo 1",
+        name: "Estudo",
         minutes: 10,
         accent: "var(--accent-2)",
         sort_order: 1,
-      },
-      {
-        id: id("tmr"),
-        name: "Estudo 2",
-        minutes: 5,
-        accent: "var(--warn)",
-        sort_order: 2,
       },
     ],
   };
@@ -112,17 +105,10 @@ export function loadDemoData(): AppData {
         },
         {
           id: id("tmr"),
-          name: "Estudo 1",
+          name: "Estudo",
           minutes: s.break_long_minutes ?? 10,
           accent: "var(--accent-2)",
           sort_order: 1,
-        },
-        {
-          id: id("tmr"),
-          name: "Estudo 2",
-          minutes: s.break_short_minutes ?? 5,
-          accent: "var(--warn)",
-          sort_order: 2,
         },
       ];
     }

@@ -210,8 +210,7 @@ begin
 
   insert into public.focus_timers (user_id, name, minutes, accent, sort_order) values
     (new.id, 'Sessão', 40, 'var(--signal)', 0),
-    (new.id, 'Estudo 1', 10, 'var(--accent-2)', 1),
-    (new.id, 'Estudo 2', 5, 'var(--warn)', 2);
+    (new.id, 'Estudo', 10, 'var(--accent-2)', 1);
 
   return new;
 end;
