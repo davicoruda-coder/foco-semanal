@@ -213,21 +213,6 @@ begin
     (new.id, 'Estudo 1', 10, 'var(--accent-2)', 1),
     (new.id, 'Estudo 2', 5, 'var(--warn)', 2);
 
-  insert into public.subjects (user_id, name, status, notes, cycle_order) values
-    (new.id, 'Projetos', 'ok', 'Projeto Sistema Estudo', 0),
-    (new.id, 'Python', 'prox', 'Revisão e continuidade', 1);
-
-  insert into public.week_blocks (user_id, day, label, type, sort_order) values
-    (new.id, 5, 'Trabalho', 'trabalho', 0),
-    (new.id, 5, 'Estudo', 'estudo', 1),
-    (new.id, 5, 'Reunião', 'reuniao', 2);
-
-  insert into public.note_columns (user_id, title, color, sort_order) values
-    (new.id, 'Faculdade', '#99F6E4', 0),
-    (new.id, 'Python', '#FDE68A', 1),
-    (new.id, 'Projetos', '#FBCFE8', 2),
-    (new.id, 'Geral', '#BBF7D0', 3);
-
   return new;
 end;
 $$;
