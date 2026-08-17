@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Download } from "lucide-react";
+import { ChevronLeft, ChevronRight, Download } from "lucide-react";
 import { useApp } from "@/components/AppProvider";
 import { useTimerRuntime } from "@/components/TimerRuntimeProvider";
 import { BackToHoje } from "@/components/BackToHoje";
@@ -16,6 +16,7 @@ import {
   getDay,
   loadFocusLog,
   monthSeries,
+  startOfWeek,
   weekSeries,
   yearSeries,
   type FocusLog,
@@ -25,7 +26,6 @@ import {
   syncFocusLogWithCloud,
 } from "@/lib/supabase/focus-sync";
 import { DAYS } from "@/lib/types";
-import { todayIndex } from "@/lib/utils";
 
 type Range = "dia" | "semana" | "mes" | "ano";
 
@@ -34,6 +34,13 @@ const REPORT_BUTTON_LABEL: Record<Range, string> = {
   semana: "Baixar PDF da semana",
   mes: "Baixar PDF do mês",
   ano: "Baixar PDF do ano",
+};
+
+const CURRENT_PERIOD_LABEL: Record<Range, string> = {
+  dia: "Hoje",
+  semana: "Esta semana",
+  mes: "Este mês",
+  ano: "Este ano",
 };
 
 const MONTHS_SHORT = [
@@ -66,10 +73,39 @@ const MONTHS_LONG = [
   "Dezembro",
 ];
 
+function periodStart(range: Range, date: Date): Date {
+  if (range === "semana") return startOfWeek(date);
+  if (range === "mes") return new Date(date.getFullYear(), date.getMonth(), 1);
+  if (range === "ano") return new Date(date.getFullYear(), 0, 1);
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+}
+
+function isCurrentPeriod(range: Range, date: Date): boolean {
+  return dateKey(periodStart(range, date)) === dateKey(periodStart(range, new Date()));
+}
+
+function shiftPeriod(date: Date, range: Range, amount: number): Date {
+  const next = new Date(date);
+  if (range === "dia") {
+    next.setDate(next.getDate() + amount);
+  } else if (range === "semana") {
+    next.setDate(next.getDate() + amount * 7);
+  } else if (range === "mes") {
+    next.setDate(1);
+    next.setMonth(next.getMonth() + amount);
+  } else {
+    next.setDate(1);
+    next.setMonth(0);
+    next.setFullYear(next.getFullYear() + amount);
+  }
+  return next;
+}
+
 export default function EstatisticasPage() {
   const { data, user } = useApp();
   const { runtime, stopwatch } = useTimerRuntime();
   const [range, setRange] = useState<Range>("semana");
+  const [referenceDate, setReferenceDate] = useState(() => new Date());
   const [log, setLog] = useState<FocusLog>({ version: 1, days: {} });
   const [confirmReset, setConfirmReset] = useState(false);
   const [syncing, setSyncing] = useState(false);
@@ -126,72 +162,113 @@ export default function EstatisticasPage() {
   const tracking =
     Boolean(session && runtime[session.id]?.running) || stopwatch.running;
 
-  const today = getDay(log, dateKey());
-  const week = useMemo(() => weekSeries(log), [log]);
-  const month = useMemo(() => monthSeries(log), [log]);
-  const year = useMemo(() => yearSeries(log), [log]);
+  const currentDay = getDay(log, dateKey());
+  const currentWeek = useMemo(() => weekSeries(log), [log]);
+  const currentMonth = useMemo(() => monthSeries(log), [log]);
+  const selectedDay = useMemo(
+    () => getDay(log, dateKey(referenceDate)),
+    [log, referenceDate],
+  );
+  const week = useMemo(
+    () => weekSeries(log, referenceDate),
+    [log, referenceDate],
+  );
+  const month = useMemo(
+    () => monthSeries(log, referenceDate),
+    [log, referenceDate],
+  );
+  const year = useMemo(
+    () => yearSeries(log, referenceDate),
+    [log, referenceDate],
+  );
 
+  const currentWeekTotal = currentWeek.reduce((a, b) => a + b.seconds, 0);
+  const currentMonthTotal = currentMonth.reduce((a, b) => a + b.seconds, 0);
   const weekTotal = week.reduce((a, b) => a + b.seconds, 0);
   const monthTotal = month.reduce((a, b) => a + b.seconds, 0);
   const yearTotal = year.reduce((a, b) => a + b.seconds, 0);
 
   const bars = useMemo(() => {
     const now = new Date();
+    const currentKey = dateKey(now);
     if (range === "dia") {
       const hour = now.getHours();
-      return today.byHour.map((seconds, h) => ({
+      const selectedIsToday = dateKey(referenceDate) === currentKey;
+      return selectedDay.byHour.map((seconds, h) => ({
         label: String(h).padStart(2, "0"),
         value: seconds,
         hint: `${String(h).padStart(2, "0")}h — ${formatFocusDuration(seconds)}`,
-        emphasis: h === hour,
+        emphasis: selectedIsToday && h === hour,
       }));
     }
     if (range === "semana") {
-      const todayI = todayIndex();
       return week.map((d, i) => ({
         label: DAYS[i].slice(0, 3),
         value: d.seconds,
         hint: `${DAYS[i]} — ${formatFocusDuration(d.seconds)}`,
-        emphasis: i === todayI,
+        emphasis: d.key === currentKey,
       }));
     }
     if (range === "mes") {
-      const todayN = now.getDate();
       return month.map((d) => ({
         label: String(d.date.getDate()),
         value: d.seconds,
         hint: `${d.date.getDate()}/${d.date.getMonth() + 1} — ${formatFocusDuration(d.seconds)}`,
-        emphasis: d.date.getDate() === todayN,
+        emphasis: d.key === currentKey,
       }));
     }
     const monthI = now.getMonth();
+    const selectedIsCurrentYear =
+      referenceDate.getFullYear() === now.getFullYear();
     return year.map((m) => ({
       label: MONTHS_SHORT[m.month],
       value: m.seconds,
       hint: `${MONTHS_SHORT[m.month]} — ${formatFocusDuration(m.seconds)}`,
-      emphasis: m.month === monthI,
+      emphasis: selectedIsCurrentYear && m.month === monthI,
     }));
-  }, [range, today, week, month, year]);
+  }, [range, referenceDate, selectedDay, week, month, year]);
 
   const headline =
     range === "dia"
-      ? today.seconds
+      ? selectedDay.seconds
       : range === "semana"
         ? weekTotal
         : range === "mes"
           ? monthTotal
           : yearTotal;
 
-  const report = useMemo(() => {
-    const now = new Date();
+  const viewingCurrentPeriod = isCurrentPeriod(range, referenceDate);
+
+  const periodLabel = useMemo(() => {
     const shortDate = (date: Date) =>
       new Intl.DateTimeFormat("pt-BR").format(date);
+    if (range === "dia") {
+      return new Intl.DateTimeFormat("pt-BR", {
+        weekday: "long",
+        day: "2-digit",
+        month: "long",
+        year: "numeric",
+      }).format(referenceDate);
+    }
+    if (range === "semana") {
+      const first = week[0]?.date ?? referenceDate;
+      const last = week[week.length - 1]?.date ?? referenceDate;
+      return `${shortDate(first)} a ${shortDate(last)}`;
+    }
+    if (range === "mes") {
+      return `${MONTHS_LONG[referenceDate.getMonth()]} de ${referenceDate.getFullYear()}`;
+    }
+    return String(referenceDate.getFullYear());
+  }, [range, referenceDate, week]);
 
+  const report = useMemo(() => {
+    const shortDate = (date: Date) =>
+      new Intl.DateTimeFormat("pt-BR").format(date);
     if (range === "dia") {
       return {
-        period: `Dia — ${shortDate(now)}`,
-        filename: `relatorio-foco-dia-${dateKey(now)}.pdf`,
-        rows: today.byHour.map((seconds, hour) => ({
+        period: `Dia — ${shortDate(referenceDate)}`,
+        filename: `relatorio-foco-dia-${dateKey(referenceDate)}.pdf`,
+        rows: selectedDay.byHour.map((seconds, hour) => ({
           label: `${String(hour).padStart(2, "0")}:00–${String(hour).padStart(2, "0")}:59`,
           seconds,
         })),
@@ -199,8 +276,8 @@ export default function EstatisticasPage() {
     }
 
     if (range === "semana") {
-      const first = week[0]?.date ?? now;
-      const last = week[week.length - 1]?.date ?? now;
+      const first = week[0]?.date ?? referenceDate;
+      const last = week[week.length - 1]?.date ?? referenceDate;
       return {
         period: `Semana — ${shortDate(first)} a ${shortDate(last)}`,
         filename: `relatorio-foco-semana-${dateKey(first)}.pdf`,
@@ -213,9 +290,9 @@ export default function EstatisticasPage() {
 
     if (range === "mes") {
       return {
-        period: `${MONTHS_LONG[now.getMonth()]} de ${now.getFullYear()}`,
-        filename: `relatorio-foco-mes-${now.getFullYear()}-${String(
-          now.getMonth() + 1,
+        period: `${MONTHS_LONG[referenceDate.getMonth()]} de ${referenceDate.getFullYear()}`,
+        filename: `relatorio-foco-mes-${referenceDate.getFullYear()}-${String(
+          referenceDate.getMonth() + 1,
         ).padStart(2, "0")}.pdf`,
         rows: month.map((day) => ({
           label: shortDate(day.date),
@@ -225,14 +302,14 @@ export default function EstatisticasPage() {
     }
 
     return {
-      period: `Ano de ${now.getFullYear()}`,
-      filename: `relatorio-foco-ano-${now.getFullYear()}.pdf`,
+      period: `Ano de ${referenceDate.getFullYear()}`,
+      filename: `relatorio-foco-ano-${referenceDate.getFullYear()}.pdf`,
       rows: year.map((item) => ({
         label: MONTHS_LONG[item.month],
         seconds: item.seconds,
       })),
     };
-  }, [range, today, week, month, year]);
+  }, [range, referenceDate, selectedDay, week, month, year]);
 
   async function downloadReport() {
     setDownloadingReport(true);
@@ -330,6 +407,52 @@ export default function EstatisticasPage() {
         })}
       </div>
 
+      <div className="mt-3 flex items-center gap-2 rounded-[var(--radius-btn)] border border-[var(--line)] bg-[var(--surface)]/70 p-2">
+        <button
+          type="button"
+          className="grid h-10 w-10 shrink-0 place-items-center rounded-full transition hover:bg-[var(--mist)]"
+          title="Período anterior"
+          aria-label="Mostrar período anterior"
+          onClick={() =>
+            setReferenceDate((date) => shiftPeriod(date, range, -1))
+          }
+        >
+          <ChevronLeft size={20} strokeWidth={2} />
+        </button>
+
+        <div className="min-w-0 flex-1 text-center">
+          <p className="truncate text-sm font-semibold capitalize">
+            {periodLabel}
+          </p>
+          {!viewingCurrentPeriod ? (
+            <button
+              type="button"
+              className="mt-0.5 text-xs font-medium text-[var(--signal)] hover:underline"
+              onClick={() => setReferenceDate(new Date())}
+            >
+              Voltar para {CURRENT_PERIOD_LABEL[range].toLowerCase()}
+            </button>
+          ) : (
+            <p className="mt-0.5 text-xs opacity-45">
+              {CURRENT_PERIOD_LABEL[range]}
+            </p>
+          )}
+        </div>
+
+        <button
+          type="button"
+          className="grid h-10 w-10 shrink-0 place-items-center rounded-full transition hover:bg-[var(--mist)] disabled:cursor-default disabled:opacity-25 disabled:hover:bg-transparent"
+          title="Próximo período"
+          aria-label="Mostrar próximo período"
+          disabled={viewingCurrentPeriod}
+          onClick={() =>
+            setReferenceDate((date) => shiftPeriod(date, range, 1))
+          }
+        >
+          <ChevronRight size={20} strokeWidth={2} />
+        </button>
+      </div>
+
       <section className="surface mt-5 p-5 md:p-6">
         <p className="text-xs font-semibold uppercase tracking-wider opacity-50">
           Total
@@ -352,7 +475,7 @@ export default function EstatisticasPage() {
             Hoje
           </p>
           <p className="font-mono-num mt-1 text-lg font-medium">
-            {formatFocusDuration(today.seconds)}
+            {formatFocusDuration(currentDay.seconds)}
           </p>
         </div>
         <div className="surface p-4">
@@ -360,7 +483,7 @@ export default function EstatisticasPage() {
             Esta semana
           </p>
           <p className="font-mono-num mt-1 text-lg font-medium">
-            {formatFocusDuration(weekTotal)}
+            {formatFocusDuration(currentWeekTotal)}
           </p>
         </div>
         <div className="surface p-4">
@@ -368,7 +491,7 @@ export default function EstatisticasPage() {
             Este mês
           </p>
           <p className="font-mono-num mt-1 text-lg font-medium">
-            {formatFocusDuration(monthTotal)}
+            {formatFocusDuration(currentMonthTotal)}
           </p>
         </div>
       </section>
