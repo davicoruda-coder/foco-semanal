@@ -116,7 +116,7 @@ export default function HojePage() {
 
             {showFullWeek ? (
               <div className="-mx-0 overflow-x-auto overscroll-x-contain">
-                <div className="grid min-w-[640px] grid-cols-7 divide-x divide-[var(--line)] sm:min-w-[720px]">
+                <div className="grid min-w-[52rem] grid-cols-7 divide-x divide-[var(--line)] sm:min-w-[46rem] lg:min-w-0">
                   {weekDays.map(({ name, i }) => {
                     const blocks = data.week_blocks
                       .filter((b) => b.day === i)
@@ -125,10 +125,10 @@ export default function HojePage() {
                     return (
                       <div
                         key={name}
-                        className="min-h-36 bg-[var(--mist)] sm:min-h-44"
+                        className="min-h-36 min-w-0 bg-[var(--mist)] sm:min-h-44"
                       >
                         <div
-                          className={`border-b px-2 py-2 text-center text-xs font-semibold uppercase tracking-wider ${
+                          className={`border-b px-1.5 py-2 text-center text-[11px] font-semibold uppercase tracking-wider sm:px-2 sm:text-xs ${
                             isToday
                               ? "relative z-[1] border-[color-mix(in_srgb,var(--signal)_18%,var(--line))] text-[var(--ink)]"
                               : "border-[var(--line)] text-[color-mix(in_srgb,var(--ink)_55%,transparent)]"
@@ -146,7 +146,7 @@ export default function HojePage() {
                         >
                           {name.slice(0, 3)}
                         </div>
-                        <div className="space-y-1.5 p-2">
+                        <div className="space-y-1.5 p-1.5 sm:p-2">
                           {blocks.length === 0 && (
                             <p className="px-1 text-xs opacity-40">—</p>
                           )}
@@ -155,8 +155,10 @@ export default function HojePage() {
                             return (
                               <div
                                 key={b.id}
-                                className="rounded-[var(--radius-tag)] px-2 py-1.5 text-sm font-medium leading-snug"
+                                title={b.label}
+                                className="rounded-[var(--radius-tag)] px-1.5 py-1.5 text-[11px] font-medium leading-snug break-words hyphens-auto sm:px-2 sm:text-xs md:text-sm"
                                 style={style.style}
+                                lang="pt-BR"
                               >
                                 {b.label}
                               </div>
