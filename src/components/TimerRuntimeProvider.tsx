@@ -54,6 +54,8 @@ type TimerRuntimeContextValue = {
 const STORAGE_KEY = "foco_semanal_timer_runtime_v1";
 const MODE_KEY = "foco_semanal_clock_mode";
 const STOPWATCH_KEY = "foco_semanal_stopwatch_v1";
+/** Backup no aparelho enquanto roda — a tela usa o relógio, não este intervalo. */
+const PERSIST_MS = 5000;
 
 const DEFAULT_STOPWATCH: StopwatchState = {
   running: false,
@@ -166,7 +168,17 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
   } | null>(null);
   const flashTimer = useRef<number | null>(null);
   const doneRef = useRef<Record<string, boolean>>({});
+  const runtimeRef = useRef(runtime);
+  const stopwatchRef = useRef(stopwatch);
   const [, setTick] = useState(0);
+
+  runtimeRef.current = runtime;
+  stopwatchRef.current = stopwatch;
+
+  const persistClocks = useCallback(() => {
+    writeStored(runtimeRef.current);
+    writeStopwatch(stopwatchRef.current);
+  }, []);
 
   useEffect(() => {
     setRuntime(readStored());
@@ -272,6 +284,15 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
   );
   const focusLastRef = useRef<number | null>(null);
 
+  const flushFocusSeconds = useCallback(() => {
+    const now = Date.now();
+    const last = focusLastRef.current;
+    if (last == null) return;
+    const deltaSec = Math.floor((now - last) / 1000);
+    focusLastRef.current = now;
+    if (deltaSec > 0) addFocusSeconds(deltaSec);
+  }, []);
+
   useEffect(() => {
     if (!ready) return;
     if (!trackingFocus) {
@@ -281,35 +302,33 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
     // Congela o card "Foco hoje" no total atual; o log real continua acumulando.
     commitFocusDisplaySnapshot();
     focusLastRef.current = Date.now();
-    const id = window.setInterval(() => {
-      const now = Date.now();
-      const last = focusLastRef.current ?? now;
-      focusLastRef.current = now;
-      const deltaSec = Math.floor((now - last) / 1000);
-      if (deltaSec > 0) {
-        addFocusSeconds(deltaSec);
-        window.dispatchEvent(new Event("foco-focus-log"));
-      }
-    }, 1000);
+
+    const persistFocus = () => {
+      flushFocusSeconds();
+      window.dispatchEvent(new Event("foco-focus-log"));
+    };
+
+    const id = window.setInterval(persistFocus, PERSIST_MS);
+    const onHide = () => {
+      if (document.visibilityState === "hidden") persistFocus();
+    };
+    document.addEventListener("visibilitychange", onHide);
+    window.addEventListener("pagehide", persistFocus);
+
     return () => {
-      const now = Date.now();
-      const last = focusLastRef.current;
+      document.removeEventListener("visibilitychange", onHide);
+      window.removeEventListener("pagehide", persistFocus);
+      flushFocusSeconds();
       focusLastRef.current = null;
-      if (last) {
-        const deltaSec = Math.floor((now - last) / 1000);
-        if (deltaSec > 0) {
-          addFocusSeconds(deltaSec);
-        }
-      }
       // Pause / fim / reset: libera o total consolidado e espelha na nuvem.
       commitFocusDisplaySnapshot();
       window.dispatchEvent(new Event("foco-focus-log"));
       void syncFocusLogWithCloud();
       window.clearInterval(id);
     };
-  }, [ready, trackingFocus]);
+  }, [ready, trackingFocus, flushFocusSeconds]);
 
-  // Global tick — continues even when Hoje is unmounted
+  // Global tick — continues even when Hoje is unmounted (tela só; não grava disco).
   useEffect(() => {
     if (!ready || !anyRunning) return;
 
@@ -326,13 +345,30 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
             next[tid] = { ...r, secondsLeft: left };
           }
         }
-        if (changed) writeStored(next);
         return changed ? next : prev;
       });
     }, 1000);
 
     return () => window.clearInterval(id);
   }, [ready, anyRunning]);
+
+  // Backup no aparelho: pause já grava; enquanto roda, a cada 5s ou ao esconder a aba.
+  useEffect(() => {
+    if (!ready || !anyRunning) return;
+
+    const id = window.setInterval(persistClocks, PERSIST_MS);
+    const onHide = () => {
+      if (document.visibilityState === "hidden") persistClocks();
+    };
+    document.addEventListener("visibilitychange", onHide);
+    window.addEventListener("pagehide", persistClocks);
+    return () => {
+      window.clearInterval(id);
+      document.removeEventListener("visibilitychange", onHide);
+      window.removeEventListener("pagehide", persistClocks);
+      persistClocks();
+    };
+  }, [ready, anyRunning, persistClocks]);
 
   // Completions
   useEffect(() => {

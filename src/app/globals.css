@@ -68,7 +68,6 @@
   --font-sans: var(--font-ui);
   --font-display: var(--font-display);
   --font-mono: var(--font-mono);
-  --font-hand: var(--font-hand);
 }
 
 * {
@@ -113,10 +112,6 @@ a {
 
 .font-display {
   font-family: var(--font-display), system-ui, sans-serif;
-}
-
-.font-hand {
-  font-family: var(--font-hand), cursive;
 }
 
 .font-mono-num {
