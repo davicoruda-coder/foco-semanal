@@ -1,14 +1,24 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight, Download } from "lucide-react";
+import { ChevronLeft, ChevronRight, Download, Plus } from "lucide-react";
 import { useApp } from "@/components/AppProvider";
 import { useTimerRuntime } from "@/components/TimerRuntimeProvider";
 import { BackToHoje } from "@/components/BackToHoje";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { DialogFrame } from "@/components/DialogFrame";
 import { FocusBarChart } from "@/components/FocusBarChart";
+import {
+  clearInterrupts,
+  formatInterruptWhen,
+  interruptSummary,
+  INTERRUPT_EVENT,
+  loadInterrupts,
+  type ClockInterrupt,
+} from "@/lib/clock-interrupt";
 import { downloadFocusReport } from "@/lib/focus-report";
 import {
+  addFocusSeconds,
   clearFocusLog,
   commitFocusDisplaySnapshot,
   dateKey,
@@ -111,6 +121,15 @@ export default function EstatisticasPage() {
   const [syncing, setSyncing] = useState(false);
   const [syncHint, setSyncHint] = useState<string | null>(null);
   const [downloadingReport, setDownloadingReport] = useState(false);
+  const [interrupts, setInterrupts] = useState<ClockInterrupt[]>([]);
+  const [addTimeOpen, setAddTimeOpen] = useState(false);
+  const [addHours, setAddHours] = useState("0");
+  const [addMinutes, setAddMinutes] = useState("25");
+  const [addDay, setAddDay] = useState(() => dateKey());
+  const [addHourOfDay, setAddHourOfDay] = useState(() =>
+    String(new Date().getHours()),
+  );
+  const [addHint, setAddHint] = useState<string | null>(null);
 
   useEffect(() => {
     const applyLocal = () => {
@@ -140,15 +159,19 @@ export default function EstatisticasPage() {
 
     applyLocal();
     void syncCloud();
+    setInterrupts(loadInterrupts());
 
     const onLog = () => applyLocal();
+    const onInterrupt = () => setInterrupts(loadInterrupts());
     window.addEventListener("foco-focus-log", onLog);
+    window.addEventListener(INTERRUPT_EVENT, onInterrupt);
     const onVis = () => {
       if (document.visibilityState === "visible") void syncCloud();
     };
     document.addEventListener("visibilitychange", onVis);
     return () => {
       window.removeEventListener("foco-focus-log", onLog);
+      window.removeEventListener(INTERRUPT_EVENT, onInterrupt);
       document.removeEventListener("visibilitychange", onVis);
     };
   }, [user]);
@@ -328,8 +351,56 @@ export default function EstatisticasPage() {
     }
   }
 
+  const addSeconds = useMemo(() => {
+    const hours = Math.max(0, Math.min(12, Math.floor(Number(addHours) || 0)));
+    const minutes = Math.max(0, Math.min(59, Math.floor(Number(addMinutes) || 0)));
+    return hours * 3600 + minutes * 60;
+  }, [addHours, addMinutes]);
+
+  function openAddTime() {
+    const today = dateKey();
+    const viewingDay = range === "dia" ? dateKey(referenceDate) : today;
+    setAddDay(viewingDay);
+    setAddHours("0");
+    setAddMinutes("25");
+    setAddHourOfDay(
+      viewingDay === today ? String(new Date().getHours()) : "12",
+    );
+    setAddHint(null);
+    setAddTimeOpen(true);
+  }
+
+  async function submitAddTime() {
+    if (addSeconds <= 0) {
+      setAddHint("Informe pelo menos 1 minuto.");
+      return;
+    }
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(addDay)) {
+      setAddHint("Data inválida.");
+      return;
+    }
+    const [year, month, day] = addDay.split("-").map(Number);
+    const hour = Math.max(0, Math.min(23, Math.floor(Number(addHourOfDay) || 0)));
+    const at = new Date(year, month - 1, day, hour, 0, 0, 0);
+    const next = addFocusSeconds(addSeconds, at);
+    commitFocusDisplaySnapshot(next);
+    setLog(next);
+    window.dispatchEvent(new Event("foco-focus-log"));
+    setAddTimeOpen(false);
+    if (user) {
+      try {
+        const merged = await syncFocusLogWithCloud();
+        setLog(merged);
+      } catch {
+        /* local already saved */
+      }
+    }
+  }
+
   async function resetHistory() {
     const empty = clearFocusLog();
+    clearInterrupts();
+    setInterrupts([]);
     setLog(empty);
     window.dispatchEvent(new Event("foco-focus-log"));
     setConfirmReset(false);
@@ -341,12 +412,102 @@ export default function EstatisticasPage() {
       <ConfirmDialog
         open={confirmReset}
         title="Resetar histórico de tempo?"
-        message="Isso apaga todo o tempo registrado (dia, semana, mês e ano) neste aparelho e na nuvem. Os temporizadores em si não mudam. Esta ação não pode ser desfeita."
+        message="Isso apaga todo o tempo registrado (dia, semana, mês e ano) neste aparelho e na nuvem, e os avisos de sessão interrompida. Os temporizadores em si não mudam. Esta ação não pode ser desfeita."
         confirmLabel="Sim, resetar"
         cancelLabel="Cancelar"
         onCancel={() => setConfirmReset(false)}
         onConfirm={() => void resetHistory()}
       />
+
+      <DialogFrame
+        open={addTimeOpen}
+        onClose={() => setAddTimeOpen(false)}
+        labelledBy="add-time-title"
+        cardClassName="surface w-full max-w-sm p-6 shadow-[var(--shadow-lg)]"
+      >
+        <h2 id="add-time-title" className="font-display text-xl font-semibold">
+          Adicionar tempo
+        </h2>
+        <p className="mt-2 text-sm opacity-65">
+          Some minutos de estudo feitos fora do sistema (cronômetro próprio,
+          caderno, etc.).
+        </p>
+        <div className="mt-4 grid gap-3">
+          <label className="grid gap-1 text-sm">
+            <span className="text-xs font-medium opacity-60">Dia</span>
+            <input
+              type="date"
+              className="input"
+              value={addDay}
+              max={dateKey()}
+              onChange={(e) => setAddDay(e.target.value)}
+            />
+          </label>
+          <div className="grid grid-cols-2 gap-2">
+            <label className="grid gap-1 text-sm">
+              <span className="text-xs font-medium opacity-60">Horas</span>
+              <input
+                type="number"
+                min={0}
+                max={12}
+                className="input"
+                value={addHours}
+                onChange={(e) => setAddHours(e.target.value)}
+              />
+            </label>
+            <label className="grid gap-1 text-sm">
+              <span className="text-xs font-medium opacity-60">Minutos</span>
+              <input
+                type="number"
+                min={0}
+                max={59}
+                className="input"
+                value={addMinutes}
+                onChange={(e) => setAddMinutes(e.target.value)}
+              />
+            </label>
+          </div>
+          <label className="grid gap-1 text-sm">
+            <span className="text-xs font-medium opacity-60">
+              Horário no gráfico do dia
+            </span>
+            <select
+              className="input"
+              value={addHourOfDay}
+              onChange={(e) => setAddHourOfDay(e.target.value)}
+            >
+              {Array.from({ length: 24 }, (_, h) => (
+                <option key={h} value={String(h)}>
+                  {String(h).padStart(2, "0")}:00
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+        <p className="mt-3 text-sm font-medium">
+          Vai somar {formatFocusDuration(addSeconds)}
+        </p>
+        {addHint ? (
+          <p className="mt-1 text-sm text-[var(--warn)]">{addHint}</p>
+        ) : null}
+        <div className="mt-6 flex flex-wrap justify-end gap-2">
+          <button
+            type="button"
+            className="btn"
+            onClick={() => setAddTimeOpen(false)}
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            className="btn btn-primary"
+            disabled={addSeconds <= 0}
+            onClick={() => void submitAddTime()}
+          >
+            Adicionar
+          </button>
+        </div>
+      </DialogFrame>
 
       <BackToHoje />
       <h1 className="font-display pb-0.5 text-2xl font-semibold leading-normal tracking-tight md:text-3xl">
@@ -496,7 +657,40 @@ export default function EstatisticasPage() {
         </div>
       </section>
 
+      {interrupts.length > 0 ? (
+        <section className="surface mt-4 p-5 md:p-6">
+          <p className="text-xs font-semibold uppercase tracking-wider opacity-50">
+            Sessão interrompida
+          </p>
+          <p className="mt-1 text-sm opacity-65">
+            O computador desligou ou o navegador parou. O tempo do apagão não
+            entrou no foco; o relógio voltou pausado no último ponto salvo.
+          </p>
+          <ul className="mt-4 grid gap-3">
+            {interrupts.map((item) => (
+              <li
+                key={item.id}
+                className="rounded-[var(--radius-btn)] border border-[var(--line)] bg-[var(--mist)]/50 px-3.5 py-3"
+              >
+                <p className="text-sm font-medium">{interruptSummary(item)}</p>
+                <p className="mt-0.5 text-xs opacity-50">
+                  Último registro às {formatInterruptWhen(item)}
+                </p>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+
       <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-start">
+        <button
+          type="button"
+          className="btn w-full sm:w-auto"
+          onClick={openAddTime}
+        >
+          <Plus size={16} strokeWidth={2} />
+          Adicionar tempo
+        </button>
         <button
           type="button"
           className="btn btn-primary w-full sm:w-auto"

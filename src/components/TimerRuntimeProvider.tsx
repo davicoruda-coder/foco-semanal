@@ -12,6 +12,11 @@ import {
 } from "react";
 import { useApp } from "@/components/AppProvider";
 import { ensureNotificationPermission, notify, playAlarmTone } from "@/lib/audio";
+import {
+  patchInterruptNames,
+  recoverStaleClocks,
+  writeHeartbeat,
+} from "@/lib/clock-interrupt";
 import { addFocusSeconds, commitFocusDisplaySnapshot } from "@/lib/focus-log";
 import { syncFocusLogWithCloud } from "@/lib/supabase/focus-sync";
 
@@ -178,11 +183,21 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
   const persistClocks = useCallback(() => {
     writeStored(runtimeRef.current);
     writeStopwatch(stopwatchRef.current);
+    const clocks = runtimeRef.current;
+    const sw = stopwatchRef.current;
+    if (sw.running || Object.values(clocks).some((r) => r.running)) {
+      writeHeartbeat();
+    }
   }, []);
 
   useEffect(() => {
-    setRuntime(readStored());
-    setStopwatch(readStopwatch());
+    const recovered = recoverStaleClocks(readStored(), readStopwatch());
+    if (recovered.changed) {
+      writeStored(recovered.runtime);
+      writeStopwatch(recovered.stopwatch);
+    }
+    setRuntime(recovered.runtime);
+    setStopwatch(recovered.stopwatch);
     const storedMode = readJson(MODE_KEY);
     if (storedMode === "timers" || storedMode === "stopwatch") {
       setModeState(storedMode);
@@ -190,6 +205,13 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
     setReady(true);
     void ensureNotificationPermission();
   }, []);
+
+  useEffect(() => {
+    if (!appReady || timers.length === 0) return;
+    patchInterruptNames(
+      timers.map((t) => ({ id: t.id, name: t.name, sort_order: t.sort_order })),
+    );
+  }, [appReady, timers]);
 
   const setMode = useCallback((next: ClockMode) => {
     setModeState(next);
@@ -463,6 +485,7 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
             },
           };
           writeStored(updated);
+          writeHeartbeat();
           return updated;
         }
 
@@ -487,6 +510,7 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
               },
         };
         writeStored(updated);
+        if (willRun) writeHeartbeat();
         return updated;
       });
     },
@@ -541,6 +565,7 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
             accumulatedMs: liveStopwatchMs(prev),
           };
       writeStopwatch(next);
+      if (willRun) writeHeartbeat();
       return next;
     });
   }, [showFlash]);
