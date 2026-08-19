@@ -682,10 +682,10 @@ export default function EstatisticasPage() {
         </section>
       ) : null}
 
-      <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-start">
+      <div className="mt-6 grid grid-cols-1 gap-2 sm:grid-cols-2">
         <button
           type="button"
-          className="btn w-full sm:w-auto"
+          className="btn w-full"
           onClick={openAddTime}
         >
           <Plus size={16} strokeWidth={2} />
@@ -693,7 +693,7 @@ export default function EstatisticasPage() {
         </button>
         <button
           type="button"
-          className="btn btn-primary w-full sm:w-auto"
+          className="btn btn-primary w-full"
           disabled={downloadingReport}
           onClick={() => void downloadReport()}
         >
@@ -703,7 +703,7 @@ export default function EstatisticasPage() {
         {user ? (
           <button
             type="button"
-            className="btn w-full sm:w-auto"
+            className="btn w-full"
             disabled={syncing}
             onClick={() => {
               setSyncing(true);
@@ -724,7 +724,7 @@ export default function EstatisticasPage() {
         ) : null}
         <button
           type="button"
-          className="btn w-full text-[var(--warn)] sm:w-auto"
+          className="btn w-full text-[var(--warn)]"
           onClick={() => setConfirmReset(true)}
         >
           Resetar histórico de tempo
