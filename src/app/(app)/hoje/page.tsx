@@ -172,7 +172,7 @@ export default function HojePage() {
               </div>
             ) : (
               <div className="bg-[var(--signal-soft)]/50 p-3 md:px-5">
-                <div className="flex flex-wrap items-center gap-2">
+                <div className="flex flex-col gap-2">
                   {todayBlocks.length === 0 && (
                     <p className="text-sm opacity-55">Nenhum bloco hoje.</p>
                   )}
