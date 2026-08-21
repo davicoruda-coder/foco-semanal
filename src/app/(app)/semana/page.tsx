@@ -23,7 +23,6 @@ import {
 const MOVE_MOUSE = 5;
 const MOVE_TOUCH = 10;
 const HOLD_MS = 180;
-const FLIP_MS = 220;
 
 function inferTypeFromColor(color: string): BlockType {
   if (color === defaultBlockColor("estudo")) return "estudo";
@@ -159,61 +158,25 @@ type DragGhost = {
   background: string;
   w: number;
   h: number;
-  x: number;
-  y: number;
   grabX: number;
   grabY: number;
 };
-
-function useFlip(orderKey: string) {
-  const nodes = useRef(new Map<string, HTMLElement>());
-  const prev = useRef(new Map<string, DOMRect>());
-
-  useLayoutEffect(() => {
-    const nextRects = new Map<string, DOMRect>();
-    nodes.current.forEach((el, id) => {
-      nextRects.set(id, el.getBoundingClientRect());
-    });
-    nodes.current.forEach((el, id) => {
-      const last = prev.current.get(id);
-      const next = nextRects.get(id);
-      if (!last || !next) return;
-      const dx = last.left - next.left;
-      const dy = last.top - next.top;
-      if (Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5) return;
-      el.style.transition = "none";
-      el.style.transform = `translate(${dx}px, ${dy}px)`;
-      requestAnimationFrame(() => {
-        el.style.transition = `transform ${FLIP_MS}ms cubic-bezier(0.22, 1, 0.36, 1)`;
-        el.style.transform = "";
-      });
-    });
-    prev.current = nextRects;
-  }, [orderKey]);
-
-  return (id: string) => (el: HTMLDivElement | null) => {
-    if (el) nodes.current.set(id, el);
-    else nodes.current.delete(id);
-  };
-}
 
 function DayCard({
   dayIndex,
   name,
   blocks,
   draggingId,
-  placeholderH,
-  overDay,
-  registerFlip,
+  dropDay,
+  dropBeforeId,
   onPointerDownBlock,
 }: {
   dayIndex: number;
   name: string;
   blocks: WeekBlock[];
   draggingId: string | null;
-  placeholderH: number;
-  overDay: number | null;
-  registerFlip: (id: string) => (el: HTMLDivElement | null) => void;
+  dropDay: number | null;
+  dropBeforeId: string | null;
   onPointerDownBlock: (
     block: WeekBlock,
     e: ReactPointerEvent<HTMLDivElement>,
@@ -231,6 +194,7 @@ function DayCard({
   const isToday = dayIndex === todayIndex();
   const { shown: addingShown, leaving: addingLeaving } =
     useOpenTransition(adding);
+  const showDrop = dropDay === dayIndex && Boolean(draggingId);
 
   useEffect(() => {
     if (!adding) return;
@@ -285,15 +249,22 @@ function DayCard({
     setAdding(false);
   }
 
+  function DropLine() {
+    return (
+      <div
+        className="h-1 rounded-full bg-[var(--signal)]"
+        aria-hidden
+      />
+    );
+  }
+
   return (
     <div
       data-week-day={dayIndex}
-      className={`surface relative flex min-h-52 min-w-0 flex-col p-3 transition ${
-        addingShown || draggingId ? "z-20 overflow-visible" : "overflow-hidden"
+      className={`surface relative flex min-h-52 min-w-0 flex-col overflow-hidden p-3 ${
+        addingShown ? "z-20 overflow-visible" : ""
       } ${isToday && !draggingId ? "ring-2 ring-[var(--signal)]" : ""} ${
-        overDay === dayIndex
-          ? "ring-2 ring-[var(--accent-2)] ring-offset-2 ring-offset-[var(--paper)]"
-          : ""
+        showDrop ? "ring-2 ring-[var(--signal)]" : ""
       }`}
     >
       <ConfirmDialog
@@ -324,18 +295,9 @@ function DayCard({
           const editing = editingId === b.id;
           const isDragging = draggingId === b.id;
           return (
-            <div
-              key={b.id}
-              ref={registerFlip(b.id)}
-              data-block-id={b.id}
-              className="space-y-1 will-change-transform"
-            >
-              {isDragging ? (
-                <div
-                  className="rounded-[var(--radius-tag)] border-2 border-dashed border-[color-mix(in_srgb,var(--ink)_22%,transparent)] bg-[color-mix(in_srgb,var(--ink)_6%,transparent)]"
-                  style={{ height: placeholderH }}
-                />
-              ) : editing ? (
+            <div key={b.id} data-block-id={b.id} className="space-y-1">
+              {showDrop && dropBeforeId === b.id ? <DropLine /> : null}
+              {editing ? (
                 <div
                   ref={editWrapRef}
                   className="rounded-[var(--radius-tag)] p-2.5 ring-2 ring-[var(--signal)]/40"
@@ -359,7 +321,9 @@ function DayCard({
                 </div>
               ) : (
                 <div
-                  className="group relative cursor-grab rounded-[var(--radius-tag)] px-2.5 py-2 text-sm select-none active:cursor-grabbing"
+                  className={`group relative cursor-grab rounded-[var(--radius-tag)] px-2.5 py-2 text-sm select-none active:cursor-grabbing ${
+                    isDragging ? "opacity-35" : ""
+                  }`}
                   style={style.style}
                   title="Arraste para reordenar · clique para editar"
                   onPointerDown={(e) => {
@@ -441,6 +405,8 @@ function DayCard({
             </div>
           );
         })}
+
+        {showDrop && dropBeforeId === null ? <DropLine /> : null}
 
         <div className="relative">
           <button
@@ -525,9 +491,11 @@ function DayCard({
 
 export default function SemanaPage() {
   const { data, setData } = useApp();
-  const [draftBlocks, setDraftBlocks] = useState<WeekBlock[] | null>(null);
   const [ghost, setGhost] = useState<DragGhost | null>(null);
-  const [overDay, setOverDay] = useState<number | null>(null);
+  const [drop, setDrop] = useState<{
+    day: number;
+    beforeId: string | null;
+  } | null>(null);
   const session = useRef<{
     id: string;
     pointerId: number;
@@ -537,34 +505,50 @@ export default function SemanaPage() {
     holdTimer: number | null;
     captureEl: HTMLElement | null;
   } | null>(null);
-  const draftRef = useRef<WeekBlock[] | null>(null);
   const ghostRef = useRef<DragGhost | null>(null);
+  const ghostEl = useRef<HTMLDivElement | null>(null);
+  const lastPoint = useRef({ x: 0, y: 0 });
+  const dropRef = useRef<{ day: number; beforeId: string | null } | null>(
+    null,
+  );
   const dataRef = useRef(data);
 
-  const weekBlocks = draftBlocks ?? data.week_blocks;
-  const orderKey = weekBlocks
-    .slice()
-    .sort((a, b) => a.day - b.day || a.sort_order - b.sort_order)
-    .map((b) => `${b.day}:${b.id}`)
-    .join("|");
-  const registerFlip = useFlip(orderKey);
-
-  draftRef.current = draftBlocks;
-  ghostRef.current = ghost;
   dataRef.current = data;
+  ghostRef.current = ghost;
+  dropRef.current = drop;
 
-  function finishDrag() {
+  function moveGhost(x: number, y: number) {
+    const g = ghostRef.current;
+    const el = ghostEl.current;
+    if (!g || !el) return;
+    el.style.transform = `translate(${x - g.grabX}px, ${y - g.grabY}px)`;
+  }
+
+  useLayoutEffect(() => {
+    if (!ghost) return;
+    moveGhost(lastPoint.current.x, lastPoint.current.y);
+  }, [ghost]);
+
+  function finishDrag(apply: boolean) {
     const s = session.current;
+    const slot = dropRef.current;
+    const id = s?.id;
     if (s?.holdTimer != null) window.clearTimeout(s.holdTimer);
     session.current = null;
     document.documentElement.classList.remove("is-dragging-block");
-    const next = draftRef.current;
-    if (next) {
-      setData((prev) => ({ ...prev, week_blocks: next }));
+    if (apply && id && slot) {
+      setData((prev) => ({
+        ...prev,
+        week_blocks: placeWeekBlock(
+          prev.week_blocks,
+          id,
+          slot.day,
+          slot.beforeId,
+        ),
+      }));
     }
-    setDraftBlocks(null);
     setGhost(null);
-    setOverDay(null);
+    setDrop(null);
   }
 
   function activateDrag() {
@@ -574,7 +558,6 @@ export default function SemanaPage() {
     s.active = true;
     s.captureEl?.setPointerCapture(s.pointerId);
     document.documentElement.classList.add("is-dragging-block");
-    setDraftBlocks(dataRef.current.week_blocks);
     setGhost({ ...g });
   }
 
@@ -592,11 +575,10 @@ export default function SemanaPage() {
       background: style.style?.background ?? defaultBlockColor(block.type),
       w: rect.width,
       h: rect.height,
-      x: e.clientX,
-      y: e.clientY,
       grabX: e.clientX - rect.left,
       grabY: e.clientY - rect.top,
     };
+    lastPoint.current = { x: e.clientX, y: e.clientY };
     ghostRef.current = g;
     session.current = {
       id: block.id,
@@ -617,6 +599,7 @@ export default function SemanaPage() {
       const dx = ev.clientX - cur.startX;
       const dy = ev.clientY - cur.startY;
       const dist = Math.hypot(dx, dy);
+      lastPoint.current = { x: ev.clientX, y: ev.clientY };
       if (!cur.active) {
         const isTouch = ev.pointerType === "touch";
         if (isTouch && Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 8) {
@@ -634,22 +617,18 @@ export default function SemanaPage() {
       }
       if (!session.current?.active) return;
       ev.preventDefault();
-      const nextGhost = {
-        ...(ghostRef.current as DragGhost),
-        x: ev.clientX,
-        y: ev.clientY,
-      };
-      ghostRef.current = nextGhost;
-      setGhost(nextGhost);
+      moveGhost(ev.clientX, ev.clientY);
       const slot = hitSlot(ev.clientX, ev.clientY, cur.id);
       if (!slot) return;
-      setOverDay(slot.day);
-      setDraftBlocks((prev) => {
-        const base = prev ?? dataRef.current.week_blocks;
-        const next = placeWeekBlock(base, cur.id, slot.day, slot.beforeId);
-        if (next === base) return prev;
-        return next;
-      });
+      const prev = dropRef.current;
+      if (
+        prev &&
+        prev.day === slot.day &&
+        prev.beforeId === slot.beforeId
+      ) {
+        return;
+      }
+      setDrop(slot);
     };
 
     const onUp = (ev: PointerEvent) => {
@@ -659,7 +638,7 @@ export default function SemanaPage() {
       window.removeEventListener("pointerup", onUp);
       window.removeEventListener("pointercancel", onUp);
       const wasActive = cur.active;
-      finishDrag();
+      finishDrag(wasActive);
       if (wasActive) {
         ev.preventDefault();
         const stopClick = (click: Event) => {
@@ -698,28 +677,28 @@ export default function SemanaPage() {
             <DayCard
               dayIndex={i}
               name={name}
-              blocks={weekBlocks
+              blocks={data.week_blocks
                 .filter((b) => b.day === i)
                 .sort((a, b) => a.sort_order - b.sort_order)}
-              draggingId={draftBlocks && ghost ? ghost.id : null}
-              placeholderH={ghost?.h ?? 40}
-              overDay={overDay}
-              registerFlip={registerFlip}
+              draggingId={ghost?.id ?? null}
+              dropDay={drop?.day ?? null}
+              dropBeforeId={drop?.beforeId ?? null}
               onPointerDownBlock={onPointerDownBlock}
             />
           </div>
         ))}
       </div>
 
-      {draftBlocks && ghost
+      {ghost
         ? createPortal(
             <div
-              className="pointer-events-none fixed top-0 left-0 z-[80] rounded-[var(--radius-tag)] px-2.5 py-2 text-sm font-medium shadow-[var(--shadow-lg)]"
+              ref={ghostEl}
+              className="pointer-events-none fixed top-0 left-0 z-[80] rounded-[var(--radius-tag)] px-2.5 py-2 text-sm font-medium shadow-[var(--shadow-md)]"
               style={{
                 width: ghost.w,
                 background: ghost.background,
                 color: "#14201a",
-                transform: `translate(${ghost.x - ghost.grabX}px, ${ghost.y - ghost.grabY}px) scale(1.04) rotate(1.2deg)`,
+                transform: "translate(-9999px, -9999px)",
               }}
             >
               {ghost.label}

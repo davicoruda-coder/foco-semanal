@@ -79,13 +79,9 @@ body {
   min-height: 100%;
 }
 
-html.is-dragging-block,
-html.is-dragging-block * {
-  cursor: grabbing !important;
-  user-select: none !important;
-}
-
 html.is-dragging-block {
+  cursor: grabbing;
+  user-select: none;
   touch-action: none;
 }
 
