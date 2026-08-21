@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Bell, BellOff, Plus, Trash2 } from "lucide-react";
+import { Bell, BellOff, Circle, Plus, Trash2 } from "lucide-react";
 import { useApp } from "@/components/AppProvider";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { ensureNotificationPermission } from "@/lib/audio";
@@ -166,9 +166,11 @@ function NoteCard({
             setColorOpen((v) => !v);
           }}
         >
-          <span
-            className="block h-[13px] w-[13px] rounded-full border-[1.75px] border-current"
-            style={{ background: currentColor }}
+          <Circle
+            size={13}
+            strokeWidth={1.75}
+            fill={currentColor}
+            className="shrink-0"
           />
         </button>
         <button
