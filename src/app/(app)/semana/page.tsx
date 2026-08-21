@@ -20,9 +20,9 @@ import {
   todayIndex,
 } from "@/lib/utils";
 
-const MOVE_MOUSE = 5;
-const MOVE_TOUCH = 10;
-const HOLD_MS = 180;
+const MOVE_MOUSE = 4;
+const MOVE_TOUCH = 8;
+const HOLD_MS = 90;
 
 function inferTypeFromColor(color: string): BlockType {
   if (color === defaultBlockColor("estudo")) return "estudo";
@@ -121,35 +121,26 @@ function hitSlot(
   clientY: number,
   draggingId: string,
 ): { day: number; beforeId: string | null } | null {
-  const els = document.elementsFromPoint(clientX, clientY);
-  for (const node of els) {
-    const el = node as HTMLElement;
-    const block = el.closest?.("[data-block-id]") as HTMLElement | null;
-    if (block) {
-      const id = block.dataset.blockId;
-      if (!id || id === draggingId) continue;
-      const dayEl = block.closest("[data-week-day]") as HTMLElement | null;
-      if (!dayEl) continue;
-      const day = Number(dayEl.dataset.weekDay);
-      if (Number.isNaN(day)) continue;
-      const rect = block.getBoundingClientRect();
-      const after = clientY > rect.top + rect.height / 2;
-      if (!after) return { day, beforeId: id };
-      const next = block.nextElementSibling as HTMLElement | null;
-      const nextId =
-        next?.dataset?.blockId && next.dataset.blockId !== draggingId
-          ? next.dataset.blockId
-          : null;
-      return { day, beforeId: nextId };
-    }
-    const dayEl = el.closest?.("[data-week-day]") as HTMLElement | null;
-    if (dayEl) {
-      const day = Number(dayEl.dataset.weekDay);
-      if (Number.isNaN(day)) continue;
-      return { day, beforeId: null };
+  const dayEl = document
+    .elementsFromPoint(clientX, clientY)
+    .map((n) => (n as HTMLElement).closest?.("[data-week-day]") as HTMLElement | null)
+    .find((el) => el != null);
+  if (!dayEl) return null;
+
+  const day = Number(dayEl.dataset.weekDay);
+  if (Number.isNaN(day)) return null;
+
+  const blocks = [
+    ...dayEl.querySelectorAll<HTMLElement>("[data-block-id]"),
+  ].filter((el) => el.dataset.blockId && el.dataset.blockId !== draggingId);
+
+  for (const block of blocks) {
+    const rect = block.getBoundingClientRect();
+    if (clientY < rect.top + rect.height / 2) {
+      return { day, beforeId: block.dataset.blockId ?? null };
     }
   }
-  return null;
+  return { day, beforeId: null };
 }
 
 type DragGhost = {
@@ -321,7 +312,7 @@ function DayCard({
                 </div>
               ) : (
                 <div
-                  className={`group relative cursor-grab rounded-[var(--radius-tag)] px-2.5 py-2 text-sm select-none active:cursor-grabbing ${
+                  className={`group relative cursor-grab touch-none rounded-[var(--radius-tag)] px-2.5 py-2 text-sm select-none active:cursor-grabbing ${
                     isDragging ? "opacity-35" : ""
                   }`}
                   style={style.style}
@@ -556,9 +547,14 @@ export default function SemanaPage() {
     const g = ghostRef.current;
     if (!s || s.active || !g) return;
     s.active = true;
-    s.captureEl?.setPointerCapture(s.pointerId);
+    try {
+      s.captureEl?.setPointerCapture(s.pointerId);
+    } catch {
+      /* ignore */
+    }
     document.documentElement.classList.add("is-dragging-block");
     setGhost({ ...g });
+    moveGhost(lastPoint.current.x, lastPoint.current.y);
   }
 
   function onPointerDownBlock(
@@ -589,7 +585,9 @@ export default function SemanaPage() {
       holdTimer: null,
       captureEl: e.currentTarget,
     };
+    // No celular: hold curto ou puxar; trava scroll cedo.
     if (e.pointerType !== "mouse") {
+      document.documentElement.classList.add("is-dragging-block");
       session.current.holdTimer = window.setTimeout(activateDrag, HOLD_MS);
     }
 
@@ -601,11 +599,17 @@ export default function SemanaPage() {
       const dist = Math.hypot(dx, dy);
       lastPoint.current = { x: ev.clientX, y: ev.clientY };
       if (!cur.active) {
-        const isTouch = ev.pointerType === "touch";
-        if (isTouch && Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 8) {
+        const isTouch = ev.pointerType === "touch" || ev.pointerType === "pen";
+        // Scroll horizontal da semana: cancela o arraste do bloco.
+        if (
+          isTouch &&
+          Math.abs(dx) > Math.abs(dy) + 4 &&
+          Math.abs(dx) > 12
+        ) {
           if (cur.holdTimer != null) window.clearTimeout(cur.holdTimer);
           session.current = null;
           ghostRef.current = null;
+          document.documentElement.classList.remove("is-dragging-block");
           window.removeEventListener("pointermove", onMove);
           window.removeEventListener("pointerup", onUp);
           window.removeEventListener("pointercancel", onUp);
@@ -613,12 +617,22 @@ export default function SemanaPage() {
         }
         const need = isTouch ? MOVE_TOUCH : MOVE_MOUSE;
         if (dist < need) return;
+        // Vertical: ativa e impede o scroll da página.
+        if (isTouch) ev.preventDefault();
         activateDrag();
       }
       if (!session.current?.active) return;
       ev.preventDefault();
       moveGhost(ev.clientX, ev.clientY);
-      const slot = hitSlot(ev.clientX, ev.clientY, cur.id);
+      // Usa o centro do fantasma pra linha azul bater com o visual.
+      const gNow = ghostRef.current;
+      const probeX = gNow
+        ? ev.clientX - gNow.grabX + gNow.w / 2
+        : ev.clientX;
+      const probeY = gNow
+        ? ev.clientY - gNow.grabY + gNow.h / 2
+        : ev.clientY;
+      const slot = hitSlot(probeX, probeY, cur.id);
       if (!slot) return;
       const prev = dropRef.current;
       if (

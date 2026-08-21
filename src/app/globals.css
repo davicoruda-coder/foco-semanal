@@ -83,6 +83,7 @@ html.is-dragging-block {
   cursor: grabbing;
   user-select: none;
   touch-action: none;
+  overscroll-behavior: none;
 }
 
 body {
