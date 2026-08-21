@@ -1,7 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { Bell, BellOff, Circle, Plus, Trash2 } from "lucide-react";
+import {
+  Bell,
+  BellOff,
+  Circle,
+  MoreHorizontal,
+  Plus,
+  Trash2,
+} from "lucide-react";
 import { useApp } from "@/components/AppProvider";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { ensureNotificationPermission } from "@/lib/audio";
@@ -41,10 +48,80 @@ function NoteCard({
   const { upsertReminder } = useApp();
   const [alarmOpen, setAlarmOpen] = useState(false);
   const [colorOpen, setColorOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const [when, setWhen] = useState(
     reminder.has_alarm ? toLocalInput(reminder.notify_at) : "",
   );
   const currentColor = sanitizeCssColor(reminder.color, "#FDE68A");
+
+  function openColor() {
+    setAlarmOpen(false);
+    setColorOpen((v) => !v);
+  }
+
+  function openAlarm() {
+    setColorOpen(false);
+    setWhen(reminder.has_alarm ? toLocalInput(reminder.notify_at) : "");
+    setAlarmOpen((v) => !v);
+  }
+
+  function toggleMenu() {
+    setMenuOpen((open) => {
+      if (open) {
+        setColorOpen(false);
+        setAlarmOpen(false);
+      }
+      return !open;
+    });
+  }
+
+  const actionBtn =
+    "inline-flex h-11 min-h-11 w-11 min-w-11 items-center justify-center rounded-lg opacity-70 transition hover:bg-white/50 hover:opacity-100";
+
+  function ActionButtons() {
+    return (
+      <>
+        <button
+          type="button"
+          className={actionBtn}
+          title="Trocar cor"
+          aria-label="Trocar cor"
+          onClick={openColor}
+        >
+          <Circle
+            size={20}
+            strokeWidth={1.75}
+            fill={currentColor}
+            className="shrink-0"
+          />
+        </button>
+        <button
+          type="button"
+          className={actionBtn}
+          title={reminder.has_alarm ? "Editar alarme" : "Adicionar alarme"}
+          aria-label={
+            reminder.has_alarm ? "Editar alarme" : "Adicionar alarme"
+          }
+          onClick={openAlarm}
+        >
+          {reminder.has_alarm ? (
+            <Bell size={20} strokeWidth={1.75} />
+          ) : (
+            <BellOff size={20} strokeWidth={1.75} />
+          )}
+        </button>
+        <button
+          type="button"
+          className={`${actionBtn} hover:text-[var(--warn)]`}
+          title="Excluir"
+          aria-label="Excluir"
+          onClick={() => onAskDelete(reminder)}
+        >
+          <Trash2 size={20} strokeWidth={1.75} />
+        </button>
+      </>
+    );
+  }
 
   return (
     <article
@@ -69,9 +146,7 @@ function NoteCard({
       />
 
       {reminder.has_alarm && !alarmOpen && (
-        <p
-          className="font-mono-num text-xs opacity-70"
-        >
+        <p className="font-mono-num text-xs opacity-70">
           ⏰{" "}
           {new Date(reminder.notify_at).toLocaleString("pt-BR", {
             day: "2-digit",
@@ -155,50 +230,24 @@ function NoteCard({
         </div>
       )}
 
-      <div className="mt-auto flex items-center justify-end gap-1 pt-1">
+      {/* Celular: um “⋯” abre cor / alarme / excluir */}
+      <div className="mt-auto flex items-center justify-end gap-1 pt-1 lg:hidden">
+        {menuOpen ? <ActionButtons /> : null}
         <button
           type="button"
-          className="inline-flex h-11 min-h-11 w-11 min-w-11 items-center justify-center rounded-lg opacity-70 transition hover:bg-white/50 hover:opacity-100"
-          title="Trocar cor"
-          aria-label="Trocar cor"
-          onClick={() => {
-            setAlarmOpen(false);
-            setColorOpen((v) => !v);
-          }}
+          className={`${actionBtn} ${menuOpen ? "bg-white/50 opacity-100" : ""}`}
+          title={menuOpen ? "Fechar opções" : "Opções do lembrete"}
+          aria-label={menuOpen ? "Fechar opções" : "Opções do lembrete"}
+          aria-expanded={menuOpen}
+          onClick={toggleMenu}
         >
-          <Circle
-            size={20}
-            strokeWidth={1.75}
-            fill={currentColor}
-            className="shrink-0"
-          />
+          <MoreHorizontal size={22} strokeWidth={1.75} />
         </button>
-        <button
-          type="button"
-          className="inline-flex h-11 min-h-11 w-11 min-w-11 items-center justify-center rounded-lg opacity-70 transition hover:bg-white/50 hover:opacity-100"
-          title={reminder.has_alarm ? "Editar alarme" : "Adicionar alarme"}
-          aria-label={reminder.has_alarm ? "Editar alarme" : "Adicionar alarme"}
-          onClick={() => {
-            setColorOpen(false);
-            setWhen(reminder.has_alarm ? toLocalInput(reminder.notify_at) : "");
-            setAlarmOpen((v) => !v);
-          }}
-        >
-          {reminder.has_alarm ? (
-            <Bell size={20} strokeWidth={1.75} />
-          ) : (
-            <BellOff size={20} strokeWidth={1.75} />
-          )}
-        </button>
-        <button
-          type="button"
-          className="inline-flex h-11 min-h-11 w-11 min-w-11 items-center justify-center rounded-lg opacity-70 transition hover:bg-white/50 hover:text-[var(--warn)] hover:opacity-100"
-          title="Excluir"
-          aria-label="Excluir"
-          onClick={() => onAskDelete(reminder)}
-        >
-          <Trash2 size={20} strokeWidth={1.75} />
-        </button>
+      </div>
+
+      {/* PC: ícones sempre visíveis */}
+      <div className="mt-auto hidden items-center justify-end gap-1 pt-1 lg:flex">
+        <ActionButtons />
       </div>
     </article>
   );
