@@ -1,13 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import {
-  ChevronDown,
-  ChevronUp,
-  GripVertical,
-  Plus,
-  Trash2,
-} from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { GripVertical, Plus, Trash2 } from "lucide-react";
 import { useApp } from "@/components/AppProvider";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { useOpenTransition } from "@/lib/use-open-transition";
@@ -75,11 +69,12 @@ function DayCard({
   const [draftLabel, setDraftLabel] = useState("");
   const [draftColor, setDraftColor] = useState(defaultBlockColor("estudo"));
   const [colorFor, setColorFor] = useState<string | null>(null);
-  const [moveFor, setMoveFor] = useState<string | null>(null);
-  const [dragArmed, setDragArmed] = useState<string | null>(null);
   const [pendingDelete, setPendingDelete] = useState<WeekBlock | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [dropHighlight, setDropHighlight] = useState(false);
+  const editWrapRef = useRef<HTMLDivElement | null>(null);
+  const justDragged = useRef(false);
+  const skipDrag = useRef(false);
 
   const isToday = dayIndex === todayIndex();
   const { shown: addingShown, leaving: addingLeaving } =
@@ -96,6 +91,24 @@ function DayCard({
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [adding]);
+
+  useEffect(() => {
+    if (!editingId) return;
+    function onPointerDown(e: PointerEvent) {
+      const wrap = editWrapRef.current;
+      if (!wrap || wrap.contains(e.target as Node)) return;
+      setEditingId(null);
+    }
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setEditingId(null);
+    }
+    document.addEventListener("pointerdown", onPointerDown);
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [editingId]);
 
   function addBlock() {
     const label = draftLabel.trim() || "Novo bloco";
@@ -125,28 +138,6 @@ function DayCard({
       const from = dayBlocks.findIndex((b) => b.id === fromId);
       const to = dayBlocks.findIndex((b) => b.id === toId);
       if (from < 0 || to < 0) return prev;
-      const next = [...dayBlocks];
-      const [item] = next.splice(from, 1);
-      next.splice(to, 0, item);
-      const others = prev.week_blocks.filter((b) => b.day !== dayIndex);
-      return {
-        ...prev,
-        week_blocks: [
-          ...others,
-          ...next.map((b, i) => ({ ...b, sort_order: i })),
-        ],
-      };
-    });
-  }
-
-  function moveBlockBy(id: string, delta: -1 | 1) {
-    setData((prev) => {
-      const dayBlocks = prev.week_blocks
-        .filter((b) => b.day === dayIndex)
-        .sort((a, b) => a.sort_order - b.sort_order);
-      const from = dayBlocks.findIndex((b) => b.id === id);
-      const to = from + delta;
-      if (from < 0 || to < 0 || to >= dayBlocks.length) return prev;
       const next = [...dayBlocks];
       const [item] = next.splice(from, 1);
       next.splice(to, 0, item);
@@ -276,7 +267,7 @@ function DayCard({
       </p>
 
       <div className="flex-1 space-y-2">
-        {blocks.map((b, index) => {
+        {blocks.map((b) => {
           const style = blockStyle(b);
           const editing = editingId === b.id;
           const isDragging = draggingId === b.id;
@@ -284,18 +275,31 @@ function DayCard({
             <div
               key={b.id}
               className={`space-y-1 ${isDragging ? "opacity-45" : ""}`}
-              draggable={dragArmed === b.id}
+              draggable={!editing}
+              onPointerDownCapture={(e) => {
+                const el = e.target as HTMLElement;
+                skipDrag.current = Boolean(el.closest("[data-no-drag]"));
+              }}
               onDragStart={(e) => {
+                if (skipDrag.current) {
+                  e.preventDefault();
+                  return;
+                }
+                justDragged.current = true;
                 e.dataTransfer.effectAllowed = "move";
                 e.dataTransfer.setData(DRAG_MIME, b.id);
                 e.dataTransfer.setData("text/plain", b.id);
                 onDragBlock(b.id);
                 setColorFor(null);
+                setEditingId(null);
               }}
               onDragEnd={() => {
-                setDragArmed(null);
+                skipDrag.current = false;
                 onDragBlock(null);
                 setDropHighlight(false);
+                window.setTimeout(() => {
+                  justDragged.current = false;
+                }, 0);
               }}
               onDragOver={(e) => {
                 if (!draggingId || draggingId === b.id) return;
@@ -321,6 +325,7 @@ function DayCard({
             >
               {editing ? (
                 <div
+                  ref={editWrapRef}
                   className="rounded-[var(--radius-tag)] p-2.5 ring-2 ring-[var(--signal)]/40"
                   style={style.style}
                 >
@@ -338,36 +343,28 @@ function DayCard({
                         setEditingId(null);
                       }
                     }}
-                    onBlur={() => {
-                      window.setTimeout(() => {
-                        setEditingId((id) => (id === b.id ? null : id));
-                      }, 150);
-                    }}
                   />
-                  <div className="mt-1.5 flex justify-end">
-                    <button
-                      type="button"
-                      className="rounded-full bg-[#14201a] px-3 py-1 text-[11px] font-semibold text-white/95 transition hover:bg-[#14201a]/85"
-                      onMouseDown={(e) => e.preventDefault()}
-                      onClick={() => setEditingId(null)}
-                    >
-                      Pronto
-                    </button>
-                  </div>
                 </div>
               ) : (
                 <div
-                  className="group relative rounded-[var(--radius-tag)] px-1.5 py-1.5 text-sm"
+                  className="group relative cursor-grab rounded-[var(--radius-tag)] px-1.5 py-1.5 text-sm active:cursor-grabbing"
                   style={style.style}
+                  title="Arraste para reordenar ou mudar de dia · clique para editar"
                 >
                   <div className="flex items-center gap-0.5">
+                    <span
+                      className="shrink-0 rounded p-1 opacity-45"
+                      aria-hidden
+                    >
+                      <GripVertical size={15} strokeWidth={2} />
+                    </span>
                     <button
                       type="button"
-                      className="min-w-0 flex-1 whitespace-normal break-words rounded px-1 py-1 text-left text-sm leading-snug"
+                      className="min-w-0 flex-1 cursor-grab whitespace-normal break-words rounded px-1 py-1 text-left text-sm leading-snug active:cursor-grabbing"
                       lang="pt-BR"
                       title={b.label || "Sem nome"}
                       onClick={() => {
-                        setMoveFor(null);
+                        if (justDragged.current) return;
                         setColorFor(null);
                         setEditingId(b.id);
                       }}
@@ -376,7 +373,7 @@ function DayCard({
                     </button>
                     <div
                       className={`contents lg:absolute lg:right-1 lg:top-1 lg:z-10 lg:flex lg:items-center lg:gap-0.5 lg:rounded-lg lg:px-1 lg:py-0.5 lg:shadow-[0_1px_8px_rgba(0,0,0,0.16)] lg:transition-opacity ${
-                        moveFor === b.id || colorFor === b.id
+                        colorFor === b.id
                           ? "lg:opacity-100"
                           : "lg:opacity-0 lg:group-hover:opacity-100 lg:group-focus-within:opacity-100"
                       }`}
@@ -384,27 +381,11 @@ function DayCard({
                     >
                       <button
                         type="button"
-                        className="order-first shrink-0 cursor-grab rounded p-1 opacity-70 hover:opacity-100 active:cursor-grabbing lg:order-none"
-                        title="Arrastar ou tocar para mover"
-                        aria-label="Mover bloco"
-                        aria-expanded={moveFor === b.id}
-                        onPointerDown={() => setDragArmed(b.id)}
-                        onPointerUp={() => setDragArmed(null)}
-                        onPointerCancel={() => setDragArmed(null)}
-                        onClick={() => {
-                          setColorFor(null);
-                          setMoveFor((id) => (id === b.id ? null : b.id));
-                        }}
-                      >
-                        <GripVertical size={15} strokeWidth={2} />
-                      </button>
-                      <button
-                        type="button"
+                        data-no-drag
                         className="shrink-0 rounded-md bg-black/[0.08] p-1 transition hover:bg-black/20"
                         title="Cor"
                         aria-label="Escolher cor"
                         onClick={() => {
-                          setMoveFor(null);
                           setColorFor((id) => (id === b.id ? null : b.id));
                         }}
                       >
@@ -417,6 +398,7 @@ function DayCard({
                       </button>
                       <button
                         type="button"
+                        data-no-drag
                         className="shrink-0 rounded-md bg-black/[0.08] p-1 transition hover:bg-black/20"
                         title="Excluir"
                         aria-label="Excluir"
@@ -428,32 +410,8 @@ function DayCard({
                   </div>
                 </div>
               )}
-              {!editing && moveFor === b.id && (
-                <div className="panel-in flex gap-1.5 px-0.5">
-                  <button
-                    type="button"
-                    className="btn flex-1 justify-center px-2 py-2 text-xs disabled:opacity-35"
-                    title="Subir"
-                    aria-label="Subir bloco"
-                    disabled={index === 0}
-                    onClick={() => moveBlockBy(b.id, -1)}
-                  >
-                    <ChevronUp size={16} strokeWidth={2} />
-                  </button>
-                  <button
-                    type="button"
-                    className="btn flex-1 justify-center px-2 py-2 text-xs disabled:opacity-35"
-                    title="Descer"
-                    aria-label="Descer bloco"
-                    disabled={index === blocks.length - 1}
-                    onClick={() => moveBlockBy(b.id, 1)}
-                  >
-                    <ChevronDown size={16} strokeWidth={2} />
-                  </button>
-                </div>
-              )}
               {!editing && colorFor === b.id && (
-                <div className="panel-in">
+                <div className="panel-in" data-no-drag>
                   <ColorSwatches
                     value={b.color || defaultBlockColor(b.type)}
                     onPick={(c) => {
@@ -561,7 +519,7 @@ export default function SemanaPage() {
         Semana
       </h1>
       <p className="mt-2 opacity-65">
-        Nome, cor e ordem dos blocos de cada dia.
+        Clique para editar · arraste para reordenar ou mudar de dia.
       </p>
 
       <div className="mt-6 flex gap-3 overflow-x-auto overscroll-x-contain pb-2 sm:mt-8 sm:grid sm:grid-cols-2 sm:overflow-visible sm:pb-0 md:grid-cols-3 lg:grid-cols-7">
