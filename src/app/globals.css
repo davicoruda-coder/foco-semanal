@@ -45,7 +45,7 @@
   --ok: #4ade80;
   --row-tint-ok: 9%;
   --row-tint-warn: 0%;
-  --status-ok-bg: color-mix(in srgb, #4ade80 55%, #15161e);
+  --status-ok-bg: color-mix(in srgb, #4ade80 12%, #15161e);
   --status-ok-fg: #4ade80;
   --status-ok-ring: color-mix(in srgb, #4ade80 45%, transparent);
   --status-prox-bg: color-mix(in srgb, var(--warn) 10%, var(--surface));
