@@ -17,6 +17,9 @@
   --status-ok-bg: #16a34a;
   --status-ok-fg: #ffffff;
   --status-ok-ring: color-mix(in srgb, #16a34a 35%, transparent);
+  --status-prox-bg: color-mix(in srgb, var(--warn) 22%, var(--surface));
+  --status-prox-fg: var(--warn);
+  --status-prox-ring: color-mix(in srgb, var(--warn) 40%, transparent);
   --next: #64748b;
   --line: #c9c7d8;
   --radius: 18px;
@@ -41,10 +44,13 @@
   --warn-soft: #2a1c12;
   --ok: #4ade80;
   --row-tint-ok: 9%;
-  --row-tint-warn: 6%;
+  --row-tint-warn: 0%;
   --status-ok-bg: color-mix(in srgb, #4ade80 55%, #15161e);
   --status-ok-fg: #4ade80;
   --status-ok-ring: color-mix(in srgb, #4ade80 45%, transparent);
+  --status-prox-bg: color-mix(in srgb, var(--warn) 10%, var(--surface));
+  --status-prox-fg: var(--warn);
+  --status-prox-ring: color-mix(in srgb, var(--warn) 45%, transparent);
   --next: #94a3b8;
   --line: #2a2b38;
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35), 0 1px 3px rgba(0, 0, 0, 0.3);

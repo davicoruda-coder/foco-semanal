@@ -88,7 +88,7 @@ export function statusClass(status: SubjectStatus): string {
     case "ok":
       return "bg-[var(--status-ok-bg)] text-[var(--status-ok-fg)] ring-1 ring-[var(--status-ok-ring)]";
     case "prox":
-      return "bg-[color-mix(in_srgb,var(--warn)_38%,var(--surface))] text-[var(--warn)] ring-1 ring-[color-mix(in_srgb,var(--warn)_45%,transparent)]";
+      return "bg-[var(--status-prox-bg)] text-[var(--status-prox-fg)] ring-1 ring-[var(--status-prox-ring)]";
   }
 }
 
