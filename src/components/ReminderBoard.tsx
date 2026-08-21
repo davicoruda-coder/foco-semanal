@@ -75,21 +75,25 @@ function NoteCard({
     });
   }
 
-  const actionBtn =
+  const touchBtn =
     "inline-flex h-11 min-h-11 w-11 min-w-11 items-center justify-center rounded-lg opacity-70 transition hover:bg-white/50 hover:opacity-100";
+  const desktopBtn =
+    "inline-flex items-center justify-center rounded p-1 opacity-55 transition hover:bg-white/50 hover:opacity-100";
 
-  function ActionButtons() {
+  function ActionButtons({ touch }: { touch?: boolean }) {
+    const btn = touch ? touchBtn : desktopBtn;
+    const icon = touch ? 20 : 13;
     return (
       <>
         <button
           type="button"
-          className={actionBtn}
+          className={btn}
           title="Trocar cor"
           aria-label="Trocar cor"
           onClick={openColor}
         >
           <Circle
-            size={20}
+            size={icon}
             strokeWidth={1.75}
             fill={currentColor}
             className="shrink-0"
@@ -97,7 +101,7 @@ function NoteCard({
         </button>
         <button
           type="button"
-          className={actionBtn}
+          className={btn}
           title={reminder.has_alarm ? "Editar alarme" : "Adicionar alarme"}
           aria-label={
             reminder.has_alarm ? "Editar alarme" : "Adicionar alarme"
@@ -105,19 +109,19 @@ function NoteCard({
           onClick={openAlarm}
         >
           {reminder.has_alarm ? (
-            <Bell size={20} strokeWidth={1.75} />
+            <Bell size={icon} strokeWidth={1.75} />
           ) : (
-            <BellOff size={20} strokeWidth={1.75} />
+            <BellOff size={icon} strokeWidth={1.75} />
           )}
         </button>
         <button
           type="button"
-          className={`${actionBtn} hover:text-[var(--warn)]`}
+          className={`${btn} hover:text-[var(--warn)]`}
           title="Excluir"
           aria-label="Excluir"
           onClick={() => onAskDelete(reminder)}
         >
-          <Trash2 size={20} strokeWidth={1.75} />
+          <Trash2 size={icon} strokeWidth={1.75} />
         </button>
       </>
     );
@@ -232,10 +236,10 @@ function NoteCard({
 
       {/* Celular: um “⋯” abre cor / alarme / excluir */}
       <div className="mt-auto flex items-center justify-end gap-1 pt-1 lg:hidden">
-        {menuOpen ? <ActionButtons /> : null}
+        {menuOpen ? <ActionButtons touch /> : null}
         <button
           type="button"
-          className={`${actionBtn} ${menuOpen ? "bg-white/50 opacity-100" : ""}`}
+          className={`${touchBtn} ${menuOpen ? "bg-white/50 opacity-100" : ""}`}
           title={menuOpen ? "Fechar opções" : "Opções do lembrete"}
           aria-label={menuOpen ? "Fechar opções" : "Opções do lembrete"}
           aria-expanded={menuOpen}
@@ -245,8 +249,8 @@ function NoteCard({
         </button>
       </div>
 
-      {/* PC: ícones sempre visíveis */}
-      <div className="mt-auto hidden items-center justify-end gap-1 pt-1 lg:flex">
+      {/* PC: ícones menores, sempre visíveis */}
+      <div className="mt-auto hidden items-center justify-end gap-0.5 pt-1 lg:flex">
         <ActionButtons />
       </div>
     </article>
