@@ -40,15 +40,17 @@ function NoteCard({
 }) {
   const { upsertReminder } = useApp();
   const [alarmOpen, setAlarmOpen] = useState(false);
+  const [colorOpen, setColorOpen] = useState(false);
   const [when, setWhen] = useState(
     reminder.has_alarm ? toLocalInput(reminder.notify_at) : "",
   );
+  const currentColor = sanitizeCssColor(reminder.color, "#FDE68A");
 
   return (
     <article
       className="note-enter relative flex min-h-[128px] flex-col rounded-[var(--radius-tag)] p-3 shadow-sm"
       style={{
-        background: sanitizeCssColor(reminder.color, "#FDE68A"),
+        background: currentColor,
         color: "#292524",
       }}
     >
@@ -130,13 +132,52 @@ function NoteCard({
         </div>
       )}
 
+      {colorOpen && (
+        <div className="mt-1 flex flex-wrap items-center gap-1.5 rounded-[var(--radius-tag)] bg-white/70 p-1.5">
+          {NOTE_COLORS.map((c) => (
+            <button
+              key={c}
+              type="button"
+              className={`h-5 w-5 rounded-full border-2 transition ${
+                currentColor.toLowerCase() === c.toLowerCase()
+                  ? "border-[var(--ink)] scale-110"
+                  : "border-transparent"
+              }`}
+              style={{ background: c }}
+              title="Trocar cor"
+              aria-label={`Cor ${c}`}
+              onClick={() => {
+                upsertReminder({ ...reminder, color: c });
+                setColorOpen(false);
+              }}
+            />
+          ))}
+        </div>
+      )}
+
       <div className="mt-auto flex items-center justify-end gap-0.5 pt-1">
+        <button
+          type="button"
+          className="rounded-full p-1 opacity-70 transition hover:bg-white/50 hover:opacity-100"
+          title="Trocar cor"
+          aria-label="Trocar cor"
+          onClick={() => {
+            setAlarmOpen(false);
+            setColorOpen((v) => !v);
+          }}
+        >
+          <span
+            className="block h-3.5 w-3.5 rounded-full border border-black/25 shadow-sm"
+            style={{ background: currentColor }}
+          />
+        </button>
         <button
           type="button"
           className="rounded p-1 opacity-55 transition hover:bg-white/50 hover:opacity-100"
           title={reminder.has_alarm ? "Editar alarme" : "Adicionar alarme"}
           aria-label={reminder.has_alarm ? "Editar alarme" : "Adicionar alarme"}
           onClick={() => {
+            setColorOpen(false);
             setWhen(reminder.has_alarm ? toLocalInput(reminder.notify_at) : "");
             setAlarmOpen((v) => !v);
           }}
@@ -269,7 +310,7 @@ export function ReminderBoard({ compact }: { compact?: boolean }) {
 
       {!compact && (
         <p className="mb-6 opacity-65">
-          Escolha a cor · escreva · sino pra alarme · lixeira pra excluir.
+          Bolinha pra trocar a cor · sino pra alarme · lixeira pra excluir.
         </p>
       )}
 
