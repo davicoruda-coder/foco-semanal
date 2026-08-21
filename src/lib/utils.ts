@@ -55,9 +55,9 @@ export function blockStyle(
     return {
       className: "",
       style: {
-        background: `color-mix(in srgb, ${bg} 78%, var(--surface))`,
+        background: `color-mix(in srgb, ${bg} 90%, var(--surface))`,
         color: "#14201a",
-        opacity: 0.82,
+        opacity: 0.92,
       },
     };
   }
