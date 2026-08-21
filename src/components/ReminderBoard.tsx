@@ -83,17 +83,17 @@ function NoteCard({
       )}
 
       {alarmOpen && (
-        <div className="mt-1 space-y-1.5 rounded-[var(--radius-tag)] bg-white/70 p-1.5">
+        <div className="mt-1 space-y-2 rounded-[var(--radius-tag)] bg-white/70 p-2">
           <input
             type="datetime-local"
-            className="input px-1.5 py-1 text-[10px]"
+            className="input px-2 py-2 text-sm sm:px-1.5 sm:py-1 sm:text-xs"
             value={when}
             onChange={(e) => setWhen(e.target.value)}
           />
-          <div className="flex flex-wrap gap-1">
+          <div className="flex flex-wrap gap-1.5">
             <button
               type="button"
-              className="rounded px-1.5 py-0.5 text-[10px] font-medium bg-[var(--signal)] text-white"
+              className="rounded-md px-3 py-2 text-sm font-medium bg-[var(--signal)] text-white sm:px-2 sm:py-1 sm:text-xs"
               onClick={() => {
                 if (!when) return;
                 void ensureNotificationPermission();
@@ -111,7 +111,7 @@ function NoteCard({
             {reminder.has_alarm && (
               <button
                 type="button"
-                className="rounded bg-white/80 px-1.5 py-0.5 text-[10px]"
+                className="rounded-md bg-white/80 px-3 py-2 text-sm sm:px-2 sm:py-1 sm:text-xs"
                 onClick={() => {
                   upsertReminder({ ...reminder, has_alarm: false });
                   setWhen("");
@@ -123,7 +123,7 @@ function NoteCard({
             )}
             <button
               type="button"
-              className="rounded bg-white/80 px-1.5 py-0.5 text-[10px]"
+              className="rounded-md bg-white/80 px-3 py-2 text-sm sm:px-2 sm:py-1 sm:text-xs"
               onClick={() => setAlarmOpen(false)}
             >
               Fechar
@@ -133,12 +133,12 @@ function NoteCard({
       )}
 
       {colorOpen && (
-        <div className="mt-1 flex flex-wrap items-center gap-1.5 rounded-[var(--radius-tag)] bg-white/70 p-1.5">
+        <div className="mt-1 flex flex-wrap items-center gap-2 rounded-[var(--radius-tag)] bg-white/70 p-2">
           {NOTE_COLORS.map((c) => (
             <button
               key={c}
               type="button"
-              className={`h-5 w-5 rounded-full border-2 transition ${
+              className={`h-9 w-9 rounded-full border-2 transition sm:h-7 sm:w-7 ${
                 currentColor.toLowerCase() === c.toLowerCase()
                   ? "border-[var(--ink)] scale-110"
                   : "border-transparent"
@@ -155,10 +155,10 @@ function NoteCard({
         </div>
       )}
 
-      <div className="mt-auto flex items-center justify-end gap-0.5 pt-1">
+      <div className="mt-auto flex items-center justify-end gap-1 pt-1">
         <button
           type="button"
-          className="rounded p-1 opacity-55 transition hover:bg-white/50 hover:opacity-100"
+          className="inline-flex h-11 min-h-11 w-11 min-w-11 items-center justify-center rounded-lg opacity-70 transition hover:bg-white/50 hover:opacity-100"
           title="Trocar cor"
           aria-label="Trocar cor"
           onClick={() => {
@@ -167,7 +167,7 @@ function NoteCard({
           }}
         >
           <Circle
-            size={13}
+            size={20}
             strokeWidth={1.75}
             fill={currentColor}
             className="shrink-0"
@@ -175,7 +175,7 @@ function NoteCard({
         </button>
         <button
           type="button"
-          className="rounded p-1 opacity-55 transition hover:bg-white/50 hover:opacity-100"
+          className="inline-flex h-11 min-h-11 w-11 min-w-11 items-center justify-center rounded-lg opacity-70 transition hover:bg-white/50 hover:opacity-100"
           title={reminder.has_alarm ? "Editar alarme" : "Adicionar alarme"}
           aria-label={reminder.has_alarm ? "Editar alarme" : "Adicionar alarme"}
           onClick={() => {
@@ -185,19 +185,19 @@ function NoteCard({
           }}
         >
           {reminder.has_alarm ? (
-            <Bell size={13} strokeWidth={1.75} />
+            <Bell size={20} strokeWidth={1.75} />
           ) : (
-            <BellOff size={13} strokeWidth={1.75} />
+            <BellOff size={20} strokeWidth={1.75} />
           )}
         </button>
         <button
           type="button"
-          className="rounded p-1 opacity-55 transition hover:bg-white/50 hover:text-[var(--warn)] hover:opacity-100"
+          className="inline-flex h-11 min-h-11 w-11 min-w-11 items-center justify-center rounded-lg opacity-70 transition hover:bg-white/50 hover:text-[var(--warn)] hover:opacity-100"
           title="Excluir"
           aria-label="Excluir"
           onClick={() => onAskDelete(reminder)}
         >
-          <Trash2 size={13} strokeWidth={1.75} />
+          <Trash2 size={20} strokeWidth={1.75} />
         </button>
       </div>
     </article>
@@ -277,12 +277,12 @@ export function ReminderBoard({ compact }: { compact?: boolean }) {
       {pickingColor && (
         <div className="panel-in mb-2 rounded-[var(--radius-tag)] border border-[var(--line)] bg-[var(--surface)]/80 p-2">
           <p className="mb-1.5 text-[11px] opacity-60">Escolha a cor</p>
-          <div className="flex flex-wrap items-center gap-1.5">
+          <div className="flex flex-wrap items-center gap-2">
             {NOTE_COLORS.map((c) => (
               <button
                 key={c}
                 type="button"
-                className={`h-6 w-6 rounded-full border-2 transition ${
+                className={`h-9 w-9 rounded-full border-2 transition sm:h-7 sm:w-7 ${
                   draftColor === c
                     ? "border-[var(--ink)] scale-110"
                     : "border-transparent"
@@ -294,14 +294,14 @@ export function ReminderBoard({ compact }: { compact?: boolean }) {
             ))}
             <button
               type="button"
-              className="ml-auto rounded bg-[var(--signal)] px-2 py-1 text-[11px] font-medium text-white"
+              className="ml-auto rounded bg-[var(--signal)] px-3 py-2 text-xs font-medium text-white sm:px-2 sm:py-1 sm:text-[11px]"
               onClick={createNote}
             >
               Criar
             </button>
             <button
               type="button"
-              className="rounded px-2 py-1 text-[11px] opacity-60"
+              className="rounded px-3 py-2 text-xs opacity-60 sm:px-2 sm:py-1 sm:text-[11px]"
               onClick={() => setPickingColor(false)}
             >
               Cancelar
