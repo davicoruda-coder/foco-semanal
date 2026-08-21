@@ -158,7 +158,7 @@ function NoteCard({
       <div className="mt-auto flex items-center justify-end gap-0.5 pt-1">
         <button
           type="button"
-          className="rounded-full p-1 opacity-70 transition hover:bg-white/50 hover:opacity-100"
+          className="rounded p-1 opacity-55 transition hover:bg-white/50 hover:opacity-100"
           title="Trocar cor"
           aria-label="Trocar cor"
           onClick={() => {
@@ -167,7 +167,7 @@ function NoteCard({
           }}
         >
           <span
-            className="block h-3.5 w-3.5 rounded-full border border-black/25 shadow-sm"
+            className="block h-[13px] w-[13px] rounded-full border-[1.75px] border-current"
             style={{ background: currentColor }}
           />
         </button>
