@@ -23,7 +23,7 @@ export function createDefaultData(): AppData {
     timers: [
       {
         id: id("tmr"),
-        name: "Sessão",
+        name: "Bloco",
         minutes: 40,
         accent: "var(--signal)",
         sort_order: 0,
@@ -98,7 +98,7 @@ export function loadDemoData(): AppData {
       data.timers = [
         {
           id: id("tmr"),
-          name: "Sessão",
+          name: "Bloco",
           minutes: s.focus_minutes ?? 40,
           accent: "var(--signal)",
           sort_order: 0,
@@ -111,6 +111,13 @@ export function loadDemoData(): AppData {
           sort_order: 1,
         },
       ];
+    }
+    const main = (data.timers ?? []).find((t) => t.sort_order === 0);
+    if (main?.name === "Sessão") {
+      data.timers = data.timers.map((t) =>
+        t.sort_order === 0 ? { ...t, name: "Bloco" } : t,
+      );
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
     }
     return data;
   } catch {

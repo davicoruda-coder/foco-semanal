@@ -75,7 +75,7 @@ export interface SessionSettings {
   break_long_minutes: number;
 }
 
-/** Temporizadores da tela principal (Sessão, Estudo, …) */
+/** Temporizadores da tela principal (Bloco, Estudo, …) */
 export interface FocusTimer {
   id: string;
   name: string;

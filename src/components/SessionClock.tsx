@@ -415,7 +415,7 @@ export function SessionClock({
     () => [...(data.timers ?? [])].sort((a, b) => a.sort_order - b.sort_order),
     [data.timers],
   );
-  /** Timers além da Sessão principal — visíveis na aba Cronômetro. */
+  /** Timers além do Bloco principal — visíveis na aba Livre. */
   const quickTimers = useMemo(
     () => timers.filter((t) => t.sort_order !== 0),
     [timers],
@@ -478,8 +478,8 @@ export function SessionClock({
         <div className="flex items-center rounded-full bg-[color-mix(in_srgb,var(--ink)_7%,transparent)] p-0.5">
           {(
             [
-              ["timers", stack ? "Timers" : "Temporizadores"],
-              ["stopwatch", "Cronômetro"],
+              ["timers", "Sessão"],
+              ["stopwatch", "Livre"],
             ] as const
           ).map(([value, label]) => {
             const active = mode === value;
@@ -503,8 +503,8 @@ export function SessionClock({
                 title={
                   runningHidden
                     ? value === "stopwatch"
-                      ? "Cronômetro em andamento"
-                      : "Timer em andamento"
+                      ? "Livre em andamento"
+                      : "Sessão em andamento"
                     : undefined
                 }
               >

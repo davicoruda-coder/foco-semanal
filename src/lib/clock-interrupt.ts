@@ -134,7 +134,7 @@ function newId(): string {
 function nameForTimer(r: InterruptibleTimer, id: string, timers: TimerNameHint[]): string {
   const byId = timers.find((t) => t.id === id);
   if (byId?.name) return byId.name;
-  if (r.sortOrder === 0) return "Sessão";
+  if (r.sortOrder === 0) return "Bloco";
   return "Temporizador";
 }
 
@@ -197,7 +197,7 @@ export function recoverStaleClocks(
       detectedAt,
       lastBeatAt,
       kind: "stopwatch",
-      name: "Cronômetro",
+      name: "Livre",
       elapsedSeconds: Math.floor(elapsedMs / 1000),
     });
   }
