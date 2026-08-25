@@ -79,7 +79,8 @@ export default function TemporizadoresPage() {
         Temporizadores
       </h1>
       <p className="mt-2 opacity-65">
-        Mesmos da tela principal — renomeie, ajuste minutos, adicione ou exclua.
+        O primeiro é a Sessão (aba Temporizadores); os demais aparecem também na
+        aba Cronômetro. Renomeie, ajuste minutos, adicione ou exclua.
       </p>
 
       <section className="surface mt-8 overflow-hidden p-0">

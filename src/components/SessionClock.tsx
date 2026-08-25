@@ -415,6 +415,11 @@ export function SessionClock({
     () => [...(data.timers ?? [])].sort((a, b) => a.sort_order - b.sort_order),
     [data.timers],
   );
+  /** Timers além da Sessão principal — visíveis na aba Cronômetro. */
+  const quickTimers = useMemo(
+    () => timers.filter((t) => t.sort_order !== 0),
+    [timers],
+  );
 
   const stack = layout === "stack";
   const size = stack
@@ -424,8 +429,44 @@ export function SessionClock({
       : timers.length === 4
         ? 88
         : 76;
+  const quickSize = stack ? 64 : quickTimers.length <= 2 ? 88 : 76;
   const swPaused = !stopwatch.running && stopwatch.accumulatedMs > 0;
   const anyTimerRunning = Object.values(runtime).some((r) => r.running);
+  const anyQuickTimerRunning = quickTimers.some(
+    (t) => runtime[t.id]?.running,
+  );
+
+  function renderTimerRing(
+    t: (typeof timers)[number],
+    ringSize: number,
+    stroke: number,
+    dense?: boolean,
+  ) {
+    const r = runtime[t.id];
+    const seconds = secondsFor(t.id);
+    const total = Math.max(1, t.minutes) * 60;
+    const running = Boolean(r?.running);
+    const paused =
+      !running && seconds > 0 && seconds < total && Boolean(r?.startedAt);
+    return (
+      <MiniRing
+        key={t.id}
+        display={formatTime(seconds)}
+        label={t.name}
+        size={ringSize}
+        stroke={stroke}
+        progress={1 - seconds / total}
+        accent={t.accent}
+        active={running}
+        paused={paused}
+        dense={dense}
+        flash={flash?.id === t.id ? flash.kind : null}
+        flashKey={flash?.id === t.id ? flash.key : undefined}
+        onToggle={() => toggleTimer(t.id)}
+        onReset={() => resetTimer(t.id)}
+      />
+    );
+  }
 
   return (
     <div className="surface overflow-hidden p-0">
@@ -444,7 +485,8 @@ export function SessionClock({
             const active = mode === value;
             const runningHidden =
               !active &&
-              ((value === "stopwatch" && stopwatch.running) ||
+              ((value === "stopwatch" &&
+                (stopwatch.running || anyQuickTimerRunning)) ||
                 (value === "timers" && anyTimerRunning));
             return (
               <button
@@ -471,35 +513,79 @@ export function SessionClock({
             );
           })}
         </div>
-        {mode === "timers" ? (
-          <Link
-            href="/temporizadores?from=hoje"
-            title="Gerenciar temporizadores"
-            aria-label="Gerenciar temporizadores"
-            className="shrink-0 rounded-full p-1.5 text-[color-mix(in_srgb,var(--ink)_45%,transparent)] transition hover:bg-[var(--mist)] hover:text-[var(--signal)]"
-          >
-            <SlidersHorizontal size={16} strokeWidth={1.75} />
-          </Link>
-        ) : null}
+        <Link
+          href="/temporizadores?from=hoje"
+          title="Gerenciar temporizadores"
+          aria-label="Gerenciar temporizadores"
+          className="shrink-0 rounded-full p-1.5 text-[color-mix(in_srgb,var(--ink)_45%,transparent)] transition hover:bg-[var(--mist)] hover:text-[var(--signal)]"
+        >
+          <SlidersHorizontal size={16} strokeWidth={1.75} />
+        </Link>
       </div>
 
       <div key={mode} className="fade-in">
       {mode === "stopwatch" ? (
-        <div className={`flex justify-center ${stack ? "px-3 py-6" : "px-3 py-6"}`}>
-          <MiniRing
-            display={formatTime(stopwatchSeconds)}
-            size={stack ? 170 : 128}
-            stroke={stack ? 6 : 4.5}
-            progress={1}
-            accent="var(--signal)"
-            softRing
-            active={stopwatch.running}
-            paused={swPaused}
-            flash={flash?.id === "stopwatch" ? flash.kind : null}
-            flashKey={flash?.id === "stopwatch" ? flash.key : undefined}
-            onToggle={toggleStopwatch}
-            onReset={resetStopwatch}
-          />
+        <div className="flex flex-col">
+          <div
+            className={`flex justify-center ${stack ? "px-3 py-5" : "px-3 py-6"}`}
+          >
+            <MiniRing
+              display={formatTime(stopwatchSeconds)}
+              size={stack ? 170 : 128}
+              stroke={stack ? 6 : 4.5}
+              progress={1}
+              accent="var(--signal)"
+              softRing
+              active={stopwatch.running}
+              paused={swPaused}
+              flash={flash?.id === "stopwatch" ? flash.kind : null}
+              flashKey={flash?.id === "stopwatch" ? flash.key : undefined}
+              onToggle={toggleStopwatch}
+              onReset={resetStopwatch}
+            />
+          </div>
+          <div className="border-t border-[var(--line)]">
+            {quickTimers.length > 0 ? (
+              stack ? (
+                <div className="flex flex-col gap-1 px-2 py-2">
+                  {quickTimers.map((t) => renderTimerRing(t, quickSize, 5, true))}
+                </div>
+              ) : (
+                <div
+                  className={`grid items-start gap-3 px-3 py-4 sm:gap-4 sm:px-6 ${
+                    quickTimers.length === 1
+                      ? "grid-cols-1 place-items-center"
+                      : quickTimers.length === 2
+                        ? "grid-cols-2"
+                        : "grid-cols-3 max-sm:flex max-sm:snap-x max-sm:overflow-x-auto max-sm:pb-1"
+                  }`}
+                >
+                  {quickTimers.map((t) => (
+                    <div
+                      key={t.id}
+                      className={
+                        quickTimers.length >= 3
+                          ? "max-sm:snap-start max-sm:shrink-0 max-sm:px-1"
+                          : undefined
+                      }
+                    >
+                      {renderTimerRing(t, quickSize, 7)}
+                    </div>
+                  ))}
+                </div>
+              )
+            ) : (
+              <p className="px-4 py-3 text-center text-xs opacity-55">
+                Nenhum timer rápido.{" "}
+                <Link
+                  href="/temporizadores?from=hoje"
+                  className="text-[var(--signal)]"
+                >
+                  Adicionar
+                </Link>
+              </p>
+            )}
+          </div>
         </div>
       ) : timers.length === 0 ? (
         <div className="px-5 py-8 text-center text-sm opacity-60">
@@ -510,35 +596,7 @@ export function SessionClock({
         </div>
       ) : stack ? (
         <div className="flex flex-col gap-1 px-2 py-2">
-          {timers.map((t) => {
-            const r = runtime[t.id];
-            const seconds = secondsFor(t.id);
-            const total = Math.max(1, t.minutes) * 60;
-            const running = Boolean(r?.running);
-            const paused =
-              !running &&
-              seconds > 0 &&
-              seconds < total &&
-              Boolean(r?.startedAt);
-            return (
-              <MiniRing
-                key={t.id}
-                display={formatTime(seconds)}
-                label={t.name}
-                size={size}
-                stroke={5}
-                progress={1 - seconds / total}
-                accent={t.accent}
-                active={running}
-                paused={paused}
-                dense
-                flash={flash?.id === t.id ? flash.kind : null}
-                flashKey={flash?.id === t.id ? flash.key : undefined}
-                onToggle={() => toggleTimer(t.id)}
-                onReset={() => resetTimer(t.id)}
-              />
-            );
-          })}
+          {timers.map((t) => renderTimerRing(t, size, 5, true))}
         </div>
       ) : (
         <div
@@ -550,42 +608,18 @@ export function SessionClock({
                 : "grid-cols-3 max-sm:flex max-sm:snap-x max-sm:overflow-x-auto max-sm:pb-1"
           }`}
         >
-          {timers.map((t) => {
-            const r = runtime[t.id];
-            const seconds = secondsFor(t.id);
-            const total = Math.max(1, t.minutes) * 60;
-            const running = Boolean(r?.running);
-            const paused =
-              !running &&
-              seconds > 0 &&
-              seconds < total &&
-              Boolean(r?.startedAt);
-            return (
-              <div
-                key={t.id}
-                className={
-                  timers.length >= 3
-                    ? "max-sm:snap-start max-sm:shrink-0 max-sm:px-1"
-                    : undefined
-                }
-              >
-                <MiniRing
-                  display={formatTime(seconds)}
-                  label={t.name}
-                  size={size}
-                  stroke={7}
-                  progress={1 - seconds / total}
-                  accent={t.accent}
-                  active={running}
-                  paused={paused}
-                  flash={flash?.id === t.id ? flash.kind : null}
-                  flashKey={flash?.id === t.id ? flash.key : undefined}
-                  onToggle={() => toggleTimer(t.id)}
-                  onReset={() => resetTimer(t.id)}
-                />
-              </div>
-            );
-          })}
+          {timers.map((t) => (
+            <div
+              key={t.id}
+              className={
+                timers.length >= 3
+                  ? "max-sm:snap-start max-sm:shrink-0 max-sm:px-1"
+                  : undefined
+              }
+            >
+              {renderTimerRing(t, size, 7)}
+            </div>
+          ))}
         </div>
       )}
       </div>
