@@ -198,7 +198,10 @@ create policy "reminders_own" on public.reminders for all to authenticated using
 create policy "note_columns_own" on public.note_columns for all to authenticated using (auth.uid() = user_id and public.current_user_has_access()) with check (auth.uid() = user_id and public.current_user_has_access());
 create policy "sticky_notes_own" on public.sticky_notes for all to authenticated using (auth.uid() = user_id and public.current_user_has_access()) with check (auth.uid() = user_id and public.current_user_has_access());
 create policy "focus_days_own" on public.focus_days for all to authenticated using (auth.uid() = user_id and public.current_user_has_access()) with check (auth.uid() = user_id and public.current_user_has_access());
-create policy "access_allowlist_admin" on public.access_allowlist for all to authenticated using (public.current_user_is_access_admin()) with check (public.current_user_is_access_admin());
+create policy "access_allowlist_select" on public.access_allowlist for select to authenticated using (public.current_user_is_access_admin());
+create policy "access_allowlist_insert" on public.access_allowlist for insert to authenticated with check (public.current_user_is_access_admin() and role = 'member');
+create policy "access_allowlist_update" on public.access_allowlist for update to authenticated using (public.current_user_is_access_admin() and role = 'member') with check (public.current_user_is_access_admin() and role = 'member');
+create policy "access_allowlist_delete" on public.access_allowlist for delete to authenticated using (public.current_user_is_access_admin() and role = 'member');
 create policy "access_requests_admin" on public.access_requests for all to authenticated using (public.current_user_is_access_admin()) with check (public.current_user_is_access_admin());
 
 -- Auto profile + defaults on signup

@@ -127,8 +127,9 @@ export function AccessManagement() {
             Acessos
           </h2>
           <p className="mt-1 text-xs opacity-55">
-            Só os e-mails desta lista podem usar o Foco. Informe uma senha
-            temporária; a pessoa pode trocar depois em Ajustes.
+            Só os e-mails desta lista podem usar o Foco. Contas novas recebem a
+            senha temporária; contas que já existem só são liberadas (a senha
+            delas não muda).
           </p>
         </div>
         <button

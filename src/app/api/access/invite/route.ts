@@ -63,9 +63,41 @@ export async function POST(request: Request) {
   const email = body.email.trim().toLowerCase();
   const password = body.password;
 
+  const { data: existingAllow, error: existingAllowError } = await supabase
+    .from("access_allowlist")
+    .select("email, role")
+    .eq("email", email)
+    .maybeSingle();
+  if (existingAllowError) {
+    return NextResponse.json(
+      { error: "Não foi possível consultar a lista de acesso." },
+      { status: 500 },
+    );
+  }
+  if (existingAllow?.role === "owner") {
+    return NextResponse.json({
+      ok: true,
+      invited: false,
+      existingOwner: true,
+      message: "Este e-mail já é proprietário. Nenhuma alteração foi feita.",
+    });
+  }
+
+  const admin = createAdminClient();
+  if (!admin) {
+    console.error("[foco] invite: SUPABASE_SERVICE_ROLE_KEY ausente");
+    return NextResponse.json(
+      { error: "Não foi possível criar a senha temporária." },
+      { status: 500 },
+    );
+  }
+
+  const existingAuthId = await findAuthUserId(admin, email);
+
   const { error: allowError } = await supabase.from("access_allowlist").upsert(
     {
       email,
+      role: "member",
       added_by: authData.user.id,
     },
     { onConflict: "email" },
@@ -77,13 +109,17 @@ export async function POST(request: Request) {
     );
   }
 
-  const admin = createAdminClient();
-  if (!admin) {
-    console.error("[foco] invite: SUPABASE_SERVICE_ROLE_KEY ausente");
-    return NextResponse.json(
-      { error: "Não foi possível criar a senha temporária." },
-      { status: 500 },
-    );
+  await supabase.from("access_requests").delete().eq("email", email);
+
+  // Conta Auth já existe: libera acesso, NUNCA redefine senha.
+  if (existingAuthId) {
+    return NextResponse.json({
+      ok: true,
+      invited: true,
+      existingAccount: true,
+      message:
+        "E-mail liberado. A conta já existia — a senha NÃO foi alterada. A pessoa entra com a senha atual ou usa “Esqueci a senha” no login.",
+    });
   }
 
   const { error: createError } = await admin.auth.admin.createUser({
@@ -96,44 +132,28 @@ export async function POST(request: Request) {
     const already =
       createError.message.toLowerCase().includes("already") ||
       createError.message.toLowerCase().includes("registered");
-    if (!already) {
-      console.error("[foco] invite createUser:", createError.message);
-      return NextResponse.json(
-        { error: "Não foi possível criar o usuário." },
-        { status: 500 },
-      );
+    if (already) {
+      // Corrida rara: conta surgiu entre o listUsers e o createUser.
+      // Ainda assim NÃO redefinimos senha.
+      return NextResponse.json({
+        ok: true,
+        invited: true,
+        existingAccount: true,
+        message:
+          "E-mail liberado. A conta já existia — a senha NÃO foi alterada. A pessoa entra com a senha atual ou usa “Esqueci a senha” no login.",
+      });
     }
-
-    const userId = await findAuthUserId(admin, email);
-    if (!userId) {
-      console.error("[foco] invite: conta existente não encontrada", email);
-      return NextResponse.json(
-        {
-          error:
-            "E-mail liberado, mas não foi possível atualizar a senha da conta existente.",
-        },
-        { status: 500 },
-      );
-    }
-
-    const { error: updateError } = await admin.auth.admin.updateUserById(
-      userId,
-      { password },
+    console.error("[foco] invite createUser:", createError.message);
+    return NextResponse.json(
+      { error: "Não foi possível criar o usuário." },
+      { status: 500 },
     );
-    if (updateError) {
-      console.error("[foco] invite updateUser:", updateError.message);
-      return NextResponse.json(
-        { error: "Não foi possível atualizar a senha." },
-        { status: 500 },
-      );
-    }
   }
-
-  await supabase.from("access_requests").delete().eq("email", email);
 
   return NextResponse.json({
     ok: true,
     invited: true,
+    created: true,
     message:
       "Acesso liberado com senha temporária. A pessoa entra com e-mail e essa senha, e pode trocar em Ajustes.",
   });
