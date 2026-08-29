@@ -102,6 +102,8 @@ export default function MateriasPage() {
   const { data, upsertSubject, setSubjectStatus, deleteSubject, setData } = useApp();
   const [name, setName] = useState("");
   const [newFreq, setNewFreq] = useState<DraftFreq>({ mode: "all", days: [] });
+  /** Rascunho local: permite abrir “Dias da semana” antes de marcar algum dia. */
+  const [freqDrafts, setFreqDrafts] = useState<Record<string, DraftFreq>>({});
   const [pendingDelete, setPendingDelete] = useState<{
     id: string;
     name: string;
@@ -128,9 +130,23 @@ export default function MateriasPage() {
     });
   }
 
+  function freqForSubject(s: Subject): DraftFreq {
+    return freqDrafts[s.id] ?? freqFromSubject(s);
+  }
+
   function updateStudyDays(s: Subject, freq: DraftFreq) {
+    setFreqDrafts((prev) => ({ ...prev, [s.id]: freq }));
+    // Ainda sem dia marcado: só atualiza a UI; persiste ao escolher o 1º dia
+    // ou ao voltar para “Todos os dias”.
     if (freq.mode === "days" && freq.days.length === 0) return;
     upsertSubject({ ...s, study_days: studyDaysFromFreq(freq) });
+    if (freq.mode === "all") {
+      setFreqDrafts((prev) => {
+        const next = { ...prev };
+        delete next[s.id];
+        return next;
+      });
+    }
   }
 
   return (
@@ -147,7 +163,14 @@ export default function MateriasPage() {
         cancelLabel="Cancelar"
         onCancel={() => setPendingDelete(null)}
         onConfirm={() => {
-          if (pendingDelete) deleteSubject(pendingDelete.id);
+          if (pendingDelete) {
+            deleteSubject(pendingDelete.id);
+            setFreqDrafts((prev) => {
+              const next = { ...prev };
+              delete next[pendingDelete.id];
+              return next;
+            });
+          }
           setPendingDelete(null);
         }}
       />
@@ -190,7 +213,7 @@ export default function MateriasPage() {
 
       <ul className="mt-6 space-y-4">
         {subjects.map((s) => {
-          const freq = freqFromSubject(s);
+          const freq = freqForSubject(s);
           return (
             <li key={s.id} className={`surface p-4 ${statusRowClass(s.status)}`}>
               <div className="flex flex-wrap items-start justify-between gap-3">
