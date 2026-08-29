@@ -78,14 +78,22 @@ export function loadDemoData(): AppData {
       return data;
     }
     const data = JSON.parse(raw) as AppData;
-    // Migra status antigo "aguard" → "prox"; study_days ausente = todos os dias
-    data.subjects = (data.subjects ?? []).map((s) => ({
+    // Migra status antigo "aguard" → "prox"; study_days ausente = todos os dias;
+    // reindexa cycle_order para corrigir duplicatas legadas.
+    const subjectsRaw = (data.subjects ?? []).map((s) => ({
       ...s,
-      status: s.status === "ok" ? "ok" : "prox",
+      status: (s.status === "ok" ? "ok" : "prox") as typeof s.status,
       study_days: Array.isArray(s.study_days)
         ? s.study_days.filter((d): d is number => typeof d === "number")
         : null,
     }));
+    data.subjects = [...subjectsRaw]
+      .sort((a, b) => {
+        const byOrder = (a.cycle_order ?? 0) - (b.cycle_order ?? 0);
+        if (byOrder !== 0) return byOrder;
+        return String(a.name).localeCompare(String(b.name), "pt-BR");
+      })
+      .map((s, i) => ({ ...s, cycle_order: i }));
     const colors = ["#FDE68A", "#A7F3D0", "#FBCFE8", "#BFDBFE", "#FECACA"];
     data.reminders = (data.reminders ?? []).map((r, i) => ({
       ...r,

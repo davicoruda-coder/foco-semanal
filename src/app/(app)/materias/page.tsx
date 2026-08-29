@@ -113,19 +113,28 @@ export default function MateriasPage() {
 
   function move(id: string, dir: -1 | 1) {
     setData((prev) => {
-      const list = [...prev.subjects].sort((a, b) => a.cycle_order - b.cycle_order);
+      const list = [...prev.subjects].sort((a, b) => {
+        const byOrder = a.cycle_order - b.cycle_order;
+        if (byOrder !== 0) return byOrder;
+        return a.name.localeCompare(b.name, "pt-BR");
+      });
       const idx = list.findIndex((s) => s.id === id);
       const swap = idx + dir;
-      if (swap < 0 || swap >= list.length) return prev;
-      const a = list[idx];
-      const b = list[swap];
+      if (idx < 0 || swap < 0 || swap >= list.length) return prev;
+
+      // Troca posição na lista e reindexa 0…n-1 (funciona mesmo com cycle_order duplicado).
+      const reordered = [...list];
+      const tmp = reordered[idx];
+      reordered[idx] = reordered[swap];
+      reordered[swap] = tmp;
+      const orderById = new Map(reordered.map((s, i) => [s.id, i]));
+
       return {
         ...prev,
-        subjects: prev.subjects.map((s) => {
-          if (s.id === a.id) return { ...s, cycle_order: b.cycle_order };
-          if (s.id === b.id) return { ...s, cycle_order: a.cycle_order };
-          return s;
-        }),
+        subjects: prev.subjects.map((s) => ({
+          ...s,
+          cycle_order: orderById.get(s.id) ?? s.cycle_order,
+        })),
       };
     });
   }

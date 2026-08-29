@@ -81,7 +81,7 @@ export async function loadCloudData(
 
   const defaults = createDefaultData();
 
-  const subjects: Subject[] = (subjectsRes.data ?? []).map((s) => ({
+  const subjectsRaw: Subject[] = (subjectsRes.data ?? []).map((s) => ({
     id: s.id,
     name: s.name,
     status: s.status === "ok" ? "ok" : "prox",
@@ -90,6 +90,13 @@ export async function loadCloudData(
     active: s.active ?? true,
     study_days: normalizeStudyDays(s.study_days as number[] | null | undefined),
   }));
+  const subjects: Subject[] = [...subjectsRaw]
+    .sort((a, b) => {
+      const byOrder = a.cycle_order - b.cycle_order;
+      if (byOrder !== 0) return byOrder;
+      return a.name.localeCompare(b.name, "pt-BR");
+    })
+    .map((s, i) => ({ ...s, cycle_order: i }));
 
   const week_blocks: WeekBlock[] = (blocksRes.data ?? []).map((b) => ({
     id: b.id,
