@@ -13,8 +13,8 @@
   --warn-soft: #fff1e6;
   --ok: #16a34a;
   --row-tint-ok: 18%;
-  /* Próximo: linha quase neutra (como no escuro); laranja fica no chip */
-  --row-tint-warn: 4%;
+  /* Próximo: tint suave (meio-termo); laranja concentrado no chip */
+  --row-tint-warn: 7%;
   --status-ok-bg: #16a34a;
   --status-ok-fg: #ffffff;
   --status-ok-ring: color-mix(in srgb, #16a34a 35%, transparent);
