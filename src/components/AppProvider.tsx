@@ -27,6 +27,7 @@ import {
   saveCloudData,
 } from "@/lib/supabase/sync";
 import { checkCurrentUserAccess } from "@/lib/supabase/access";
+import { subjectShowsOnDay, todayIndex, normalizeStudyDays } from "@/lib/utils";
 import type {
   AppData,
   FocusTimer,
@@ -467,10 +468,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
       upsertSubject: (subject) => {
         setData((prev) => {
           if (subject.id) {
+            const patch = { ...subject };
+            if ("study_days" in subject) {
+              patch.study_days = normalizeStudyDays(subject.study_days);
+            }
             return {
               ...prev,
               subjects: prev.subjects.map((s) =>
-                s.id === subject.id ? { ...s, ...subject } : s,
+                s.id === subject.id ? { ...s, ...patch } : s,
               ),
             };
           }
@@ -481,14 +486,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
             notes: subject.notes ?? "",
             cycle_order: subject.cycle_order ?? prev.subjects.length,
             active: subject.active ?? true,
+            study_days: normalizeStudyDays(subject.study_days),
           };
           return { ...prev, subjects: [...prev.subjects, row] };
         });
       },
       setSubjectStatus: (id, status) => {
         setData((prev) => {
+          const day = todayIndex();
           const ordered = [...prev.subjects]
-            .filter((s) => s.active)
+            .filter((s) => s.active && subjectShowsOnDay(s, day))
             .sort((a, b) => a.cycle_order - b.cycle_order);
           const idx = ordered.findIndex((s) => s.id === id);
           if (idx < 0) return prev;
@@ -502,17 +509,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
             };
           }
 
-          // Último Ok do ciclo → todos voltam pra Próx.
+          // Último Ok do ciclo de hoje → matérias de hoje voltam pra Próx.
           if (idx === ordered.length - 1) {
             return {
               ...prev,
               subjects: prev.subjects.map((s) =>
-                s.active ? { ...s, status: "prox" as const } : s,
+                s.active && subjectShowsOnDay(s, day)
+                  ? { ...s, status: "prox" as const }
+                  : s,
               ),
             };
           }
 
-          // Ok no meio → esta Ok; próxima vira Próx.
+          // Ok no meio → esta Ok; próxima (de hoje) vira Próx.
           const next = ordered[idx + 1];
           return {
             ...prev,

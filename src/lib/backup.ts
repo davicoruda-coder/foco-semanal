@@ -14,7 +14,7 @@ import type {
   ThemePref,
   WeekBlock,
 } from "@/lib/types";
-import { sanitizeCssColor } from "@/lib/utils";
+import { sanitizeCssColor, normalizeStudyDays } from "@/lib/utils";
 
 export const MAX_BACKUP_BYTES = 1_048_576;
 const MAX_ITEMS = 500;
@@ -84,6 +84,9 @@ function parseSubject(raw: unknown, index: number): Subject | null {
   const name = asString(raw.name, "", MAX_NAME).trim();
   if (!id || !name) return null;
   const status: SubjectStatus = raw.status === "ok" ? "ok" : "prox";
+  const studyDaysRaw = Array.isArray(raw.study_days)
+    ? raw.study_days.filter((d): d is number => typeof d === "number")
+    : null;
   return {
     id,
     name,
@@ -91,6 +94,7 @@ function parseSubject(raw: unknown, index: number): Subject | null {
     notes: asString(raw.notes, "", MAX_TEXT),
     cycle_order: asInt(raw.cycle_order, index, 0, 9_999),
     active: asBool(raw.active, true),
+    study_days: normalizeStudyDays(studyDaysRaw),
   };
 }
 

@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import { useApp } from "@/components/AppProvider";
 import { DAYS, STATUS_LABEL, type SubjectStatus } from "@/lib/types";
-import { blockStyle, statusClass, statusRowClass, todayIndex } from "@/lib/utils";
+import { blockStyle, statusClass, statusRowClass, subjectShowsOnDay, todayIndex } from "@/lib/utils";
 import { ReminderWatcher } from "@/components/ReminderWatcher";
 import { ReminderBoard } from "@/components/ReminderBoard";
 import { SessionClock } from "@/components/SessionClock";
@@ -38,9 +38,9 @@ export default function HojePage() {
   const subjects = useMemo(
     () =>
       [...data.subjects]
-        .filter((s) => s.active)
+        .filter((s) => s.active && subjectShowsOnDay(s, day))
         .sort((a, b) => a.cycle_order - b.cycle_order),
-    [data.subjects],
+    [data.subjects, day],
   );
 
   const todayBlocks = useMemo(
@@ -254,11 +254,11 @@ export default function HojePage() {
                   />
                 </div>
               ))}
-              {subjects.length === 0 && (
+                  {subjects.length === 0 && (
                 <p className="px-4 py-8 text-sm opacity-55">
-                  Nenhuma matéria —{" "}
+                  Nenhuma matéria para hoje —{" "}
                   <Link href="/materias?from=hoje" className="text-[var(--signal)]">
-                    adicionar
+                    gerenciar
                   </Link>
                 </p>
               )}
@@ -351,9 +351,9 @@ export default function HojePage() {
                   {subjects.length === 0 && (
                     <tr>
                       <td colSpan={3} className="px-5 py-8 text-sm opacity-55">
-                        Nenhuma matéria —{" "}
+                        Nenhuma matéria para hoje —{" "}
                         <Link href="/materias?from=hoje" className="text-[var(--signal)]">
-                          adicionar
+                          gerenciar
                         </Link>
                       </td>
                     </tr>

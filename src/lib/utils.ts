@@ -1,4 +1,4 @@
-import type { BlockType, SubjectStatus, WeekBlock } from "./types";
+import type { BlockType, Subject, SubjectStatus, WeekBlock } from "./types";
 
 export const BLOCK_COLORS = [
   "#E2E8F0", // trabalho / slate
@@ -106,4 +106,28 @@ export function statusRowClass(status: SubjectStatus): string {
 export function todayIndex(): number {
   const js = new Date().getDay(); // 0 Sun
   return js === 0 ? 6 : js - 1;
+}
+
+/** Normaliza dias: null/vazio/7 dias = todos os dias. */
+export function normalizeStudyDays(
+  days: number[] | null | undefined,
+): number[] | null {
+  if (!days?.length) return null;
+  const uniq = [
+    ...new Set(
+      days.filter((d) => Number.isInteger(d) && d >= 0 && d <= 6),
+    ),
+  ].sort((a, b) => a - b);
+  if (uniq.length === 0 || uniq.length === 7) return null;
+  return uniq;
+}
+
+/** Sem `study_days` (ou lista vazia) = aparece todos os dias. */
+export function subjectShowsOnDay(
+  subject: Pick<Subject, "study_days">,
+  day: number,
+): boolean {
+  const days = normalizeStudyDays(subject.study_days);
+  if (!days) return true;
+  return days.includes(day);
 }

@@ -19,6 +19,7 @@ import {
 } from "@/lib/clock-interrupt";
 import { addFocusSeconds, commitFocusDisplaySnapshot } from "@/lib/focus-log";
 import { syncFocusLogWithCloud } from "@/lib/supabase/focus-sync";
+import { subjectShowsOnDay, todayIndex } from "@/lib/utils";
 
 export type TimerRuntime = {
   secondsLeft: number;
@@ -427,8 +428,9 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
       notify("Foco Semanal", `${t.name} concluído`);
 
       if (t.sort_order === 0) {
+        const day = todayIndex();
         const subjects = [...data.subjects]
-          .filter((s) => s.active)
+          .filter((s) => s.active && subjectShowsOnDay(s, day))
           .sort((a, b) => a.cycle_order - b.cycle_order);
         const next =
           subjects.find((s) => s.status === "prox") ?? subjects[0] ?? null;

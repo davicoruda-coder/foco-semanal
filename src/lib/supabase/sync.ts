@@ -12,6 +12,7 @@ import type {
   ThemePref,
   WeekBlock,
 } from "@/lib/types";
+import { normalizeStudyDays } from "@/lib/utils";
 
 type Client = SupabaseClient;
 
@@ -87,6 +88,7 @@ export async function loadCloudData(
     notes: s.notes ?? "",
     cycle_order: s.cycle_order ?? 0,
     active: s.active ?? true,
+    study_days: normalizeStudyDays(s.study_days as number[] | null | undefined),
   }));
 
   const week_blocks: WeekBlock[] = (blocksRes.data ?? []).map((b) => ({
@@ -214,6 +216,7 @@ export async function saveCloudData(
         notes: s.notes,
         cycle_order: s.cycle_order,
         active: s.active,
+        study_days: normalizeStudyDays(s.study_days),
       })),
     );
     assertOk("subjects insert", error);

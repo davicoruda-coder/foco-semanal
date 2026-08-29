@@ -18,6 +18,11 @@ export interface Subject {
   notes: string;
   cycle_order: number;
   active: boolean;
+  /**
+   * Dias da semana em que a matéria aparece no ciclo (0=Seg … 6=Dom).
+   * `null` = todos os dias.
+   */
+  study_days: number[] | null;
 }
 
 export interface WeekBlock {

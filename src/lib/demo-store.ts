@@ -78,10 +78,13 @@ export function loadDemoData(): AppData {
       return data;
     }
     const data = JSON.parse(raw) as AppData;
-    // Migra status antigo "aguard" → "prox"
+    // Migra status antigo "aguard" → "prox"; study_days ausente = todos os dias
     data.subjects = (data.subjects ?? []).map((s) => ({
       ...s,
       status: s.status === "ok" ? "ok" : "prox",
+      study_days: Array.isArray(s.study_days)
+        ? s.study_days.filter((d): d is number => typeof d === "number")
+        : null,
     }));
     const colors = ["#FDE68A", "#A7F3D0", "#FBCFE8", "#BFDBFE", "#FECACA"];
     data.reminders = (data.reminders ?? []).map((r, i) => ({
