@@ -18,8 +18,8 @@
   --status-ok-bg: #16a34a;
   --status-ok-fg: #ffffff;
   --status-ok-ring: color-mix(in srgb, #16a34a 35%, transparent);
-  /* Chip Próximo: laranja no texto/anel; fundo leve */
-  --status-prox-bg: var(--surface);
+  /* Chip Próximo: acompanha a linha; laranja no texto/anel (sem branco puro) */
+  --status-prox-bg: var(--row-prox);
   --status-prox-fg: var(--warn);
   --status-prox-ring: color-mix(in srgb, var(--warn) 42%, transparent);
   --next: #64748b;
