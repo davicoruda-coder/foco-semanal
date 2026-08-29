@@ -13,6 +13,8 @@
   --warn-soft: #fff1e6;
   --ok: #16a34a;
   --row-tint-ok: 18%;
+  /* Linha Próximo no claro: mist um pouco mais carregado que a barra */
+  --row-prox: color-mix(in srgb, var(--ink) 5.5%, var(--mist));
   --status-ok-bg: #16a34a;
   --status-ok-fg: #ffffff;
   --status-ok-ring: color-mix(in srgb, #16a34a 35%, transparent);
@@ -44,6 +46,8 @@
   --warn-soft: #2a1c12;
   --ok: #4ade80;
   --row-tint-ok: 9%;
+  /* Escuro: mesma cor da barra (mist) */
+  --row-prox: var(--mist);
   --status-ok-bg: color-mix(in srgb, #4ade80 12%, #15161e);
   --status-ok-fg: #4ade80;
   --status-ok-ring: color-mix(in srgb, #4ade80 45%, transparent);

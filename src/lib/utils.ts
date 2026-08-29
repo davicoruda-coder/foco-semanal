@@ -98,8 +98,8 @@ export function statusRowClass(status: SubjectStatus): string {
     case "ok":
       return "bg-[color-mix(in_srgb,var(--ok)_var(--row-tint-ok),var(--surface))]";
     case "prox":
-      // Mesmo tom da barra MATÉRIA / CONCLUSÃO / ANOTAÇÕES (`--mist`)
-      return "bg-[var(--mist)]";
+      // Claro: mist um pouco mais carregado; escuro: igual à barra (--row-prox)
+      return "bg-[var(--row-prox)]";
   }
 }
 
