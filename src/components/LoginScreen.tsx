@@ -3,11 +3,15 @@
 import { useState } from "react";
 import { Eye, EyeOff, Target } from "lucide-react";
 import { useApp } from "@/components/AppProvider";
-import { checkEmailAccess } from "@/lib/supabase/access";
+import { checkCurrentUserAccess } from "@/lib/supabase/access";
 
 const WHATSAPP_DEMO_URL =
   "https://wa.me/5571996952190?text=" +
   encodeURIComponent("Olá! Quero conhecer o Foco.");
+
+const GENERIC_AUTH_ERROR = "E-mail ou senha incorretos.";
+const GENERIC_RESET_MSG =
+  "Se este e-mail tiver acesso, enviamos um link para redefinir a senha.";
 
 export function LoginScreen() {
   const { supabaseReady } = useApp();
@@ -44,33 +48,34 @@ export function LoginScreen() {
       const { createClient } = await import("@/lib/supabase/client");
       const supabase = createClient();
 
-      const access = await checkEmailAccess(supabase, trimmed);
-      if (!access.configured) {
-        setErr("O controle de acesso ainda não foi configurado.");
-        setBusy(false);
-        return;
-      }
-      if (!access.allowed) {
-        setErr("Este e-mail ainda não tem acesso ao Foco.");
-        setBusy(false);
-        return;
-      }
-
       const { error } = await supabase.auth.signInWithPassword({
         email: trimmed,
         password,
       });
       if (error) {
-        throw new Error("E-mail ou senha incorretos.");
+        setErr(GENERIC_AUTH_ERROR);
+        setBusy(false);
+        return;
+      }
+
+      // Após autenticar: allowlist via RPC autenticada (não expõe lista a anon).
+      const access = await checkCurrentUserAccess(supabase);
+      if (!access.configured) {
+        await supabase.auth.signOut();
+        setErr("O controle de acesso ainda não foi configurado.");
+        setBusy(false);
+        return;
+      }
+      if (!access.allowed) {
+        await supabase.auth.signOut();
+        setErr(GENERIC_AUTH_ERROR);
+        setBusy(false);
+        return;
       }
       setBusy(false);
-    } catch (error) {
+    } catch {
       setBusy(false);
-      setErr(
-        error && typeof error === "object" && "message" in error
-          ? String((error as { message: unknown }).message)
-          : "Não foi possível entrar.",
-      );
+      setErr(GENERIC_AUTH_ERROR);
     }
   }
 
@@ -85,19 +90,13 @@ export function LoginScreen() {
     try {
       const { createClient } = await import("@/lib/supabase/client");
       const supabase = createClient();
-      const access = await checkEmailAccess(supabase, trimmed);
-      if (!access.allowed) {
-        setErr("Este e-mail não tem acesso ao Foco.");
-        setBusy(false);
-        return;
-      }
-      const { error } = await supabase.auth.resetPasswordForEmail(trimmed, {
+      // Sempre a mesma resposta — não revela se o e-mail está na allowlist.
+      await supabase.auth.resetPasswordForEmail(trimmed, {
         redirectTo: `${window.location.origin}/auth/callback?next=/redefinir-senha`,
       });
-      if (error) throw error;
-      setMsg("Enviamos um link para você criar uma nova senha.");
+      setMsg(GENERIC_RESET_MSG);
     } catch {
-      setErr("Não foi possível enviar o link de recuperação.");
+      setMsg(GENERIC_RESET_MSG);
     } finally {
       setBusy(false);
     }

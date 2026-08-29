@@ -165,10 +165,10 @@ begin
 end;
 $$;
 
-grant execute on function public.is_email_allowed(text) to anon, authenticated;
 grant execute on function public.request_demo_access(text) to anon, authenticated;
 grant execute on function public.current_user_has_access() to authenticated;
 grant execute on function public.current_user_is_access_admin() to authenticated;
+-- is_email_allowed: sem grant a anon/authenticated (só uso interno SECURITY DEFINER)
 
 insert into public.access_allowlist (email, role)
 values ('davicoruda@gmail.com', 'owner')
