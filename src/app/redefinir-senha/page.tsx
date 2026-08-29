@@ -3,6 +3,11 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Target } from "lucide-react";
+import {
+  MIN_PASSWORD_LENGTH,
+  isValidNewPassword,
+  newPasswordHint,
+} from "@/lib/password";
 
 export default function RedefinirSenhaPage() {
   const router = useRouter();
@@ -14,8 +19,8 @@ export default function RedefinirSenhaPage() {
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (password.length < 6) {
-      setErr("A senha precisa ter pelo menos 6 caracteres.");
+    if (!isValidNewPassword(password)) {
+      setErr(newPasswordHint());
       return;
     }
     if (password !== confirm) {
@@ -56,7 +61,8 @@ export default function RedefinirSenhaPage() {
         </div>
         <p className="font-display text-3xl font-semibold tracking-tight">Nova senha</p>
         <p className="mt-2 text-sm text-[color-mix(in_srgb,var(--ink)_60%,transparent)]">
-          Defina uma nova senha para a sua conta.
+          Defina uma nova senha para a sua conta (mínimo {MIN_PASSWORD_LENGTH}{" "}
+          caracteres).
         </p>
 
         <form className="mt-8 space-y-3" onSubmit={(e) => void onSubmit(e)}>
@@ -65,7 +71,7 @@ export default function RedefinirSenhaPage() {
             type="password"
             autoComplete="new-password"
             required
-            minLength={6}
+            minLength={MIN_PASSWORD_LENGTH}
             placeholder="Nova senha"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
@@ -75,7 +81,7 @@ export default function RedefinirSenhaPage() {
             type="password"
             autoComplete="new-password"
             required
-            minLength={6}
+            minLength={MIN_PASSWORD_LENGTH}
             placeholder="Confirmar senha"
             value={confirm}
             onChange={(e) => setConfirm(e.target.value)}

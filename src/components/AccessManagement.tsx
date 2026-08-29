@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Eye, EyeOff, MailPlus, RefreshCw, Trash2, UserCheck } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { MIN_PASSWORD_LENGTH, isValidNewPassword, newPasswordHint } from "@/lib/password";
 
 type AllowedEmail = {
   email: string;
@@ -70,8 +71,8 @@ export function AccessManagement() {
     const normalized = rawEmail.trim().toLowerCase();
     const password = rawPassword;
     if (!normalized) return;
-    if (password.length < 6) {
-      setMessage("A senha temporária precisa ter pelo menos 6 caracteres.");
+    if (!isValidNewPassword(password)) {
+      setMessage(newPasswordHint());
       return;
     }
     setBusyEmail(normalized);
@@ -201,9 +202,9 @@ export function AccessManagement() {
             className="input w-full pr-11"
             type={showPassword ? "text" : "password"}
             required
-            minLength={6}
+            minLength={MIN_PASSWORD_LENGTH}
             autoComplete="new-password"
-            placeholder="Senha temporária"
+            placeholder={`Senha temporária (mín. ${MIN_PASSWORD_LENGTH})`}
             value={tempPassword}
             onChange={(event) => setTempPassword(event.target.value)}
           />

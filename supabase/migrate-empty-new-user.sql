@@ -4,7 +4,8 @@
 create or replace function public.handle_new_user()
 returns trigger
 language plpgsql
-security definer set search_path = public
+security definer
+set search_path = ''
 as $$
 begin
   if not public.is_email_allowed(new.email) then

@@ -11,14 +11,19 @@ App com **login obrigatório** por **magic link** (e-mail). Dados principais fic
    - Project URL  
    - Publishable / anon key
 3. **SQL Editor** — rode [`supabase/schema.sql`](supabase/schema.sql).  
-   Se o projeto já existia, rode também:
-   - [`supabase/migrate-theme-auto.sql`](supabase/migrate-theme-auto.sql)
-   - [`supabase/migrate-focus-days.sql`](supabase/migrate-focus-days.sql)
-   - [`supabase/migrate-access-control.sql`](supabase/migrate-access-control.sql)
-   - [`supabase/migrate-focus-days-allowlist.sql`](supabase/migrate-focus-days-allowlist.sql)
-   - [`supabase/migrate-empty-new-user.sql`](supabase/migrate-empty-new-user.sql)
-4. **Authentication → Providers → Email** — habilitado (Magic link / OTP).
-5. **Authentication → URL Configuration**:
+   Se o projeto já existia, rode também as migrations em `supabase/migrate-*.sql`
+   (theme, focus-days, access-control, protect-access-owners, revoke-anon-email-check,
+   security-hardening-p4p5, etc.).
+4. **Proprietário inicial** (obrigatório em projeto novo) — no SQL Editor:
+
+```sql
+insert into public.access_allowlist (email, role)
+values ('seu@email.com', 'owner')
+on conflict (email) do update set role = 'owner';
+```
+
+5. **Authentication → Providers → Email** — habilitado (senha e/ou magic link).
+6. **Authentication → URL Configuration**:
    - Site URL: `https://foco.davicosystems.ia.br` (ou sua URL da Vercel)
    - Redirect URLs:  
      `http://localhost:3000/auth/callback`  

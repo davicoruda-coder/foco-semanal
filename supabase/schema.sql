@@ -98,6 +98,8 @@ create table if not exists public.sticky_notes (
   sort_order int not null default 0
 );
 
+-- Garante column_id do mesmo user_id (ver migrate-security-hardening-p4p5.sql)
+
 -- Histórico de foco (Estatísticas / Foco hoje). Relógios continuam locais.
 create table if not exists public.focus_days (
   user_id uuid not null references auth.users(id) on delete cascade,
@@ -165,14 +167,14 @@ begin
 end;
 $$;
 
-grant execute on function public.request_demo_access(text) to anon, authenticated;
 grant execute on function public.current_user_has_access() to authenticated;
 grant execute on function public.current_user_is_access_admin() to authenticated;
--- is_email_allowed: sem grant a anon/authenticated (só uso interno SECURITY DEFINER)
+-- is_email_allowed / request_demo_access: sem grant público (só uso interno ou SQL)
 
-insert into public.access_allowlist (email, role)
-values ('davicoruda@gmail.com', 'owner')
-on conflict (email) do update set role = 'owner';
+-- Proprietário inicial: inserir manualmente após o deploy (não versionar e-mail real):
+-- insert into public.access_allowlist (email, role)
+-- values ('seu@email.com', 'owner')
+-- on conflict (email) do update set role = 'owner';
 
 -- RLS
 alter table public.profiles enable row level security;
@@ -208,7 +210,7 @@ create policy "access_requests_admin" on public.access_requests for all to authe
 create or replace function public.handle_new_user()
 returns trigger
 language plpgsql
-security definer set search_path = public
+security definer set search_path = ''
 as $$
 begin
   if not public.is_email_allowed(new.email) then
@@ -227,6 +229,32 @@ begin
   return new;
 end;
 $$;
+
+create or replace function public.sticky_notes_same_owner()
+returns trigger
+language plpgsql
+security invoker
+set search_path = ''
+as $$
+begin
+  if not exists (
+    select 1
+    from public.note_columns c
+    where c.id = new.column_id
+      and c.user_id = new.user_id
+  ) then
+    raise exception 'sticky_notes.column_id must belong to the same user';
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists sticky_notes_same_owner_trg on public.sticky_notes;
+create trigger sticky_notes_same_owner_trg
+  before insert or update of column_id, user_id
+  on public.sticky_notes
+  for each row
+  execute function public.sticky_notes_same_owner();
 
 drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created

@@ -1,16 +1,13 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+import { isValidNewPassword, newPasswordHint } from "@/lib/password";
 
 function validEmail(value: unknown): value is string {
   return (
     typeof value === "string" &&
     /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim())
   );
-}
-
-function validPassword(value: unknown): value is string {
-  return typeof value === "string" && value.length >= 6 && value.length <= 72;
 }
 
 async function findAuthUserId(
@@ -54,11 +51,8 @@ export async function POST(request: Request) {
   if (!validEmail(body?.email)) {
     return NextResponse.json({ error: "E-mail inválido." }, { status: 400 });
   }
-  if (!validPassword(body?.password)) {
-    return NextResponse.json(
-      { error: "A senha temporária precisa ter pelo menos 6 caracteres." },
-      { status: 400 },
-    );
+  if (!isValidNewPassword(body?.password)) {
+    return NextResponse.json({ error: newPasswordHint() }, { status: 400 });
   }
   const email = body.email.trim().toLowerCase();
   const password = body.password;

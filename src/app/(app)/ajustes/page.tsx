@@ -8,6 +8,7 @@ import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { InstallPwaCard } from "@/components/InstallPwaCard";
 import { ensureNotificationPermission } from "@/lib/audio";
 import { backupFileError } from "@/lib/backup";
+import { MIN_PASSWORD_LENGTH, isValidNewPassword, newPasswordHint } from "@/lib/password";
 import type { ThemePref } from "@/lib/types";
 
 const OPTIONS: { value: ThemePref; label: string; icon: typeof Sun }[] = [
@@ -46,8 +47,8 @@ export default function AjustesPage() {
 
   async function savePassword(e: React.FormEvent) {
     e.preventDefault();
-    if (password.length < 6) {
-      setPasswordErr("A senha precisa ter pelo menos 6 caracteres.");
+    if (!isValidNewPassword(password)) {
+      setPasswordErr(newPasswordHint());
       setPasswordMsg(null);
       return;
     }
@@ -313,7 +314,7 @@ export default function AjustesPage() {
                     type="password"
                     autoComplete="new-password"
                     required
-                    minLength={6}
+                    minLength={MIN_PASSWORD_LENGTH}
                     placeholder="Nova senha"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
@@ -323,7 +324,7 @@ export default function AjustesPage() {
                     type="password"
                     autoComplete="new-password"
                     required
-                    minLength={6}
+                    minLength={MIN_PASSWORD_LENGTH}
                     placeholder="Confirmar senha"
                     value={passwordConfirm}
                     onChange={(e) => setPasswordConfirm(e.target.value)}
