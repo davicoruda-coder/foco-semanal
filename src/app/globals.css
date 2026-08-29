@@ -13,12 +13,11 @@
   --warn-soft: #fff1e6;
   --ok: #16a34a;
   --row-tint-ok: 18%;
-  /* Próximo: tint suave (meio-termo); laranja concentrado no chip */
-  --row-tint-warn: 7%;
   --status-ok-bg: #16a34a;
   --status-ok-fg: #ffffff;
   --status-ok-ring: color-mix(in srgb, #16a34a 35%, transparent);
-  --status-prox-bg: color-mix(in srgb, var(--warn) 8%, var(--surface));
+  /* Chip Próximo: laranja no texto/anel; fundo leve */
+  --status-prox-bg: var(--surface);
   --status-prox-fg: var(--warn);
   --status-prox-ring: color-mix(in srgb, var(--warn) 42%, transparent);
   --next: #64748b;
@@ -45,11 +44,11 @@
   --warn-soft: #2a1c12;
   --ok: #4ade80;
   --row-tint-ok: 9%;
-  --row-tint-warn: 0%;
   --status-ok-bg: color-mix(in srgb, #4ade80 12%, #15161e);
   --status-ok-fg: #4ade80;
   --status-ok-ring: color-mix(in srgb, #4ade80 45%, transparent);
-  --status-prox-bg: color-mix(in srgb, var(--warn) 10%, var(--surface));
+  /* Chip Próximo: alinhado ao mist da linha; laranja no texto/anel */
+  --status-prox-bg: var(--mist);
   --status-prox-fg: var(--warn);
   --status-prox-ring: color-mix(in srgb, var(--warn) 45%, transparent);
   --next: #94a3b8;
