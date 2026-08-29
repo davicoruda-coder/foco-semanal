@@ -13,13 +13,14 @@
   --warn-soft: #fff1e6;
   --ok: #16a34a;
   --row-tint-ok: 18%;
-  --row-tint-warn: 14%;
+  /* Próximo: linha quase neutra (como no escuro); laranja fica no chip */
+  --row-tint-warn: 4%;
   --status-ok-bg: #16a34a;
   --status-ok-fg: #ffffff;
   --status-ok-ring: color-mix(in srgb, #16a34a 35%, transparent);
-  --status-prox-bg: color-mix(in srgb, var(--warn) 22%, var(--surface));
+  --status-prox-bg: color-mix(in srgb, var(--warn) 8%, var(--surface));
   --status-prox-fg: var(--warn);
-  --status-prox-ring: color-mix(in srgb, var(--warn) 40%, transparent);
+  --status-prox-ring: color-mix(in srgb, var(--warn) 42%, transparent);
   --next: #64748b;
   --line: #c9c7d8;
   --radius: 18px;
