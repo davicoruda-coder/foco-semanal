@@ -32,7 +32,9 @@ export default function TemporizadoresPage() {
   );
   const [pendingDelete, setPendingDelete] = useState<FocusTimer | null>(null);
   const [draftName, setDraftName] = useState("");
-  const [draftMinutes, setDraftMinutes] = useState(25);
+  /** String para permitir apagar e digitar de novo sem voltar para 1. */
+  const [draftMinutes, setDraftMinutes] = useState("25");
+  const [minutesDraft, setMinutesDraft] = useState<Record<string, string>>({});
   const [alarm, setAlarm] = useState<AlarmPrefs>({ volume: 0.7, tone: "acorde" });
 
   useEffect(() => {
@@ -44,15 +46,21 @@ export default function TemporizadoresPage() {
     saveAlarmPrefs(next);
   }
 
+  function parseMinutes(raw: string, fallback = 25) {
+    const n = Number.parseInt(raw, 10);
+    if (!Number.isFinite(n) || n < 1) return fallback;
+    return Math.min(n, 999);
+  }
+
   function addTimer() {
     const name = draftName.trim() || `Temporizador ${timers.length + 1}`;
     upsertTimer({
       name,
-      minutes: Math.max(1, draftMinutes),
+      minutes: parseMinutes(draftMinutes, 25),
       accent: ACCENTS[timers.length % ACCENTS.length],
     });
     setDraftName("");
-    setDraftMinutes(25);
+    setDraftMinutes("25");
   }
 
   return (
@@ -120,13 +128,25 @@ export default function TemporizadoresPage() {
                     type="number"
                     min={1}
                     className="input w-24 py-1.5"
-                    value={t.minutes}
+                    value={minutesDraft[t.id] ?? String(t.minutes)}
                     onChange={(e) =>
-                      upsertTimer({
-                        ...t,
-                        minutes: Math.max(1, Number(e.target.value) || 1),
-                      })
+                      setMinutesDraft((prev) => ({
+                        ...prev,
+                        [t.id]: e.target.value,
+                      }))
                     }
+                    onBlur={() => {
+                      const next = parseMinutes(
+                        minutesDraft[t.id] ?? String(t.minutes),
+                        t.minutes,
+                      );
+                      upsertTimer({ ...t, minutes: next });
+                      setMinutesDraft((prev) => {
+                        const copy = { ...prev };
+                        delete copy[t.id];
+                        return copy;
+                      });
+                    }}
                   />
                 </label>
                 <div className="flex flex-wrap gap-1.5">
@@ -176,7 +196,10 @@ export default function TemporizadoresPage() {
               className="input sm:w-28"
               placeholder="Min"
               value={draftMinutes}
-              onChange={(e) => setDraftMinutes(Number(e.target.value) || 1)}
+              onChange={(e) => setDraftMinutes(e.target.value)}
+              onBlur={() =>
+                setDraftMinutes(String(parseMinutes(draftMinutes, 25)))
+              }
             />
             <button type="button" className="btn btn-primary whitespace-nowrap" onClick={addTimer}>
               <Plus size={16} /> Adicionar
