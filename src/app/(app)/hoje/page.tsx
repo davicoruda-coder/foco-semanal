@@ -16,6 +16,7 @@ import { ReminderBoard } from "@/components/ReminderBoard";
 import { SessionClock } from "@/components/SessionClock";
 import { FocusTodayCard } from "@/components/FocusTodayCard";
 import { MonthCalendarDialog } from "@/components/MonthCalendar";
+import { AutoGrowTextarea } from "@/components/AutoGrowTextarea";
 
 /** Com o ciclo grande, a semana encolhe para "só hoje" e o ciclo sobe. */
 const COMPACT_WEEK_THRESHOLD = 6;
@@ -244,13 +245,13 @@ export default function HojePage() {
                       })}
                     </div>
                   </div>
-                  <textarea
-                    className="min-h-12 w-full resize-y rounded-[var(--radius-tag)] border border-[var(--line)] bg-[var(--surface)]/70 px-2.5 py-2 text-[15px] text-[color-mix(in_srgb,var(--ink)_84%,transparent)] outline-none focus:border-[var(--signal)] focus:text-[var(--ink)]"
+                  <AutoGrowTextarea
+                    className="w-full rounded-[var(--radius-tag)] border border-[var(--line)] bg-[var(--surface)]/70 px-2.5 py-2 text-[15px] text-[color-mix(in_srgb,var(--ink)_84%,transparent)] focus:border-[var(--signal)] focus:text-[var(--ink)]"
                     value={s.notes}
                     placeholder="Anotações…"
-                    onChange={(e) =>
-                      upsertSubject({ ...s, notes: e.target.value })
-                    }
+                    minPx={48}
+                    maxPx={96}
+                    onChange={(notes) => upsertSubject({ ...s, notes })}
                   />
                 </div>
               ))}
@@ -334,15 +335,15 @@ export default function HojePage() {
                             : ""
                         }`}
                       >
-                        <div className="flex min-h-[2.25rem] items-center">
-                          <textarea
-                            className="field-sizing-content max-h-28 min-h-[1.375rem] w-full resize-y break-words rounded-[var(--radius-tag)] border border-transparent bg-transparent px-0 py-0 text-[15px] font-normal leading-snug text-[color-mix(in_srgb,var(--ink)_84%,transparent)] outline-none focus:border-[var(--line)] focus:bg-[var(--surface)] focus:px-2 focus:py-1 focus:text-[var(--ink)]"
-                            rows={1}
+                        <div className="flex min-h-[2.25rem] items-start">
+                          <AutoGrowTextarea
+                            className="w-full break-words rounded-[var(--radius-tag)] border border-transparent bg-transparent px-0 py-0 text-[15px] font-normal leading-snug text-[color-mix(in_srgb,var(--ink)_84%,transparent)] focus:border-[var(--line)] focus:bg-[var(--surface)] focus:px-2 focus:py-1 focus:text-[var(--ink)]"
                             value={s.notes}
                             placeholder="Anotações…"
-                            onChange={(e) =>
-                              upsertSubject({ ...s, notes: e.target.value })
-                            }
+                            minPx={22}
+                            maxPx={44}
+                            rows={1}
+                            onChange={(notes) => upsertSubject({ ...s, notes })}
                           />
                         </div>
                       </td>
