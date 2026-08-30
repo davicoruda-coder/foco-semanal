@@ -14,7 +14,7 @@ type Props = {
   rows?: number;
 };
 
-/** Textarea sem puxador: cresce com o texto até maxPx, depois rola. */
+/** Textarea sem puxador: cresce com o texto até maxPx; barra só quando passa do limite. */
 export function AutoGrowTextarea({
   value,
   onChange,
@@ -31,20 +31,28 @@ export function AutoGrowTextarea({
     if (!el) return;
     const from = el.offsetHeight || minPx;
     el.style.transition = "none";
+    el.style.overflowY = "hidden";
     el.style.height = "auto";
-    const next = Math.min(Math.max(el.scrollHeight, minPx), maxPx);
+    const content = el.scrollHeight;
+    const next = Math.min(Math.max(content, minPx), maxPx);
+    const needsScroll = content > maxPx + 1;
     el.style.height = `${from}px`;
     void el.offsetHeight;
     el.style.transition = "height 220ms ease";
     el.style.height = `${next}px`;
+    el.style.overflowY = needsScroll ? "auto" : "hidden";
   }, [value, minPx, maxPx]);
 
   return (
     <textarea
       ref={ref}
       rows={rows}
-      className={`resize-none overflow-y-auto outline-none ${className}`}
-      style={{ minHeight: minPx, maxHeight: maxPx }}
+      className={`resize-none outline-none ${className}`}
+      style={{
+        minHeight: minPx,
+        maxHeight: maxPx,
+        overflowY: "hidden",
+      }}
       placeholder={placeholder}
       value={value}
       onChange={(e) => onChange(e.target.value)}
