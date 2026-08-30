@@ -20,10 +20,10 @@ import { sanitizeCssColor } from "@/lib/utils";
 const NOTE_TEXT_MIN_PX = { compact: 72, full: 60 } as const;
 const NOTE_TEXT_MAX_PX = { compact: 160, full: 140 } as const;
 
-/** 0 = tamanho atual (máximo); 1–2 = um pouco menores. */
-const NOTE_FONT_CLASS = {
-  compact: ["text-lg", "text-base", "text-sm"],
-  full: ["text-base", "text-sm", "text-xs"],
+/** 0 = tamanho atual (máximo); 1–2 = um pouco menores. Valores em px p/ transição suave. */
+const NOTE_FONT_PX = {
+  compact: [18, 16, 14],
+  full: [16, 14, 12],
 } as const;
 
 function clampFontSize(value: number | undefined): 0 | 1 | 2 {
@@ -72,15 +72,19 @@ function NoteCard({
   const textMin = compact ? NOTE_TEXT_MIN_PX.compact : NOTE_TEXT_MIN_PX.full;
   const textMax = compact ? NOTE_TEXT_MAX_PX.compact : NOTE_TEXT_MAX_PX.full;
   const fontSize = clampFontSize(reminder.font_size);
-  const fontClass = (compact ? NOTE_FONT_CLASS.compact : NOTE_FONT_CLASS.full)[
-    fontSize
-  ];
+  const fontPx = (compact ? NOTE_FONT_PX.compact : NOTE_FONT_PX.full)[fontSize];
 
   useLayoutEffect(() => {
     const el = textRef.current;
     if (!el) return;
+    const from = el.offsetHeight || textMin;
+    el.style.transition = "none";
     el.style.height = "auto";
-    el.style.height = `${Math.min(Math.max(el.scrollHeight, textMin), textMax)}px`;
+    const next = Math.min(Math.max(el.scrollHeight, textMin), textMax);
+    el.style.height = `${from}px`;
+    void el.offsetHeight;
+    el.style.transition = "height 220ms ease, font-size 220ms ease";
+    el.style.height = `${next}px`;
   }, [reminder.title, textMin, textMax, fontSize]);
 
   function bumpFont(delta: -1 | 1) {
@@ -113,11 +117,14 @@ function NoteCard({
   const touchBtn =
     "inline-flex h-11 min-h-11 w-11 min-w-11 items-center justify-center rounded-lg opacity-70 transition hover:bg-white/50 hover:opacity-100";
   const desktopBtn =
-    "inline-flex items-center justify-center rounded p-1 opacity-55 transition hover:bg-white/50 hover:opacity-100";
+    "inline-flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded p-0 opacity-55 transition hover:bg-white/50 hover:opacity-100";
 
   function ActionButtons({ touch }: { touch?: boolean }) {
     const btn = touch ? touchBtn : desktopBtn;
     const icon = touch ? 20 : 13;
+    const fontLabel = touch
+      ? "inline-flex h-5 w-5 items-center justify-center text-[13px] font-semibold leading-none"
+      : "inline-flex h-[13px] w-[15px] items-center justify-center text-[11px] font-semibold leading-none";
     return (
       <>
         <button
@@ -128,9 +135,7 @@ function NoteCard({
           disabled={fontSize >= 2}
           onClick={() => bumpFont(1)}
         >
-          <span className={`font-semibold leading-none ${touch ? "text-sm" : "text-[11px]"}`}>
-            A−
-          </span>
+          <span className={fontLabel}>A−</span>
         </button>
         <button
           type="button"
@@ -140,9 +145,7 @@ function NoteCard({
           disabled={fontSize <= 0}
           onClick={() => bumpFont(-1)}
         >
-          <span className={`font-semibold leading-none ${touch ? "text-base" : "text-xs"}`}>
-            A+
-          </span>
+          <span className={fontLabel}>A+</span>
         </button>
         <button
           type="button"
@@ -196,8 +199,13 @@ function NoteCard({
     >
       <textarea
         ref={textRef}
-        className={`w-full resize-none overflow-y-auto bg-transparent font-normal leading-relaxed outline-none placeholder:opacity-40 ${fontClass}`}
-        style={{ minHeight: textMin, maxHeight: textMax }}
+        className="w-full resize-none overflow-y-auto bg-transparent font-normal leading-relaxed outline-none placeholder:opacity-40"
+        style={{
+          minHeight: textMin,
+          maxHeight: textMax,
+          fontSize: fontPx,
+          transition: "height 220ms ease, font-size 220ms ease",
+        }}
         placeholder="Escreva…"
         value={noteText(reminder.title)}
         rows={3}
@@ -307,7 +315,7 @@ function NoteCard({
       </div>
 
       {/* PC: ícones menores, sempre visíveis */}
-      <div className="mt-auto hidden items-center justify-end gap-0.5 pt-1 lg:flex">
+      <div className="mt-auto hidden items-center justify-end gap-1 pt-1 lg:flex">
         <ActionButtons />
       </div>
     </article>
