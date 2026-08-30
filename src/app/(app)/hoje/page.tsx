@@ -9,7 +9,7 @@ import {
   SlidersHorizontal,
 } from "lucide-react";
 import { useApp } from "@/components/AppProvider";
-import { DAYS, STATUS_LABEL, type SubjectStatus } from "@/lib/types";
+import { DAYS, STATUS_LABEL } from "@/lib/types";
 import { blockStyle, statusClass, statusRowClass, subjectShowsOnDay, todayIndex } from "@/lib/utils";
 import { ReminderWatcher } from "@/components/ReminderWatcher";
 import { ReminderBoard } from "@/components/ReminderBoard";
@@ -23,7 +23,7 @@ import { SubjectTimerControls } from "@/components/SubjectTimerControls";
 const COMPACT_WEEK_THRESHOLD = 6;
 
 export default function HojePage() {
-  const { data, upsertSubject, setSubjectStatus } = useApp();
+  const { data, upsertSubject } = useApp();
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [weekOverride, setWeekOverride] = useState<boolean | null>(null);
   const [narrow, setNarrow] = useState(false);
@@ -226,25 +226,11 @@ export default function HojePage() {
                     <p className="min-w-0 flex-1 text-base font-medium leading-snug">
                       {s.name}
                     </p>
-                    <div className="inline-flex shrink-0 items-center gap-0.5 rounded-full border border-[var(--line)] bg-[color-mix(in_srgb,var(--ink)_6%,transparent)] p-0.5">
-                      {(["ok", "prox"] as SubjectStatus[]).map((st) => {
-                        const active = s.status === st;
-                        return (
-                          <button
-                            key={st}
-                            type="button"
-                            className={`rounded-full px-2.5 py-1.5 text-xs font-medium transition ${
-                              active
-                                ? statusClass(st)
-                                : "text-[color-mix(in_srgb,var(--ink)_55%,transparent)]"
-                            }`}
-                            onClick={() => setSubjectStatus(s.id, st)}
-                          >
-                            {STATUS_LABEL[st]}
-                          </button>
-                        );
-                      })}
-                    </div>
+                    <span
+                      className={`shrink-0 rounded-full px-2.5 py-1.5 text-xs font-medium ${statusClass(s.status)}`}
+                    >
+                      {STATUS_LABEL[s.status]}
+                    </span>
                   </div>
                   <SubjectTimerControls
                     subjectId={s.id}
@@ -278,7 +264,7 @@ export default function HojePage() {
                 <colgroup>
                   <col className="w-[20%]" />
                   <col className="w-[10.5rem]" />
-                  <col className="w-[8.5rem]" />
+                  <col className="w-[7.5rem]" />
                   <col />
                 </colgroup>
                 <thead>
@@ -290,7 +276,7 @@ export default function HojePage() {
                       Tempo
                     </th>
                     <th className="border-b border-[var(--line)] py-3 pl-2 pr-2 text-left">
-                      Conclusão
+                      Status
                     </th>
                     <th className="border-b border-[var(--line)] px-5 py-3 text-left">
                       Anotações
@@ -332,25 +318,11 @@ export default function HojePage() {
                             : ""
                         }`}
                       >
-                        <div className="inline-flex items-center gap-0.5 rounded-full border border-[var(--line)] bg-[color-mix(in_srgb,var(--ink)_6%,transparent)] p-0.5">
-                          {(["ok", "prox"] as SubjectStatus[]).map((st) => {
-                            const active = s.status === st;
-                            return (
-                              <button
-                                key={st}
-                                type="button"
-                                className={`rounded-full px-2.5 py-1.5 text-xs font-medium transition ${
-                                  active
-                                    ? statusClass(st)
-                                    : "text-[color-mix(in_srgb,var(--ink)_55%,transparent)] hover:text-[var(--ink)]"
-                                }`}
-                                onClick={() => setSubjectStatus(s.id, st)}
-                              >
-                                {STATUS_LABEL[st]}
-                              </button>
-                            );
-                          })}
-                        </div>
+                        <span
+                          className={`inline-flex rounded-full px-2.5 py-1.5 text-xs font-medium ${statusClass(s.status)}`}
+                        >
+                          {STATUS_LABEL[s.status]}
+                        </span>
                       </td>
                       <td
                         className={`px-5 py-3 align-middle ${

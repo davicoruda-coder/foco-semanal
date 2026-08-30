@@ -118,7 +118,7 @@ export const DAYS = [
 ] as const;
 
 export const STATUS_LABEL: Record<SubjectStatus, string> = {
-  ok: "Ok",
+  ok: "Concluída",
   prox: "Próximo",
 };
 
