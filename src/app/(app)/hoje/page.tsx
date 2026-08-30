@@ -18,7 +18,7 @@ import { FocusTodayCard } from "@/components/FocusTodayCard";
 import { MonthCalendarDialog } from "@/components/MonthCalendar";
 
 /** Com o ciclo grande, a semana encolhe para "só hoje" e o ciclo sobe. */
-const COMPACT_WEEK_THRESHOLD = 5;
+const COMPACT_WEEK_THRESHOLD = 6;
 
 export default function HojePage() {
   const { data, upsertSubject, setSubjectStatus } = useApp();
