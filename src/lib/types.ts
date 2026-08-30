@@ -119,7 +119,7 @@ export const DAYS = [
 
 export const STATUS_LABEL: Record<SubjectStatus, string> = {
   ok: "Concluída",
-  prox: "Próximo",
+  prox: "Próxima",
 };
 
 export const BLOCK_TYPE_LABEL: Record<BlockType, string> = {
