@@ -181,10 +181,45 @@ function DayCard({
   const [pendingDelete, setPendingDelete] = useState<WeekBlock | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const editWrapRef = useRef<HTMLDivElement | null>(null);
+  const addBtnRef = useRef<HTMLButtonElement | null>(null);
+  const [addPanelPos, setAddPanelPos] = useState<{
+    left: number;
+    top: number;
+    width: number;
+  } | null>(null);
 
   const isToday = dayIndex === todayIndex();
   const { shown: addingShown, leaving: addingLeaving } =
     useOpenTransition(adding);
+
+  useLayoutEffect(() => {
+    if (!addingShown) {
+      setAddPanelPos(null);
+      return;
+    }
+    const btn = addBtnRef.current;
+    if (!btn) return;
+
+    function update() {
+      const rect = btn!.getBoundingClientRect();
+      const width = Math.min(280, window.innerWidth - 24);
+      let left = rect.left + rect.width / 2 - width / 2;
+      left = Math.max(12, Math.min(left, window.innerWidth - width - 12));
+      setAddPanelPos({
+        left,
+        top: rect.top - 8,
+        width,
+      });
+    }
+
+    update();
+    window.addEventListener("resize", update);
+    window.addEventListener("scroll", update, true);
+    return () => {
+      window.removeEventListener("resize", update);
+      window.removeEventListener("scroll", update, true);
+    };
+  }, [addingShown]);
   const showDrop = dropDay === dayIndex && Boolean(draggingId);
 
   useEffect(() => {
@@ -253,10 +288,8 @@ function DayCard({
     <div
       data-week-day={dayIndex}
       className={`surface relative flex min-h-52 min-w-0 flex-col overflow-hidden p-3 ${
-        addingShown ? "z-20 overflow-visible" : ""
-      } ${isToday && !draggingId ? "ring-2 ring-[var(--signal)]" : ""} ${
-        showDrop ? "ring-2 ring-[var(--signal)]" : ""
-      }`}
+        isToday && !draggingId ? "ring-2 ring-[var(--signal)]" : ""
+      } ${showDrop ? "ring-2 ring-[var(--signal)]" : ""}`}
     >
       <ConfirmDialog
         open={Boolean(pendingDelete)}
@@ -401,6 +434,7 @@ function DayCard({
 
         <div className="relative">
           <button
+            ref={addBtnRef}
             type="button"
             className="flex w-full items-center justify-center gap-1 rounded-[var(--radius-tag)] border border-dashed border-[var(--line)] py-2 text-xs opacity-55 transition hover:opacity-100"
             onClick={() => setAdding(true)}
@@ -409,71 +443,81 @@ function DayCard({
             Bloco
           </button>
 
-          {addingShown ? (
-            <>
-              <button
-                type="button"
-                className={`scrim-fade fixed inset-0 z-30 cursor-default bg-[color-mix(in_srgb,var(--ink)_18%,transparent)] ${
-                  addingLeaving ? "is-leaving" : ""
-                }`}
-                aria-label="Fechar formulário"
-                onClick={closeAdd}
-              />
-              <div
-                className="absolute bottom-0 left-1/2 z-40 w-[min(17.5rem,calc(100vw-1.5rem))] -translate-x-1/2"
-                role="dialog"
-                aria-label={`Novo bloco em ${name}`}
-              >
-                <div
-                  className={`rounded-[var(--radius)] border border-[var(--line)] bg-[var(--surface)] p-3.5 shadow-[var(--shadow-lg)] ${
-                    addingLeaving ? "panel-out" : "panel-in"
-                  }`}
-                >
-                  <p className="mb-2 text-xs font-semibold opacity-60">
-                    Novo bloco · {name}
-                  </p>
-                  <input
-                    className="input w-full px-3 py-2.5 text-sm"
-                    placeholder="Nome do bloco"
-                    value={draftLabel}
-                    autoFocus
-                    onChange={(e) => setDraftLabel(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        e.preventDefault();
-                        addBlock();
-                      }
-                    }}
+          {addingShown
+            ? createPortal(
+                <>
+                  <button
+                    type="button"
+                    className={`scrim-fade fixed inset-0 z-30 cursor-default bg-[color-mix(in_srgb,var(--ink)_18%,transparent)] ${
+                      addingLeaving ? "is-leaving" : ""
+                    }`}
+                    aria-label="Fechar formulário"
+                    onClick={closeAdd}
                   />
-                  <p className="mt-3 text-[10px] uppercase tracking-wider opacity-50">
-                    Cor
-                  </p>
-                  <div className="mt-2">
-                    <ColorSwatches
-                      value={draftColor}
-                      onPick={setDraftColor}
-                    />
-                  </div>
-                  <div className="mt-3.5 grid grid-cols-2 gap-2">
-                    <button
-                      type="button"
-                      className="btn btn-primary w-full px-2 py-2 text-xs"
-                      onClick={addBlock}
+                  {addPanelPos ? (
+                    <div
+                      className="fixed z-40 -translate-y-full"
+                      style={{
+                        left: addPanelPos.left,
+                        top: addPanelPos.top,
+                        width: addPanelPos.width,
+                      }}
+                      role="dialog"
+                      aria-label={`Novo bloco em ${name}`}
                     >
-                      Adicionar
-                    </button>
-                    <button
-                      type="button"
-                      className="btn w-full px-2 py-2 text-xs"
-                      onClick={closeAdd}
+                    <div
+                      className={`rounded-[var(--radius)] border border-[var(--line)] bg-[var(--surface)] p-3.5 shadow-[var(--shadow-lg)] ${
+                        addingLeaving ? "panel-out" : "panel-in"
+                      }`}
                     >
-                      Cancelar
-                    </button>
+                      <p className="mb-2 text-xs font-semibold opacity-60">
+                        Novo bloco · {name}
+                      </p>
+                      <input
+                        className="input w-full px-3 py-2.5 text-sm"
+                        placeholder="Nome do bloco"
+                        value={draftLabel}
+                        autoFocus
+                        onChange={(e) => setDraftLabel(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            addBlock();
+                          }
+                        }}
+                      />
+                      <p className="mt-3 text-[10px] uppercase tracking-wider opacity-50">
+                        Cor
+                      </p>
+                      <div className="mt-2">
+                        <ColorSwatches
+                          value={draftColor}
+                          onPick={setDraftColor}
+                        />
+                      </div>
+                      <div className="mt-3.5 grid grid-cols-2 gap-2">
+                        <button
+                          type="button"
+                          className="btn btn-primary w-full px-2 py-2 text-xs"
+                          onClick={addBlock}
+                        >
+                          Adicionar
+                        </button>
+                        <button
+                          type="button"
+                          className="btn w-full px-2 py-2 text-xs"
+                          onClick={closeAdd}
+                        >
+                          Cancelar
+                        </button>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
-            </>
-          ) : null}
+                  ) : null}
+                </>,
+                document.body,
+              )
+            : null}
         </div>
       </div>
     </div>
