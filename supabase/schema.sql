@@ -78,7 +78,8 @@ create table if not exists public.reminders (
   done_at timestamptz,
   active boolean not null default true,
   has_alarm boolean not null default false,
-  color text not null default '#FDE68A'
+  color text not null default '#FDE68A',
+  font_size smallint not null default 0 check (font_size between 0 and 2)
 );
 
 create table if not exists public.note_columns (

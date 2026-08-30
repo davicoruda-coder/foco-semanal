@@ -16,6 +16,12 @@ import { normalizeStudyDays } from "@/lib/utils";
 
 type Client = SupabaseClient;
 
+function normalizeFontSize(value: unknown): 0 | 1 | 2 {
+  const n = typeof value === "number" ? value : Number(value);
+  if (n === 1 || n === 2) return n;
+  return 0;
+}
+
 function asTheme(v: string | null | undefined): ThemePref {
   return v === "dark" || v === "auto" ? v : "light";
 }
@@ -146,6 +152,7 @@ export async function loadCloudData(
     active: r.active ?? true,
     has_alarm: r.has_alarm ?? false,
     color: r.color ?? "#FDE68A",
+    font_size: normalizeFontSize(r.font_size),
   }));
 
   const note_columns: NoteColumn[] = (columnsRes.data ?? []).map((c) => ({
@@ -257,6 +264,7 @@ export async function saveCloudData(
         active: r.active,
         has_alarm: r.has_alarm,
         color: r.color,
+        font_size: r.font_size ?? 0,
       })),
     );
     assertOk("reminders insert", error);

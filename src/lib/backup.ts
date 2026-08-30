@@ -138,6 +138,10 @@ function parseReminder(raw: unknown): Reminder | null {
     active: asBool(raw.active, true),
     has_alarm: asBool(raw.has_alarm, false),
     color: asColor(raw.color, "#FDE68A"),
+    font_size: (() => {
+      const n = typeof raw.font_size === "number" ? raw.font_size : Number(raw.font_size);
+      return n === 1 || n === 2 ? n : 0;
+    })(),
   };
 }
 

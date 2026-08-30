@@ -46,6 +46,10 @@ export interface Reminder {
   /** Se false, é só nota — sem alarme */
   has_alarm: boolean;
   color: string;
+  /**
+   * Tamanho da fonte: 0 = atual (máximo), 1 e 2 = um pouco menores.
+   */
+  font_size: 0 | 1 | 2;
 }
 
 export interface NoteColumn {

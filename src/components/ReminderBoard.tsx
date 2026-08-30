@@ -20,6 +20,17 @@ import { sanitizeCssColor } from "@/lib/utils";
 const NOTE_TEXT_MIN_PX = { compact: 72, full: 60 } as const;
 const NOTE_TEXT_MAX_PX = { compact: 160, full: 140 } as const;
 
+/** 0 = tamanho atual (máximo); 1–2 = um pouco menores. */
+const NOTE_FONT_CLASS = {
+  compact: ["text-lg", "text-base", "text-sm"],
+  full: ["text-base", "text-sm", "text-xs"],
+} as const;
+
+function clampFontSize(value: number | undefined): 0 | 1 | 2 {
+  if (value === 1 || value === 2) return value;
+  return 0;
+}
+
 const NOTE_COLORS = [
   "#FDE68A",
   "#A7F3D0",
@@ -60,13 +71,23 @@ function NoteCard({
   const currentColor = sanitizeCssColor(reminder.color, "#FDE68A");
   const textMin = compact ? NOTE_TEXT_MIN_PX.compact : NOTE_TEXT_MIN_PX.full;
   const textMax = compact ? NOTE_TEXT_MAX_PX.compact : NOTE_TEXT_MAX_PX.full;
+  const fontSize = clampFontSize(reminder.font_size);
+  const fontClass = (compact ? NOTE_FONT_CLASS.compact : NOTE_FONT_CLASS.full)[
+    fontSize
+  ];
 
   useLayoutEffect(() => {
     const el = textRef.current;
     if (!el) return;
     el.style.height = "auto";
     el.style.height = `${Math.min(Math.max(el.scrollHeight, textMin), textMax)}px`;
-  }, [reminder.title, textMin, textMax]);
+  }, [reminder.title, textMin, textMax, fontSize]);
+
+  function bumpFont(delta: -1 | 1) {
+    const next = clampFontSize(fontSize + delta);
+    if (next === fontSize) return;
+    upsertReminder({ ...reminder, font_size: next });
+  }
 
   function openColor() {
     setAlarmOpen(false);
@@ -99,6 +120,30 @@ function NoteCard({
     const icon = touch ? 20 : 13;
     return (
       <>
+        <button
+          type="button"
+          className={`${btn} disabled:opacity-30`}
+          title="Diminuir fonte"
+          aria-label="Diminuir fonte"
+          disabled={fontSize >= 2}
+          onClick={() => bumpFont(1)}
+        >
+          <span className={`font-semibold leading-none ${touch ? "text-sm" : "text-[11px]"}`}>
+            A−
+          </span>
+        </button>
+        <button
+          type="button"
+          className={`${btn} disabled:opacity-30`}
+          title="Aumentar fonte"
+          aria-label="Aumentar fonte"
+          disabled={fontSize <= 0}
+          onClick={() => bumpFont(-1)}
+        >
+          <span className={`font-semibold leading-none ${touch ? "text-base" : "text-xs"}`}>
+            A+
+          </span>
+        </button>
         <button
           type="button"
           className={btn}
@@ -151,9 +196,7 @@ function NoteCard({
     >
       <textarea
         ref={textRef}
-        className={`w-full resize-none overflow-y-auto bg-transparent font-normal leading-relaxed outline-none placeholder:opacity-40 ${
-          compact ? "text-lg" : "text-base"
-        }`}
+        className={`w-full resize-none overflow-y-auto bg-transparent font-normal leading-relaxed outline-none placeholder:opacity-40 ${fontClass}`}
         style={{ minHeight: textMin, maxHeight: textMax }}
         placeholder="Escreva…"
         value={noteText(reminder.title)}

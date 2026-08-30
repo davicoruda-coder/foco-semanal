@@ -99,6 +99,8 @@ export function loadDemoData(): AppData {
       ...r,
       has_alarm: r.has_alarm ?? true,
       color: r.color ?? colors[i % colors.length],
+      font_size:
+        r.font_size === 1 || r.font_size === 2 ? r.font_size : 0,
     }));
     if (!data.timers?.length) {
       const s = data.session_settings ?? {

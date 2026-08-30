@@ -591,6 +591,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
             color:
               reminder.color ??
               colors[prev.reminders.length % colors.length],
+            font_size: reminder.font_size ?? 0,
           };
           return { ...prev, reminders: [...prev.reminders, row] };
         });
