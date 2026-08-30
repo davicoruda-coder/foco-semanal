@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import {
   Bell,
   BellOff,
@@ -15,6 +15,10 @@ import { ensureNotificationPermission } from "@/lib/audio";
 import { plainTextFromHtml } from "@/lib/note-html";
 import type { Reminder } from "@/lib/types";
 import { sanitizeCssColor } from "@/lib/utils";
+
+/** Altura do campo de texto: cresce até ~2× antes da barra de rolagem. */
+const NOTE_TEXT_MIN_PX = { compact: 72, full: 60 } as const;
+const NOTE_TEXT_MAX_PX = { compact: 160, full: 140 } as const;
 
 const NOTE_COLORS = [
   "#FDE68A",
@@ -46,6 +50,7 @@ function NoteCard({
   compact?: boolean;
 }) {
   const { upsertReminder } = useApp();
+  const textRef = useRef<HTMLTextAreaElement>(null);
   const [alarmOpen, setAlarmOpen] = useState(false);
   const [colorOpen, setColorOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -53,6 +58,15 @@ function NoteCard({
     reminder.has_alarm ? toLocalInput(reminder.notify_at) : "",
   );
   const currentColor = sanitizeCssColor(reminder.color, "#FDE68A");
+  const textMin = compact ? NOTE_TEXT_MIN_PX.compact : NOTE_TEXT_MIN_PX.full;
+  const textMax = compact ? NOTE_TEXT_MAX_PX.compact : NOTE_TEXT_MAX_PX.full;
+
+  useLayoutEffect(() => {
+    const el = textRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${Math.min(Math.max(el.scrollHeight, textMin), textMax)}px`;
+  }, [reminder.title, textMin, textMax]);
 
   function openColor() {
     setAlarmOpen(false);
@@ -136,11 +150,11 @@ function NoteCard({
       }}
     >
       <textarea
-        className={`w-full flex-1 resize-none bg-transparent font-normal leading-relaxed outline-none placeholder:opacity-40 ${
-          compact
-            ? "min-h-[72px] text-lg"
-            : "min-h-[60px] text-base"
+        ref={textRef}
+        className={`w-full resize-none overflow-y-auto bg-transparent font-normal leading-relaxed outline-none placeholder:opacity-40 ${
+          compact ? "text-lg" : "text-base"
         }`}
+        style={{ minHeight: textMin, maxHeight: textMax }}
         placeholder="Escreva…"
         value={noteText(reminder.title)}
         rows={3}
