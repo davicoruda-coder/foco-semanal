@@ -472,6 +472,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
             if ("study_days" in subject) {
               patch.study_days = normalizeStudyDays(subject.study_days);
             }
+            if ("study_minutes" in subject) {
+              const n = Number(subject.study_minutes);
+              patch.study_minutes =
+                Number.isFinite(n) && n >= 1 ? Math.min(999, Math.floor(n)) : 25;
+            }
             return {
               ...prev,
               subjects: prev.subjects.map((s) =>
@@ -487,6 +492,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
             cycle_order: subject.cycle_order ?? prev.subjects.length,
             active: subject.active ?? true,
             study_days: normalizeStudyDays(subject.study_days),
+            study_minutes:
+              typeof subject.study_minutes === "number" && subject.study_minutes >= 1
+                ? Math.min(999, Math.floor(subject.study_minutes))
+                : 25,
           };
           return { ...prev, subjects: [...prev.subjects, row] };
         });

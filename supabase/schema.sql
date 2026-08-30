@@ -20,6 +20,7 @@ create table if not exists public.subjects (
   active boolean not null default true,
   -- null = todos os dias; senão 0=Seg … 6=Dom (1–6 dias)
   study_days int[] null,
+  study_minutes int not null default 25,
   created_at timestamptz not null default now(),
   constraint subjects_study_days_valid check (
     study_days is null
@@ -27,7 +28,8 @@ create table if not exists public.subjects (
       cardinality(study_days) between 1 and 6
       and study_days <@ array[0, 1, 2, 3, 4, 5, 6]
     )
-  )
+  ),
+  constraint subjects_study_minutes_range check (study_minutes between 1 and 999)
 );
 
 create table if not exists public.week_blocks (

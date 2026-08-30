@@ -23,6 +23,8 @@ export interface Subject {
    * `null` = todos os dias.
    */
   study_days: number[] | null;
+  /** Minutos do temporizador desta matéria (play no ciclo). */
+  study_minutes: number;
 }
 
 export interface WeekBlock {

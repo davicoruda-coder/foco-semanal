@@ -86,6 +86,10 @@ export function loadDemoData(): AppData {
       study_days: Array.isArray(s.study_days)
         ? s.study_days.filter((d): d is number => typeof d === "number")
         : null,
+      study_minutes:
+        typeof s.study_minutes === "number" && s.study_minutes >= 1
+          ? Math.min(999, Math.floor(s.study_minutes))
+          : 25,
     }));
     data.subjects = [...subjectsRaw]
       .sort((a, b) => {

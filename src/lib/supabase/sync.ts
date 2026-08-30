@@ -22,6 +22,12 @@ function normalizeFontSize(value: unknown): 0 | 1 | 2 {
   return 0;
 }
 
+function normalizeStudyMinutes(value: unknown, fallback = 25): number {
+  const n = typeof value === "number" ? value : Number(value);
+  if (!Number.isFinite(n) || n < 1) return fallback;
+  return Math.min(999, Math.floor(n));
+}
+
 function asTheme(v: string | null | undefined): ThemePref {
   return v === "dark" || v === "auto" ? v : "light";
 }
@@ -95,6 +101,7 @@ export async function loadCloudData(
     cycle_order: s.cycle_order ?? 0,
     active: s.active ?? true,
     study_days: normalizeStudyDays(s.study_days as number[] | null | undefined),
+    study_minutes: normalizeStudyMinutes(s.study_minutes, 25),
   }));
   const subjects: Subject[] = [...subjectsRaw]
     .sort((a, b) => {
@@ -231,6 +238,7 @@ export async function saveCloudData(
         cycle_order: s.cycle_order,
         active: s.active,
         study_days: normalizeStudyDays(s.study_days),
+        study_minutes: normalizeStudyMinutes(s.study_minutes, 25),
       })),
     );
     assertOk("subjects insert", error);

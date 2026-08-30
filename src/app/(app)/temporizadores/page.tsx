@@ -87,8 +87,8 @@ export default function TemporizadoresPage() {
         Temporizadores
       </h1>
       <p className="mt-2 opacity-65">
-        O primeiro é o Bloco (aba Sessão); os demais aparecem também na aba
-        Livre. Renomeie, ajuste minutos, adicione ou exclua.
+        O primeiro é o Bloco da aba Sessão. Os demais ficam guardados aqui
+        (o tempo de cada matéria fica em Matérias / na lista do ciclo).
       </p>
 
       <section className="surface mt-8 overflow-hidden p-0">

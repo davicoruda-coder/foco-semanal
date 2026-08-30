@@ -98,12 +98,20 @@ function StudyDaysPicker({
   );
 }
 
+function parseMinutes(raw: string, fallback = 25) {
+  const n = Number.parseInt(raw, 10);
+  if (!Number.isFinite(n) || n < 1) return fallback;
+  return Math.min(n, 999);
+}
+
 export default function MateriasPage() {
   const { data, upsertSubject, setSubjectStatus, deleteSubject, setData } = useApp();
   const [name, setName] = useState("");
+  const [newMinutes, setNewMinutes] = useState("25");
   const [newFreq, setNewFreq] = useState<DraftFreq>({ mode: "all", days: [] });
   /** Rascunho local: permite abrir “Dias da semana” antes de marcar algum dia. */
   const [freqDrafts, setFreqDrafts] = useState<Record<string, DraftFreq>>({});
+  const [minutesDraft, setMinutesDraft] = useState<Record<string, string>>({});
   const [pendingDelete, setPendingDelete] = useState<{
     id: string;
     name: string;
@@ -188,7 +196,7 @@ export default function MateriasPage() {
         Matérias
       </h1>
       <p className="mt-2 opacity-65">
-        Status, dias de estudo, observações e ordem do ciclo.
+        Status, tempo de estudo, dias, observações e ordem do ciclo.
       </p>
 
       <form
@@ -201,18 +209,35 @@ export default function MateriasPage() {
             name: name.trim(),
             status: "prox",
             study_days: studyDaysFromFreq(newFreq),
+            study_minutes: parseMinutes(newMinutes, 25),
           });
           setName("");
+          setNewMinutes("25");
           setNewFreq({ mode: "all", days: [] });
         }}
       >
-        <div className="flex flex-col gap-3 sm:flex-row">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
           <input
             className="input"
             placeholder="Nova matéria"
             value={name}
             onChange={(e) => setName(e.target.value)}
           />
+          <label className="flex shrink-0 items-center gap-2 text-sm">
+            <span className="opacity-60">Min</span>
+            <input
+              className="input w-20 py-2 text-center font-mono-num"
+              type="number"
+              min={1}
+              max={999}
+              inputMode="numeric"
+              value={newMinutes}
+              onChange={(e) => setNewMinutes(e.target.value)}
+              onBlur={() =>
+                setNewMinutes(String(parseMinutes(newMinutes, 25)))
+              }
+            />
+          </label>
           <button type="submit" className="btn btn-primary whitespace-nowrap">
             Adicionar
           </button>
@@ -251,14 +276,54 @@ export default function MateriasPage() {
                   })}
                 </div>
               </div>
-              <div className="mt-3">
-                <p className="mb-1.5 text-xs font-medium uppercase tracking-wider opacity-50">
-                  Frequência
-                </p>
-                <StudyDaysPicker
-                  value={freq}
-                  onChange={(next) => updateStudyDays(s, next)}
-                />
+              <div className="mt-3 flex flex-wrap items-end gap-4">
+                <div>
+                  <p className="mb-1.5 text-xs font-medium uppercase tracking-wider opacity-50">
+                    Tempo de estudo
+                  </p>
+                  <label className="flex items-center gap-2 text-sm">
+                    <input
+                      className="input w-20 py-2 text-center font-mono-num"
+                      type="number"
+                      min={1}
+                      max={999}
+                      inputMode="numeric"
+                      value={
+                        minutesDraft[s.id] ?? String(s.study_minutes ?? 25)
+                      }
+                      onChange={(e) =>
+                        setMinutesDraft((prev) => ({
+                          ...prev,
+                          [s.id]: e.target.value,
+                        }))
+                      }
+                      onBlur={() => {
+                        const next = parseMinutes(
+                          minutesDraft[s.id] ?? String(s.study_minutes ?? 25),
+                          s.study_minutes ?? 25,
+                        );
+                        setMinutesDraft((prev) => {
+                          const copy = { ...prev };
+                          delete copy[s.id];
+                          return copy;
+                        });
+                        if (next !== (s.study_minutes ?? 25)) {
+                          upsertSubject({ ...s, study_minutes: next });
+                        }
+                      }}
+                    />
+                    <span className="opacity-55">min</span>
+                  </label>
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="mb-1.5 text-xs font-medium uppercase tracking-wider opacity-50">
+                    Frequência
+                  </p>
+                  <StudyDaysPicker
+                    value={freq}
+                    onChange={(next) => updateStudyDays(s, next)}
+                  />
+                </div>
               </div>
               <textarea
                 className="input mt-3 min-h-20"

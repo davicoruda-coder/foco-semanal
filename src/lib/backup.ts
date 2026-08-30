@@ -95,6 +95,7 @@ function parseSubject(raw: unknown, index: number): Subject | null {
     cycle_order: asInt(raw.cycle_order, index, 0, 9_999),
     active: asBool(raw.active, true),
     study_days: normalizeStudyDays(studyDaysRaw),
+    study_minutes: Math.min(999, Math.max(1, asInt(raw.study_minutes, 25, 1, 999))),
   };
 }
 

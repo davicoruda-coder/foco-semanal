@@ -415,26 +415,16 @@ export function SessionClock({
     () => [...(data.timers ?? [])].sort((a, b) => a.sort_order - b.sort_order),
     [data.timers],
   );
-  /** Timers além do Bloco principal — visíveis na aba Livre. */
-  const quickTimers = useMemo(
-    () => timers.filter((t) => t.sort_order !== 0),
+  /** Só o Bloco (sort_order 0) na aba Sessão — matérias têm timer na lista. */
+  const sessionTimers = useMemo(
+    () => timers.filter((t) => t.sort_order === 0),
     [timers],
   );
 
   const stack = layout === "stack";
-  const size = stack
-    ? 64
-    : timers.length <= 3
-      ? 100
-      : timers.length === 4
-        ? 88
-        : 76;
-  const quickSize = stack ? 64 : quickTimers.length <= 2 ? 88 : 76;
+  const size = stack ? 64 : 100;
   const swPaused = !stopwatch.running && stopwatch.accumulatedMs > 0;
-  const anyTimerRunning = Object.values(runtime).some((r) => r.running);
-  const anyQuickTimerRunning = quickTimers.some(
-    (t) => runtime[t.id]?.running,
-  );
+  const anySessionRunning = sessionTimers.some((t) => runtime[t.id]?.running);
 
   function renderTimerRing(
     t: (typeof timers)[number],
@@ -485,9 +475,8 @@ export function SessionClock({
             const active = mode === value;
             const runningHidden =
               !active &&
-              ((value === "stopwatch" &&
-                (stopwatch.running || anyQuickTimerRunning)) ||
-                (value === "timers" && anyTimerRunning));
+              ((value === "stopwatch" && stopwatch.running) ||
+                (value === "timers" && anySessionRunning));
             return (
               <button
                 key={value}
@@ -525,101 +514,38 @@ export function SessionClock({
 
       <div key={mode} className="fade-in">
       {mode === "stopwatch" ? (
-        <div className="flex flex-col">
-          <div
-            className={`flex justify-center ${stack ? "px-3 py-5" : "px-3 py-6"}`}
-          >
-            <MiniRing
-              display={formatTime(stopwatchSeconds)}
-              size={stack ? 170 : 128}
-              stroke={stack ? 6 : 4.5}
-              progress={1}
-              accent="var(--signal)"
-              softRing
-              active={stopwatch.running}
-              paused={swPaused}
-              flash={flash?.id === "stopwatch" ? flash.kind : null}
-              flashKey={flash?.id === "stopwatch" ? flash.key : undefined}
-              onToggle={toggleStopwatch}
-              onReset={resetStopwatch}
-            />
-          </div>
-          <div className="border-t border-[var(--line)]">
-            {quickTimers.length > 0 ? (
-              stack ? (
-                <div className="flex flex-col gap-1 px-2 py-2">
-                  {quickTimers.map((t) => renderTimerRing(t, quickSize, 5, true))}
-                </div>
-              ) : (
-                <div
-                  className={`grid items-start gap-3 px-3 py-4 sm:gap-4 sm:px-6 ${
-                    quickTimers.length === 1
-                      ? "grid-cols-1 place-items-center"
-                      : quickTimers.length === 2
-                        ? "grid-cols-2"
-                        : "grid-cols-3 max-sm:flex max-sm:snap-x max-sm:overflow-x-auto max-sm:pb-1"
-                  }`}
-                >
-                  {quickTimers.map((t) => (
-                    <div
-                      key={t.id}
-                      className={
-                        quickTimers.length >= 3
-                          ? "max-sm:snap-start max-sm:shrink-0 max-sm:px-1"
-                          : undefined
-                      }
-                    >
-                      {renderTimerRing(t, quickSize, 7)}
-                    </div>
-                  ))}
-                </div>
-              )
-            ) : (
-              <p className="px-4 py-3 text-center text-xs opacity-55">
-                Nenhum timer rápido.{" "}
-                <Link
-                  href="/temporizadores?from=hoje"
-                  className="text-[var(--signal)]"
-                >
-                  Adicionar
-                </Link>
-              </p>
-            )}
-          </div>
+        <div
+          className={`flex justify-center ${stack ? "px-3 py-5" : "px-3 py-6"}`}
+        >
+          <MiniRing
+            display={formatTime(stopwatchSeconds)}
+            size={stack ? 170 : 128}
+            stroke={stack ? 6 : 4.5}
+            progress={1}
+            accent="var(--signal)"
+            softRing
+            active={stopwatch.running}
+            paused={swPaused}
+            flash={flash?.id === "stopwatch" ? flash.kind : null}
+            flashKey={flash?.id === "stopwatch" ? flash.key : undefined}
+            onToggle={toggleStopwatch}
+            onReset={resetStopwatch}
+          />
         </div>
-      ) : timers.length === 0 ? (
+      ) : sessionTimers.length === 0 ? (
         <div className="px-5 py-8 text-center text-sm opacity-60">
-          Nenhum temporizador.{" "}
+          Nenhum Bloco de sessão.{" "}
           <Link href="/temporizadores?from=hoje" className="text-[var(--signal)]">
             Adicionar
           </Link>
         </div>
       ) : stack ? (
         <div className="flex flex-col gap-1 px-2 py-2">
-          {timers.map((t) => renderTimerRing(t, size, 5, true))}
+          {sessionTimers.map((t) => renderTimerRing(t, size, 5, true))}
         </div>
       ) : (
-        <div
-          className={`grid items-start gap-3 px-3 py-5 sm:gap-4 sm:px-6 md:px-8 ${
-            timers.length === 1
-              ? "grid-cols-1 place-items-center"
-              : timers.length === 2
-                ? "grid-cols-2"
-                : "grid-cols-3 max-sm:flex max-sm:snap-x max-sm:overflow-x-auto max-sm:pb-1"
-          }`}
-        >
-          {timers.map((t) => (
-            <div
-              key={t.id}
-              className={
-                timers.length >= 3
-                  ? "max-sm:snap-start max-sm:shrink-0 max-sm:px-1"
-                  : undefined
-              }
-            >
-              {renderTimerRing(t, size, 7)}
-            </div>
-          ))}
+        <div className="grid grid-cols-1 place-items-center gap-3 px-3 py-5 sm:px-6 md:px-8">
+          {sessionTimers.map((t) => renderTimerRing(t, size, 7))}
         </div>
       )}
       </div>
