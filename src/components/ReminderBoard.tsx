@@ -299,24 +299,34 @@ function NoteCard({
         </div>
       )}
 
-      {/* Celular: um “⋯” abre cor / alarme / excluir */}
-      <div className="mt-auto flex items-center justify-end gap-1 pt-1 lg:hidden">
-        {menuOpen ? <ActionButtons touch /> : null}
+      {/* Um “⋯” abre fonte / cor / alarme / excluir (celular e PC) */}
+      <div className="mt-auto flex items-center justify-end gap-1 pt-1">
+        {menuOpen ? (
+          <>
+            <div className="flex items-center gap-1 lg:hidden">
+              <ActionButtons touch />
+            </div>
+            <div className="hidden items-center gap-1 lg:flex">
+              <ActionButtons />
+            </div>
+          </>
+        ) : null}
         <button
           type="button"
-          className={`${touchBtn} ${menuOpen ? "bg-white/50 opacity-100" : ""}`}
+          className={`${touchBtn} lg:h-[22px] lg:min-h-0 lg:w-[22px] lg:min-w-0 lg:rounded lg:p-0 ${
+            menuOpen ? "bg-white/50 opacity-100" : ""
+          }`}
           title={menuOpen ? "Fechar opções" : "Opções do lembrete"}
           aria-label={menuOpen ? "Fechar opções" : "Opções do lembrete"}
           aria-expanded={menuOpen}
           onClick={toggleMenu}
         >
-          <MoreHorizontal size={22} strokeWidth={1.75} />
+          <MoreHorizontal
+            size={22}
+            strokeWidth={1.75}
+            className="lg:h-[13px] lg:w-[13px]"
+          />
         </button>
-      </div>
-
-      {/* PC: ícones menores, sempre visíveis */}
-      <div className="mt-auto hidden items-center justify-end gap-1 pt-1 lg:flex">
-        <ActionButtons />
       </div>
     </article>
   );
