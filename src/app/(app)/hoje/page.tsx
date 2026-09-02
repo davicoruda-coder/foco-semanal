@@ -134,7 +134,7 @@ export default function HojePage() {
                           className={`border-b px-2 py-2.5 text-center text-xs font-semibold uppercase tracking-wider md:px-2 md:py-2 ${
                             isToday
                               ? "relative z-[1] border-[color-mix(in_srgb,var(--signal)_18%,var(--line))] text-[var(--ink)]"
-                              : "border-[var(--line)] text-[color-mix(in_srgb,var(--ink)_55%,transparent)]"
+                              : "border-[var(--line)] text-[color-mix(in_srgb,var(--ink)_72%,transparent)]"
                           }`}
                           style={
                             isToday
@@ -159,7 +159,7 @@ export default function HojePage() {
                               <div
                                 key={b.id}
                                 title={b.label}
-                                className="rounded-[var(--radius-tag)] px-2 py-2 text-sm font-medium leading-snug break-words hyphens-auto md:px-2 md:py-1.5 md:text-xs lg:text-sm"
+                                className="rounded-[var(--radius-tag)] px-2 py-2 text-sm font-semibold leading-snug break-words hyphens-auto tabular-nums md:px-2 md:py-1.5 md:text-xs lg:text-sm"
                                 style={style.style}
                                 lang="pt-BR"
                               >
@@ -184,7 +184,7 @@ export default function HojePage() {
                     return (
                       <div
                         key={b.id}
-                        className="rounded-[var(--radius-tag)] px-3 py-1.5 text-sm font-medium"
+                        className="rounded-[var(--radius-tag)] px-3 py-1.5 text-sm font-semibold tabular-nums"
                         style={style.style}
                       >
                         {b.label}

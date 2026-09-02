@@ -45,19 +45,19 @@ export function blockStyle(
   opts?: { muted?: boolean },
 ): {
   className: string;
-  style?: { background: string; color: string; opacity?: number };
+  style?: { background: string; color: string };
 } {
   const bg = sanitizeCssColor(
     block.color,
     defaultBlockColor(block.type),
   );
   if (opts?.muted) {
+    // Sem opacity < 1: opacity força composição e deixa a fonte “embaçada”.
     return {
       className: "",
       style: {
-        background: `color-mix(in srgb, ${bg} 90%, var(--surface))`,
-        color: "#14201a",
-        opacity: 0.92,
+        background: `color-mix(in srgb, ${bg} 72%, var(--surface))`,
+        color: "#3d453f",
       },
     };
   }
