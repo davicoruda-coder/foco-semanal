@@ -16,9 +16,8 @@ import { plainTextFromHtml } from "@/lib/note-html";
 import type { Reminder } from "@/lib/types";
 import { sanitizeCssColor } from "@/lib/utils";
 
-/** Altura do campo de texto: cresce até ~2× antes da barra de rolagem. */
+/** Altura mínima do campo; a nota cresce com o texto (sem barra de rolagem). */
 const NOTE_TEXT_MIN_PX = { compact: 72, full: 60 } as const;
-const NOTE_TEXT_MAX_PX = { compact: 160, full: 140 } as const;
 
 /** 0 = tamanho atual (máximo); 1–2 = um pouco menores. Valores em px p/ transição suave. */
 const NOTE_FONT_PX = {
@@ -70,7 +69,6 @@ function NoteCard({
   );
   const currentColor = sanitizeCssColor(reminder.color, "#FDE68A");
   const textMin = compact ? NOTE_TEXT_MIN_PX.compact : NOTE_TEXT_MIN_PX.full;
-  const textMax = compact ? NOTE_TEXT_MAX_PX.compact : NOTE_TEXT_MAX_PX.full;
   const fontSize = clampFontSize(reminder.font_size);
   const fontPx = (compact ? NOTE_FONT_PX.compact : NOTE_FONT_PX.full)[fontSize];
 
@@ -79,13 +77,14 @@ function NoteCard({
     if (!el) return;
     const from = el.offsetHeight || textMin;
     el.style.transition = "none";
+    el.style.overflowY = "hidden";
     el.style.height = "auto";
-    const next = Math.min(Math.max(el.scrollHeight, textMin), textMax);
+    const next = Math.max(el.scrollHeight, textMin);
     el.style.height = `${from}px`;
     void el.offsetHeight;
     el.style.transition = "height 220ms ease, font-size 220ms ease";
     el.style.height = `${next}px`;
-  }, [reminder.title, textMin, textMax, fontSize]);
+  }, [reminder.title, textMin, fontSize]);
 
   function bumpFont(delta: -1 | 1) {
     const next = clampFontSize(fontSize + delta);
@@ -199,10 +198,9 @@ function NoteCard({
     >
       <textarea
         ref={textRef}
-        className="w-full resize-none overflow-y-auto bg-transparent font-normal leading-relaxed outline-none placeholder:opacity-40"
+        className="w-full resize-none overflow-hidden bg-transparent font-normal leading-relaxed outline-none placeholder:opacity-40"
         style={{
           minHeight: textMin,
-          maxHeight: textMax,
           fontSize: fontPx,
           transition: "height 220ms ease, font-size 220ms ease",
         }}
