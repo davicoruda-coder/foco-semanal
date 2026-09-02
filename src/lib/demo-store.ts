@@ -90,6 +90,7 @@ export function loadDemoData(): AppData {
         typeof s.study_minutes === "number" && s.study_minutes >= 1
           ? Math.min(999, Math.floor(s.study_minutes))
           : 25,
+      is_free: Boolean(s.is_free),
     }));
     data.subjects = [...subjectsRaw]
       .sort((a, b) => {

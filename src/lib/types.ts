@@ -25,6 +25,12 @@ export interface Subject {
   study_days: number[] | null;
   /** Minutos do temporizador desta matéria (play no ciclo). */
   study_minutes: number;
+  /**
+   * Livre = aparece no dia só com nome e anotações
+   * (sem timer da matéria e sem Concluída/Próxima).
+   * Sessão/cronômetro da lateral continuam disponíveis.
+   */
+  is_free: boolean;
 }
 
 export interface WeekBlock {

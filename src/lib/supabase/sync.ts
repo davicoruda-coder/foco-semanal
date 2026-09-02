@@ -160,6 +160,7 @@ export async function loadCloudData(
     active: s.active ?? true,
     study_days: normalizeStudyDays(s.study_days as number[] | null | undefined),
     study_minutes: normalizeStudyMinutes(s.study_minutes, 25),
+    is_free: Boolean(s.is_free),
   }));
   const subjects: Subject[] = [...subjectsRaw]
     .sort((a, b) => {
@@ -354,6 +355,7 @@ export async function saveCloudData(
       active: s.active,
       study_days: normalizeStudyDays(s.study_days),
       study_minutes: normalizeStudyMinutes(s.study_minutes, 25),
+      is_free: Boolean(s.is_free),
       ...LIVE,
     })),
     "subjects",

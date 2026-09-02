@@ -21,6 +21,7 @@ create table if not exists public.subjects (
   -- null = todos os dias; senão 0=Seg … 6=Dom (1–6 dias)
   study_days int[] null,
   study_minutes int not null default 25,
+  is_free boolean not null default false,
   created_at timestamptz not null default now(),
   deleted_at timestamptz,
   constraint subjects_study_days_valid check (

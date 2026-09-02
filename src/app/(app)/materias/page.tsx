@@ -108,6 +108,7 @@ export default function MateriasPage() {
   const { data, upsertSubject, setSubjectStatus, deleteSubject, setData } = useApp();
   const [name, setName] = useState("");
   const [newMinutes, setNewMinutes] = useState("25");
+  const [newIsFree, setNewIsFree] = useState(false);
   const [newFreq, setNewFreq] = useState<DraftFreq>({ mode: "all", days: [] });
   /** Rascunho local: permite abrir “Dias da semana” antes de marcar algum dia. */
   const [freqDrafts, setFreqDrafts] = useState<Record<string, DraftFreq>>({});
@@ -196,7 +197,8 @@ export default function MateriasPage() {
         Matérias
       </h1>
       <p className="mt-2 opacity-65">
-        Status, tempo de estudo, dias, observações e ordem do ciclo.
+        Com tempo (ciclo e timer) ou Livre (só nome e anotações). Dias e ordem
+        valem para os dois modos.
       </p>
 
       <form
@@ -210,9 +212,11 @@ export default function MateriasPage() {
             status: "prox",
             study_days: studyDaysFromFreq(newFreq),
             study_minutes: parseMinutes(newMinutes, 25),
+            is_free: newIsFree,
           });
           setName("");
           setNewMinutes("25");
+          setNewIsFree(false);
           setNewFreq({ mode: "all", days: [] });
         }}
       >
@@ -223,23 +227,49 @@ export default function MateriasPage() {
             value={name}
             onChange={(e) => setName(e.target.value)}
           />
-          <label className="flex shrink-0 items-center gap-2 text-sm">
-            <span className="opacity-60">Min</span>
-            <input
-              className="input w-20 py-2 text-center font-mono-num"
-              type="number"
-              min={1}
-              max={999}
-              inputMode="numeric"
-              value={newMinutes}
-              onChange={(e) => setNewMinutes(e.target.value)}
-              onBlur={() =>
-                setNewMinutes(String(parseMinutes(newMinutes, 25)))
-              }
-            />
-          </label>
+          {!newIsFree && (
+            <label className="flex shrink-0 items-center gap-2 text-sm">
+              <span className="opacity-60">Min</span>
+              <input
+                className="input w-20 py-2 text-center font-mono-num"
+                type="number"
+                min={1}
+                max={999}
+                inputMode="numeric"
+                value={newMinutes}
+                onChange={(e) => setNewMinutes(e.target.value)}
+                onBlur={() =>
+                  setNewMinutes(String(parseMinutes(newMinutes, 25)))
+                }
+              />
+            </label>
+          )}
           <button type="submit" className="btn btn-primary whitespace-nowrap">
             Adicionar
+          </button>
+        </div>
+        <div className="inline-flex items-center gap-0.5 rounded-full border border-[var(--line)] bg-[color-mix(in_srgb,var(--ink)_6%,transparent)] p-0.5">
+          <button
+            type="button"
+            className={`rounded-full px-2.5 py-1 text-xs font-medium transition ${
+              !newIsFree
+                ? "bg-[var(--signal)] text-white"
+                : "text-[color-mix(in_srgb,var(--ink)_55%,transparent)] hover:text-[var(--ink)]"
+            }`}
+            onClick={() => setNewIsFree(false)}
+          >
+            Com tempo
+          </button>
+          <button
+            type="button"
+            className={`rounded-full px-2.5 py-1 text-xs font-medium transition ${
+              newIsFree
+                ? "bg-[var(--signal)] text-white"
+                : "text-[color-mix(in_srgb,var(--ink)_55%,transparent)] hover:text-[var(--ink)]"
+            }`}
+            onClick={() => setNewIsFree(true)}
+          >
+            Livre
           </button>
         </div>
         <StudyDaysPicker value={newFreq} onChange={setNewFreq} />
@@ -248,73 +278,113 @@ export default function MateriasPage() {
       <ul className="mt-6 space-y-4">
         {subjects.map((s) => {
           const freq = freqForSubject(s);
+          const free = Boolean(s.is_free);
           return (
-            <li key={s.id} className={`surface p-4 ${statusRowClass(s.status)}`}>
+            <li
+              key={s.id}
+              className={`surface p-4 ${free ? "" : statusRowClass(s.status)}`}
+            >
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <input
                   className="input max-w-xs font-medium"
                   value={s.name}
                   onChange={(e) => upsertSubject({ ...s, name: e.target.value })}
                 />
-                <div className="inline-flex items-center gap-0.5 rounded-full border border-[var(--line)] bg-[color-mix(in_srgb,var(--ink)_6%,transparent)] p-0.5">
-                  {(["ok", "prox"] as SubjectStatus[]).map((st) => {
-                    const active = s.status === st;
-                    return (
-                      <button
-                        key={st}
-                        type="button"
-                        className={`rounded-full px-2.5 py-1 text-xs font-medium transition ${
-                          active
-                            ? statusClass(st)
-                            : "text-[color-mix(in_srgb,var(--ink)_55%,transparent)] hover:text-[var(--ink)]"
-                        }`}
-                        onClick={() => setSubjectStatus(s.id, st)}
-                      >
-                        {STATUS_LABEL[st]}
-                      </button>
-                    );
-                  })}
+                <div className="flex flex-wrap items-center gap-2">
+                  <div className="inline-flex items-center gap-0.5 rounded-full border border-[var(--line)] bg-[color-mix(in_srgb,var(--ink)_6%,transparent)] p-0.5">
+                    <button
+                      type="button"
+                      className={`rounded-full px-2.5 py-1 text-xs font-medium transition ${
+                        !free
+                          ? "bg-[var(--signal)] text-white"
+                          : "text-[color-mix(in_srgb,var(--ink)_55%,transparent)] hover:text-[var(--ink)]"
+                      }`}
+                      onClick={() => {
+                        if (!free) return;
+                        upsertSubject({ ...s, is_free: false });
+                      }}
+                    >
+                      Com tempo
+                    </button>
+                    <button
+                      type="button"
+                      className={`rounded-full px-2.5 py-1 text-xs font-medium transition ${
+                        free
+                          ? "bg-[var(--signal)] text-white"
+                          : "text-[color-mix(in_srgb,var(--ink)_55%,transparent)] hover:text-[var(--ink)]"
+                      }`}
+                      onClick={() => {
+                        if (free) return;
+                        upsertSubject({ ...s, is_free: true });
+                      }}
+                    >
+                      Livre
+                    </button>
+                  </div>
+                  {!free && (
+                    <div className="inline-flex items-center gap-0.5 rounded-full border border-[var(--line)] bg-[color-mix(in_srgb,var(--ink)_6%,transparent)] p-0.5">
+                      {(["ok", "prox"] as SubjectStatus[]).map((st) => {
+                        const active = s.status === st;
+                        return (
+                          <button
+                            key={st}
+                            type="button"
+                            className={`rounded-full px-2.5 py-1 text-xs font-medium transition ${
+                              active
+                                ? statusClass(st)
+                                : "text-[color-mix(in_srgb,var(--ink)_55%,transparent)] hover:text-[var(--ink)]"
+                            }`}
+                            onClick={() => setSubjectStatus(s.id, st)}
+                          >
+                            {STATUS_LABEL[st]}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               </div>
               <div className="mt-3 flex flex-wrap items-end gap-4">
-                <div>
-                  <p className="mb-1.5 text-xs font-medium uppercase tracking-wider opacity-50">
-                    Tempo de estudo
-                  </p>
-                  <label className="flex items-center gap-2 text-sm">
-                    <input
-                      className="input w-20 py-2 text-center font-mono-num"
-                      type="number"
-                      min={1}
-                      max={999}
-                      inputMode="numeric"
-                      value={
-                        minutesDraft[s.id] ?? String(s.study_minutes ?? 25)
-                      }
-                      onChange={(e) =>
-                        setMinutesDraft((prev) => ({
-                          ...prev,
-                          [s.id]: e.target.value,
-                        }))
-                      }
-                      onBlur={() => {
-                        const next = parseMinutes(
-                          minutesDraft[s.id] ?? String(s.study_minutes ?? 25),
-                          s.study_minutes ?? 25,
-                        );
-                        setMinutesDraft((prev) => {
-                          const copy = { ...prev };
-                          delete copy[s.id];
-                          return copy;
-                        });
-                        if (next !== (s.study_minutes ?? 25)) {
-                          upsertSubject({ ...s, study_minutes: next });
+                {!free && (
+                  <div>
+                    <p className="mb-1.5 text-xs font-medium uppercase tracking-wider opacity-50">
+                      Tempo de estudo
+                    </p>
+                    <label className="flex items-center gap-2 text-sm">
+                      <input
+                        className="input w-20 py-2 text-center font-mono-num"
+                        type="number"
+                        min={1}
+                        max={999}
+                        inputMode="numeric"
+                        value={
+                          minutesDraft[s.id] ?? String(s.study_minutes ?? 25)
                         }
-                      }}
-                    />
-                    <span className="opacity-55">min</span>
-                  </label>
-                </div>
+                        onChange={(e) =>
+                          setMinutesDraft((prev) => ({
+                            ...prev,
+                            [s.id]: e.target.value,
+                          }))
+                        }
+                        onBlur={() => {
+                          const next = parseMinutes(
+                            minutesDraft[s.id] ?? String(s.study_minutes ?? 25),
+                            s.study_minutes ?? 25,
+                          );
+                          setMinutesDraft((prev) => {
+                            const copy = { ...prev };
+                            delete copy[s.id];
+                            return copy;
+                          });
+                          if (next !== (s.study_minutes ?? 25)) {
+                            upsertSubject({ ...s, study_minutes: next });
+                          }
+                        }}
+                      />
+                      <span className="opacity-55">min</span>
+                    </label>
+                  </div>
+                )}
                 <div className="min-w-0 flex-1">
                   <p className="mb-1.5 text-xs font-medium uppercase tracking-wider opacity-50">
                     Frequência

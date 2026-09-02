@@ -317,7 +317,7 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
     });
   }, [timers, ready, appReady]);
 
-  // Alinha timers das matérias ao study_minutes (e remove órfãos).
+  // Alinha timers das matérias ao study_minutes (e remove órfãos / livres).
   useEffect(() => {
     if (!ready || !appReady) return;
 
@@ -327,8 +327,9 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
         if (!isSubjectTimerKey(id)) next[id] = r;
       }
 
-      const activeIds = new Set(subjects.map((s) => s.id));
-      for (const s of subjects) {
+      const timedSubjects = subjects.filter((s) => !s.is_free);
+      const activeIds = new Set(timedSubjects.map((s) => s.id));
+      for (const s of timedSubjects) {
         const key = subjectTimerKey(s.id);
         const minutes = Math.max(1, s.study_minutes ?? 25);
         const full = minutes * 60;
@@ -540,7 +541,7 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
       if (t.sort_order === 0) {
         const day = todayIndex();
         const todaySubjects = [...data.subjects]
-          .filter((s) => s.active && subjectShowsOnDay(s, day))
+          .filter((s) => s.active && !s.is_free && subjectShowsOnDay(s, day))
           .sort((a, b) => a.cycle_order - b.cycle_order);
         const next =
           todaySubjects.find((s) => s.status === "prox") ??
@@ -562,6 +563,7 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
     }
 
     for (const s of subjects) {
+      if (s.is_free) continue;
       const key = subjectTimerKey(s.id);
       const r = runtime[key];
       const minutes = Math.max(1, s.study_minutes ?? 25);
@@ -770,7 +772,8 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
     (subjectId: string) => {
       const key = subjectTimerKey(subjectId);
       const sub = subjects.find((s) => s.id === subjectId);
-      const minutes = Math.max(1, sub?.study_minutes ?? 25);
+      if (!sub || sub.is_free) return;
+      const minutes = Math.max(1, sub.study_minutes ?? 25);
       setRuntime((prev) => {
         const current =
           prev[key] ??
@@ -862,7 +865,8 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
     (subjectId: string) => {
       const key = subjectTimerKey(subjectId);
       const sub = subjects.find((s) => s.id === subjectId);
-      const minutes = Math.max(1, sub?.study_minutes ?? 25);
+      if (!sub || sub.is_free) return;
+      const minutes = Math.max(1, sub.study_minutes ?? 25);
       doneRef.current[key] = false;
       linkedPausedSubjectsRef.current =
         linkedPausedSubjectsRef.current.filter((id) => id !== key);

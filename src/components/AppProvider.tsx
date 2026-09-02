@@ -589,6 +589,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
               patch.study_minutes =
                 Number.isFinite(n) && n >= 1 ? Math.min(999, Math.floor(n)) : 25;
             }
+            if ("is_free" in subject) {
+              patch.is_free = Boolean(subject.is_free);
+            }
             return {
               ...prev,
               subjects: prev.subjects.map((s) =>
@@ -608,15 +611,21 @@ export function AppProvider({ children }: { children: ReactNode }) {
               typeof subject.study_minutes === "number" && subject.study_minutes >= 1
                 ? Math.min(999, Math.floor(subject.study_minutes))
                 : 25,
+            is_free: Boolean(subject.is_free),
           };
           return { ...prev, subjects: [...prev.subjects, row] };
         });
       },
       setSubjectStatus: (id, status) => {
         setData((prev) => {
+          const target = prev.subjects.find((s) => s.id === id);
+          if (!target || target.is_free) return prev;
+
           const day = todayIndex();
           const ordered = [...prev.subjects]
-            .filter((s) => s.active && subjectShowsOnDay(s, day))
+            .filter(
+              (s) => s.active && !s.is_free && subjectShowsOnDay(s, day),
+            )
             .sort((a, b) => a.cycle_order - b.cycle_order);
           const idx = ordered.findIndex((s) => s.id === id);
           if (idx < 0) return prev;
@@ -630,19 +639,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
             };
           }
 
-          // Último Ok do ciclo de hoje → matérias de hoje voltam pra Próx.
+          // Último Ok do ciclo de hoje → matérias com tempo de hoje voltam pra Próx.
           if (idx === ordered.length - 1) {
             return {
               ...prev,
               subjects: prev.subjects.map((s) =>
-                s.active && subjectShowsOnDay(s, day)
+                s.active && !s.is_free && subjectShowsOnDay(s, day)
                   ? { ...s, status: "prox" as const }
                   : s,
               ),
             };
           }
 
-          // Ok no meio → esta Ok; próxima (de hoje) vira Próx.
+          // Ok no meio → esta Ok; próxima (de hoje, com tempo) vira Próx.
           const next = ordered[idx + 1];
           return {
             ...prev,

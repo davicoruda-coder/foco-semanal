@@ -96,6 +96,7 @@ function parseSubject(raw: unknown, index: number): Subject | null {
     active: asBool(raw.active, true),
     study_days: normalizeStudyDays(studyDaysRaw),
     study_minutes: Math.min(999, Math.max(1, asInt(raw.study_minutes, 25, 1, 999))),
+    is_free: asBool(raw.is_free, false),
   };
 }
 

@@ -217,27 +217,38 @@ export default function HojePage() {
 
             {/* Mobile: cards empilhados */}
             <div className="divide-y divide-[var(--line)] md:hidden">
-              {subjects.map((s) => (
+              {subjects.map((s) => {
+                const free = Boolean(s.is_free);
+                return (
                 <div
                   key={s.id}
-                  className={`space-y-2.5 px-4 py-3.5 ${statusRowClass(s.status)}`}
+                  className={`space-y-2.5 px-4 py-3.5 ${free ? "" : statusRowClass(s.status)}`}
                 >
                   <div className="flex flex-wrap items-start justify-between gap-2">
                     <p className="min-w-0 flex-1 text-base font-medium leading-snug">
                       {s.name}
                     </p>
-                    <span
-                      className={`shrink-0 rounded-full px-2.5 py-1.5 text-xs font-medium ${statusClass(s.status)}`}
-                    >
-                      {STATUS_LABEL[s.status]}
-                    </span>
+                    {!free && (
+                      <span
+                        className={`shrink-0 rounded-full px-2.5 py-1.5 text-xs font-medium ${statusClass(s.status)}`}
+                      >
+                        {STATUS_LABEL[s.status]}
+                      </span>
+                    )}
+                    {free && (
+                      <span className="shrink-0 rounded-full px-2.5 py-1.5 text-xs font-medium text-[color-mix(in_srgb,var(--ink)_50%,transparent)] ring-1 ring-[var(--line)]">
+                        Livre
+                      </span>
+                    )}
                   </div>
-                  <SubjectTimerControls
-                    subjectId={s.id}
-                    studyMinutes={s.study_minutes ?? 25}
-                    name={s.name}
-                    compact
-                  />
+                  {!free && (
+                    <SubjectTimerControls
+                      subjectId={s.id}
+                      studyMinutes={s.study_minutes ?? 25}
+                      name={s.name}
+                      compact
+                    />
+                  )}
                   <AutoGrowTextarea
                     className="w-full rounded-[var(--radius-tag)] border border-[var(--line)] bg-[var(--surface)]/70 px-2.5 py-2 text-[15px] text-[color-mix(in_srgb,var(--ink)_84%,transparent)] focus:border-[var(--signal)] focus:text-[var(--ink)]"
                     value={s.notes}
@@ -247,7 +258,8 @@ export default function HojePage() {
                     onChange={(notes) => upsertSubject({ ...s, notes })}
                   />
                 </div>
-              ))}
+                );
+              })}
                   {subjects.length === 0 && (
                 <p className="px-4 py-8 text-sm opacity-55">
                   Nenhuma matéria para hoje —{" "}
@@ -284,53 +296,49 @@ export default function HojePage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {subjects.map((s, i) => (
+                  {subjects.map((s, i) => {
+                    const free = Boolean(s.is_free);
+                    const rowBorder =
+                      i < subjects.length - 1
+                        ? "border-b-2 border-[var(--surface)]"
+                        : "";
+                    return (
                     <tr
                       key={s.id}
-                      className={`transition-colors ${statusRowClass(s.status)}`}
+                      className={`transition-colors ${free ? "" : statusRowClass(s.status)}`}
                     >
                       <td
-                        className={`break-words px-5 py-3 align-middle text-base font-medium leading-snug ${
-                          i < subjects.length - 1
-                            ? "border-b-2 border-[var(--surface)]"
-                            : ""
-                        }`}
+                        className={`break-words px-5 py-3 align-middle text-base font-medium leading-snug ${rowBorder}`}
                       >
                         {s.name}
                       </td>
-                      <td
-                        className={`py-3 pl-2 pr-2 align-middle ${
-                          i < subjects.length - 1
-                            ? "border-b-2 border-[var(--surface)]"
-                            : ""
-                        }`}
-                      >
-                        <SubjectTimerControls
-                          subjectId={s.id}
-                          studyMinutes={s.study_minutes ?? 25}
-                          name={s.name}
-                        />
+                      <td className={`py-3 pl-2 pr-2 align-middle ${rowBorder}`}>
+                        {free ? (
+                          <span className="text-sm text-[color-mix(in_srgb,var(--ink)_40%,transparent)]">
+                            —
+                          </span>
+                        ) : (
+                          <SubjectTimerControls
+                            subjectId={s.id}
+                            studyMinutes={s.study_minutes ?? 25}
+                            name={s.name}
+                          />
+                        )}
                       </td>
-                      <td
-                        className={`py-3 pl-2 pr-2 align-middle ${
-                          i < subjects.length - 1
-                            ? "border-b-2 border-[var(--surface)]"
-                            : ""
-                        }`}
-                      >
-                        <span
-                          className={`inline-flex rounded-full px-2.5 py-1.5 text-xs font-medium ${statusClass(s.status)}`}
-                        >
-                          {STATUS_LABEL[s.status]}
-                        </span>
+                      <td className={`py-3 pl-2 pr-2 align-middle ${rowBorder}`}>
+                        {free ? (
+                          <span className="inline-flex rounded-full px-2.5 py-1.5 text-xs font-medium text-[color-mix(in_srgb,var(--ink)_50%,transparent)] ring-1 ring-[var(--line)]">
+                            Livre
+                          </span>
+                        ) : (
+                          <span
+                            className={`inline-flex rounded-full px-2.5 py-1.5 text-xs font-medium ${statusClass(s.status)}`}
+                          >
+                            {STATUS_LABEL[s.status]}
+                          </span>
+                        )}
                       </td>
-                      <td
-                        className={`px-5 py-3 align-middle ${
-                          i < subjects.length - 1
-                            ? "border-b-2 border-[var(--surface)]"
-                            : ""
-                        }`}
-                      >
+                      <td className={`px-5 py-3 align-middle ${rowBorder}`}>
                         <div className="flex min-h-[2.25rem] items-start">
                           <AutoGrowTextarea
                             className="w-full break-words rounded-[var(--radius-tag)] border border-transparent bg-transparent px-0 py-0 text-[15px] font-normal leading-snug text-[color-mix(in_srgb,var(--ink)_84%,transparent)] focus:border-[var(--line)] focus:bg-[var(--surface)] focus:px-2 focus:py-1 focus:text-[var(--ink)]"
@@ -344,7 +352,8 @@ export default function HojePage() {
                         </div>
                       </td>
                     </tr>
-                  ))}
+                    );
+                  })}
                   {subjects.length === 0 && (
                     <tr>
                       <td colSpan={4} className="px-5 py-8 text-sm opacity-55">
