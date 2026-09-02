@@ -399,8 +399,13 @@ export default function EstatisticasPage() {
   }
 
   async function resetHistory() {
-    if (!promptDestructivePassword("resetar o histórico de tempo")) {
+    const auth = promptDestructivePassword("resetar o histórico de tempo");
+    if (auth === "cancel") {
       setConfirmReset(false);
+      return;
+    }
+    if (auth === "wrong") {
+      window.alert("Senha incorreta. Tente de novo.");
       return;
     }
     const empty = clearFocusLog();

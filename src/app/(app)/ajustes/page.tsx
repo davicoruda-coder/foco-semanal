@@ -135,9 +135,13 @@ export default function AjustesPage() {
         onCancel={() => setConfirmCloudWipe(false)}
         onConfirm={() => {
           void (async () => {
-            if (!promptDestructivePassword("apagar os dados na nuvem")) {
+            const auth = promptDestructivePassword("apagar os dados na nuvem");
+            if (auth === "cancel") {
               setConfirmCloudWipe(false);
-              setCloudWipeMsg("Cancelado — senha incorreta ou vazia.");
+              return;
+            }
+            if (auth === "wrong") {
+              window.alert("Senha incorreta. Tente de novo.");
               return;
             }
             setConfirmCloudWipe(false);

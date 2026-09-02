@@ -4,11 +4,16 @@
  */
 export const DESTRUCTIVE_ACTION_PASSWORD = "91565683";
 
-/** Pede a senha; retorna true só se bater. Cancelar = false. */
-export function promptDestructivePassword(actionLabel: string): boolean {
+export type DestructivePromptResult = "ok" | "cancel" | "wrong";
+
+/** Pede a senha. Cancelar = cancel; senha errada = wrong; certa = ok. */
+export function promptDestructivePassword(
+  actionLabel: string,
+): DestructivePromptResult {
   const typed = window.prompt(
     `Para ${actionLabel}, digite a senha de autorização:`,
   );
-  if (typed == null) return false;
-  return typed === DESTRUCTIVE_ACTION_PASSWORD;
+  if (typed == null) return "cancel";
+  if (typed === DESTRUCTIVE_ACTION_PASSWORD) return "ok";
+  return "wrong";
 }
