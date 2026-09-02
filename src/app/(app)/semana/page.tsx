@@ -367,7 +367,7 @@ function DayCard({
                 >
                   <div className="flex items-center gap-0.5">
                     <span
-                      className="min-w-0 flex-1 whitespace-normal break-words px-0.5 py-0.5 text-left text-sm font-semibold leading-snug tabular-nums"
+                      className="min-w-0 flex-1 whitespace-normal break-words px-0.5 py-0.5 text-left text-sm font-medium leading-snug tabular-nums"
                       lang="pt-BR"
                     >
                       {b.label || "Sem nome"}
