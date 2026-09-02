@@ -265,7 +265,8 @@ export default function AjustesPage() {
           Backup
         </h2>
         <p className="mt-1 text-xs opacity-55">
-          Exportar/importar um arquivo JSON de segurança.
+          Exportar/importar um arquivo JSON de segurança. Importar só
+          atualiza o que veio no arquivo — não apaga o resto na nuvem.
         </p>
         <div className="mt-3 flex flex-wrap gap-2">
           <button type="button" className="btn btn-primary" onClick={downloadBackup}>

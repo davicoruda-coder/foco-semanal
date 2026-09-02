@@ -30,7 +30,7 @@ function navActive(pathname: string, href: string) {
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const { user, ready } = useApp();
+  const { user, ready, cloudSync } = useApp();
 
   if (!ready) {
     return (
@@ -46,6 +46,18 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="relative z-0 min-h-screen pb-[calc(4.25rem+env(safe-area-inset-bottom))] lg:pb-0">
+      {cloudSync.message ? (
+        <div
+          className={`px-4 py-2 text-center text-xs font-medium ${
+            cloudSync.status === "error" || cloudSync.status === "offline"
+              ? "bg-[color-mix(in_srgb,var(--warn)_18%,var(--surface))] text-[var(--warn)]"
+              : "bg-[var(--mist)] text-[color-mix(in_srgb,var(--ink)_70%,transparent)]"
+          }`}
+          role="status"
+        >
+          {cloudSync.message}
+        </div>
+      ) : null}
       <header className="sticky top-0 z-20 hidden border-b border-[var(--line)] bg-[var(--surface)]/80 backdrop-blur-xl lg:block">
         <div className="mx-auto flex h-14 max-w-7xl items-center gap-3 px-5 md:px-8">
           <Link

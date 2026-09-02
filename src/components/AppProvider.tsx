@@ -25,7 +25,10 @@ import {
   isCloudDataEmpty,
   loadCloudData,
   saveCloudData,
+  softDeleteCloudRows,
+  type SoftDeleteTable,
 } from "@/lib/supabase/sync";
+import { rememberLastKnownGood, loadLastKnownGood } from "@/lib/local-recovery";
 import { checkCurrentUserAccess } from "@/lib/supabase/access";
 import { subjectShowsOnDay, todayIndex, normalizeStudyDays } from "@/lib/utils";
 import type {
@@ -103,6 +106,11 @@ type AppContextValue = {
   importBackup: (json: string) => { ok: true } | { ok: false; error: string };
   /** Zera dados na nuvem (e neste aparelho). Só com sessão cloud. */
   resetCloudData: () => Promise<{ ok: true } | { ok: false; error: string }>;
+  /** Estado da sincronização com a nuvem (para aviso na UI). */
+  cloudSync: {
+    status: "idle" | "saving" | "error" | "offline";
+    message: string | null;
+  };
 };
 
 const AppContext = createContext<AppContextValue | null>(null);
@@ -114,6 +122,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [data, setDataState] = useState<AppData>(() => createDefaultData());
   const [themePref, setThemePrefState] = useState<ThemePref>("light");
   const [theme, setThemeState] = useState<Theme>("light");
+  const [cloudSync, setCloudSync] = useState<{
+    status: "idle" | "saving" | "error" | "offline";
+    message: string | null;
+  }>({ status: "idle", message: null });
   const cloudRef = useRef(false);
   const userIdRef = useRef<string | null>(null);
   const themeRef = useRef<ThemePref>("light");
@@ -123,6 +135,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   );
   const saveInFlightRef = useRef(false);
   const loadOkRef = useRef(false);
+  const lastLoadAtRef = useRef(0);
+  const hiddenAtRef = useRef<number | null>(null);
 
   useEffect(() => {
     themeRef.current = themePref;
@@ -171,10 +185,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
       try {
         loaded = await loadCloudData(supabase, uid);
         loadOkRef.current = true;
+        lastLoadAtRef.current = Date.now();
       } catch (err) {
         console.error("[foco] falha ao carregar nuvem:", err);
         loadOkRef.current = false;
         if (cancelled) return;
+        const fallback = loadLastKnownGood() ?? localSnapshot;
         setCloud(true);
         cloudRef.current = true;
         userIdRef.current = uid;
@@ -186,7 +202,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
             sessionUser.email ||
             "Usuário",
         });
-        setDataState(localSnapshot);
+        setDataState(fallback);
+        setCloudSync({
+          status: "error",
+          message:
+            "Sem conexão com a nuvem — alterações locais não serão salvas até recarregar.",
+        });
         setThemePrefState(localPref);
         setThemeState(resolveTheme(localPref));
         applyTheme(resolveTheme(localPref));
@@ -228,6 +249,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setDataState(loaded.data);
       // Espelha a nuvem no aparelho para o próximo boot não gravar vazio.
       saveDemoData(loaded.data);
+      rememberLastKnownGood(loaded.data);
+      setCloudSync({ status: "idle", message: null });
       const theme =
         localPref === "auto" && loaded.theme !== "auto"
           ? "auto"
@@ -317,6 +340,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (!pending) return;
     saveInFlightRef.current = true;
     pendingSaveRef.current = null;
+    setCloudSync({ status: "saving", message: null });
     try {
       const { createClient } = await import("@/lib/supabase/client");
       const supabase = createClient();
@@ -326,8 +350,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
         pending.data,
         pending.theme,
       );
+      rememberLastKnownGood(pending.data);
+      setCloudSync({ status: "idle", message: null });
     } catch (err) {
       console.error("[foco] falha ao salvar na nuvem:", err);
+      setCloudSync({
+        status: "error",
+        message: "Falha ao salvar na nuvem. Tentando de novo…",
+      });
       if (!pendingSaveRef.current) {
         pendingSaveRef.current = pending;
       }
@@ -347,6 +377,81 @@ export function AppProvider({ children }: { children: ReactNode }) {
     saveTimer.current = window.setTimeout(() => {
       void flushCloudSaveRef.current();
     }, 600);
+  }, []);
+
+  const softDelete = useCallback(
+    async (table: SoftDeleteTable, ids: string[]) => {
+      if (!cloudRef.current || !userIdRef.current || !loadOkRef.current) return;
+      if (!isSupabaseConfigured()) return;
+      try {
+        const { createClient } = await import("@/lib/supabase/client");
+        const supabase = createClient();
+        await softDeleteCloudRows(supabase, table, userIdRef.current, ids);
+      } catch (err) {
+        console.error("[foco] soft-delete falhou:", err);
+        setCloudSync({
+          status: "error",
+          message: "Não foi possível excluir na nuvem. Tente de novo.",
+        });
+      }
+    },
+    [],
+  );
+
+  // Ao voltar do background: se passou tempo, recarrega a nuvem (evita save stale).
+  useEffect(() => {
+    function onVisibility() {
+      if (document.visibilityState === "hidden") {
+        hiddenAtRef.current = Date.now();
+        return;
+      }
+      const hiddenAt = hiddenAtRef.current;
+      hiddenAtRef.current = null;
+      if (!cloudRef.current || !userIdRef.current || !loadOkRef.current) return;
+      if (pendingSaveRef.current || saveInFlightRef.current) return;
+      const awayMs = hiddenAt ? Date.now() - hiddenAt : 0;
+      const sinceLoad = Date.now() - lastLoadAtRef.current;
+      if (awayMs < 90_000 && sinceLoad < 180_000) return;
+
+      void (async () => {
+        try {
+          const { createClient } = await import("@/lib/supabase/client");
+          const supabase = createClient();
+          const uid = userIdRef.current;
+          if (!uid) return;
+          const loaded = await loadCloudData(supabase, uid);
+          lastLoadAtRef.current = Date.now();
+          setDataState(loaded.data);
+          saveDemoData(loaded.data);
+          rememberLastKnownGood(loaded.data);
+          setCloudSync({ status: "idle", message: null });
+        } catch (err) {
+          console.warn("[foco] re-sync ao focar falhou:", err);
+        }
+      })();
+    }
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => document.removeEventListener("visibilitychange", onVisibility);
+  }, []);
+
+  // Flush pendente ao fechar/esconder a aba.
+  useEffect(() => {
+    function flushNow() {
+      if (saveTimer.current) {
+        window.clearTimeout(saveTimer.current);
+        saveTimer.current = null;
+      }
+      void flushCloudSaveRef.current();
+    }
+    function onHide() {
+      if (document.visibilityState === "hidden") flushNow();
+    }
+    window.addEventListener("pagehide", flushNow);
+    document.addEventListener("visibilitychange", onHide);
+    return () => {
+      window.removeEventListener("pagehide", flushNow);
+      document.removeEventListener("visibilitychange", onHide);
+    };
   }, []);
 
   const setTheme = useCallback(
@@ -420,8 +525,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const parsed = parseBackupJson(json);
     if (!parsed.ok) return parsed;
     const imported = parsed.data;
+    // Com sync upsert-only, import NÃO apaga o que já está na nuvem —
+    // só sobe/atualiza o que veio no arquivo. Itens extras na nuvem permanecem.
     saveDemoData(imported);
     setDataState(imported);
+    rememberLastKnownGood(imported);
     if (cloudRef.current) {
       persistCloud(imported, parsed.theme ?? themeRef.current);
     }
@@ -450,6 +558,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       );
       setDataState(fresh);
       saveDemoData(fresh);
+      rememberLastKnownGood(fresh);
       return { ok: true as const };
     } catch {
       return { ok: false as const, error: "Não foi possível apagar na nuvem." };
@@ -545,11 +654,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
           };
         });
       },
-      deleteSubject: (id) =>
+      deleteSubject: (id) => {
+        void softDelete("subjects", [id]);
         setData((prev) => ({
           ...prev,
           subjects: prev.subjects.filter((s) => s.id !== id),
-        })),
+        }));
+      },
       upsertWeekBlock: (block) => {
         setData((prev) => {
           if (block.id) {
@@ -573,11 +684,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
           return { ...prev, week_blocks: [...prev.week_blocks, row] };
         });
       },
-      deleteWeekBlock: (id) =>
+      deleteWeekBlock: (id) => {
+        void softDelete("week_blocks", [id]);
         setData((prev) => ({
           ...prev,
           week_blocks: prev.week_blocks.filter((b) => b.id !== id),
-        })),
+        }));
+      },
       upsertReminder: (reminder) => {
         setData((prev) => {
           if (reminder.id) {
@@ -608,11 +721,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
           return { ...prev, reminders: [...prev.reminders, row] };
         });
       },
-      deleteReminder: (id) =>
+      deleteReminder: (id) => {
+        void softDelete("reminders", [id]);
         setData((prev) => ({
           ...prev,
           reminders: prev.reminders.filter((r) => r.id !== id),
-        })),
+        }));
+      },
       upsertColumn: (col) => {
         setData((prev) => {
           if (col.id) {
@@ -655,11 +770,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
           return { ...prev, sticky_notes: [...prev.sticky_notes, row] };
         });
       },
-      deleteSticky: (id) =>
+      deleteSticky: (id) => {
+        void softDelete("sticky_notes", [id]);
         setData((prev) => ({
           ...prev,
           sticky_notes: prev.sticky_notes.filter((n) => n.id !== id),
-        })),
+        }));
+      },
       updateSettings: (settings) =>
         setData((prev) => ({
           ...prev,
@@ -693,13 +810,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
           return { ...prev, timers: [...prev.timers, row] };
         });
       },
-      deleteTimer: (id) =>
+      deleteTimer: (id) => {
+        void softDelete("focus_timers", [id]);
         setData((prev) => ({
           ...prev,
           timers: prev.timers
             .filter((t) => t.id !== id)
             .map((t, i) => ({ ...t, sort_order: i })),
-        })),
+        }));
+      },
       addStudySession: (session) =>
         setData((prev) => ({
           ...prev,
@@ -711,6 +830,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       exportBackup,
       importBackup,
       resetCloudData,
+      cloudSync,
     }),
     [
       ready,
@@ -722,9 +842,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setTheme,
       logout,
       setData,
+      softDelete,
       exportBackup,
       importBackup,
       resetCloudData,
+      cloudSync,
     ],
   );
 

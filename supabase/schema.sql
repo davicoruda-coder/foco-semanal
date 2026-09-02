@@ -22,6 +22,7 @@ create table if not exists public.subjects (
   study_days int[] null,
   study_minutes int not null default 25,
   created_at timestamptz not null default now(),
+  deleted_at timestamptz,
   constraint subjects_study_days_valid check (
     study_days is null
     or (
@@ -39,7 +40,8 @@ create table if not exists public.week_blocks (
   label text not null,
   type text not null check (type in ('trabalho', 'estudo', 'reuniao', 'pessoal', 'outro')),
   sort_order int not null default 0,
-  color text
+  color text,
+  deleted_at timestamptz
 );
 
 create table if not exists public.session_settings (
@@ -55,7 +57,8 @@ create table if not exists public.focus_timers (
   name text not null,
   minutes int not null default 25,
   accent text not null default 'var(--signal)',
-  sort_order int not null default 0
+  sort_order int not null default 0,
+  deleted_at timestamptz
 );
 
 create table if not exists public.study_sessions (
@@ -81,7 +84,8 @@ create table if not exists public.reminders (
   active boolean not null default true,
   has_alarm boolean not null default false,
   color text not null default '#FDE68A',
-  font_size smallint not null default 0 check (font_size between 0 and 2)
+  font_size smallint not null default 0 check (font_size between 0 and 2),
+  deleted_at timestamptz
 );
 
 create table if not exists public.note_columns (
@@ -89,7 +93,8 @@ create table if not exists public.note_columns (
   user_id uuid not null references auth.users(id) on delete cascade,
   title text not null,
   color text not null default '#FDE68A',
-  sort_order int not null default 0
+  sort_order int not null default 0,
+  deleted_at timestamptz
 );
 
 create table if not exists public.sticky_notes (
@@ -98,7 +103,8 @@ create table if not exists public.sticky_notes (
   column_id uuid not null references public.note_columns(id) on delete cascade,
   text text not null default '',
   color text not null default '#FDE047',
-  sort_order int not null default 0
+  sort_order int not null default 0,
+  deleted_at timestamptz
 );
 
 -- Garante column_id do mesmo user_id (ver migrate-security-hardening-p4p5.sql)

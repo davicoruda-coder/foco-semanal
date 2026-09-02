@@ -18,11 +18,19 @@ type Client = SupabaseClient;
 
 export type SaveCloudOptions = {
   /**
-   * Permite gravar coleções vazias (apaga o que está na nuvem).
+   * Soft-delete de TODAS as coleções do usuário e grava o payload.
    * Só use no botão explícito “Apagar dados na nuvem”.
    */
   allowEmptyWipe?: boolean;
 };
+
+export type SoftDeleteTable =
+  | "subjects"
+  | "week_blocks"
+  | "reminders"
+  | "note_columns"
+  | "sticky_notes"
+  | "focus_timers";
 
 function normalizeFontSize(value: unknown): 0 | 1 | 2 {
   const n = typeof value === "number" ? value : Number(value);
@@ -69,6 +77,8 @@ function contentFingerprint(data: AppData): string {
   ].join(":");
 }
 
+const LIVE = { deleted_at: null as null };
+
 export async function loadCloudData(
   supabase: Client,
   userId: string,
@@ -85,19 +95,48 @@ export async function loadCloudData(
     stickiesRes,
   ] = await Promise.all([
     supabase.from("profiles").select("display_name, theme").eq("id", userId).maybeSingle(),
-    supabase.from("subjects").select("*").eq("user_id", userId).order("cycle_order"),
-    supabase.from("week_blocks").select("*").eq("user_id", userId).order("sort_order"),
+    supabase
+      .from("subjects")
+      .select("*")
+      .eq("user_id", userId)
+      .is("deleted_at", null)
+      .order("cycle_order"),
+    supabase
+      .from("week_blocks")
+      .select("*")
+      .eq("user_id", userId)
+      .is("deleted_at", null)
+      .order("sort_order"),
     supabase.from("session_settings").select("*").eq("user_id", userId).maybeSingle(),
-    supabase.from("focus_timers").select("*").eq("user_id", userId).order("sort_order"),
+    supabase
+      .from("focus_timers")
+      .select("*")
+      .eq("user_id", userId)
+      .is("deleted_at", null)
+      .order("sort_order"),
     supabase
       .from("study_sessions")
       .select("*")
       .eq("user_id", userId)
       .order("started_at", { ascending: false })
       .limit(100),
-    supabase.from("reminders").select("*").eq("user_id", userId),
-    supabase.from("note_columns").select("*").eq("user_id", userId).order("sort_order"),
-    supabase.from("sticky_notes").select("*").eq("user_id", userId).order("sort_order"),
+    supabase
+      .from("reminders")
+      .select("*")
+      .eq("user_id", userId)
+      .is("deleted_at", null),
+    supabase
+      .from("note_columns")
+      .select("*")
+      .eq("user_id", userId)
+      .is("deleted_at", null)
+      .order("sort_order"),
+    supabase
+      .from("sticky_notes")
+      .select("*")
+      .eq("user_id", userId)
+      .is("deleted_at", null)
+      .order("sort_order"),
   ]);
 
   assertOk("profiles", profileRes.error);
@@ -212,93 +251,52 @@ export async function loadCloudData(
   };
 }
 
-async function replaceCollection(
+/** Soft-delete explícito por id (nunca via save geral). */
+export async function softDeleteCloudRows(
+  supabase: Client,
+  table: SoftDeleteTable,
+  userId: string,
+  ids: string[],
+): Promise<void> {
+  const clean = ids.filter(Boolean);
+  if (clean.length === 0) return;
+  const { error } = await supabase
+    .from(table)
+    .update({ deleted_at: new Date().toISOString() })
+    .eq("user_id", userId)
+    .in("id", clean)
+    .is("deleted_at", null);
+  assertOk(`${table} soft-delete`, error);
+}
+
+async function softWipeUserTable(
+  supabase: Client,
+  table: SoftDeleteTable,
+  userId: string,
+): Promise<void> {
+  const { error } = await supabase
+    .from(table)
+    .update({ deleted_at: new Date().toISOString() })
+    .eq("user_id", userId)
+    .is("deleted_at", null);
+  assertOk(`${table} soft-wipe`, error);
+}
+
+/** Só UPSERT — nunca apaga órfãos. Soft-delete é caminho separado. */
+async function upsertCollection(
   supabase: Client,
   table: string,
-  userId: string,
   rows: Record<string, unknown>[],
-  opts: {
-    allowEmptyWipe: boolean;
-    label: string;
-    /** Só upsert (sem apagar órfãos). Útil p/ colunas antes das notas. */
-    upsertOnly?: boolean;
-    /** Só remove ids que não estão em `rows` (após upsert). */
-    orphansOnly?: boolean;
-  },
+  label: string,
 ): Promise<void> {
-  const ids = rows
-    .map((r) => r.id)
-    .filter((id): id is string => typeof id === "string" && id.length > 0);
-
-  if (opts.orphansOnly) {
-    const { data: remote, error: listError } = await supabase
-      .from(table)
-      .select("id")
-      .eq("user_id", userId);
-    assertOk(`${opts.label} list`, listError);
-    const keep = new Set(ids);
-    const orphans = (remote ?? [])
-      .map((r) => r.id as string)
-      .filter((id) => !keep.has(id));
-    if (orphans.length === 0) return;
-    const { error: delError } = await supabase
-      .from(table)
-      .delete()
-      .eq("user_id", userId)
-      .in("id", orphans);
-    assertOk(`${opts.label} orphans`, delError);
-    return;
-  }
-
-  if (rows.length === 0) {
-    if (!opts.allowEmptyWipe) {
-      const { count, error } = await supabase
-        .from(table)
-        .select("id", { count: "exact", head: true })
-        .eq("user_id", userId);
-      assertOk(`${opts.label} count`, error);
-      if ((count ?? 0) > 0) {
-        console.warn(
-          `[foco] protegeu ${opts.label}: save veio vazio e a nuvem tem ${count} item(ns). Ignorado.`,
-        );
-        return;
-      }
-    }
-    const { error } = await supabase.from(table).delete().eq("user_id", userId);
-    assertOk(`${opts.label} wipe`, error);
-    return;
-  }
-
-  const { error: upsertError } = await supabase.from(table).upsert(rows, {
-    onConflict: "id",
-  });
-  assertOk(`${opts.label} upsert`, upsertError);
-
-  if (opts.upsertOnly) return;
-
-  const { data: remote, error: listError } = await supabase
-    .from(table)
-    .select("id")
-    .eq("user_id", userId);
-  assertOk(`${opts.label} list`, listError);
-  const keep = new Set(ids);
-  const orphans = (remote ?? [])
-    .map((r) => r.id as string)
-    .filter((id) => !keep.has(id));
-  if (orphans.length === 0) return;
-
-  const { error: delError } = await supabase
-    .from(table)
-    .delete()
-    .eq("user_id", userId)
-    .in("id", orphans);
-  assertOk(`${opts.label} orphans`, delError);
+  if (rows.length === 0) return;
+  const { error } = await supabase.from(table).upsert(rows, { onConflict: "id" });
+  assertOk(`${label} upsert`, error);
 }
 
 /**
- * Persiste o estado do usuário.
- * Usa upsert + remoção de órfãos (não apaga tudo antes de gravar).
- * Coleções vazias só apagam a nuvem com `allowEmptyWipe: true`.
+ * Persiste o estado do usuário (UPSERT-ONLY).
+ * Não remove linhas remotas que o cliente não conhece — evita wipe multi-device.
  */
 export async function saveCloudData(
   supabase: Client,
@@ -322,8 +320,8 @@ export async function saveCloudData(
   });
   assertOk("session_settings upsert", settingsError);
 
-  // Bloqueio extra: estado “quase vazio” nunca sobrescreve nuvem cheia sem intenção.
-  if (!allowEmptyWipe && isCloudDataEmpty(data) && data.timers.length <= 2) {
+  // Bloqueio: estado vazio nunca sobrescreve nuvem cheia (exceto wipe explícito).
+  if (!allowEmptyWipe && isCloudDataEmpty(data)) {
     const remote = await loadCloudData(supabase, userId);
     if (!isCloudDataEmpty(remote.data)) {
       console.warn(
@@ -334,10 +332,18 @@ export async function saveCloudData(
     }
   }
 
-  await replaceCollection(
+  if (allowEmptyWipe) {
+    await softWipeUserTable(supabase, "sticky_notes", userId);
+    await softWipeUserTable(supabase, "note_columns", userId);
+    await softWipeUserTable(supabase, "subjects", userId);
+    await softWipeUserTable(supabase, "week_blocks", userId);
+    await softWipeUserTable(supabase, "reminders", userId);
+    await softWipeUserTable(supabase, "focus_timers", userId);
+  }
+
+  await upsertCollection(
     supabase,
     "subjects",
-    userId,
     data.subjects.map((s) => ({
       id: s.id,
       user_id: userId,
@@ -348,14 +354,14 @@ export async function saveCloudData(
       active: s.active,
       study_days: normalizeStudyDays(s.study_days),
       study_minutes: normalizeStudyMinutes(s.study_minutes, 25),
+      ...LIVE,
     })),
-    { allowEmptyWipe, label: "subjects" },
+    "subjects",
   );
 
-  await replaceCollection(
+  await upsertCollection(
     supabase,
     "week_blocks",
-    userId,
     data.week_blocks.map((b) => ({
       id: b.id,
       user_id: userId,
@@ -364,14 +370,14 @@ export async function saveCloudData(
       type: b.type,
       sort_order: b.sort_order,
       color: b.color ?? null,
+      ...LIVE,
     })),
-    { allowEmptyWipe, label: "week_blocks" },
+    "week_blocks",
   );
 
-  await replaceCollection(
+  await upsertCollection(
     supabase,
     "reminders",
-    userId,
     data.reminders.map((r) => ({
       id: r.id,
       user_id: userId,
@@ -384,57 +390,43 @@ export async function saveCloudData(
       has_alarm: r.has_alarm,
       color: r.color,
       font_size: r.font_size ?? 0,
+      ...LIVE,
     })),
-    { allowEmptyWipe, label: "reminders" },
+    "reminders",
   );
 
-  const noteColumnRows = data.note_columns.map((c) => ({
-    id: c.id,
-    user_id: userId,
-    title: c.title,
-    color: c.color,
-    sort_order: c.sort_order,
-  }));
-  const stickyRows = data.sticky_notes.map((n) => ({
-    id: n.id,
-    user_id: userId,
-    column_id: n.column_id,
-    text: n.text,
-    color: n.color,
-    sort_order: n.sort_order,
-  }));
+  await upsertCollection(
+    supabase,
+    "note_columns",
+    data.note_columns.map((c) => ({
+      id: c.id,
+      user_id: userId,
+      title: c.title,
+      color: c.color,
+      sort_order: c.sort_order,
+      ...LIVE,
+    })),
+    "note_columns",
+  );
 
-  // Notas dependem de colunas: upsert colunas → sync notas → limpa colunas órfãs.
-  if (allowEmptyWipe && stickyRows.length === 0 && noteColumnRows.length === 0) {
-    await replaceCollection(supabase, "sticky_notes", userId, [], {
-      allowEmptyWipe: true,
-      label: "sticky_notes",
-    });
-    await replaceCollection(supabase, "note_columns", userId, [], {
-      allowEmptyWipe: true,
-      label: "note_columns",
-    });
-  } else {
-    await replaceCollection(supabase, "note_columns", userId, noteColumnRows, {
-      allowEmptyWipe,
-      label: "note_columns",
-      upsertOnly: true,
-    });
-    await replaceCollection(supabase, "sticky_notes", userId, stickyRows, {
-      allowEmptyWipe,
-      label: "sticky_notes",
-    });
-    await replaceCollection(supabase, "note_columns", userId, noteColumnRows, {
-      allowEmptyWipe,
-      label: "note_columns",
-      orphansOnly: true,
-    });
-  }
+  await upsertCollection(
+    supabase,
+    "sticky_notes",
+    data.sticky_notes.map((n) => ({
+      id: n.id,
+      user_id: userId,
+      column_id: n.column_id,
+      text: n.text,
+      color: n.color,
+      sort_order: n.sort_order,
+      ...LIVE,
+    })),
+    "sticky_notes",
+  );
 
-  await replaceCollection(
+  await upsertCollection(
     supabase,
     "focus_timers",
-    userId,
     data.timers.map((t) => ({
       id: t.id,
       user_id: userId,
@@ -442,11 +434,11 @@ export async function saveCloudData(
       minutes: t.minutes,
       accent: t.accent,
       sort_order: t.sort_order,
+      ...LIVE,
     })),
-    { allowEmptyWipe, label: "focus_timers" },
+    "focus_timers",
   );
 
-  // study_sessions: só upsert (nunca apaga histórico remoto)
   if (data.study_sessions.length) {
     const { error } = await supabase.from("study_sessions").upsert(
       data.study_sessions.slice(0, 100).map((s) => ({
