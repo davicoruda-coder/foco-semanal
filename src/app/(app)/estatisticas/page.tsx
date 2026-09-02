@@ -35,6 +35,7 @@ import {
   clearFocusLogCloud,
   syncFocusLogWithCloud,
 } from "@/lib/supabase/focus-sync";
+import { promptDestructivePassword } from "@/lib/destructive-guard";
 import { DAYS } from "@/lib/types";
 
 type Range = "dia" | "semana" | "mes" | "ano";
@@ -398,6 +399,10 @@ export default function EstatisticasPage() {
   }
 
   async function resetHistory() {
+    if (!promptDestructivePassword("resetar o histórico de tempo")) {
+      setConfirmReset(false);
+      return;
+    }
     const empty = clearFocusLog();
     clearInterrupts();
     setInterrupts([]);
@@ -412,7 +417,7 @@ export default function EstatisticasPage() {
       <ConfirmDialog
         open={confirmReset}
         title="Resetar histórico de tempo?"
-        message="Isso apaga todo o tempo registrado (dia, semana, mês e ano) neste aparelho e na nuvem, e os avisos de sessão interrompida. Os temporizadores em si não mudam. Esta ação não pode ser desfeita."
+        message="Isso apaga todo o tempo registrado (dia, semana, mês e ano) neste aparelho e na nuvem, e os avisos de sessão interrompida. Os temporizadores em si não mudam. Será pedida a senha de autorização. Esta ação não pode ser desfeita."
         confirmLabel="Sim, resetar"
         cancelLabel="Cancelar"
         onCancel={() => setConfirmReset(false)}

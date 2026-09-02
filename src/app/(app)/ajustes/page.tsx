@@ -8,6 +8,7 @@ import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { InstallPwaCard } from "@/components/InstallPwaCard";
 import { ensureNotificationPermission } from "@/lib/audio";
 import { backupFileError } from "@/lib/backup";
+import { promptDestructivePassword } from "@/lib/destructive-guard";
 import { MIN_PASSWORD_LENGTH, isValidNewPassword, newPasswordHint } from "@/lib/password";
 import type { ThemePref } from "@/lib/types";
 
@@ -368,7 +369,7 @@ export default function AjustesPage() {
             <div className="border-t border-[var(--line)] pt-3">
               <p className="text-xs opacity-55">
                 Apaga matérias, semana, lembretes, notas e sessões na nuvem. A
-                conta permanece conectada.
+                conta permanece conectada. Pede a senha de autorização.
               </p>
               <button
                 type="button"
@@ -383,15 +384,8 @@ export default function AjustesPage() {
                     ) {
                       return;
                     }
-                    const typed = window.prompt(
-                      "Para confirmar, digite APAGAR (em maiúsculas):",
-                    );
-                    if (typed !== "APAGAR") {
-                      setCloudWipeMsg(
-                        typed == null
-                          ? null
-                          : "Cancelado — digite exatamente APAGAR.",
-                      );
+                    if (!promptDestructivePassword("apagar os dados na nuvem")) {
+                      setCloudWipeMsg("Cancelado — senha incorreta ou vazia.");
                       return;
                     }
                     setCloudWipeBusy(true);

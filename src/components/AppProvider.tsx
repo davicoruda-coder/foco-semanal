@@ -226,6 +226,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
           "Usuário",
       });
       setDataState(loaded.data);
+      // Espelha a nuvem no aparelho para o próximo boot não gravar vazio.
+      saveDemoData(loaded.data);
       const theme =
         localPref === "auto" && loaded.theme !== "auto"
           ? "auto"
@@ -444,6 +446,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         userIdRef.current,
         fresh,
         themeRef.current,
+        { allowEmptyWipe: true },
       );
       setDataState(fresh);
       saveDemoData(fresh);

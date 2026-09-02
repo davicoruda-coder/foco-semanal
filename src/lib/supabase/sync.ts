@@ -16,6 +16,14 @@ import { normalizeStudyDays } from "@/lib/utils";
 
 type Client = SupabaseClient;
 
+export type SaveCloudOptions = {
+  /**
+   * Permite gravar coleções vazias (apaga o que está na nuvem).
+   * Só use no botão explícito “Apagar dados na nuvem”.
+   */
+  allowEmptyWipe?: boolean;
+};
+
 function normalizeFontSize(value: unknown): 0 | 1 | 2 {
   const n = typeof value === "number" ? value : Number(value);
   if (n === 1 || n === 2) return n;
@@ -48,6 +56,17 @@ export function isCloudDataEmpty(data: AppData): boolean {
     data.sticky_notes.length === 0 &&
     data.note_columns.length === 0
   );
+}
+
+function contentFingerprint(data: AppData): string {
+  return [
+    data.subjects.length,
+    data.week_blocks.length,
+    data.reminders.length,
+    data.note_columns.length,
+    data.sticky_notes.length,
+    data.timers.length,
+  ].join(":");
 }
 
 export async function loadCloudData(
@@ -193,18 +212,107 @@ export async function loadCloudData(
   };
 }
 
-/** Persiste o estado completo do usuário (replace por coleção). */
+async function replaceCollection(
+  supabase: Client,
+  table: string,
+  userId: string,
+  rows: Record<string, unknown>[],
+  opts: {
+    allowEmptyWipe: boolean;
+    label: string;
+    /** Só upsert (sem apagar órfãos). Útil p/ colunas antes das notas. */
+    upsertOnly?: boolean;
+    /** Só remove ids que não estão em `rows` (após upsert). */
+    orphansOnly?: boolean;
+  },
+): Promise<void> {
+  const ids = rows
+    .map((r) => r.id)
+    .filter((id): id is string => typeof id === "string" && id.length > 0);
+
+  if (opts.orphansOnly) {
+    const { data: remote, error: listError } = await supabase
+      .from(table)
+      .select("id")
+      .eq("user_id", userId);
+    assertOk(`${opts.label} list`, listError);
+    const keep = new Set(ids);
+    const orphans = (remote ?? [])
+      .map((r) => r.id as string)
+      .filter((id) => !keep.has(id));
+    if (orphans.length === 0) return;
+    const { error: delError } = await supabase
+      .from(table)
+      .delete()
+      .eq("user_id", userId)
+      .in("id", orphans);
+    assertOk(`${opts.label} orphans`, delError);
+    return;
+  }
+
+  if (rows.length === 0) {
+    if (!opts.allowEmptyWipe) {
+      const { count, error } = await supabase
+        .from(table)
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", userId);
+      assertOk(`${opts.label} count`, error);
+      if ((count ?? 0) > 0) {
+        console.warn(
+          `[foco] protegeu ${opts.label}: save veio vazio e a nuvem tem ${count} item(ns). Ignorado.`,
+        );
+        return;
+      }
+    }
+    const { error } = await supabase.from(table).delete().eq("user_id", userId);
+    assertOk(`${opts.label} wipe`, error);
+    return;
+  }
+
+  const { error: upsertError } = await supabase.from(table).upsert(rows, {
+    onConflict: "id",
+  });
+  assertOk(`${opts.label} upsert`, upsertError);
+
+  if (opts.upsertOnly) return;
+
+  const { data: remote, error: listError } = await supabase
+    .from(table)
+    .select("id")
+    .eq("user_id", userId);
+  assertOk(`${opts.label} list`, listError);
+  const keep = new Set(ids);
+  const orphans = (remote ?? [])
+    .map((r) => r.id as string)
+    .filter((id) => !keep.has(id));
+  if (orphans.length === 0) return;
+
+  const { error: delError } = await supabase
+    .from(table)
+    .delete()
+    .eq("user_id", userId)
+    .in("id", orphans);
+  assertOk(`${opts.label} orphans`, delError);
+}
+
+/**
+ * Persiste o estado do usuário.
+ * Usa upsert + remoção de órfãos (não apaga tudo antes de gravar).
+ * Coleções vazias só apagam a nuvem com `allowEmptyWipe: true`.
+ */
 export async function saveCloudData(
   supabase: Client,
   userId: string,
   data: AppData,
   theme: ThemePref,
+  options: SaveCloudOptions = {},
 ): Promise<void> {
+  const allowEmptyWipe = Boolean(options.allowEmptyWipe);
+
   const { error: themeError } = await supabase
     .from("profiles")
     .upsert({ id: userId, theme }, { onConflict: "id" });
   if (themeError) {
-    // Banco antigo pode rejeitar "auto"; não bloqueia o restante do save.
     console.warn("[foco] falha ao salvar tema na nuvem:", themeError.message);
   }
 
@@ -214,111 +322,131 @@ export async function saveCloudData(
   });
   assertOk("session_settings upsert", settingsError);
 
-  // study_sessions: upsert only (não apaga histórico remoto além do que sincronizamos)
-  const deletes = await Promise.all([
-    supabase.from("sticky_notes").delete().eq("user_id", userId),
-    supabase.from("note_columns").delete().eq("user_id", userId),
-    supabase.from("subjects").delete().eq("user_id", userId),
-    supabase.from("week_blocks").delete().eq("user_id", userId),
-    supabase.from("reminders").delete().eq("user_id", userId),
-    supabase.from("focus_timers").delete().eq("user_id", userId),
-  ]);
-  for (const res of deletes) {
-    assertOk("delete collection", res.error);
+  // Bloqueio extra: estado “quase vazio” nunca sobrescreve nuvem cheia sem intenção.
+  if (!allowEmptyWipe && isCloudDataEmpty(data) && data.timers.length <= 2) {
+    const remote = await loadCloudData(supabase, userId);
+    if (!isCloudDataEmpty(remote.data)) {
+      console.warn(
+        "[foco] save vazio bloqueado — nuvem ainda tem dados:",
+        contentFingerprint(remote.data),
+      );
+      return;
+    }
   }
 
-  if (data.subjects.length) {
-    const { error } = await supabase.from("subjects").insert(
-      data.subjects.map((s) => ({
-        id: s.id,
-        user_id: userId,
-        name: s.name,
-        status: s.status,
-        notes: s.notes,
-        cycle_order: s.cycle_order,
-        active: s.active,
-        study_days: normalizeStudyDays(s.study_days),
-        study_minutes: normalizeStudyMinutes(s.study_minutes, 25),
-      })),
-    );
-    assertOk("subjects insert", error);
+  await replaceCollection(
+    supabase,
+    "subjects",
+    userId,
+    data.subjects.map((s) => ({
+      id: s.id,
+      user_id: userId,
+      name: s.name,
+      status: s.status,
+      notes: s.notes,
+      cycle_order: s.cycle_order,
+      active: s.active,
+      study_days: normalizeStudyDays(s.study_days),
+      study_minutes: normalizeStudyMinutes(s.study_minutes, 25),
+    })),
+    { allowEmptyWipe, label: "subjects" },
+  );
+
+  await replaceCollection(
+    supabase,
+    "week_blocks",
+    userId,
+    data.week_blocks.map((b) => ({
+      id: b.id,
+      user_id: userId,
+      day: b.day,
+      label: b.label,
+      type: b.type,
+      sort_order: b.sort_order,
+      color: b.color ?? null,
+    })),
+    { allowEmptyWipe, label: "week_blocks" },
+  );
+
+  await replaceCollection(
+    supabase,
+    "reminders",
+    userId,
+    data.reminders.map((r) => ({
+      id: r.id,
+      user_id: userId,
+      title: r.title,
+      notes: r.notes,
+      notify_at: r.notify_at,
+      remind_minutes_before: r.remind_minutes_before,
+      done_at: r.done_at,
+      active: r.active,
+      has_alarm: r.has_alarm,
+      color: r.color,
+      font_size: r.font_size ?? 0,
+    })),
+    { allowEmptyWipe, label: "reminders" },
+  );
+
+  const noteColumnRows = data.note_columns.map((c) => ({
+    id: c.id,
+    user_id: userId,
+    title: c.title,
+    color: c.color,
+    sort_order: c.sort_order,
+  }));
+  const stickyRows = data.sticky_notes.map((n) => ({
+    id: n.id,
+    user_id: userId,
+    column_id: n.column_id,
+    text: n.text,
+    color: n.color,
+    sort_order: n.sort_order,
+  }));
+
+  // Notas dependem de colunas: upsert colunas → sync notas → limpa colunas órfãs.
+  if (allowEmptyWipe && stickyRows.length === 0 && noteColumnRows.length === 0) {
+    await replaceCollection(supabase, "sticky_notes", userId, [], {
+      allowEmptyWipe: true,
+      label: "sticky_notes",
+    });
+    await replaceCollection(supabase, "note_columns", userId, [], {
+      allowEmptyWipe: true,
+      label: "note_columns",
+    });
+  } else {
+    await replaceCollection(supabase, "note_columns", userId, noteColumnRows, {
+      allowEmptyWipe,
+      label: "note_columns",
+      upsertOnly: true,
+    });
+    await replaceCollection(supabase, "sticky_notes", userId, stickyRows, {
+      allowEmptyWipe,
+      label: "sticky_notes",
+    });
+    await replaceCollection(supabase, "note_columns", userId, noteColumnRows, {
+      allowEmptyWipe,
+      label: "note_columns",
+      orphansOnly: true,
+    });
   }
 
-  if (data.week_blocks.length) {
-    const { error } = await supabase.from("week_blocks").insert(
-      data.week_blocks.map((b) => ({
-        id: b.id,
-        user_id: userId,
-        day: b.day,
-        label: b.label,
-        type: b.type,
-        sort_order: b.sort_order,
-        color: b.color ?? null,
-      })),
-    );
-    assertOk("week_blocks insert", error);
-  }
+  await replaceCollection(
+    supabase,
+    "focus_timers",
+    userId,
+    data.timers.map((t) => ({
+      id: t.id,
+      user_id: userId,
+      name: t.name,
+      minutes: t.minutes,
+      accent: t.accent,
+      sort_order: t.sort_order,
+    })),
+    { allowEmptyWipe, label: "focus_timers" },
+  );
 
-  if (data.reminders.length) {
-    const { error } = await supabase.from("reminders").insert(
-      data.reminders.map((r) => ({
-        id: r.id,
-        user_id: userId,
-        title: r.title,
-        notes: r.notes,
-        notify_at: r.notify_at,
-        remind_minutes_before: r.remind_minutes_before,
-        done_at: r.done_at,
-        active: r.active,
-        has_alarm: r.has_alarm,
-        color: r.color,
-        font_size: r.font_size ?? 0,
-      })),
-    );
-    assertOk("reminders insert", error);
-  }
-
-  if (data.note_columns.length) {
-    const { error } = await supabase.from("note_columns").insert(
-      data.note_columns.map((c) => ({
-        id: c.id,
-        user_id: userId,
-        title: c.title,
-        color: c.color,
-        sort_order: c.sort_order,
-      })),
-    );
-    assertOk("note_columns insert", error);
-  }
-
-  if (data.sticky_notes.length) {
-    const { error } = await supabase.from("sticky_notes").insert(
-      data.sticky_notes.map((n) => ({
-        id: n.id,
-        user_id: userId,
-        column_id: n.column_id,
-        text: n.text,
-        color: n.color,
-        sort_order: n.sort_order,
-      })),
-    );
-    assertOk("sticky_notes insert", error);
-  }
-
-  if (data.timers.length) {
-    const { error } = await supabase.from("focus_timers").insert(
-      data.timers.map((t) => ({
-        id: t.id,
-        user_id: userId,
-        name: t.name,
-        minutes: t.minutes,
-        accent: t.accent,
-        sort_order: t.sort_order,
-      })),
-    );
-    assertOk("focus_timers insert", error);
-  }
-
+  // study_sessions: só upsert (nunca apaga histórico remoto)
   if (data.study_sessions.length) {
     const { error } = await supabase.from("study_sessions").upsert(
       data.study_sessions.slice(0, 100).map((s) => ({
