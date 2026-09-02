@@ -35,6 +35,7 @@ export default function AjustesPage() {
   const [cloudWipeBusy, setCloudWipeBusy] = useState(false);
   const [cloudWipeMsg, setCloudWipeMsg] = useState<string | null>(null);
   const [confirmLogout, setConfirmLogout] = useState(false);
+  const [confirmCloudWipe, setConfirmCloudWipe] = useState(false);
   const [passwordFormOpen, setPasswordFormOpen] = useState(false);
   const [password, setPassword] = useState("");
   const [passwordConfirm, setPasswordConfirm] = useState("");
@@ -123,6 +124,33 @@ export default function AjustesPage() {
         onConfirm={() => {
           setConfirmLogout(false);
           logout();
+        }}
+      />
+      <ConfirmDialog
+        open={confirmCloudWipe}
+        title="Apagar dados na nuvem?"
+        message="Isso apaga matérias, semana, lembretes, notas e sessões na nuvem. A conta permanece conectada. Será pedida a senha de autorização. Esta ação não pode ser desfeita."
+        confirmLabel="Sim, apagar"
+        cancelLabel="Cancelar"
+        onCancel={() => setConfirmCloudWipe(false)}
+        onConfirm={() => {
+          void (async () => {
+            if (!promptDestructivePassword("apagar os dados na nuvem")) {
+              setConfirmCloudWipe(false);
+              setCloudWipeMsg("Cancelado — senha incorreta ou vazia.");
+              return;
+            }
+            setConfirmCloudWipe(false);
+            setCloudWipeBusy(true);
+            setCloudWipeMsg(null);
+            const result = await resetCloudData();
+            setCloudWipeBusy(false);
+            setCloudWipeMsg(
+              result.ok
+                ? "Dados na nuvem apagados. Estado inicial restaurado."
+                : result.error,
+            );
+          })();
         }}
       />
 
@@ -376,28 +404,8 @@ export default function AjustesPage() {
                 className="btn mt-2 text-[var(--warn)]"
                 disabled={cloudWipeBusy}
                 onClick={() => {
-                  void (async () => {
-                    if (
-                      !confirm(
-                        "Isso apaga TODOS os dados na nuvem. Continuar?",
-                      )
-                    ) {
-                      return;
-                    }
-                    if (!promptDestructivePassword("apagar os dados na nuvem")) {
-                      setCloudWipeMsg("Cancelado — senha incorreta ou vazia.");
-                      return;
-                    }
-                    setCloudWipeBusy(true);
-                    setCloudWipeMsg(null);
-                    const result = await resetCloudData();
-                    setCloudWipeBusy(false);
-                    setCloudWipeMsg(
-                      result.ok
-                        ? "Dados na nuvem apagados. Estado inicial restaurado."
-                        : result.error,
-                    );
-                  })();
+                  setCloudWipeMsg(null);
+                  setConfirmCloudWipe(true);
                 }}
               >
                 {cloudWipeBusy ? "Apagando…" : "Apagar dados na nuvem"}
