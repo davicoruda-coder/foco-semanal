@@ -630,6 +630,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
           const idx = ordered.findIndex((s) => s.id === id);
           if (idx < 0) return prev;
 
+          const restartToday = (subjects: typeof prev.subjects) =>
+            subjects.map((s) =>
+              s.active && !s.is_free && subjectShowsOnDay(s, day)
+                ? { ...s, status: "prox" as const }
+                : s,
+            );
+
           if (status !== "ok") {
             return {
               ...prev,
@@ -639,28 +646,33 @@ export function AppProvider({ children }: { children: ReactNode }) {
             };
           }
 
-          // Último Ok do ciclo de hoje → todas (incluindo a última) voltam pra Próx.
+          // Último Ok do ciclo de hoje → reinicia: todas voltam pra Próx
+          // (incluindo a última — nenhuma fica Concluída).
           if (idx === ordered.length - 1) {
-            return {
-              ...prev,
-              subjects: prev.subjects.map((s) =>
-                s.active && !s.is_free && subjectShowsOnDay(s, day)
-                  ? { ...s, status: "prox" as const }
-                  : s,
-              ),
-            };
+            return { ...prev, subjects: restartToday(prev.subjects) };
           }
 
           // Ok no meio → esta Ok; próxima (de hoje, com tempo) vira Próx.
           const next = ordered[idx + 1];
-          return {
-            ...prev,
-            subjects: prev.subjects.map((s) => {
-              if (s.id === id) return { ...s, status: "ok" };
-              if (next && s.id === next.id) return { ...s, status: "prox" };
-              return s;
-            }),
-          };
+          const subjects = prev.subjects.map((s) => {
+            if (s.id === id) return { ...s, status: "ok" as const };
+            if (next && s.id === next.id) return { ...s, status: "prox" as const };
+            return s;
+          });
+
+          // Rede de segurança: se todas as de hoje ficaram Ok, reinicia o ciclo.
+          const todayAfter = subjects
+            .filter(
+              (s) => s.active && !s.is_free && subjectShowsOnDay(s, day),
+            );
+          if (
+            todayAfter.length > 0 &&
+            todayAfter.every((s) => s.status === "ok")
+          ) {
+            return { ...prev, subjects: restartToday(subjects) };
+          }
+
+          return { ...prev, subjects };
         });
       },
       deleteSubject: (id) => {
