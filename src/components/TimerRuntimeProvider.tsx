@@ -285,20 +285,11 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
 
         if (existing.running && existing.endsAt) {
           const left = liveSeconds(existing, t.minutes);
+          // Expirado: o efeito de conclusão para o relógio (alarme / Ok).
           next[t.id] =
             left <= 0
-              ? {
-                  secondsLeft: 0,
-                  running: false,
-                  endsAt: null,
-                  startedAt: null,
-                  sortOrder: t.sort_order,
-                }
-              : {
-                  ...existing,
-                  secondsLeft: left,
-                  sortOrder: t.sort_order,
-                };
+              ? { ...existing, secondsLeft: 0, sortOrder: t.sort_order }
+              : { ...existing, secondsLeft: left, sortOrder: t.sort_order };
           continue;
         }
 
@@ -347,14 +338,10 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
 
         if (existing.running && existing.endsAt) {
           const left = liveSeconds(existing, minutes);
+          // Expirado: não “roubar” o running — senão o Ok automático não dispara.
           next[key] =
             left <= 0
-              ? {
-                  secondsLeft: 0,
-                  running: false,
-                  endsAt: null,
-                  startedAt: null,
-                }
+              ? { ...existing, secondsLeft: 0 }
               : { ...existing, secondsLeft: left };
           continue;
         }
@@ -506,7 +493,7 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
 
   // Completions — FocusTimers e matérias
   useEffect(() => {
-    if (!ready) return;
+    if (!ready || !appReady) return;
     for (const t of timers) {
       const r = runtime[t.id];
       if (!r?.running) {
@@ -605,6 +592,7 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
     timers,
     subjects,
     ready,
+    appReady,
     data.subjects,
     addStudySession,
     setSubjectStatus,
@@ -688,6 +676,7 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
         if (left <= 0 && !current.running) {
           // restart from full
           const full = Math.max(1, def?.minutes ?? 25) * 60;
+          doneRef.current[id] = false;
           showFlash(id, "play");
           let updated: Record<string, TimerRuntime> = {
             ...prev,
@@ -787,6 +776,7 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
         const left = liveSeconds(current, minutes);
         if (left <= 0 && !current.running) {
           const full = minutes * 60;
+          doneRef.current[key] = false;
           showFlash(key, "play");
           // Um de cada vez: pausa outras matérias em play
           const next = { ...prev };
@@ -821,6 +811,7 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
         const next = { ...prev };
 
         if (willRun) {
+          doneRef.current[key] = false;
           for (const [id, r] of Object.entries(prev)) {
             if (!isSubjectTimerKey(id) || id === key || !r.running) continue;
             const otherId = subjectIdFromKey(id);
