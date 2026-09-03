@@ -454,46 +454,47 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
   }, [ready, trackingFocus, flushFocusSeconds]);
 
   // Global tick — continues even when Hoje is unmounted (tela só; não grava disco).
-  // Também conclui matérias no mesmo instante do 00:00 (não espera outro effect).
+  // Lê runtimeRef (puro): não depende do updater do setState (React 19 pode adiar).
   useEffect(() => {
     if (!ready || !anyRunning) return;
 
     const id = window.setInterval(() => {
       setTick((n) => n + 1);
+      const prev = runtimeRef.current;
+      const next: Record<string, TimerRuntime> = { ...prev };
+      let changed = false;
       const completedSubjects: { key: string; name: string }[] = [];
-      setRuntime((prev) => {
-        let changed = false;
-        const next = { ...prev };
-        for (const [tid, r] of Object.entries(prev)) {
-          if (!r.running || !r.endsAt) continue;
-          const left = Math.max(0, Math.ceil((r.endsAt - Date.now()) / 1000));
-          if (left !== r.secondsLeft) {
-            changed = true;
-            next[tid] = { ...r, secondsLeft: left };
-          }
-          if (
-            left <= 0 &&
-            isSubjectTimerKey(tid) &&
-            !doneRef.current[tid]
-          ) {
-            doneRef.current[tid] = true;
-            changed = true;
-            next[tid] = {
-              secondsLeft: 0,
-              running: false,
-              endsAt: null,
-              startedAt: null,
-            };
-            const sid = subjectIdFromKey(tid);
-            const sub = subjectsRef.current.find((s) => s.id === sid);
-            if (sub && !sub.is_free) {
-              completedSubjects.push({ key: tid, name: sub.name });
-            }
+
+      for (const [tid, r] of Object.entries(prev)) {
+        if (!r.running || !r.endsAt) continue;
+        const left = Math.max(0, Math.ceil((r.endsAt - Date.now()) / 1000));
+        if (left !== r.secondsLeft) {
+          changed = true;
+          next[tid] = { ...r, secondsLeft: left };
+        }
+        if (left <= 0 && isSubjectTimerKey(tid) && !doneRef.current[tid]) {
+          doneRef.current[tid] = true;
+          changed = true;
+          next[tid] = {
+            secondsLeft: 0,
+            running: false,
+            endsAt: null,
+            startedAt: null,
+          };
+          const sid = subjectIdFromKey(tid);
+          const sub = subjectsRef.current.find((s) => s.id === sid);
+          if (sub && !sub.is_free) {
+            completedSubjects.push({ key: tid, name: sub.name });
           }
         }
-        if (changed) writeStored(next);
-        return changed ? next : prev;
-      });
+      }
+
+      if (changed) {
+        runtimeRef.current = next;
+        writeStored(next);
+        setRuntime(next);
+      }
+
       for (const item of completedSubjects) {
         linkedPausedSubjectsRef.current =
           linkedPausedSubjectsRef.current.filter((id) => id !== item.key);
@@ -506,36 +507,42 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
     return () => window.clearInterval(id);
   }, [ready, anyRunning]);
 
-  // Aba voltou: se o intervalo ficou lento em background, conclui matérias já em 00:00.
+  // Aba voltou: se o intervalo ficou lento, conclui matérias ainda "running" em 00:00.
   useEffect(() => {
     if (!ready || !appReady) return;
+
     function flushExpiredSubjects() {
+      const prev = runtimeRef.current;
+      const next: Record<string, TimerRuntime> = { ...prev };
+      let changed = false;
       const completed: { key: string; name: string }[] = [];
-      setRuntime((prev) => {
-        let changed = false;
-        const next = { ...prev };
-        for (const s of subjectsRef.current) {
-          if (s.is_free) continue;
-          const key = subjectTimerKey(s.id);
-          const r = prev[key];
-          if (!r?.running) continue;
-          const minutes = Math.max(1, s.study_minutes ?? 25);
-          const left = liveSeconds(r, minutes);
-          if (left > 0) continue;
-          if (doneRef.current[key]) continue;
-          doneRef.current[key] = true;
-          changed = true;
-          next[key] = {
-            secondsLeft: 0,
-            running: false,
-            endsAt: null,
-            startedAt: null,
-          };
-          completed.push({ key, name: s.name });
-        }
-        if (changed) writeStored(next);
-        return changed ? next : prev;
-      });
+
+      for (const s of subjectsRef.current) {
+        if (s.is_free) continue;
+        const key = subjectTimerKey(s.id);
+        const r = prev[key];
+        if (!r?.running) continue;
+        const minutes = Math.max(1, s.study_minutes ?? 25);
+        const left = liveSeconds(r, minutes);
+        if (left > 0) continue;
+        if (doneRef.current[key]) continue;
+        doneRef.current[key] = true;
+        changed = true;
+        next[key] = {
+          secondsLeft: 0,
+          running: false,
+          endsAt: null,
+          startedAt: null,
+        };
+        completed.push({ key, name: s.name });
+      }
+
+      if (changed) {
+        runtimeRef.current = next;
+        writeStored(next);
+        setRuntime(next);
+      }
+
       for (const item of completed) {
         linkedPausedSubjectsRef.current =
           linkedPausedSubjectsRef.current.filter((id) => id !== item.key);
@@ -544,9 +551,12 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
         setSubjectStatusRef.current(subjectIdFromKey(item.key), "ok");
       }
     }
+
     function onVisibility() {
       if (document.visibilityState === "visible") flushExpiredSubjects();
     }
+
+    flushExpiredSubjects();
     document.addEventListener("visibilitychange", onVisibility);
     return () => document.removeEventListener("visibilitychange", onVisibility);
   }, [ready, appReady]);
@@ -879,6 +889,7 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
           };
           linkedPausedSubjectsRef.current =
             linkedPausedSubjectsRef.current.filter((id) => id === key);
+          runtimeRef.current = next;
           writeStored(next);
           writeHeartbeat();
           return next;
@@ -922,6 +933,7 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
             linkedPausedSubjectsRef.current.filter((id) => id !== key);
         }
 
+        runtimeRef.current = next;
         writeStored(next);
         if (willRun) writeHeartbeat();
         return next;
@@ -949,6 +961,7 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
             startedAt: null,
           },
         };
+        runtimeRef.current = updated;
         writeStored(updated);
         return updated;
       });
