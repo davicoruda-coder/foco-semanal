@@ -86,7 +86,7 @@ type AppContextValue = {
   logout: () => void;
   setData: (updater: (prev: AppData) => AppData) => void;
   upsertSubject: (subject: Partial<Subject> & { name: string }) => void;
-  /** Marca status; Ok no último do dia: este Concluída, os outros de hoje voltam pra Próx. */
+  /** Marca status; Ok no último do ciclo de hoje → todos (incluindo o último) voltam pra Próx. */
   setSubjectStatus: (id: string, status: SubjectStatus) => void;
   deleteSubject: (id: string) => void;
   upsertWeekBlock: (block: Partial<WeekBlock> & { day: number; label: string }) => void;
@@ -639,18 +639,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
             };
           }
 
-          // Último Ok do ciclo de hoje: esta fica Concluída; as outras de hoje
-          // voltam pra Próx. (antes todas iam pra Próx e o último nunca aparecia Ok).
+          // Último Ok do ciclo de hoje → todas (incluindo a última) voltam pra Próx.
           if (idx === ordered.length - 1) {
             return {
               ...prev,
-              subjects: prev.subjects.map((s) => {
-                if (s.id === id) return { ...s, status: "ok" as const };
-                if (s.active && !s.is_free && subjectShowsOnDay(s, day)) {
-                  return { ...s, status: "prox" as const };
-                }
-                return s;
-              }),
+              subjects: prev.subjects.map((s) =>
+                s.active && !s.is_free && subjectShowsOnDay(s, day)
+                  ? { ...s, status: "prox" as const }
+                  : s,
+              ),
             };
           }
 
