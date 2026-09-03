@@ -195,12 +195,16 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
   const doneRef = useRef<Record<string, boolean>>({});
   const runtimeRef = useRef(runtime);
   const stopwatchRef = useRef(stopwatch);
+  const setSubjectStatusRef = useRef(setSubjectStatus);
+  const subjectsRef = useRef(subjects);
   /** Matérias pausadas junto com sessão/cronômetro — retomam no play. */
   const linkedPausedSubjectsRef = useRef<string[]>([]);
   const [, setTick] = useState(0);
 
   runtimeRef.current = runtime;
   stopwatchRef.current = stopwatch;
+  setSubjectStatusRef.current = setSubjectStatus;
+  subjectsRef.current = subjects;
 
   const persistClocks = useCallback(() => {
     writeStored(runtimeRef.current);
@@ -450,11 +454,13 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
   }, [ready, trackingFocus, flushFocusSeconds]);
 
   // Global tick — continues even when Hoje is unmounted (tela só; não grava disco).
+  // Também conclui matérias no mesmo instante do 00:00 (não espera outro effect).
   useEffect(() => {
     if (!ready || !anyRunning) return;
 
     const id = window.setInterval(() => {
       setTick((n) => n + 1);
+      const completedSubjects: { key: string; name: string }[] = [];
       setRuntime((prev) => {
         let changed = false;
         const next = { ...prev };
@@ -465,13 +471,85 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
             changed = true;
             next[tid] = { ...r, secondsLeft: left };
           }
+          if (
+            left <= 0 &&
+            isSubjectTimerKey(tid) &&
+            !doneRef.current[tid]
+          ) {
+            doneRef.current[tid] = true;
+            changed = true;
+            next[tid] = {
+              secondsLeft: 0,
+              running: false,
+              endsAt: null,
+              startedAt: null,
+            };
+            const sid = subjectIdFromKey(tid);
+            const sub = subjectsRef.current.find((s) => s.id === sid);
+            if (sub && !sub.is_free) {
+              completedSubjects.push({ key: tid, name: sub.name });
+            }
+          }
         }
+        if (changed) writeStored(next);
         return changed ? next : prev;
       });
+      for (const item of completedSubjects) {
+        linkedPausedSubjectsRef.current =
+          linkedPausedSubjectsRef.current.filter((id) => id !== item.key);
+        playAlarmTone();
+        notify("Foco Semanal", `${item.name} concluída`);
+        setSubjectStatusRef.current(subjectIdFromKey(item.key), "ok");
+      }
     }, 1000);
 
     return () => window.clearInterval(id);
   }, [ready, anyRunning]);
+
+  // Aba voltou: se o intervalo ficou lento em background, conclui matérias já em 00:00.
+  useEffect(() => {
+    if (!ready || !appReady) return;
+    function flushExpiredSubjects() {
+      const completed: { key: string; name: string }[] = [];
+      setRuntime((prev) => {
+        let changed = false;
+        const next = { ...prev };
+        for (const s of subjectsRef.current) {
+          if (s.is_free) continue;
+          const key = subjectTimerKey(s.id);
+          const r = prev[key];
+          if (!r?.running) continue;
+          const minutes = Math.max(1, s.study_minutes ?? 25);
+          const left = liveSeconds(r, minutes);
+          if (left > 0) continue;
+          if (doneRef.current[key]) continue;
+          doneRef.current[key] = true;
+          changed = true;
+          next[key] = {
+            secondsLeft: 0,
+            running: false,
+            endsAt: null,
+            startedAt: null,
+          };
+          completed.push({ key, name: s.name });
+        }
+        if (changed) writeStored(next);
+        return changed ? next : prev;
+      });
+      for (const item of completed) {
+        linkedPausedSubjectsRef.current =
+          linkedPausedSubjectsRef.current.filter((id) => id !== item.key);
+        playAlarmTone();
+        notify("Foco Semanal", `${item.name} concluída`);
+        setSubjectStatusRef.current(subjectIdFromKey(item.key), "ok");
+      }
+    }
+    function onVisibility() {
+      if (document.visibilityState === "visible") flushExpiredSubjects();
+    }
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => document.removeEventListener("visibilitychange", onVisibility);
+  }, [ready, appReady]);
 
   // Backup no aparelho: pause já grava; enquanto roda, a cada 5s ou ao esconder a aba.
   useEffect(() => {

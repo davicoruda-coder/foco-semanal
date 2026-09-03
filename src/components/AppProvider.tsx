@@ -137,6 +137,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const loadOkRef = useRef(false);
   const lastLoadAtRef = useRef(0);
   const hiddenAtRef = useRef<number | null>(null);
+  /** Sobe a cada alteração local — re-sync assíncrono descarta se mudou no meio. */
+  const dataRevRef = useRef(0);
 
   useEffect(() => {
     themeRef.current = themePref;
@@ -413,13 +415,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const sinceLoad = Date.now() - lastLoadAtRef.current;
       if (awayMs < 90_000 && sinceLoad < 180_000) return;
 
+      const revAtStart = dataRevRef.current;
+      const uid = userIdRef.current;
+
       void (async () => {
         try {
           const { createClient } = await import("@/lib/supabase/client");
           const supabase = createClient();
-          const uid = userIdRef.current;
           if (!uid) return;
           const loaded = await loadCloudData(supabase, uid);
+          // Local mudou ou há save pendente/em voo: não pisar o Ok da matéria.
+          if (pendingSaveRef.current || saveInFlightRef.current) return;
+          if (dataRevRef.current !== revAtStart) return;
+          if (userIdRef.current !== uid) return;
           lastLoadAtRef.current = Date.now();
           setDataState(loaded.data);
           saveDemoData(loaded.data);
@@ -476,6 +484,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     (updater: (prev: AppData) => AppData) => {
       setDataState((prev) => {
         const next = updater(prev);
+        if (next !== prev) dataRevRef.current += 1;
         if (cloudRef.current) {
           persistCloud(next, themeRef.current);
           saveDemoData(next);
@@ -581,6 +590,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setData((prev) => {
           if (subject.id) {
             const patch = { ...subject };
+            // Status só via setSubjectStatus — evita anotações com spread velho
+            // sobrescreverem o Ok do timer.
+            delete (patch as { status?: SubjectStatus }).status;
             if ("study_days" in subject) {
               patch.study_days = normalizeStudyDays(subject.study_days);
             }
@@ -595,7 +607,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
             return {
               ...prev,
               subjects: prev.subjects.map((s) =>
-                s.id === subject.id ? { ...s, ...patch } : s,
+                s.id === subject.id ? { ...s, ...patch, status: s.status } : s,
               ),
             };
           }
