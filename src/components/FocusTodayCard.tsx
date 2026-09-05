@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { useApp } from "@/components/AppProvider";
 import { useTimerRuntime } from "@/components/TimerRuntimeProvider";
 import {
   dateKey,
@@ -12,28 +11,27 @@ import {
   type FocusLog,
 } from "@/lib/focus-log";
 
-/** Mini-card "Foco hoje": total consolidado (pause/fim/reset ou ao abrir Estatísticas). */
+/** Mini-card "Foco hoje": total consolidado (pause/fim da matéria ou ao abrir Estatísticas). */
 export function FocusTodayCard() {
-  const { data } = useApp();
-  const { runtime, stopwatch } = useTimerRuntime();
+  const { runtime } = useTimerRuntime();
   const [log, setLog] = useState<FocusLog>({ version: 1, days: {} });
   const wasTracking = useRef(false);
 
-  const session = useMemo(
+  // Mesma regra do provider: só matéria em play conta (não Sessão/Livre).
+  const tracking = useMemo(
     () =>
-      [...(data.timers ?? [])].sort((a, b) => a.sort_order - b.sort_order)[0] ??
-      null,
-    [data.timers],
+      Object.entries(runtime).some(
+        ([id, r]) => id.startsWith("sub:") && r.running,
+      ),
+    [runtime],
   );
-  const tracking =
-    Boolean(session && runtime[session.id]?.running) || stopwatch.running;
 
   // Sempre lê o snapshot — não o log ao vivo (evita update ao voltar de Semana/Matérias).
   useEffect(() => {
     setLog(loadFocusDisplaySnapshot());
   }, []);
 
-  // Ao pausar/finalizar/resetar, o provider commitou o snapshot; recarrega.
+  // Ao pausar/finalizar a matéria, o provider commitou o snapshot; recarrega.
   useEffect(() => {
     if (wasTracking.current && !tracking) {
       setLog(loadFocusDisplaySnapshot());

@@ -1,4 +1,4 @@
-/** Log de tempo de foco (Sessão + cronômetro em play). Local-first. */
+/** Log de tempo de foco (matéria em play). Local-first. */
 
 const STORAGE_KEY = "foco_semanal_focus_log_v1";
 /** Snapshot do card "Foco hoje" — só muda em pause/fim/reset ou ao abrir Estatísticas. */
