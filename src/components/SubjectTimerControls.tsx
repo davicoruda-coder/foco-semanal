@@ -39,6 +39,10 @@ export function SubjectTimerControls({
   const running = Boolean(r?.running);
   const paused =
     !running && seconds > 0 && seconds < total && Boolean(r?.startedAt);
+  /** Cronômetro só com play ou pause — some no idle e no 00:00 (Concluída). */
+  const showClock = running || paused;
+  /** Reset só no pause, para poder zerar e recomeçar. */
+  const showReset = paused;
   const flashHere = flash?.id === key ? flash.kind : null;
 
   return (
@@ -98,27 +102,31 @@ export function SubjectTimerControls({
         )}
       </button>
 
-      <span
-        className={`font-mono-num tabular-nums ${
-          compact ? "text-sm" : "text-[15px]"
-        } ${paused ? "timer-paused" : ""} ${
-          running ? "text-[var(--signal)]" : ""
-        }`}
-      >
-        {formatTime(seconds)}
-      </span>
+      {showClock && (
+        <span
+          className={`font-mono-num tabular-nums ${
+            compact ? "text-sm" : "text-[15px]"
+          } ${paused ? "timer-paused" : ""} ${
+            running ? "text-[var(--signal)]" : ""
+          }`}
+        >
+          {formatTime(seconds)}
+        </span>
+      )}
 
-      <button
-        type="button"
-        onClick={() => resetSubjectTimer(subjectId)}
-        title={`Resetar ${name}`}
-        aria-label={`Resetar tempo de ${name}`}
-        className={`rounded-full text-[color-mix(in_srgb,var(--ink)_45%,transparent)] transition hover:bg-[var(--mist)] hover:text-[var(--ink)] ${
-          compact ? "p-1.5" : "p-1.5"
-        }`}
-      >
-        <RotateCcw size={compact ? 14 : 15} strokeWidth={2} />
-      </button>
+      {showReset && (
+        <button
+          type="button"
+          onClick={() => resetSubjectTimer(subjectId)}
+          title={`Resetar ${name}`}
+          aria-label={`Resetar tempo de ${name}`}
+          className={`rounded-full text-[color-mix(in_srgb,var(--ink)_45%,transparent)] transition hover:bg-[var(--mist)] hover:text-[var(--ink)] ${
+            compact ? "p-1.5" : "p-1.5"
+          }`}
+        >
+          <RotateCcw size={compact ? 14 : 15} strokeWidth={2} />
+        </button>
+      )}
     </div>
   );
 }
