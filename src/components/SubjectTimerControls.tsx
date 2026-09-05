@@ -68,8 +68,8 @@ export function SubjectTimerControls({
           running
             ? "bg-[var(--signal)] text-white shadow-sm"
             : paused
-              ? "bg-[color-mix(in_srgb,var(--signal)_18%,transparent)] text-[var(--signal)] ring-1 ring-[color-mix(in_srgb,var(--signal)_28%,transparent)]"
-              : "bg-[color-mix(in_srgb,var(--signal)_14%,transparent)] text-[var(--signal)] ring-1 ring-[color-mix(in_srgb,var(--signal)_22%,transparent)] hover:bg-[color-mix(in_srgb,var(--signal)_22%,transparent)]"
+              ? "bg-[color-mix(in_srgb,var(--signal)_28%,transparent)] text-[var(--signal)] ring-1 ring-[color-mix(in_srgb,var(--signal)_40%,transparent)]"
+              : "bg-[color-mix(in_srgb,var(--signal)_22%,transparent)] text-[var(--signal)] ring-1 ring-[color-mix(in_srgb,var(--signal)_36%,transparent)] hover:bg-[color-mix(in_srgb,var(--signal)_32%,transparent)]"
         }`}
       >
         {running ? (
