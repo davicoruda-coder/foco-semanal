@@ -399,13 +399,13 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
   );
   const anyRunning = anyTimerRunning || stopwatch.running;
 
-  // Conta foco só com Sessão (sort_order 0) ou cronômetro em play — nunca em pause.
-  const sessionTimer = useMemo(
-    () => [...timers].sort((a, b) => a.sort_order - b.sort_order)[0] ?? null,
-    [timers],
-  );
-  const trackingFocus = Boolean(
-    (sessionTimer && runtime[sessionTimer.id]?.running) || stopwatch.running,
+  // Conta foco só com matéria em play — Sessão/Livre não entram em Foco hoje nem estatísticas.
+  const trackingFocus = useMemo(
+    () =>
+      Object.entries(runtime).some(
+        ([id, r]) => isSubjectTimerKey(id) && r.running,
+      ),
+    [runtime],
   );
   const focusLastRef = useRef<number | null>(null);
 
