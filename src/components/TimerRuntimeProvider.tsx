@@ -13,7 +13,9 @@ import {
 import { useApp } from "@/components/AppProvider";
 import { ensureNotificationPermission, notify, playAlarmTone } from "@/lib/audio";
 import {
+  heartbeatIsStale,
   patchInterruptNames,
+  readHeartbeat,
   recoverStaleClocks,
   writeHeartbeat,
 } from "@/lib/clock-interrupt";
@@ -56,6 +58,8 @@ type TimerRuntimeContextValue = {
   toggleSubjectTimer: (subjectId: string) => void;
   resetSubjectTimer: (subjectId: string) => void;
   secondsForSubject: (subjectId: string) => number;
+  /** Cronômetros das matérias Livre (sobe o tempo). */
+  subjectStopwatches: Record<string, StopwatchState>;
   stopwatch: StopwatchState;
   stopwatchSeconds: number;
   toggleStopwatch: () => void;
@@ -65,6 +69,8 @@ type TimerRuntimeContextValue = {
 const STORAGE_KEY = "foco_semanal_timer_runtime_v1";
 const MODE_KEY = "foco_semanal_clock_mode";
 const STOPWATCH_KEY = "foco_semanal_stopwatch_v1";
+/** Cronômetros por matéria Livre (sobe o tempo). */
+const SUBJECT_SW_KEY = "foco_semanal_subject_stopwatch_v1";
 /** Backup no aparelho enquanto roda — a tela usa o relógio, não este intervalo. */
 const PERSIST_MS = 5000;
 export const SUBJECT_TIMER_PREFIX = "sub:";
@@ -140,6 +146,34 @@ function writeStopwatch(state: StopwatchState) {
   writeJson(STOPWATCH_KEY, JSON.stringify(state));
 }
 
+function readSubjectStopwatches(): Record<string, StopwatchState> {
+  try {
+    const raw = readJson(SUBJECT_SW_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw) as Record<string, Partial<StopwatchState>>;
+    const next: Record<string, StopwatchState> = {};
+    for (const [id, s] of Object.entries(parsed ?? {})) {
+      next[id] = { ...DEFAULT_STOPWATCH, ...s };
+    }
+    return next;
+  } catch {
+    return {};
+  }
+}
+
+function writeSubjectStopwatches(map: Record<string, StopwatchState>) {
+  writeJson(SUBJECT_SW_KEY, JSON.stringify(map));
+}
+
+function pauseStopwatchState(s: StopwatchState): StopwatchState {
+  if (!s.running) return s;
+  return {
+    running: false,
+    segmentStartedAt: null,
+    accumulatedMs: liveStopwatchMs(s),
+  };
+}
+
 function liveStopwatchMs(s: StopwatchState): number {
   if (s.running && s.segmentStartedAt) {
     return s.accumulatedMs + (Date.now() - s.segmentStartedAt);
@@ -184,6 +218,9 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
   const subjects = data.subjects ?? [];
   const [runtime, setRuntime] = useState<Record<string, TimerRuntime>>({});
   const [stopwatch, setStopwatch] = useState<StopwatchState>(DEFAULT_STOPWATCH);
+  const [subjectStopwatches, setSubjectStopwatches] = useState<
+    Record<string, StopwatchState>
+  >({});
   const [mode, setModeState] = useState<ClockMode>("timers");
   const [ready, setReady] = useState(false);
   const [flash, setFlash] = useState<{
@@ -195,6 +232,7 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
   const doneRef = useRef<Record<string, boolean>>({});
   const runtimeRef = useRef(runtime);
   const stopwatchRef = useRef(stopwatch);
+  const subjectStopwatchesRef = useRef(subjectStopwatches);
   const setSubjectStatusRef = useRef(setSubjectStatus);
   const subjectsRef = useRef(subjects);
   /** Matérias pausadas junto com sessão/cronômetro — retomam no play. */
@@ -203,15 +241,24 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
 
   runtimeRef.current = runtime;
   stopwatchRef.current = stopwatch;
+  subjectStopwatchesRef.current = subjectStopwatches;
   setSubjectStatusRef.current = setSubjectStatus;
   subjectsRef.current = subjects;
 
   const persistClocks = useCallback(() => {
     writeStored(runtimeRef.current);
     writeStopwatch(stopwatchRef.current);
+    writeSubjectStopwatches(subjectStopwatchesRef.current);
     const clocks = runtimeRef.current;
     const sw = stopwatchRef.current;
-    if (sw.running || Object.values(clocks).some((r) => r.running)) {
+    const anySubjectSw = Object.values(subjectStopwatchesRef.current).some(
+      (s) => s.running,
+    );
+    if (
+      sw.running ||
+      anySubjectSw ||
+      Object.values(clocks).some((r) => r.running)
+    ) {
       writeHeartbeat();
     }
   }, []);
@@ -224,6 +271,32 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
     }
     setRuntime(recovered.runtime);
     setStopwatch(recovered.stopwatch);
+
+    let subjectSw = readSubjectStopwatches();
+    if (heartbeatIsStale(readHeartbeat())) {
+      const beat = readHeartbeat();
+      let changed = false;
+      const next: Record<string, StopwatchState> = {};
+      for (const [id, s] of Object.entries(subjectSw)) {
+        if (!s.running || !s.segmentStartedAt) {
+          next[id] = s;
+          continue;
+        }
+        changed = true;
+        const delta = Math.max(0, beat - s.segmentStartedAt);
+        next[id] = {
+          running: false,
+          segmentStartedAt: null,
+          accumulatedMs: Math.max(0, s.accumulatedMs + delta),
+        };
+      }
+      if (changed) {
+        subjectSw = next;
+        writeSubjectStopwatches(next);
+      }
+    }
+    setSubjectStopwatches(subjectSw);
+
     const storedMode = readJson(MODE_KEY);
     if (storedMode === "timers" || storedMode === "stopwatch") {
       setModeState(storedMode);
@@ -393,19 +466,55 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
     });
   }, [subjects, ready, appReady]);
 
+  // Alinha cronômetros Livre: só matérias is_free; remove órfãos parados.
+  useEffect(() => {
+    if (!ready || !appReady) return;
+
+    setSubjectStopwatches((prev) => {
+      const freeIds = new Set(
+        subjects.filter((s) => s.is_free).map((s) => s.id),
+      );
+      let changed = false;
+      const next: Record<string, StopwatchState> = {};
+      for (const [id, s] of Object.entries(prev)) {
+        if (freeIds.has(id)) {
+          next[id] = s;
+          continue;
+        }
+        if (s.running) {
+          // Mantém rodando até pause (matéria acabou de virar “com tempo”).
+          next[id] = s;
+        } else {
+          changed = true;
+        }
+      }
+      if (!changed && Object.keys(next).length === Object.keys(prev).length) {
+        return prev;
+      }
+      writeSubjectStopwatches(next);
+      subjectStopwatchesRef.current = next;
+      return next;
+    });
+  }, [subjects, ready, appReady]);
+
+  const anySubjectStopwatchRunning = useMemo(
+    () => Object.values(subjectStopwatches).some((s) => s.running),
+    [subjectStopwatches],
+  );
   const anyTimerRunning = useMemo(
     () => Object.values(runtime).some((r) => r.running),
     [runtime],
   );
-  const anyRunning = anyTimerRunning || stopwatch.running;
+  const anyRunning =
+    anyTimerRunning || stopwatch.running || anySubjectStopwatchRunning;
 
-  // Conta foco só com matéria em play — Sessão/Livre não entram em Foco hoje nem estatísticas.
+  // Conta foco só com matéria em play (countdown ou Livre) — Sessão/sidebar não entram.
   const trackingFocus = useMemo(
     () =>
       Object.entries(runtime).some(
         ([id, r]) => isSubjectTimerKey(id) && r.running,
-      ),
-    [runtime],
+      ) || anySubjectStopwatchRunning,
+    [runtime, anySubjectStopwatchRunning],
   );
   const focusLastRef = useRef<number | null>(null);
 
@@ -849,8 +958,90 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
     (subjectId: string) => {
       const key = subjectTimerKey(subjectId);
       const sub = subjects.find((s) => s.id === subjectId);
-      if (!sub || sub.is_free) return;
+      if (!sub) return;
+
+      // Matéria Livre: cronômetro que sobe (sem Concluída).
+      if (sub.is_free) {
+        setSubjectStopwatches((prev) => {
+          const current = prev[subjectId] ?? DEFAULT_STOPWATCH;
+          const willRun = !current.running;
+          showFlash(key, willRun ? "play" : "pause");
+          const next: Record<string, StopwatchState> = { ...prev };
+
+          if (willRun) {
+            for (const [id, s] of Object.entries(prev)) {
+              if (id === subjectId || !s.running) continue;
+              next[id] = pauseStopwatchState(s);
+            }
+            next[subjectId] = {
+              running: true,
+              segmentStartedAt: Date.now(),
+              accumulatedMs: current.accumulatedMs,
+            };
+          } else {
+            next[subjectId] = pauseStopwatchState(current);
+          }
+
+          subjectStopwatchesRef.current = next;
+          writeSubjectStopwatches(next);
+          if (willRun) writeHeartbeat();
+          return next;
+        });
+
+        // Um de cada vez: pausa countdowns de outras matérias.
+        setRuntime((prev) => {
+          let changed = false;
+          const next = { ...prev };
+          for (const [id, r] of Object.entries(prev)) {
+            if (!isSubjectTimerKey(id) || !r.running) continue;
+            const otherId = subjectIdFromKey(id);
+            const other = subjects.find((s) => s.id === otherId);
+            const otherMin = Math.max(1, other?.study_minutes ?? 25);
+            const otherLeft = liveSeconds(r, otherMin);
+            next[id] = {
+              secondsLeft: otherLeft,
+              running: false,
+              endsAt: null,
+              startedAt: r.startedAt,
+            };
+            changed = true;
+          }
+          if (!changed) return prev;
+          linkedPausedSubjectsRef.current = [];
+          runtimeRef.current = next;
+          writeStored(next);
+          return next;
+        });
+        return;
+      }
+
       const minutes = Math.max(1, sub.study_minutes ?? 25);
+      const currentRuntime =
+        runtimeRef.current[key] ??
+        ({
+          secondsLeft: minutes * 60,
+          running: false,
+          endsAt: null,
+          startedAt: null,
+        } satisfies TimerRuntime);
+      const willStart = !currentRuntime.running;
+
+      if (willStart) {
+        setSubjectStopwatches((prev) => {
+          let changed = false;
+          const next: Record<string, StopwatchState> = { ...prev };
+          for (const [id, s] of Object.entries(prev)) {
+            if (!s.running) continue;
+            next[id] = pauseStopwatchState(s);
+            changed = true;
+          }
+          if (!changed) return prev;
+          subjectStopwatchesRef.current = next;
+          writeSubjectStopwatches(next);
+          return next;
+        });
+      }
+
       setRuntime((prev) => {
         const current =
           prev[key] ??
@@ -946,7 +1137,20 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
     (subjectId: string) => {
       const key = subjectTimerKey(subjectId);
       const sub = subjects.find((s) => s.id === subjectId);
-      if (!sub || sub.is_free) return;
+      if (!sub) return;
+
+      if (sub.is_free) {
+        setSubjectStopwatches((prev) => {
+          if (!prev[subjectId]) return prev;
+          const next = { ...prev };
+          delete next[subjectId];
+          subjectStopwatchesRef.current = next;
+          writeSubjectStopwatches(next);
+          return next;
+        });
+        return;
+      }
+
       const minutes = Math.max(1, sub.study_minutes ?? 25);
       doneRef.current[key] = false;
       linkedPausedSubjectsRef.current =
@@ -972,10 +1176,16 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
   const secondsForSubject = useCallback(
     (subjectId: string) => {
       const sub = subjects.find((s) => s.id === subjectId);
+      if (sub?.is_free) {
+        return Math.floor(
+          liveStopwatchMs(subjectStopwatches[subjectId] ?? DEFAULT_STOPWATCH) /
+            1000,
+        );
+      }
       const minutes = Math.max(1, sub?.study_minutes ?? 25);
       return liveSeconds(runtime[subjectTimerKey(subjectId)], minutes);
     },
-    [runtime, subjects],
+    [runtime, subjects, subjectStopwatches],
   );
 
   const stopwatchSeconds = Math.floor(liveStopwatchMs(stopwatch) / 1000);
@@ -1028,6 +1238,7 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
       toggleSubjectTimer,
       resetSubjectTimer,
       secondsForSubject,
+      subjectStopwatches,
       stopwatch,
       stopwatchSeconds,
       toggleStopwatch,
@@ -1044,6 +1255,7 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
       toggleSubjectTimer,
       resetSubjectTimer,
       secondsForSubject,
+      subjectStopwatches,
       stopwatch,
       stopwatchSeconds,
       toggleStopwatch,

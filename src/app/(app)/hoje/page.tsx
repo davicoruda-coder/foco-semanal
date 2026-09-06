@@ -241,14 +241,13 @@ export default function HojePage() {
                       </span>
                     )}
                   </div>
-                  {!free && (
-                    <SubjectTimerControls
-                      subjectId={s.id}
-                      studyMinutes={s.study_minutes ?? 25}
-                      name={s.name}
-                      compact
-                    />
-                  )}
+                  <SubjectTimerControls
+                    subjectId={s.id}
+                    studyMinutes={s.study_minutes ?? 25}
+                    name={s.name}
+                    compact
+                    isFree={free}
+                  />
                   <AutoGrowTextarea
                     className="w-full rounded-[var(--radius-tag)] border border-[var(--line)] bg-[var(--surface)]/70 px-2.5 py-2 text-[15px] text-[color-mix(in_srgb,var(--ink)_84%,transparent)] focus:border-[var(--signal)] focus:text-[var(--ink)]"
                     value={s.notes}
@@ -313,17 +312,12 @@ export default function HojePage() {
                         {s.name}
                       </td>
                       <td className={`py-3 pl-2 pr-2 align-middle ${rowBorder}`}>
-                        {free ? (
-                          <span className="text-sm text-[color-mix(in_srgb,var(--ink)_40%,transparent)]">
-                            —
-                          </span>
-                        ) : (
-                          <SubjectTimerControls
-                            subjectId={s.id}
-                            studyMinutes={s.study_minutes ?? 25}
-                            name={s.name}
-                          />
-                        )}
+                        <SubjectTimerControls
+                          subjectId={s.id}
+                          studyMinutes={s.study_minutes ?? 25}
+                          name={s.name}
+                          isFree={free}
+                        />
                       </td>
                       <td className={`py-3 pl-2 pr-2 align-middle ${rowBorder}`}>
                         {free ? (

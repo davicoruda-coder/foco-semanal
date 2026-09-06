@@ -15,6 +15,8 @@ type Props = {
   /** Nome só para aria-label */
   name?: string;
   compact?: boolean;
+  /** Matéria Livre: cronômetro que sobe (sem meta). */
+  isFree?: boolean;
 };
 
 export function SubjectTimerControls({
@@ -22,6 +24,7 @@ export function SubjectTimerControls({
   studyMinutes,
   name = "matéria",
   compact,
+  isFree = false,
 }: Props) {
   const {
     runtime,
@@ -30,16 +33,30 @@ export function SubjectTimerControls({
     toggleSubjectTimer,
     resetSubjectTimer,
     secondsForSubject,
+    subjectStopwatches,
   } = useTimerRuntime();
 
   const key = subjectTimerKey(subjectId);
-  const r = runtime[key];
   const seconds = secondsForSubject(subjectId);
-  const total = Math.max(1, studyMinutes) * 60;
-  const running = Boolean(r?.running);
-  const paused =
-    !running && seconds > 0 && seconds < total && Boolean(r?.startedAt);
-  /** Cronômetro só com play ou pause — some no idle e no 00:00 (Concluída). */
+
+  const running = isFree
+    ? Boolean(subjectStopwatches[subjectId]?.running)
+    : Boolean(runtime[key]?.running);
+
+  const paused = isFree
+    ? !running && seconds > 0
+    : (() => {
+        const r = runtime[key];
+        const total = Math.max(1, studyMinutes) * 60;
+        return (
+          !running &&
+          seconds > 0 &&
+          seconds < total &&
+          Boolean(r?.startedAt)
+        );
+      })();
+
+  /** Cronômetro só com play ou pause — some no idle (e no 00:00 das com tempo). */
   const showClock = running || paused;
   /** Reset só no pause, para poder zerar e recomeçar. */
   const showReset = paused;
