@@ -41,7 +41,13 @@ export default function HojePage() {
     () =>
       [...data.subjects]
         .filter((s) => s.active && subjectShowsOnDay(s, day))
-        .sort((a, b) => a.cycle_order - b.cycle_order),
+        .sort((a, b) => {
+          // Livre no topo; depois o ciclo (Próxima/Concluída) por ordem.
+          const freeA = Number(Boolean(a.is_free));
+          const freeB = Number(Boolean(b.is_free));
+          if (freeA !== freeB) return freeB - freeA;
+          return a.cycle_order - b.cycle_order;
+        }),
     [data.subjects, day],
   );
 
