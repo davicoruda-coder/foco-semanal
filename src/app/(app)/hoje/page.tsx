@@ -236,7 +236,7 @@ export default function HojePage() {
                       </span>
                     )}
                     {free && (
-                      <span className="shrink-0 rounded-full px-2.5 py-1.5 text-xs font-medium text-[color-mix(in_srgb,var(--ink)_50%,transparent)] ring-1 ring-[var(--line)]">
+                      <span className="shrink-0 rounded-full bg-[var(--signal-soft)] px-2.5 py-1.5 text-xs font-medium text-[var(--signal)] ring-1 ring-[color-mix(in_srgb,var(--signal)_35%,transparent)]">
                         Livre
                       </span>
                     )}
@@ -327,7 +327,7 @@ export default function HojePage() {
                       </td>
                       <td className={`py-3 pl-2 pr-2 align-middle ${rowBorder}`}>
                         {free ? (
-                          <span className="inline-flex rounded-full px-2.5 py-1.5 text-xs font-medium text-[color-mix(in_srgb,var(--ink)_50%,transparent)] ring-1 ring-[var(--line)]">
+                          <span className="inline-flex rounded-full bg-[var(--signal-soft)] px-2.5 py-1.5 text-xs font-medium text-[var(--signal)] ring-1 ring-[color-mix(in_srgb,var(--signal)_35%,transparent)]">
                             Livre
                           </span>
                         ) : (
