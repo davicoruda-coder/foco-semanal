@@ -103,6 +103,11 @@ export function statusRowClass(status: SubjectStatus): string {
   }
 }
 
+/** Fundo da linha/card de matéria Livre (fora do ciclo). */
+export function freeRowClass(): string {
+  return "bg-[var(--row-free)]";
+}
+
 /** Monday=0 ... Sunday=6 (planilha style) */
 export function todayIndex(): number {
   const js = new Date().getDay(); // 0 Sun

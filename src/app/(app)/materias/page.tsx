@@ -6,7 +6,7 @@ import { useApp } from "@/components/AppProvider";
 import { BackToHoje } from "@/components/BackToHoje";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { DAYS, STATUS_LABEL, type Subject, type SubjectStatus } from "@/lib/types";
-import { normalizeStudyDays, statusClass, statusRowClass } from "@/lib/utils";
+import { freeRowClass, normalizeStudyDays, statusClass, statusRowClass } from "@/lib/utils";
 
 type DraftFreq = {
   mode: "all" | "days";
@@ -282,7 +282,7 @@ export default function MateriasPage() {
           return (
             <li
               key={s.id}
-              className={`surface p-4 ${free ? "" : statusRowClass(s.status)}`}
+              className={`surface p-4 ${free ? freeRowClass() : statusRowClass(s.status)}`}
             >
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <input

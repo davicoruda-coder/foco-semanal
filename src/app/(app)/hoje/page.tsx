@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import { useApp } from "@/components/AppProvider";
 import { DAYS, STATUS_LABEL } from "@/lib/types";
-import { blockStyle, statusClass, statusRowClass, subjectShowsOnDay, todayIndex } from "@/lib/utils";
+import { blockStyle, freeRowClass, statusClass, statusRowClass, subjectShowsOnDay, todayIndex } from "@/lib/utils";
 import { ReminderWatcher } from "@/components/ReminderWatcher";
 import { ReminderBoard } from "@/components/ReminderBoard";
 import { SessionClock } from "@/components/SessionClock";
@@ -228,7 +228,7 @@ export default function HojePage() {
                 return (
                 <div
                   key={s.id}
-                  className={`space-y-2.5 px-4 py-3.5 ${free ? "" : statusRowClass(s.status)}`}
+                  className={`space-y-2.5 px-4 py-3.5 ${free ? freeRowClass() : statusRowClass(s.status)}`}
                 >
                   <div className="flex flex-wrap items-start justify-between gap-2">
                     <p className="min-w-0 flex-1 text-base font-medium leading-snug">
@@ -310,7 +310,7 @@ export default function HojePage() {
                     return (
                     <tr
                       key={s.id}
-                      className={`transition-colors ${free ? "" : statusRowClass(s.status)}`}
+                      className={`transition-colors ${free ? freeRowClass() : statusRowClass(s.status)}`}
                     >
                       <td
                         className={`break-words px-5 py-3 align-middle text-base font-medium leading-snug ${rowBorder}`}
