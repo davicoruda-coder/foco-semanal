@@ -1,6 +1,7 @@
 "use client";
 
 import { Pause, Play, RotateCcw } from "lucide-react";
+import { useStudyFlow } from "@/components/StudyFlowProvider";
 import { useTimerRuntime } from "@/components/TimerRuntimeProvider";
 
 function formatTime(totalSeconds: number) {
@@ -35,9 +36,11 @@ export function SubjectTimerControls({
     secondsForSubject,
     subjectStopwatches,
   } = useTimerRuntime();
+  const { allowSubjectPlay, sessionActive } = useStudyFlow();
 
   const key = subjectTimerKey(subjectId);
   const seconds = secondsForSubject(subjectId);
+  const playAllowed = isFree ? !sessionActive : allowSubjectPlay(subjectId);
 
   const running = isFree
     ? Boolean(subjectStopwatches[subjectId]?.running)
@@ -59,7 +62,7 @@ export function SubjectTimerControls({
   /** Cronômetro só com play ou pause — some no idle (e no 00:00 das com tempo). */
   const showClock = running || paused;
   /** Reset só no pause, para poder zerar e recomeçar. */
-  const showReset = paused;
+  const showReset = paused && playAllowed;
   const flashHere = flash?.id === key ? flash.kind : null;
 
   return (
@@ -70,23 +73,39 @@ export function SubjectTimerControls({
     >
       <button
         type="button"
-        onClick={() => toggleSubjectTimer(subjectId)}
-        title={paused ? "Continuar" : running ? "Pausar" : "Iniciar"}
+        disabled={!playAllowed}
+        onClick={() => {
+          if (!playAllowed) return;
+          toggleSubjectTimer(subjectId);
+        }}
+        title={
+          !playAllowed
+            ? "Pause a sessão ou use só a matéria atual"
+            : paused
+              ? "Continuar"
+              : running
+                ? "Pausar"
+                : "Iniciar"
+        }
         aria-label={
-          paused
-            ? `Continuar ${name}`
-            : running
-              ? `Pausar ${name}`
-              : `Iniciar ${name}`
+          !playAllowed
+            ? `Play bloqueado durante a sessão (${name})`
+            : paused
+              ? `Continuar ${name}`
+              : running
+                ? `Pausar ${name}`
+                : `Iniciar ${name}`
         }
         className={`relative grid place-items-center rounded-full transition ${
           compact ? "size-8" : "size-9"
         } ${
-          running
-            ? "bg-[var(--signal)] text-white shadow-sm"
-            : paused
-              ? "bg-[color-mix(in_srgb,var(--signal)_28%,transparent)] text-[var(--signal)] ring-1 ring-[color-mix(in_srgb,var(--signal)_40%,transparent)]"
-              : "bg-[color-mix(in_srgb,var(--signal)_22%,transparent)] text-[var(--signal)] ring-1 ring-[color-mix(in_srgb,var(--signal)_36%,transparent)] hover:bg-[color-mix(in_srgb,var(--signal)_32%,transparent)]"
+          !playAllowed
+            ? "cursor-not-allowed bg-[var(--mist)] text-[color-mix(in_srgb,var(--ink)_35%,transparent)]"
+            : running
+              ? "bg-[var(--signal)] text-white shadow-sm"
+              : paused
+                ? "bg-[color-mix(in_srgb,var(--signal)_28%,transparent)] text-[var(--signal)] ring-1 ring-[color-mix(in_srgb,var(--signal)_40%,transparent)]"
+                : "bg-[color-mix(in_srgb,var(--signal)_22%,transparent)] text-[var(--signal)] ring-1 ring-[color-mix(in_srgb,var(--signal)_36%,transparent)] hover:bg-[color-mix(in_srgb,var(--signal)_32%,transparent)]"
         }`}
       >
         {running ? (
@@ -99,7 +118,7 @@ export function SubjectTimerControls({
             className="translate-x-px"
           />
         )}
-        {flashHere && (
+        {flashHere && playAllowed && (
           <span
             key={flash?.key}
             className="timer-flash absolute inset-0 grid place-items-center rounded-full bg-[var(--surface)]/80"

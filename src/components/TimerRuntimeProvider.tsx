@@ -21,6 +21,7 @@ import {
 } from "@/lib/clock-interrupt";
 import { addFocusSeconds, commitFocusDisplaySnapshot } from "@/lib/focus-log";
 import { syncFocusLogWithCloud } from "@/lib/supabase/focus-sync";
+import { emitSubjectComplete } from "@/lib/study-flow-events";
 import { subjectShowsOnDay, todayIndex } from "@/lib/utils";
 
 export type TimerRuntime = {
@@ -609,7 +610,9 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
           linkedPausedSubjectsRef.current.filter((id) => id !== item.key);
         playAlarmTone();
         notify("Foco Semanal", `${item.name} concluída`);
-        setSubjectStatusRef.current(subjectIdFromKey(item.key), "ok");
+        const sid = subjectIdFromKey(item.key);
+        setSubjectStatusRef.current(sid, "ok");
+        emitSubjectComplete(sid);
       }
     }, 1000);
 
@@ -657,7 +660,9 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
           linkedPausedSubjectsRef.current.filter((id) => id !== item.key);
         playAlarmTone();
         notify("Foco Semanal", `${item.name} concluída`);
-        setSubjectStatusRef.current(subjectIdFromKey(item.key), "ok");
+        const sid = subjectIdFromKey(item.key);
+        setSubjectStatusRef.current(sid, "ok");
+        emitSubjectComplete(sid);
       }
     }
 
@@ -783,6 +788,7 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
       playAlarmTone();
       notify("Foco Semanal", `${s.name} concluída`);
       setSubjectStatus(s.id, "ok");
+      emitSubjectComplete(s.id);
     }
   }, [
     runtime,

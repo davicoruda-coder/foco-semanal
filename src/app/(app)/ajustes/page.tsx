@@ -6,10 +6,15 @@ import { useApp } from "@/components/AppProvider";
 import { AccessManagement } from "@/components/AccessManagement";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { InstallPwaCard } from "@/components/InstallPwaCard";
+import { useStudyFlow } from "@/components/StudyFlowProvider";
 import { ensureNotificationPermission } from "@/lib/audio";
 import { backupFileError } from "@/lib/backup";
 import { promptDestructivePassword } from "@/lib/destructive-guard";
 import { MIN_PASSWORD_LENGTH, isValidNewPassword, newPasswordHint } from "@/lib/password";
+import {
+  clampInt,
+  type BlockRangeSettings,
+} from "@/lib/session-block";
 import type { ThemePref } from "@/lib/types";
 
 const OPTIONS: { value: ThemePref; label: string; icon: typeof Sun }[] = [
@@ -200,6 +205,8 @@ export default function AjustesPage() {
           </p>
         )}
       </section>
+
+      <SessionBlockSettings />
 
       <section className="surface mt-4 p-4 md:p-5">
         <h2 className="font-display text-base font-semibold tracking-tight md:text-lg">
@@ -423,5 +430,106 @@ export default function AjustesPage() {
         </div>
       </section>
     </div>
+  );
+}
+
+function SessionBlockSettings() {
+  const { settings, saveSettings, refreshSettings } = useStudyFlow();
+  const [draft, setDraft] = useState<BlockRangeSettings>(settings);
+  const [savedMsg, setSavedMsg] = useState<string | null>(null);
+
+  useEffect(() => {
+    refreshSettings();
+  }, [refreshSettings]);
+
+  useEffect(() => {
+    setDraft(settings);
+  }, [settings]);
+
+  function patch<K extends keyof BlockRangeSettings>(
+    key: K,
+    value: number,
+  ) {
+    setDraft((prev) => ({ ...prev, [key]: value }));
+    setSavedMsg(null);
+  }
+
+  function onSave() {
+    let min = clampInt(draft.minMinutes, 10, 120);
+    let max = clampInt(draft.maxMinutes, min, 180);
+    const target = clampInt(draft.targetMinutes, min, max);
+    const rest = clampInt(draft.restMinutes, 1, 60);
+    if (min > max) {
+      min = max;
+    }
+    saveSettings({
+      minMinutes: min,
+      maxMinutes: max,
+      targetMinutes: target,
+      restMinutes: rest,
+    });
+    setSavedMsg("Tempos da sessão salvos.");
+  }
+
+  return (
+    <section className="surface mt-4 p-4 md:p-5">
+      <h2 className="font-display text-base font-semibold tracking-tight md:text-lg">
+        Sessão de estudos
+      </h2>
+      <p className="mt-1 text-xs opacity-55">
+        Meta e faixa usadas para montar o bloco do botão Iniciar sessão. O
+        descanso não entra nas estatísticas.
+      </p>
+      <div className="mt-3 grid gap-3 sm:grid-cols-2">
+        <label className="block text-sm">
+          <span className="opacity-70">Meta (min)</span>
+          <input
+            type="number"
+            min={10}
+            max={180}
+            className="input mt-1 w-full"
+            value={draft.targetMinutes}
+            onChange={(e) => patch("targetMinutes", Number(e.target.value))}
+          />
+        </label>
+        <label className="block text-sm">
+          <span className="opacity-70">Descanso (min)</span>
+          <input
+            type="number"
+            min={1}
+            max={60}
+            className="input mt-1 w-full"
+            value={draft.restMinutes}
+            onChange={(e) => patch("restMinutes", Number(e.target.value))}
+          />
+        </label>
+        <label className="block text-sm">
+          <span className="opacity-70">Mínimo do bloco (min)</span>
+          <input
+            type="number"
+            min={10}
+            max={120}
+            className="input mt-1 w-full"
+            value={draft.minMinutes}
+            onChange={(e) => patch("minMinutes", Number(e.target.value))}
+          />
+        </label>
+        <label className="block text-sm">
+          <span className="opacity-70">Máximo do bloco (min)</span>
+          <input
+            type="number"
+            min={10}
+            max={180}
+            className="input mt-1 w-full"
+            value={draft.maxMinutes}
+            onChange={(e) => patch("maxMinutes", Number(e.target.value))}
+          />
+        </label>
+      </div>
+      <button type="button" className="btn btn-primary mt-3" onClick={onSave}>
+        Salvar
+      </button>
+      {savedMsg && <p className="mt-2 text-sm opacity-70">{savedMsg}</p>}
+    </section>
   );
 }

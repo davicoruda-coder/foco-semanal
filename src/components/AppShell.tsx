@@ -45,7 +45,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="relative z-0 min-h-screen pb-[calc(4.25rem+env(safe-area-inset-bottom))] lg:pb-0">
+    <div className="relative z-0 min-h-screen pb-[calc(4.25rem+env(safe-area-inset-bottom)+4.5rem)] lg:pb-10">
       {cloudSync.message ? (
         <div
           className={`px-4 py-2 text-center text-xs font-medium ${

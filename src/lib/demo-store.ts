@@ -18,7 +18,7 @@ export function createDefaultData(): AppData {
     session_settings: {
       focus_minutes: 40,
       break_short_minutes: 5,
-      break_long_minutes: 10,
+      break_long_minutes: 20,
     },
     timers: [
       {
@@ -111,7 +111,7 @@ export function loadDemoData(): AppData {
       const s = data.session_settings ?? {
         focus_minutes: 40,
         break_short_minutes: 5,
-        break_long_minutes: 10,
+        break_long_minutes: 20,
       };
       data.timers = [
         {
