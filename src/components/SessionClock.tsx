@@ -475,6 +475,7 @@ export function SessionClock({
             Cronômetro
           </p>
         ) : (
+          <>
           <div className="flex items-center rounded-full bg-[color-mix(in_srgb,var(--ink)_7%,transparent)] p-0.5">
             {(
               [
@@ -512,15 +513,16 @@ export function SessionClock({
               );
             })}
           </div>
+          <Link
+            href="/ajustes"
+            title="Ajustes"
+            aria-label="Ajustes"
+            className="shrink-0 rounded-full p-1.5 text-[color-mix(in_srgb,var(--ink)_45%,transparent)] transition hover:bg-[var(--mist)] hover:text-[var(--signal)]"
+          >
+            <SlidersHorizontal size={16} strokeWidth={1.75} />
+          </Link>
+          </>
         )}
-        <Link
-          href="/temporizadores?from=hoje"
-          title="Gerenciar temporizadores"
-          aria-label="Gerenciar temporizadores"
-          className="shrink-0 rounded-full p-1.5 text-[color-mix(in_srgb,var(--ink)_45%,transparent)] transition hover:bg-[var(--mist)] hover:text-[var(--signal)]"
-        >
-          <SlidersHorizontal size={16} strokeWidth={1.75} />
-        </Link>
       </div>
 
       <div key={livreOnly ? "livre" : mode} className="fade-in">
@@ -546,8 +548,8 @@ export function SessionClock({
       ) : sessionTimers.length === 0 ? (
         <div className="px-5 py-8 text-center text-sm opacity-60">
           Nenhum Bloco de sessão.{" "}
-          <Link href="/temporizadores?from=hoje" className="text-[var(--signal)]">
-            Adicionar
+          <Link href="/ajustes" className="text-[var(--signal)]">
+            Ver ajustes
           </Link>
         </div>
       ) : stack ? (
