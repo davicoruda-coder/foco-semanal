@@ -36,7 +36,7 @@ export function FocusBarChart({
       {!hasData && (
         <p className="mb-3 text-xs opacity-50">
           Ainda sem tempo registrado neste período. Inicie uma sessão ou o
-          cronômetro Livre para preencher o gráfico.
+          cronômetro para preencher o gráfico.
         </p>
       )}
       <div
