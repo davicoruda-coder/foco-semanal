@@ -105,7 +105,7 @@ export function SubjectTimerControls({
               ? "bg-[var(--signal)] text-white shadow-sm"
               : paused
                 ? "bg-[color-mix(in_srgb,var(--signal)_22%,transparent)] text-[var(--signal)] ring-1 ring-[color-mix(in_srgb,var(--signal)_30%,transparent)]"
-                : "bg-[var(--mist)] text-[color-mix(in_srgb,var(--ink)_50%,transparent)] ring-1 ring-[color-mix(in_srgb,var(--ink)_12%,transparent)] hover:bg-[color-mix(in_srgb,var(--ink)_10%,var(--mist))] hover:text-[var(--ink)]"
+                : "bg-[color-mix(in_srgb,var(--ink)_8%,var(--mist))] text-[color-mix(in_srgb,var(--ink)_62%,transparent)] ring-1 ring-[color-mix(in_srgb,var(--ink)_16%,transparent)] hover:bg-[color-mix(in_srgb,var(--ink)_12%,var(--mist))] hover:text-[var(--ink)]"
         }`}
       >
         {running ? (

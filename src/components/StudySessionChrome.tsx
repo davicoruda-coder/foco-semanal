@@ -24,26 +24,26 @@ export function StudySessionBar() {
 
   if (flow.phase === "idle") {
     return (
-      <div className="border-b border-[var(--line)] px-4 py-3 md:px-5">
+      <div className="border-b border-[var(--line)] px-4 py-2.5 md:px-5">
         <button
           type="button"
           disabled={!flow.canStart}
           onClick={flow.startSession}
-          className="flex w-full items-center justify-between gap-3 rounded-[var(--radius)] bg-[var(--signal)] px-3.5 py-3 text-left text-white transition enabled:hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-45"
+          className="flex w-full items-center justify-between gap-2.5 rounded-[var(--radius-tag)] bg-[var(--signal)] px-3 py-2 text-left text-white transition enabled:hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-45"
         >
           <span className="min-w-0">
-            <span className="block text-sm font-semibold tracking-tight">
+            <span className="block text-[13px] font-semibold tracking-tight">
               Iniciar sessão
             </span>
-            <span className="mt-0.5 block truncate text-xs text-white/85">
+            <span className="mt-0.5 block truncate text-[11px] text-white/75">
               {flow.canStart
                 ? flow.previewSummary
                 : "Nenhuma matéria com tempo na fila"}
             </span>
           </span>
-          <span className="grid size-9 shrink-0 place-items-center rounded-full bg-white/20">
+          <span className="grid size-8 shrink-0 place-items-center rounded-full bg-white/20">
             <Play
-              size={16}
+              size={14}
               fill="currentColor"
               strokeWidth={0}
               className="translate-x-px"
@@ -55,24 +55,24 @@ export function StudySessionBar() {
   }
 
   return (
-    <div className="border-b border-[var(--line)] px-4 py-3 md:px-5">
-      <div className="flex items-center gap-2 rounded-[var(--radius)] border border-[color-mix(in_srgb,var(--signal)_28%,var(--line))] bg-[var(--signal-soft)] px-2.5 py-2">
+    <div className="border-b border-[var(--line)] px-4 py-2.5 md:px-5">
+      <div className="flex items-center gap-2 rounded-[var(--radius-tag)] border border-[color-mix(in_srgb,var(--signal)_28%,var(--line))] bg-[var(--signal-soft)] px-2 py-1.5">
         <button
           type="button"
           onClick={
             flow.phase === "running" ? flow.pauseSession : flow.resumeSession
           }
-          className="grid size-9 shrink-0 place-items-center rounded-full bg-[var(--signal)] text-white"
+          className="grid size-8 shrink-0 place-items-center rounded-full bg-[var(--signal)] text-white"
           title={flow.phase === "running" ? "Pausar sessão" : "Retomar sessão"}
           aria-label={
             flow.phase === "running" ? "Pausar sessão" : "Retomar sessão"
           }
         >
           {flow.phase === "running" ? (
-            <Pause size={15} fill="currentColor" strokeWidth={0} />
+            <Pause size={14} fill="currentColor" strokeWidth={0} />
           ) : (
             <Play
-              size={15}
+              size={14}
               fill="currentColor"
               strokeWidth={0}
               className="translate-x-px"
@@ -80,21 +80,21 @@ export function StudySessionBar() {
           )}
         </button>
         <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-semibold text-[var(--signal)]">
+          <p className="truncate text-[13px] font-semibold text-[var(--signal)]">
             {flow.phase === "paused" ? "Sessão pausada" : "Em sessão"}
           </p>
-          <p className="truncate text-xs text-[color-mix(in_srgb,var(--ink)_55%,transparent)]">
+          <p className="truncate text-[11px] text-[color-mix(in_srgb,var(--ink)_55%,transparent)]">
             {flow.blockSummary}
           </p>
         </div>
         <button
           type="button"
           onClick={flow.chooseFinish}
-          className="rounded-full p-2 text-[color-mix(in_srgb,var(--ink)_45%,transparent)] transition hover:bg-[var(--surface)] hover:text-[var(--ink)]"
+          className="rounded-full p-1.5 text-[color-mix(in_srgb,var(--ink)_45%,transparent)] transition hover:bg-[var(--surface)] hover:text-[var(--ink)]"
           title="Finalizar estudos"
           aria-label="Finalizar estudos"
         >
-          <X size={18} strokeWidth={2} />
+          <X size={16} strokeWidth={2} />
         </button>
       </div>
     </div>

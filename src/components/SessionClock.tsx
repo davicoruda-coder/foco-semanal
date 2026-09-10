@@ -526,12 +526,12 @@ export function SessionClock({
       <div key={livreOnly ? "livre" : mode} className="fade-in">
       {showStopwatch ? (
         <div
-          className={`flex justify-center ${stack ? "px-3 py-4" : "px-3 py-6"}`}
+          className={`flex justify-center ${livreOnly ? (stack ? "px-3 py-3" : "px-3 py-4") : stack ? "px-3 py-5" : "px-3 py-6"}`}
         >
           <MiniRing
             display={formatTime(stopwatchSeconds)}
-            size={livreOnly ? (stack ? 132 : 112) : stack ? 170 : 128}
-            stroke={stack ? 5 : 4.5}
+            size={livreOnly ? (stack ? 108 : 96) : stack ? 170 : 128}
+            stroke={livreOnly ? 4.5 : stack ? 6 : 4.5}
             progress={1}
             accent="var(--signal)"
             softRing
