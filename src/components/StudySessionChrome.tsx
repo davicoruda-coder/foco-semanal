@@ -165,9 +165,6 @@ export function StudySessionChrome() {
             <p className="mt-4 font-mono-num text-center text-4xl tracking-tight text-[var(--signal)]">
               {formatClock(flow.restSecondsLeft)}
             </p>
-            <p className="mt-2 text-center text-sm text-[color-mix(in_srgb,var(--ink)_60%,transparent)]">
-              Não conta nas estatísticas
-            </p>
             <button
               type="button"
               className="btn mt-6 w-full"
