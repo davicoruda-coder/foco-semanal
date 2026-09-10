@@ -393,8 +393,11 @@ function MiniRing({
 
 export function SessionClock({
   layout = "row",
+  variant = "full",
 }: {
   layout?: ClockLayout;
+  /** No Hoje: só cronômetro Livre (sessão fica no CTA do ciclo). */
+  variant?: "full" | "livre";
 }) {
   const { data } = useApp();
   const {
@@ -425,6 +428,8 @@ export function SessionClock({
   const size = stack ? 64 : 100;
   const swPaused = !stopwatch.running && stopwatch.accumulatedMs > 0;
   const anySessionRunning = sessionTimers.some((t) => runtime[t.id]?.running);
+  const livreOnly = variant === "livre";
+  const showStopwatch = livreOnly || mode === "stopwatch";
 
   function renderTimerRing(
     t: (typeof timers)[number],
@@ -465,43 +470,49 @@ export function SessionClock({
           stack ? "px-3 py-2" : "px-3 py-2.5 md:px-5"
         }`}
       >
-        <div className="flex items-center rounded-full bg-[color-mix(in_srgb,var(--ink)_7%,transparent)] p-0.5">
-          {(
-            [
-              ["timers", "Sessão"],
-              ["stopwatch", "Livre"],
-            ] as const
-          ).map(([value, label]) => {
-            const active = mode === value;
-            const runningHidden =
-              !active &&
-              ((value === "stopwatch" && stopwatch.running) ||
-                (value === "timers" && anySessionRunning));
-            return (
-              <button
-                key={value}
-                type="button"
-                onClick={() => setMode(value)}
-                className={`rounded-full px-2.5 py-1 text-xs font-medium transition sm:px-3 sm:py-1.5 ${
-                  active
-                    ? "bg-[var(--surface)] text-[var(--signal)] shadow-sm"
-                    : runningHidden
-                      ? "tab-running-hint"
-                      : "text-[color-mix(in_srgb,var(--ink)_55%,transparent)] hover:text-[var(--ink)]"
-                }`}
-                title={
-                  runningHidden
-                    ? value === "stopwatch"
-                      ? "Livre em andamento"
-                      : "Sessão em andamento"
-                    : undefined
-                }
-              >
-                {label}
-              </button>
-            );
-          })}
-        </div>
+        {livreOnly ? (
+          <p className="text-xs font-semibold uppercase tracking-wider text-[color-mix(in_srgb,var(--ink)_55%,transparent)]">
+            Cronômetro Livre
+          </p>
+        ) : (
+          <div className="flex items-center rounded-full bg-[color-mix(in_srgb,var(--ink)_7%,transparent)] p-0.5">
+            {(
+              [
+                ["timers", "Sessão"],
+                ["stopwatch", "Livre"],
+              ] as const
+            ).map(([value, label]) => {
+              const active = mode === value;
+              const runningHidden =
+                !active &&
+                ((value === "stopwatch" && stopwatch.running) ||
+                  (value === "timers" && anySessionRunning));
+              return (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => setMode(value)}
+                  className={`rounded-full px-2.5 py-1 text-xs font-medium transition sm:px-3 sm:py-1.5 ${
+                    active
+                      ? "bg-[var(--surface)] text-[var(--signal)] shadow-sm"
+                      : runningHidden
+                        ? "tab-running-hint"
+                        : "text-[color-mix(in_srgb,var(--ink)_55%,transparent)] hover:text-[var(--ink)]"
+                  }`}
+                  title={
+                    runningHidden
+                      ? value === "stopwatch"
+                        ? "Livre em andamento"
+                        : "Sessão em andamento"
+                      : undefined
+                  }
+                >
+                  {label}
+                </button>
+              );
+            })}
+          </div>
+        )}
         <Link
           href="/temporizadores?from=hoje"
           title="Gerenciar temporizadores"
@@ -512,15 +523,15 @@ export function SessionClock({
         </Link>
       </div>
 
-      <div key={mode} className="fade-in">
-      {mode === "stopwatch" ? (
+      <div key={livreOnly ? "livre" : mode} className="fade-in">
+      {showStopwatch ? (
         <div
-          className={`flex justify-center ${stack ? "px-3 py-5" : "px-3 py-6"}`}
+          className={`flex justify-center ${stack ? "px-3 py-4" : "px-3 py-6"}`}
         >
           <MiniRing
             display={formatTime(stopwatchSeconds)}
-            size={stack ? 170 : 128}
-            stroke={stack ? 6 : 4.5}
+            size={livreOnly ? (stack ? 132 : 112) : stack ? 170 : 128}
+            stroke={stack ? 5 : 4.5}
             progress={1}
             accent="var(--signal)"
             softRing

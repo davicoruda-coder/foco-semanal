@@ -1,7 +1,6 @@
 "use client";
 
 import { Pause, Play, X } from "lucide-react";
-import { usePathname } from "next/navigation";
 import { DialogFrame } from "@/components/DialogFrame";
 import { useStudyFlow } from "@/components/StudyFlowProvider";
 
@@ -11,99 +10,103 @@ function formatClock(totalSeconds: number) {
   return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
 }
 
-export function StudySessionChrome() {
-  const pathname = usePathname();
+/** CTA / status da sessão — fica dentro do card Ciclo de Estudos. */
+export function StudySessionBar() {
   const flow = useStudyFlow();
-  const onHoje = pathname === "/hoje" || pathname.startsWith("/hoje/");
 
-  const showBar =
-    onHoje &&
-    (flow.phase === "idle" ||
-      flow.phase === "running" ||
-      flow.phase === "paused");
+  if (
+    flow.phase !== "idle" &&
+    flow.phase !== "running" &&
+    flow.phase !== "paused"
+  ) {
+    return null;
+  }
+
+  if (flow.phase === "idle") {
+    return (
+      <div className="border-b border-[var(--line)] px-4 py-3 md:px-5">
+        <button
+          type="button"
+          disabled={!flow.canStart}
+          onClick={flow.startSession}
+          className="flex w-full items-center justify-between gap-3 rounded-[var(--radius)] bg-[var(--signal)] px-3.5 py-3 text-left text-white transition enabled:hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-45"
+        >
+          <span className="min-w-0">
+            <span className="block text-sm font-semibold tracking-tight">
+              Iniciar sessão
+            </span>
+            <span className="mt-0.5 block truncate text-xs text-white/85">
+              {flow.canStart
+                ? flow.previewSummary
+                : "Nenhuma matéria com tempo na fila"}
+            </span>
+          </span>
+          <span className="grid size-9 shrink-0 place-items-center rounded-full bg-white/20">
+            <Play
+              size={16}
+              fill="currentColor"
+              strokeWidth={0}
+              className="translate-x-px"
+            />
+          </span>
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="border-b border-[var(--line)] px-4 py-3 md:px-5">
+      <div className="flex items-center gap-2 rounded-[var(--radius)] border border-[color-mix(in_srgb,var(--signal)_28%,var(--line))] bg-[var(--signal-soft)] px-2.5 py-2">
+        <button
+          type="button"
+          onClick={
+            flow.phase === "running" ? flow.pauseSession : flow.resumeSession
+          }
+          className="grid size-9 shrink-0 place-items-center rounded-full bg-[var(--signal)] text-white"
+          title={flow.phase === "running" ? "Pausar sessão" : "Retomar sessão"}
+          aria-label={
+            flow.phase === "running" ? "Pausar sessão" : "Retomar sessão"
+          }
+        >
+          {flow.phase === "running" ? (
+            <Pause size={15} fill="currentColor" strokeWidth={0} />
+          ) : (
+            <Play
+              size={15}
+              fill="currentColor"
+              strokeWidth={0}
+              className="translate-x-px"
+            />
+          )}
+        </button>
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-semibold text-[var(--signal)]">
+            {flow.phase === "paused" ? "Sessão pausada" : "Em sessão"}
+          </p>
+          <p className="truncate text-xs text-[color-mix(in_srgb,var(--ink)_55%,transparent)]">
+            {flow.blockSummary}
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={flow.chooseFinish}
+          className="rounded-full p-2 text-[color-mix(in_srgb,var(--ink)_45%,transparent)] transition hover:bg-[var(--surface)] hover:text-[var(--ink)]"
+          title="Finalizar estudos"
+          aria-label="Finalizar estudos"
+        >
+          <X size={18} strokeWidth={2} />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/** Diálogos pós-bloco / descanso (globais). */
+export function StudySessionChrome() {
+  const flow = useStudyFlow();
 
   return (
     <>
-      {showBar && (
-        <div className="pointer-events-none fixed inset-x-0 bottom-[calc(4.25rem+env(safe-area-inset-bottom)+0.5rem)] z-40 px-3 lg:bottom-6 lg:left-auto lg:right-6 lg:w-[min(100%,22rem)] lg:px-0">
-          <div className="pointer-events-auto mx-auto max-w-lg lg:mx-0">
-            {flow.phase === "idle" ? (
-              <button
-                type="button"
-                disabled={!flow.canStart}
-                onClick={flow.startSession}
-                className="flex w-full items-center justify-between gap-3 rounded-2xl bg-[var(--signal)] px-4 py-3.5 text-left text-white shadow-[var(--shadow-md)] transition enabled:hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-45"
-              >
-                <span className="min-w-0">
-                  <span className="block text-sm font-semibold tracking-tight">
-                    Iniciar sessão
-                  </span>
-                  <span className="mt-0.5 block truncate text-xs text-white/85">
-                    {flow.canStart
-                      ? flow.previewSummary
-                      : "Nenhuma matéria com tempo na fila"}
-                  </span>
-                </span>
-                <span className="grid size-10 shrink-0 place-items-center rounded-full bg-white/20">
-                  <Play
-                    size={18}
-                    fill="currentColor"
-                    strokeWidth={0}
-                    className="translate-x-px"
-                  />
-                </span>
-              </button>
-            ) : (
-              <div className="flex items-center gap-2 rounded-2xl border border-[var(--line)] bg-[var(--surface)]/95 px-3 py-2.5 shadow-[var(--shadow-md)] backdrop-blur-xl">
-                <button
-                  type="button"
-                  onClick={
-                    flow.phase === "running"
-                      ? flow.pauseSession
-                      : flow.resumeSession
-                  }
-                  className="grid size-10 shrink-0 place-items-center rounded-full bg-[var(--signal)] text-white"
-                  title={
-                    flow.phase === "running" ? "Pausar sessão" : "Retomar sessão"
-                  }
-                  aria-label={
-                    flow.phase === "running" ? "Pausar sessão" : "Retomar sessão"
-                  }
-                >
-                  {flow.phase === "running" ? (
-                    <Pause size={16} fill="currentColor" strokeWidth={0} />
-                  ) : (
-                    <Play
-                      size={16}
-                      fill="currentColor"
-                      strokeWidth={0}
-                      className="translate-x-px"
-                    />
-                  )}
-                </button>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-semibold">
-                    {flow.phase === "paused" ? "Sessão pausada" : "Em sessão"}
-                  </p>
-                  <p className="truncate text-xs text-[color-mix(in_srgb,var(--ink)_55%,transparent)]">
-                    {flow.blockSummary}
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={flow.chooseFinish}
-                  className="rounded-full p-2 text-[color-mix(in_srgb,var(--ink)_45%,transparent)] transition hover:bg-[var(--mist)] hover:text-[var(--ink)]"
-                  title="Finalizar estudos"
-                  aria-label="Finalizar estudos"
-                >
-                  <X size={18} strokeWidth={2} />
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
       <DialogFrame
         open={flow.phase === "block_done"}
         onClose={flow.chooseFinish}

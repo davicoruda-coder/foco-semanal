@@ -18,6 +18,7 @@ import { FocusTodayCard } from "@/components/FocusTodayCard";
 import { MonthCalendarDialog } from "@/components/MonthCalendar";
 import { AutoGrowTextarea } from "@/components/AutoGrowTextarea";
 import { SubjectTimerControls } from "@/components/SubjectTimerControls";
+import { StudySessionBar } from "@/components/StudySessionChrome";
 
 /** Com o ciclo grande, a semana encolhe para "só hoje" e o ciclo sobe. */
 const COMPACT_WEEK_THRESHOLD = 6;
@@ -221,6 +222,8 @@ export default function HojePage() {
               </Link>
             </div>
 
+            <StudySessionBar />
+
             {/* Mobile: cards empilhados */}
             <div className="divide-y divide-[var(--line)] md:hidden">
               {subjects.map((s) => {
@@ -370,7 +373,7 @@ export default function HojePage() {
           </section>
 
           <div className="space-y-4 lg:hidden">
-            <SessionClock layout="stack" />
+            <SessionClock layout="stack" variant="livre" />
             <FocusTodayCard />
           </div>
         </div>
@@ -379,7 +382,7 @@ export default function HojePage() {
           <div className="surface p-3">
             <ReminderBoard compact />
           </div>
-          <SessionClock layout="stack" />
+          <SessionClock layout="stack" variant="livre" />
           <FocusTodayCard />
         </aside>
       </div>
