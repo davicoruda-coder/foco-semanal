@@ -52,6 +52,8 @@ type StudyFlowContextValue = {
   startSession: () => void;
   pauseSession: () => void;
   resumeSession: () => void;
+  /** Zera o bloco atual e recomeça do início. */
+  resetSession: () => void;
   chooseRest: () => void;
   chooseContinue: () => void;
   chooseFinish: () => void;
@@ -75,7 +77,7 @@ function todayQueue(subjects: Subject[]): Subject[] {
 }
 
 export function StudyFlowProvider({ children }: { children: ReactNode }) {
-  const { data, updateSettings } = useApp();
+  const { data, updateSettings, setSubjectStatus } = useApp();
   const {
     toggleSubjectTimer,
     resetSubjectTimer,
@@ -224,6 +226,45 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
     }
   }, [runtime, subjectTimerKey, toggleSubjectTimer]);
 
+  const resetSession = useCallback(() => {
+    if (phaseRef.current !== "running" && phaseRef.current !== "paused") return;
+    const subjects = blockRef.current;
+    if (subjects.length === 0) return;
+
+    const wasRunning = phaseRef.current === "running";
+    const currentId = subjects[indexRef.current]?.id;
+    if (currentId) {
+      const key = subjectTimerKey(currentId);
+      if (runtime[key]?.running) toggleSubjectTimer(currentId);
+    }
+
+    advancingRef.current = false;
+    for (const s of subjects) {
+      resetSubjectTimer(s.id);
+      const live = (data.subjects ?? []).find((x) => x.id === s.id);
+      if (live?.status === "ok") setSubjectStatus(s.id, "prox");
+    }
+
+    setBlock(subjects.map((s) => ({ ...s, status: "prox" as const })));
+    setCurrentIndex(0);
+    setRestEndsAt(null);
+
+    if (wasRunning) {
+      setPhase("running");
+      window.setTimeout(() => startSubjectAt(0, subjects), 80);
+    } else {
+      setPhase("paused");
+    }
+  }, [
+    data.subjects,
+    runtime,
+    subjectTimerKey,
+    toggleSubjectTimer,
+    resetSubjectTimer,
+    setSubjectStatus,
+    startSubjectAt,
+  ]);
+
   const chooseRest = useCallback(() => {
     playAlarmTone();
     const ends = Date.now() + settings.restMinutes * 60 * 1000;
@@ -357,6 +398,7 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
       startSession,
       pauseSession,
       resumeSession,
+      resetSession,
       chooseRest,
       chooseContinue,
       chooseFinish,
@@ -380,6 +422,7 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
       startSession,
       pauseSession,
       resumeSession,
+      resetSession,
       chooseRest,
       chooseContinue,
       chooseFinish,

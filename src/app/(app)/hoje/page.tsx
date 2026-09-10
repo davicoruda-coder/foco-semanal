@@ -18,6 +18,7 @@ import { FocusTodayCard } from "@/components/FocusTodayCard";
 import { MonthCalendarDialog } from "@/components/MonthCalendar";
 import { AutoGrowTextarea } from "@/components/AutoGrowTextarea";
 import { StudySessionBar } from "@/components/StudySessionChrome";
+import { SessionSubjectClock } from "@/components/SessionSubjectClock";
 
 /** Com o ciclo grande, a semana encolhe para "só hoje" e o ciclo sobe. */
 const COMPACT_WEEK_THRESHOLD = 6;
@@ -233,9 +234,12 @@ export default function HojePage() {
                   className={`space-y-2.5 px-4 py-3.5 ${free ? freeRowClass() : statusRowClass(s.status)}`}
                 >
                   <div className="flex flex-wrap items-start justify-between gap-2">
-                    <p className="min-w-0 flex-1 text-base font-medium leading-snug">
-                      {s.name}
-                    </p>
+                    <div className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-2.5 gap-y-1">
+                      <p className="min-w-0 text-base font-medium leading-snug">
+                        {s.name}
+                      </p>
+                      <SessionSubjectClock subjectId={s.id} compact />
+                    </div>
                     {!free && (
                       <span
                         className={`shrink-0 rounded-full px-2.5 py-1.5 text-xs font-medium ${statusClass(s.status)}`}
@@ -306,7 +310,10 @@ export default function HojePage() {
                       <td
                         className={`break-words px-5 py-3 align-middle text-base font-medium leading-snug ${rowBorder}`}
                       >
-                        {s.name}
+                        <div className="flex flex-wrap items-baseline gap-x-2.5 gap-y-1">
+                          <span className="min-w-0">{s.name}</span>
+                          <SessionSubjectClock subjectId={s.id} />
+                        </div>
                       </td>
                       <td className={`py-3 pl-2 pr-2 align-middle ${rowBorder}`}>
                         {free ? (

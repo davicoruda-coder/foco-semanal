@@ -472,10 +472,7 @@ export function SessionClock({
       >
         {livreOnly ? (
           <p className="text-xs font-semibold uppercase tracking-wider text-[color-mix(in_srgb,var(--ink)_55%,transparent)]">
-            Cronômetro Livre
-            <span className="ml-1.5 font-normal normal-case tracking-normal opacity-70">
-              · conta no foco
-            </span>
+            Cronômetro
           </p>
         ) : (
           <div className="flex items-center rounded-full bg-[color-mix(in_srgb,var(--ink)_7%,transparent)] p-0.5">

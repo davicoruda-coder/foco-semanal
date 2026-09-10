@@ -1,6 +1,6 @@
 "use client";
 
-import { Pause, Play, X } from "lucide-react";
+import { Pause, Play, RotateCcw, X } from "lucide-react";
 import { DialogFrame } from "@/components/DialogFrame";
 import { useStudyFlow } from "@/components/StudyFlowProvider";
 
@@ -56,7 +56,7 @@ export function StudySessionBar() {
 
   return (
     <div className="border-b border-[var(--line)] px-4 py-2.5 md:px-5">
-      <div className="flex items-center gap-2 rounded-[var(--radius-tag)] border border-[color-mix(in_srgb,var(--signal)_28%,var(--line))] bg-[var(--signal-soft)] px-2 py-1.5">
+      <div className="flex items-center gap-1.5 rounded-[var(--radius-tag)] border border-[color-mix(in_srgb,var(--signal)_28%,var(--line))] bg-[var(--signal-soft)] px-2 py-1.5 sm:gap-2">
         <button
           type="button"
           onClick={
@@ -87,6 +87,15 @@ export function StudySessionBar() {
             {flow.blockSummary}
           </p>
         </div>
+        <button
+          type="button"
+          onClick={flow.resetSession}
+          className="rounded-full p-1.5 text-[color-mix(in_srgb,var(--ink)_45%,transparent)] transition hover:bg-[var(--surface)] hover:text-[var(--ink)]"
+          title="Resetar sessão (recomeça o bloco)"
+          aria-label="Resetar sessão e recomeçar o bloco"
+        >
+          <RotateCcw size={16} strokeWidth={2} />
+        </button>
         <button
           type="button"
           onClick={flow.chooseFinish}
