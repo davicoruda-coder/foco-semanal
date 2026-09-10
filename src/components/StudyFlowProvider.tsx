@@ -23,17 +23,16 @@ import {
   type BlockRangeSettings,
 } from "@/lib/session-block";
 import { SUBJECT_COMPLETE_EVENT } from "@/lib/study-flow-events";
+import {
+  clearPersistedStudyFlow,
+  readPersistedStudyFlow,
+  writePersistedStudyFlow,
+  type StudyFlowPhase,
+} from "@/lib/study-flow-persist";
 import type { Subject } from "@/lib/types";
 import { subjectShowsOnDay, todayIndex } from "@/lib/utils";
 
-export type StudyFlowPhase =
-  | "idle"
-  | "running"
-  | "paused"
-  | "block_done"
-  | "resting"
-  | "rest_done";
-
+export type { StudyFlowPhase };
 type StudyFlowContextValue = {
   phase: StudyFlowPhase;
   block: Subject[];
@@ -77,12 +76,13 @@ function todayQueue(subjects: Subject[]): Subject[] {
 }
 
 export function StudyFlowProvider({ children }: { children: ReactNode }) {
-  const { data, updateSettings, setSubjectStatus } = useApp();
+  const { data, updateSettings, setSubjectStatus, ready: appReady } = useApp();
   const {
     toggleSubjectTimer,
     resetSubjectTimer,
     runtime,
     subjectTimerKey,
+    clocksReady,
   } = useTimerRuntime();
 
   const [settings, setSettings] = useState<BlockRangeSettings>(() =>
@@ -95,15 +95,107 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
   const [block, setBlock] = useState<Subject[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [restEndsAt, setRestEndsAt] = useState<number | null>(null);
+  const [hydrated, setHydrated] = useState(false);
   const [, setTick] = useState(0);
 
   const phaseRef = useRef(phase);
   const blockRef = useRef(block);
   const indexRef = useRef(currentIndex);
   const advancingRef = useRef(false);
+  const resumeAfterHydrateRef = useRef(false);
   phaseRef.current = phase;
   blockRef.current = block;
   indexRef.current = currentIndex;
+
+  // Restaura sessão/descanso após F5 (timers das matérias já estão no localStorage).
+  useEffect(() => {
+    if (!appReady || hydrated) return;
+
+    const saved = readPersistedStudyFlow();
+    const day = todayIndex();
+
+    if (saved.day !== day || saved.phase === "idle") {
+      clearPersistedStudyFlow();
+      setHydrated(true);
+      return;
+    }
+
+    if (saved.phase === "resting" || saved.phase === "rest_done") {
+      if (
+        saved.phase === "resting" &&
+        saved.restEndsAt != null &&
+        Date.now() >= saved.restEndsAt
+      ) {
+        setPhase("rest_done");
+        setRestEndsAt(null);
+      } else {
+        setPhase(saved.phase);
+        setRestEndsAt(saved.restEndsAt);
+      }
+      setBlock([]);
+      setCurrentIndex(0);
+      setHydrated(true);
+      return;
+    }
+
+    const subjects = data.subjects ?? [];
+    const restored = saved.blockIds
+      .map((id) => subjects.find((s) => s.id === id))
+      .filter((s): s is Subject => Boolean(s));
+
+    if (
+      restored.length === 0 &&
+      (saved.phase === "running" ||
+        saved.phase === "paused" ||
+        saved.phase === "block_done")
+    ) {
+      clearPersistedStudyFlow();
+      setHydrated(true);
+      return;
+    }
+
+    const idx = Math.min(
+      saved.currentIndex,
+      Math.max(0, restored.length - 1),
+    );
+    setBlock(restored);
+    setCurrentIndex(idx);
+    setPhase(saved.phase);
+    setRestEndsAt(null);
+    if (saved.phase === "running") {
+      resumeAfterHydrateRef.current = true;
+    }
+    setHydrated(true);
+  }, [appReady, hydrated, data.subjects]);
+
+  // Se estava em play, retoma o timer da matéria atual sem zerar.
+  useEffect(() => {
+    if (!hydrated || !clocksReady || !resumeAfterHydrateRef.current) return;
+    resumeAfterHydrateRef.current = false;
+    const id = blockRef.current[indexRef.current]?.id;
+    if (!id) return;
+    const key = subjectTimerKey(id);
+    if (!runtime[key]?.running) {
+      window.setTimeout(() => toggleSubjectTimer(id), 80);
+    }
+  }, [hydrated, clocksReady, runtime, subjectTimerKey, toggleSubjectTimer]);
+
+  // Persiste andamento.
+  useEffect(() => {
+    if (!hydrated) return;
+    if (phase === "idle") {
+      clearPersistedStudyFlow();
+      return;
+    }
+    writePersistedStudyFlow({
+      version: 1,
+      phase,
+      blockIds: block.map((s) => s.id),
+      currentIndex,
+      restEndsAt,
+      day: todayIndex(),
+    });
+  }, [hydrated, phase, block, currentIndex, restEndsAt]);
 
   const refreshSettings = useCallback(() => {
     setSettings(

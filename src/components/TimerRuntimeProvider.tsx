@@ -65,6 +65,8 @@ type TimerRuntimeContextValue = {
   stopwatchSeconds: number;
   toggleStopwatch: () => void;
   resetStopwatch: () => void;
+  /** Relógios já lidos do aparelho. */
+  clocksReady: boolean;
 };
 
 const STORAGE_KEY = "foco_semanal_timer_runtime_v1";
@@ -1251,6 +1253,7 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
       stopwatchSeconds,
       toggleStopwatch,
       resetStopwatch,
+      clocksReady: ready,
     }),
     [
       mode,
@@ -1268,6 +1271,7 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
       stopwatchSeconds,
       toggleStopwatch,
       resetStopwatch,
+      ready,
     ],
   );
 
