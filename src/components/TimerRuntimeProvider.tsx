@@ -509,13 +509,15 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
   const anyRunning =
     anyTimerRunning || stopwatch.running || anySubjectStopwatchRunning;
 
-  // Conta foco só com matéria em play (countdown ou Livre) — Sessão/sidebar não entram.
+  // Conta foco: sessão (timers das matérias) ou cronômetro Livre da lateral.
   const trackingFocus = useMemo(
     () =>
       Object.entries(runtime).some(
         ([id, r]) => isSubjectTimerKey(id) && r.running,
-      ) || anySubjectStopwatchRunning,
-    [runtime, anySubjectStopwatchRunning],
+      ) ||
+      anySubjectStopwatchRunning ||
+      stopwatch.running,
+    [runtime, anySubjectStopwatchRunning, stopwatch.running],
   );
   const focusLastRef = useRef<number | null>(null);
 

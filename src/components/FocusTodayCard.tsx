@@ -13,17 +13,19 @@ import {
 
 /** Mini-card "Foco hoje": total consolidado (pause/fim da matéria ou ao abrir Estatísticas). */
 export function FocusTodayCard() {
-  const { runtime, subjectStopwatches } = useTimerRuntime();
+  const { runtime, subjectStopwatches, stopwatch } = useTimerRuntime();
   const [log, setLog] = useState<FocusLog>({ version: 1, days: {} });
   const wasTracking = useRef(false);
 
-  // Mesma regra do provider: só matéria em play conta (countdown ou Livre).
+  // Mesma regra do provider: matéria em play (sessão) ou cronômetro Livre.
   const tracking = useMemo(
     () =>
       Object.entries(runtime).some(
         ([id, r]) => id.startsWith("sub:") && r.running,
-      ) || Object.values(subjectStopwatches).some((s) => s.running),
-    [runtime, subjectStopwatches],
+      ) ||
+      Object.values(subjectStopwatches).some((s) => s.running) ||
+      stopwatch.running,
+    [runtime, subjectStopwatches, stopwatch.running],
   );
 
   // Sempre lê o snapshot — não o log ao vivo (evita update ao voltar de Semana/Matérias).

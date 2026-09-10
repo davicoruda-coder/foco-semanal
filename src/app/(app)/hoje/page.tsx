@@ -17,7 +17,6 @@ import { SessionClock } from "@/components/SessionClock";
 import { FocusTodayCard } from "@/components/FocusTodayCard";
 import { MonthCalendarDialog } from "@/components/MonthCalendar";
 import { AutoGrowTextarea } from "@/components/AutoGrowTextarea";
-import { SubjectTimerControls } from "@/components/SubjectTimerControls";
 import { StudySessionBar } from "@/components/StudySessionChrome";
 
 /** Com o ciclo grande, a semana encolhe para "só hoje" e o ciclo sobe. */
@@ -250,13 +249,6 @@ export default function HojePage() {
                       </span>
                     )}
                   </div>
-                  <SubjectTimerControls
-                    subjectId={s.id}
-                    studyMinutes={s.study_minutes ?? 25}
-                    name={s.name}
-                    compact
-                    isFree={free}
-                  />
                   <AutoGrowTextarea
                     className="w-full rounded-[var(--radius-tag)] border border-[var(--line)] bg-[var(--surface)]/70 px-2.5 py-2 text-[15px] text-[color-mix(in_srgb,var(--ink)_84%,transparent)] focus:border-[var(--signal)] focus:text-[var(--ink)]"
                     value={s.notes}
@@ -282,18 +274,14 @@ export default function HojePage() {
             <div className="hidden md:block">
               <table className="w-full table-fixed border-separate border-spacing-0 text-left">
                 <colgroup>
-                  <col className="w-[20%]" />
-                  <col className="w-[10.5rem]" />
-                  <col className="w-[7.5rem]" />
+                  <col className="w-[22%]" />
+                  <col className="w-[8.5rem]" />
                   <col />
                 </colgroup>
                 <thead>
                   <tr className="bg-[var(--mist)] text-xs font-medium uppercase tracking-wider text-[color-mix(in_srgb,var(--ink)_55%,transparent)]">
                     <th className="border-b border-[var(--line)] px-5 py-3 text-left">
                       Matéria
-                    </th>
-                    <th className="border-b border-[var(--line)] py-3 pl-2 pr-2 text-left">
-                      Tempo
                     </th>
                     <th className="border-b border-[var(--line)] py-3 pl-2 pr-2 text-left">
                       Status
@@ -319,14 +307,6 @@ export default function HojePage() {
                         className={`break-words px-5 py-3 align-middle text-base font-medium leading-snug ${rowBorder}`}
                       >
                         {s.name}
-                      </td>
-                      <td className={`py-3 pl-2 pr-2 align-middle ${rowBorder}`}>
-                        <SubjectTimerControls
-                          subjectId={s.id}
-                          studyMinutes={s.study_minutes ?? 25}
-                          name={s.name}
-                          isFree={free}
-                        />
                       </td>
                       <td className={`py-3 pl-2 pr-2 align-middle ${rowBorder}`}>
                         {free ? (
@@ -359,7 +339,7 @@ export default function HojePage() {
                   })}
                   {subjects.length === 0 && (
                     <tr>
-                      <td colSpan={4} className="px-5 py-8 text-sm opacity-55">
+                      <td colSpan={3} className="px-5 py-8 text-sm opacity-55">
                         Nenhuma matéria para hoje —{" "}
                         <Link href="/materias?from=hoje" className="text-[var(--signal)]">
                           gerenciar
