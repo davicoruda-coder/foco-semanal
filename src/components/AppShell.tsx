@@ -184,6 +184,30 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           {cloudSync.message}
         </div>
       ) : null}
+      <header className="sticky top-0 z-20 border-b border-[var(--line)] bg-[var(--surface)]/95 pt-[env(safe-area-inset-top)] backdrop-blur-xl lg:hidden">
+        <div className="mx-auto flex h-12 max-w-lg items-center px-3">
+          <Link
+            href="/hoje"
+            className="flex min-w-0 items-center gap-2"
+            title="Foco Semanal"
+          >
+            <div
+              className="grid h-7 w-7 shrink-0 place-items-center rounded-[10px] text-white"
+              style={{
+                background:
+                  "linear-gradient(135deg, var(--signal), var(--accent-2))",
+                boxShadow: "var(--shadow-md)",
+              }}
+            >
+              <Target size={14} strokeWidth={2.25} />
+            </div>
+            <span className="font-display truncate text-[15px] font-semibold tracking-tight">
+              Foco
+            </span>
+          </Link>
+        </div>
+      </header>
+
       <header className="sticky top-0 z-20 hidden border-b border-[var(--line)] bg-[var(--surface)]/80 backdrop-blur-xl lg:block">
         <div className="mx-auto flex h-14 max-w-7xl items-center gap-3 px-5 md:px-8">
           <Link
@@ -230,7 +254,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       </header>
 
-      <main className="mx-auto max-w-7xl px-2.5 pb-5 pt-[max(0.5rem,env(safe-area-inset-top))] sm:px-5 sm:pb-6 sm:pt-[max(0.75rem,env(safe-area-inset-top))] md:px-8 lg:pb-10 lg:pt-6">
+      <main className="mx-auto max-w-7xl px-2.5 pb-5 pt-3 sm:px-5 sm:pb-6 sm:pt-4 md:px-8 lg:pb-10 lg:pt-6">
         {children}
       </main>
 
