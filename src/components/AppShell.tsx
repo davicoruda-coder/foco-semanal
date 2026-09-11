@@ -289,7 +289,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                     : "text-[color-mix(in_srgb,var(--ink)_45%,transparent)]"
                 }`}
               >
-                <Icon size={24} strokeWidth={active ? 2.4 : 1.85} />
+                <Icon size={24} strokeWidth={2} />
                 <span className="max-w-full truncate px-0.5 leading-none">
                   {label}
                 </span>
@@ -309,10 +309,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 : "text-[color-mix(in_srgb,var(--ink)_45%,transparent)]"
             }`}
           >
-            <Ellipsis
-              size={24}
-              strokeWidth={moreOpen || moreActive ? 2.4 : 1.85}
-            />
+            <Ellipsis size={24} strokeWidth={2} />
             <span className="max-w-full truncate px-0.5 leading-none">
               Mais
             </span>
