@@ -720,22 +720,18 @@ export default function SemanaPage() {
 
   return (
     <div className="mx-auto max-w-6xl lg:max-w-none">
-      <div className="flex flex-wrap items-end justify-between gap-2">
-        <div>
-          <h1 className="font-display pb-0.5 text-2xl font-semibold leading-normal tracking-tight md:text-3xl">
-            Editar semana
-          </h1>
-          <p className="mt-2 opacity-65">
-            Clique para editar · arraste o bloco para reordenar ou mudar de dia.
-          </p>
-        </div>
-        <Link
-          href="/agenda"
-          className="text-sm font-medium text-[var(--signal)]"
-        >
-          ← Agenda
-        </Link>
-      </div>
+      <Link
+        href="/agenda"
+        className="mb-2 inline-flex text-sm font-medium text-[var(--signal)] lg:hidden"
+      >
+        ← Agenda
+      </Link>
+      <h1 className="font-display pb-0.5 text-2xl font-semibold leading-normal tracking-tight md:text-3xl">
+        Semana
+      </h1>
+      <p className="mt-2 opacity-65">
+        Clique para editar · arraste o bloco para reordenar ou mudar de dia.
+      </p>
 
       <div className="mt-6 flex gap-3 overflow-x-auto overscroll-x-contain pb-2 sm:mt-8 sm:grid sm:grid-cols-2 sm:overflow-visible sm:pb-0 md:grid-cols-3 lg:grid-cols-7">
         {DAYS.map((name, i) => (

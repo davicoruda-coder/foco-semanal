@@ -6,6 +6,8 @@ import {
   BookMarked,
   BookOpen,
   CalendarDays,
+  Home,
+  Settings,
   StickyNote,
   Target,
   ChartColumn,
@@ -13,7 +15,17 @@ import {
 import { useApp } from "@/components/AppProvider";
 import { LoginScreen } from "@/components/LoginScreen";
 
-const NAV = [
+/** Desktop: layout clássico. */
+const DESKTOP_NAV = [
+  { href: "/hoje", label: "Hoje", icon: Home },
+  { href: "/semana", label: "Semana", icon: CalendarDays },
+  { href: "/materias", label: "Matérias", icon: BookOpen },
+  { href: "/estatisticas", label: "Estatísticas", icon: ChartColumn },
+  { href: "/ajustes", label: "Ajustes", icon: Settings },
+];
+
+/** Mobile: abas por função. */
+const MOBILE_NAV = [
   { href: "/hoje", label: "Estudo", icon: BookMarked },
   { href: "/agenda", label: "Agenda", icon: CalendarDays },
   { href: "/lembretes", label: "Lembretes", icon: StickyNote },
@@ -21,7 +33,16 @@ const NAV = [
   { href: "/estatisticas", label: "Estatísticas", icon: ChartColumn },
 ];
 
-function navActive(pathname: string, href: string) {
+function desktopNavActive(pathname: string, href: string) {
+  if (href === "/ajustes") {
+    return (
+      pathname.startsWith("/ajustes") || pathname.startsWith("/configuracoes")
+    );
+  }
+  return pathname.startsWith(href);
+}
+
+function mobileNavActive(pathname: string, href: string) {
   if (href === "/agenda") {
     return (
       pathname.startsWith("/agenda") || pathname.startsWith("/semana")
@@ -83,8 +104,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </Link>
 
           <nav className="ml-auto flex items-center gap-1">
-            {NAV.map(({ href, label, icon: Icon }) => {
-              const active = navActive(pathname, href);
+            {DESKTOP_NAV.map(({ href, label, icon: Icon }) => {
+              const active = desktopNavActive(pathname, href);
               return (
                 <Link
                   key={href}
@@ -115,8 +136,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         aria-label="Navegação principal"
       >
         <div className="mx-auto grid h-[4.25rem] max-w-lg grid-cols-5 px-1">
-          {NAV.map(({ href, label, icon: Icon }) => {
-            const active = navActive(pathname, href);
+          {MOBILE_NAV.map(({ href, label, icon: Icon }) => {
+            const active = mobileNavActive(pathname, href);
             return (
               <Link
                 key={href}

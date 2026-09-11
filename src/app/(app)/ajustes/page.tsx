@@ -174,7 +174,7 @@ export default function AjustesPage() {
 
       <Link
         href="/agenda"
-        className="mb-2 inline-flex text-sm font-medium text-[color-mix(in_srgb,var(--ink)_60%,transparent)] transition hover:text-[var(--signal)]"
+        className="mb-2 inline-flex text-sm font-medium text-[color-mix(in_srgb,var(--ink)_60%,transparent)] transition hover:text-[var(--signal)] lg:hidden"
       >
         ← Agenda
       </Link>
