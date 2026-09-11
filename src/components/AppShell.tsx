@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { useApp } from "@/components/AppProvider";
 import { LoginScreen } from "@/components/LoginScreen";
+import { useOpenTransition } from "@/lib/use-open-transition";
 
 /** Desktop: layout clássico. */
 const DESKTOP_NAV = [
@@ -81,6 +82,7 @@ function MobileMoreMenu({
 }) {
   const panelRef = useRef<HTMLDivElement>(null);
   const titleId = useId();
+  const { shown, leaving } = useOpenTransition(open, 160);
 
   useEffect(() => {
     if (!open) return;
@@ -91,13 +93,15 @@ function MobileMoreMenu({
     return () => window.removeEventListener("keydown", onKey);
   }, [open, onClose]);
 
-  if (!open) return null;
+  if (!shown) return null;
 
   return (
     <div className="fixed inset-0 z-40 lg:hidden" role="presentation">
       <button
         type="button"
-        className="absolute inset-0 bg-[color-mix(in_srgb,var(--ink)_28%,transparent)]"
+        className={`absolute inset-0 bg-[color-mix(in_srgb,var(--ink)_28%,transparent)] scrim-fade ${
+          leaving ? "is-leaving" : ""
+        }`}
         aria-label="Fechar menu"
         onClick={onClose}
       />
@@ -106,7 +110,9 @@ function MobileMoreMenu({
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className="absolute inset-x-0 bottom-[calc(4.5rem+env(safe-area-inset-bottom))] mx-auto w-full max-w-lg px-2 pb-2"
+        className={`absolute inset-x-0 bottom-[calc(4.5rem+env(safe-area-inset-bottom))] mx-auto w-full max-w-lg px-2 pb-2 sheet-up ${
+          leaving ? "is-leaving" : ""
+        }`}
       >
         <div className="overflow-hidden rounded-[18px] border border-[var(--line)] bg-[var(--surface)] shadow-[var(--shadow-md)]">
           <p
@@ -128,7 +134,7 @@ function MobileMoreMenu({
                     href={href}
                     onClick={onClose}
                     aria-current={active ? "page" : undefined}
-                    className={`flex min-h-12 items-center gap-3 px-4 text-[15px] font-medium transition ${
+                    className={`flex min-h-12 items-center gap-3 px-4 text-[15px] font-medium transition-colors ${
                       active
                         ? "bg-[var(--signal-soft)] text-[var(--signal)]"
                         : "text-[var(--ink)] active:bg-[var(--mist)]"
