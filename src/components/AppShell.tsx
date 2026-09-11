@@ -3,10 +3,10 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  BookMarked,
   BookOpen,
   CalendarDays,
-  Home,
-  Settings,
+  StickyNote,
   Target,
   ChartColumn,
 } from "lucide-react";
@@ -14,16 +14,18 @@ import { useApp } from "@/components/AppProvider";
 import { LoginScreen } from "@/components/LoginScreen";
 
 const NAV = [
-  { href: "/hoje", label: "Hoje", icon: Home },
-  { href: "/semana", label: "Semana", icon: CalendarDays },
+  { href: "/hoje", label: "Estudo", icon: BookMarked },
+  { href: "/agenda", label: "Agenda", icon: CalendarDays },
+  { href: "/lembretes", label: "Lembretes", icon: StickyNote },
   { href: "/materias", label: "Matérias", icon: BookOpen },
   { href: "/estatisticas", label: "Estatísticas", icon: ChartColumn },
-  { href: "/ajustes", label: "Ajustes", icon: Settings },
 ];
 
 function navActive(pathname: string, href: string) {
-  if (href === "/ajustes") {
-    return pathname.startsWith("/ajustes") || pathname.startsWith("/configuracoes");
+  if (href === "/agenda") {
+    return (
+      pathname.startsWith("/agenda") || pathname.startsWith("/semana")
+    );
   }
   return pathname.startsWith(href);
 }
@@ -129,7 +131,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               >
                 <Icon size={20} strokeWidth={active ? 2.25 : 1.75} />
                 <span className="max-w-full truncate px-0.5 leading-none">
-                  {label === "Estatísticas" ? "Estat." : label}
+                  {label === "Estatísticas"
+                    ? "Estat."
+                    : label === "Lembretes"
+                      ? "Lembr."
+                      : label}
                 </span>
               </Link>
             );
