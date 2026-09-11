@@ -118,7 +118,6 @@ export function StudySessionChrome() {
   const flow = useStudyFlow();
   const { data, upsertSubject } = useApp();
   const [notesDraft, setNotesDraft] = useState("");
-  const [notesSaved, setNotesSaved] = useState(false);
 
   const lastSubject = useMemo(() => {
     if (flow.phase !== "block_done" || flow.block.length === 0) return null;
@@ -132,21 +131,12 @@ export function StudySessionChrome() {
   useEffect(() => {
     if (flow.phase !== "block_done" || !lastSubject) return;
     setNotesDraft(lastSubject.notes ?? "");
-    setNotesSaved(false);
   }, [flow.phase, lastSubject?.id]);
 
-  function persistNotes() {
-    if (!lastSubject) return;
-    upsertSubject({ ...lastSubject, notes: notesDraft });
-  }
-
-  function saveNotesOnly() {
-    persistNotes();
-    setNotesSaved(true);
-  }
-
   function afterNotesThen(action: () => void) {
-    if (!notesSaved && lastSubject) persistNotes();
+    if (lastSubject) {
+      upsertSubject({ ...lastSubject, notes: notesDraft });
+    }
     action();
   }
 
@@ -165,7 +155,7 @@ export function StudySessionChrome() {
           {flow.blockSummary}. O que deseja fazer?
         </p>
 
-        {lastSubject && !notesSaved ? (
+        {lastSubject ? (
           <div className="mt-5 rounded-[var(--radius-tag)] border border-[var(--line)] bg-[var(--mist)]/60 p-3.5">
             <p className="text-[11px] font-semibold uppercase tracking-wider text-[color-mix(in_srgb,var(--ink)_50%,transparent)]">
               Anotações
@@ -174,7 +164,8 @@ export function StudySessionChrome() {
               {lastSubject.name}
             </p>
             <p className="mt-0.5 text-xs text-[color-mix(in_srgb,var(--ink)_50%,transparent)]">
-              Atualize onde parou, se quiser — não conta no tempo de estudo.
+              Edite se quiser — grava ao escolher uma opção abaixo. Não conta no
+              tempo de estudo.
             </p>
             <AutoGrowTextarea
               className="mt-2.5 w-full rounded-[10px] border border-[var(--line)] bg-[var(--surface)] px-3 py-2.5 text-sm leading-snug text-[var(--ink)] focus:border-[var(--signal)]"
@@ -184,20 +175,13 @@ export function StudySessionChrome() {
               minPx={72}
               maxPx={140}
             />
-            <button
-              type="button"
-              className="btn mt-3 w-full bg-[var(--signal)] text-white"
-              onClick={saveNotesOnly}
-            >
-              Salvar anotações
-            </button>
           </div>
         ) : null}
 
-        <div className={`flex flex-col gap-2 ${notesSaved || !lastSubject ? "mt-6" : "mt-4"}`}>
+        <div className="mt-5 flex flex-col gap-2">
           <button
             type="button"
-            className={`btn ${notesSaved || !lastSubject ? "bg-[var(--signal)] text-white" : ""}`}
+            className="btn bg-[var(--signal)] text-white"
             onClick={() => afterNotesThen(flow.chooseRest)}
           >
             Descansar ({flow.settings.restMinutes} min)
