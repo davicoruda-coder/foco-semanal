@@ -106,7 +106,7 @@ function MobileMoreMenu({
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className="absolute inset-x-0 bottom-[calc(4.25rem+env(safe-area-inset-bottom))] mx-auto w-full max-w-lg px-2 pb-2"
+        className="absolute inset-x-0 bottom-[calc(4.5rem+env(safe-area-inset-bottom))] mx-auto w-full max-w-lg px-2 pb-2"
       >
         <div className="overflow-hidden rounded-[18px] border border-[var(--line)] bg-[var(--surface)] shadow-[var(--shadow-md)]">
           <p
@@ -171,7 +171,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const moreActive = mobileMoreActive(pathname);
 
   return (
-    <div className="relative z-0 min-h-screen pb-[calc(4.25rem+env(safe-area-inset-bottom))] lg:pb-0">
+    <div className="relative z-0 min-h-screen pb-[calc(4.5rem+env(safe-area-inset-bottom))] lg:pb-0">
       {cloudSync.message ? (
         <div
           className={`px-4 py-2 text-center text-xs font-medium ${
@@ -268,7 +268,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         className="fixed inset-x-0 bottom-0 z-50 border-t border-[var(--line)] bg-[var(--surface)]/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl lg:hidden"
         aria-label="Navegação principal"
       >
-        <div className="mx-auto grid h-[4.25rem] max-w-lg grid-cols-4 px-1">
+        <div className="mx-auto grid h-[4.5rem] max-w-lg grid-cols-4">
           {MOBILE_PRIMARY.map(({ href, label, icon: Icon }) => {
             const active = mobilePrimaryActive(pathname, href);
             return (
@@ -277,17 +277,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 href={href}
                 aria-label={label}
                 aria-current={active ? "page" : undefined}
-                className={`grid place-items-center rounded-[var(--radius-btn)] text-[10px] font-medium transition-colors ${
+                className={`flex flex-col items-center justify-center gap-1 rounded-[var(--radius-btn)] text-[11px] font-medium transition-colors ${
                   active
                     ? "text-[var(--signal)]"
-                    : "text-[color-mix(in_srgb,var(--ink)_50%,transparent)]"
+                    : "text-[color-mix(in_srgb,var(--ink)_55%,transparent)]"
                 }`}
               >
-                <span className="flex h-9 flex-col items-center justify-center gap-0.5">
-                  <Icon size={20} strokeWidth={active ? 2.25 : 1.75} />
-                  <span className="max-w-full truncate px-0.5 leading-none">
-                    {label === "Lembretes" ? "Lembr." : label}
-                  </span>
+                <Icon size={24} strokeWidth={active ? 2.25 : 1.85} />
+                <span className="max-w-full truncate px-0.5 leading-none">
+                  {label === "Lembretes" ? "Lembr." : label}
                 </span>
               </Link>
             );
@@ -299,18 +297,22 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             aria-haspopup="dialog"
             title="Mais opções"
             onClick={() => setMoreOpen((v) => !v)}
-            className={`grid place-items-center rounded-[var(--radius-btn)] transition-colors ${
+            className={`flex flex-col items-center justify-center gap-1 rounded-[var(--radius-btn)] transition-colors ${
               moreOpen || moreActive
                 ? "text-[var(--signal)]"
-                : "text-[color-mix(in_srgb,var(--ink)_50%,transparent)]"
+                : "text-[color-mix(in_srgb,var(--ink)_55%,transparent)]"
             }`}
           >
-            {/* Mesma altura do bloco ícone+rótulo; ⋯ no centro óptico */}
-            <span className="grid h-9 w-9 place-items-center">
-              <Ellipsis
-                size={22}
-                strokeWidth={moreOpen || moreActive ? 2.5 : 2}
-              />
+            <Ellipsis
+              size={26}
+              strokeWidth={moreOpen || moreActive ? 2.5 : 2.15}
+            />
+            {/* Mesma altura do rótulo para alinhar o ⋯ aos ícones */}
+            <span
+              className="invisible max-w-full truncate px-0.5 text-[11px] font-medium leading-none"
+              aria-hidden
+            >
+              Mais
             </span>
           </button>
         </div>
