@@ -268,7 +268,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         className="fixed inset-x-0 bottom-0 z-50 border-t border-[var(--line)] bg-[var(--surface)]/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl lg:hidden"
         aria-label="Navegação principal"
       >
-        <div className="mx-auto grid h-[4.5rem] max-w-lg grid-cols-4">
+        <div className="mx-auto flex h-[4.5rem] w-full max-w-lg">
           {MOBILE_PRIMARY.map(({ href, label, icon: Icon }) => {
             const active = mobilePrimaryActive(pathname, href);
             return (
@@ -277,13 +277,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 href={href}
                 aria-label={label}
                 aria-current={active ? "page" : undefined}
-                className={`flex flex-col items-center justify-center gap-1 rounded-[var(--radius-btn)] text-[11px] font-medium transition-colors ${
+                className={`flex min-w-0 flex-1 flex-col items-center justify-center gap-1 text-[11px] font-medium transition-colors ${
                   active
                     ? "text-[var(--signal)]"
-                    : "text-[color-mix(in_srgb,var(--ink)_55%,transparent)]"
+                    : "text-[color-mix(in_srgb,var(--ink)_45%,transparent)]"
                 }`}
               >
-                <Icon size={24} strokeWidth={active ? 2.25 : 1.85} />
+                <Icon size={24} strokeWidth={active ? 2.4 : 1.85} />
                 <span className="max-w-full truncate px-0.5 leading-none">
                   {label}
                 </span>
@@ -297,21 +297,17 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             aria-haspopup="dialog"
             title="Mais opções"
             onClick={() => setMoreOpen((v) => !v)}
-            className={`flex flex-col items-center justify-center gap-1 rounded-[var(--radius-btn)] transition-colors ${
+            className={`flex min-w-0 flex-1 flex-col items-center justify-center gap-1 text-[11px] font-medium transition-colors ${
               moreOpen || moreActive
                 ? "text-[var(--signal)]"
-                : "text-[color-mix(in_srgb,var(--ink)_55%,transparent)]"
+                : "text-[color-mix(in_srgb,var(--ink)_45%,transparent)]"
             }`}
           >
             <Ellipsis
-              size={26}
-              strokeWidth={moreOpen || moreActive ? 2.5 : 2.15}
+              size={24}
+              strokeWidth={moreOpen || moreActive ? 2.4 : 1.85}
             />
-            {/* Mesma altura do rótulo para alinhar o ⋯ aos ícones */}
-            <span
-              className="invisible max-w-full truncate px-0.5 text-[11px] font-medium leading-none"
-              aria-hidden
-            >
+            <span className="max-w-full truncate px-0.5 leading-none">
               Mais
             </span>
           </button>
