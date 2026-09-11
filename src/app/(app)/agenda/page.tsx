@@ -194,14 +194,6 @@ export default function AgendaPage() {
           </div>
         )}
       </section>
-
-      <p className="px-0.5 text-sm opacity-60">
-        Para criar ou reordenar blocos, use{" "}
-        <Link href="/semana" className="text-[var(--signal)]">
-          Editar semana
-        </Link>
-        .
-      </p>
     </div>
   );
 }
