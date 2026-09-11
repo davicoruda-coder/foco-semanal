@@ -285,7 +285,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               >
                 <Icon size={24} strokeWidth={active ? 2.25 : 1.85} />
                 <span className="max-w-full truncate px-0.5 leading-none">
-                  {label === "Lembretes" ? "Lembr." : label}
+                  {label === "Lembretes" ? "Lembrete" : label}
                 </span>
               </Link>
             );
