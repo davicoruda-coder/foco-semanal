@@ -193,7 +193,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           {cloudSync.message}
         </div>
       ) : null}
-      <header className="sticky top-0 z-20 border-b border-[var(--line)] bg-[var(--surface)]/95 pt-[env(safe-area-inset-top)] backdrop-blur-xl lg:hidden">
+      <header className="sticky top-0 z-20 border-b border-[var(--line)] bg-[var(--surface)]/95 pt-[env(safe-area-inset-top)] backdrop-blur-md lg:hidden">
         <div className="mx-auto flex h-12 max-w-lg items-center px-3">
           <Link
             href="/hoje"
@@ -217,7 +217,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       </header>
 
-      <header className="sticky top-0 z-20 hidden border-b border-[var(--line)] bg-[var(--surface)]/80 backdrop-blur-xl lg:block">
+      <header className="sticky top-0 z-20 hidden border-b border-[var(--line)] bg-[var(--surface)]/90 backdrop-blur-md lg:block">
         <div className="mx-auto flex h-14 max-w-7xl items-center gap-3 px-5 md:px-8">
           <Link
             href="/hoje"
@@ -274,7 +274,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       />
 
       <nav
-        className="fixed inset-x-0 bottom-0 z-50 border-t border-[var(--line)] bg-[var(--surface)]/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl lg:hidden"
+        className="fixed inset-x-0 bottom-0 z-50 border-t border-[var(--line)] bg-[var(--surface)]/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-md lg:hidden"
         aria-label="Navegação principal"
       >
         <div className="mx-auto flex h-[4.5rem] w-full max-w-lg">
