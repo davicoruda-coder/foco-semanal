@@ -1,7 +1,10 @@
 "use client";
 
+import { useEffect, useMemo, useState } from "react";
 import { Pause, Play, RotateCcw, X } from "lucide-react";
 import { DialogFrame } from "@/components/DialogFrame";
+import { AutoGrowTextarea } from "@/components/AutoGrowTextarea";
+import { useApp } from "@/components/AppProvider";
 import { useStudyFlow } from "@/components/StudyFlowProvider";
 
 function formatClock(totalSeconds: number) {
@@ -113,14 +116,47 @@ export function StudySessionBar() {
 /** Diálogos pós-bloco / descanso (globais). */
 export function StudySessionChrome() {
   const flow = useStudyFlow();
+  const { data, upsertSubject } = useApp();
+  const [notesDraft, setNotesDraft] = useState("");
+  const [notesSaved, setNotesSaved] = useState(false);
+
+  const lastSubject = useMemo(() => {
+    if (flow.phase !== "block_done" || flow.block.length === 0) return null;
+    const fromBlock = flow.block[flow.block.length - 1];
+    if (!fromBlock) return null;
+    return (
+      (data.subjects ?? []).find((s) => s.id === fromBlock.id) ?? fromBlock
+    );
+  }, [flow.phase, flow.block, data.subjects]);
+
+  useEffect(() => {
+    if (flow.phase !== "block_done" || !lastSubject) return;
+    setNotesDraft(lastSubject.notes ?? "");
+    setNotesSaved(false);
+  }, [flow.phase, lastSubject?.id]);
+
+  function persistNotes() {
+    if (!lastSubject) return;
+    upsertSubject({ ...lastSubject, notes: notesDraft });
+  }
+
+  function saveNotesOnly() {
+    persistNotes();
+    setNotesSaved(true);
+  }
+
+  function afterNotesThen(action: () => void) {
+    if (!notesSaved && lastSubject) persistNotes();
+    action();
+  }
 
   return (
     <>
       <DialogFrame
         open={flow.phase === "block_done"}
-        onClose={flow.chooseFinish}
+        onClose={() => afterNotesThen(flow.chooseFinish)}
         labelledBy="block-done-title"
-        cardClassName="surface w-full max-w-sm p-6 shadow-[var(--shadow-lg)]"
+        cardClassName="surface w-full max-w-md p-6 shadow-[var(--shadow-lg)]"
       >
         <h2 id="block-done-title" className="font-display text-xl font-semibold">
           Bloco concluído
@@ -128,21 +164,55 @@ export function StudySessionChrome() {
         <p className="mt-2 text-sm text-[color-mix(in_srgb,var(--ink)_70%,transparent)]">
           {flow.blockSummary}. O que deseja fazer?
         </p>
-        <div className="mt-6 flex flex-col gap-2">
+
+        {lastSubject && !notesSaved ? (
+          <div className="mt-5 rounded-[var(--radius-tag)] border border-[var(--line)] bg-[var(--mist)]/60 p-3.5">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-[color-mix(in_srgb,var(--ink)_50%,transparent)]">
+              Anotações
+            </p>
+            <p className="mt-1 text-sm font-semibold text-[var(--ink)]">
+              {lastSubject.name}
+            </p>
+            <p className="mt-0.5 text-xs text-[color-mix(in_srgb,var(--ink)_50%,transparent)]">
+              Atualize onde parou, se quiser — não conta no tempo de estudo.
+            </p>
+            <AutoGrowTextarea
+              className="mt-2.5 w-full rounded-[10px] border border-[var(--line)] bg-[var(--surface)] px-3 py-2.5 text-sm leading-snug text-[var(--ink)] focus:border-[var(--signal)]"
+              value={notesDraft}
+              onChange={setNotesDraft}
+              placeholder="Ex.: vídeo 12, próximo passo…"
+              minPx={72}
+              maxPx={140}
+            />
+            <button
+              type="button"
+              className="btn mt-3 w-full bg-[var(--signal)] text-white"
+              onClick={saveNotesOnly}
+            >
+              Salvar anotações
+            </button>
+          </div>
+        ) : null}
+
+        <div className={`flex flex-col gap-2 ${notesSaved || !lastSubject ? "mt-6" : "mt-4"}`}>
           <button
             type="button"
-            className="btn bg-[var(--signal)] text-white"
-            onClick={flow.chooseRest}
+            className={`btn ${notesSaved || !lastSubject ? "bg-[var(--signal)] text-white" : ""}`}
+            onClick={() => afterNotesThen(flow.chooseRest)}
           >
             Descansar ({flow.settings.restMinutes} min)
           </button>
-          <button type="button" className="btn" onClick={flow.chooseContinue}>
+          <button
+            type="button"
+            className="btn"
+            onClick={() => afterNotesThen(flow.chooseContinue)}
+          >
             Continuar estudando
           </button>
           <button
             type="button"
             className="btn border-transparent bg-transparent text-[color-mix(in_srgb,var(--ink)_60%,transparent)]"
-            onClick={flow.chooseFinish}
+            onClick={() => afterNotesThen(flow.chooseFinish)}
           >
             Finalizar estudos
           </button>
