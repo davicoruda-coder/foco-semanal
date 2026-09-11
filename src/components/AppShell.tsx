@@ -253,15 +253,17 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 href={href}
                 aria-label={label}
                 aria-current={active ? "page" : undefined}
-                className={`flex flex-col items-center justify-center gap-0.5 rounded-[var(--radius-btn)] text-[10px] font-medium transition-colors ${
+                className={`grid place-items-center rounded-[var(--radius-btn)] text-[10px] font-medium transition-colors ${
                   active
                     ? "text-[var(--signal)]"
                     : "text-[color-mix(in_srgb,var(--ink)_50%,transparent)]"
                 }`}
               >
-                <Icon size={20} strokeWidth={active ? 2.25 : 1.75} />
-                <span className="max-w-full truncate px-0.5 leading-none">
-                  {label === "Lembretes" ? "Lembr." : label}
+                <span className="flex h-9 flex-col items-center justify-center gap-0.5">
+                  <Icon size={20} strokeWidth={active ? 2.25 : 1.75} />
+                  <span className="max-w-full truncate px-0.5 leading-none">
+                    {label === "Lembretes" ? "Lembr." : label}
+                  </span>
                 </span>
               </Link>
             );
@@ -273,22 +275,18 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             aria-haspopup="dialog"
             title="Mais opções"
             onClick={() => setMoreOpen((v) => !v)}
-            className={`flex flex-col items-center justify-center gap-0.5 rounded-[var(--radius-btn)] transition-colors ${
+            className={`grid place-items-center rounded-[var(--radius-btn)] transition-colors ${
               moreOpen || moreActive
                 ? "text-[var(--signal)]"
                 : "text-[color-mix(in_srgb,var(--ink)_50%,transparent)]"
             }`}
           >
-            <Ellipsis
-              size={22}
-              strokeWidth={moreOpen || moreActive ? 2.25 : 1.75}
-            />
-            {/* Reserva a mesma altura do rótulo das outras abas */}
-            <span
-              className="invisible max-w-full truncate px-0.5 text-[10px] font-medium leading-none"
-              aria-hidden
-            >
-              —
+            {/* Mesma altura do bloco ícone+rótulo; ⋯ no centro óptico */}
+            <span className="grid h-9 w-9 place-items-center">
+              <Ellipsis
+                size={22}
+                strokeWidth={moreOpen || moreActive ? 2.5 : 2}
+              />
             </span>
           </button>
         </div>
