@@ -450,8 +450,13 @@ a {
   animation: dialog-card-out 140ms ease-in both;
 }
 
-.panel-in {
-  animation: dialog-card-in 180ms ease-out both;
+.nav-tab-active-chip {
+  /* Claro: um pouco mais saturado que --signal-soft, para ler no branco */
+  background: color-mix(in srgb, var(--signal) 20%, var(--surface));
+}
+
+:root[data-theme="dark"] .nav-tab-active-chip {
+  background: var(--signal-soft);
 }
 
 .panel-out {

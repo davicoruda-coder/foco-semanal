@@ -291,7 +291,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               >
                 <span
                   className={`grid size-9 place-items-center rounded-xl transition-colors ${
-                    active ? "bg-[var(--signal-soft)]" : "bg-transparent"
+                    active ? "nav-tab-active-chip" : "bg-transparent"
                   }`}
                 >
                   <Icon size={24} strokeWidth={1.85} />
@@ -318,7 +318,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <span
               className={`grid size-9 place-items-center rounded-xl transition-colors ${
                 moreOpen || moreActive
-                  ? "bg-[var(--signal-soft)]"
+                  ? "nav-tab-active-chip"
                   : "bg-transparent"
               }`}
             >
