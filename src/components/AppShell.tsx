@@ -30,7 +30,7 @@ const MOBILE_NAV = [
   { href: "/agenda", label: "Agenda", icon: CalendarDays },
   { href: "/lembretes", label: "Lembretes", icon: StickyNote },
   { href: "/materias", label: "Matérias", icon: BookOpen },
-  { href: "/estatisticas", label: "Estatísticas", icon: ChartColumn },
+  { href: "/ajustes", label: "Ajustes", icon: Settings },
 ];
 
 function desktopNavActive(pathname: string, href: string) {
@@ -46,6 +46,11 @@ function mobileNavActive(pathname: string, href: string) {
   if (href === "/agenda") {
     return (
       pathname.startsWith("/agenda") || pathname.startsWith("/semana")
+    );
+  }
+  if (href === "/ajustes") {
+    return (
+      pathname.startsWith("/ajustes") || pathname.startsWith("/configuracoes")
     );
   }
   return pathname.startsWith(href);
@@ -152,11 +157,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               >
                 <Icon size={20} strokeWidth={active ? 2.25 : 1.75} />
                 <span className="max-w-full truncate px-0.5 leading-none">
-                  {label === "Estatísticas"
-                    ? "Estat."
-                    : label === "Lembretes"
-                      ? "Lembr."
-                      : label}
+                  {label === "Lembretes" ? "Lembr." : label}
                 </span>
               </Link>
             );

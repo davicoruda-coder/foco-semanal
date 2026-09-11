@@ -7,7 +7,6 @@ import {
   ChevronDown,
   ChevronUp,
   Pencil,
-  Settings,
 } from "lucide-react";
 import { useApp } from "@/components/AppProvider";
 import { DAYS } from "@/lib/types";
@@ -58,25 +57,15 @@ export default function AgendaPage() {
         <h1 className="font-display text-2xl font-semibold tracking-tight md:text-3xl">
           Agenda
         </h1>
-        <div className="flex items-center gap-1.5">
-          <Link
-            href="/semana"
-            title="Editar semana"
-            aria-label="Editar semana"
-            className="inline-flex min-h-10 items-center gap-1.5 rounded-[var(--radius-btn)] px-3 text-sm font-medium text-[color-mix(in_srgb,var(--ink)_70%,transparent)] transition hover:bg-[var(--mist)] hover:text-[var(--ink)]"
-          >
-            <Pencil size={16} strokeWidth={1.75} />
-            <span className="hidden sm:inline">Editar semana</span>
-          </Link>
-          <Link
-            href="/ajustes"
-            title="Ajustes"
-            aria-label="Ajustes"
-            className="grid size-10 place-items-center rounded-[var(--radius-btn)] text-[color-mix(in_srgb,var(--ink)_55%,transparent)] transition hover:bg-[var(--mist)] hover:text-[var(--signal)]"
-          >
-            <Settings size={20} strokeWidth={1.75} />
-          </Link>
-        </div>
+        <Link
+          href="/semana"
+          title="Editar semana"
+          aria-label="Editar semana"
+          className="inline-flex min-h-10 items-center gap-1.5 rounded-[var(--radius-btn)] px-3 text-sm font-medium text-[color-mix(in_srgb,var(--ink)_70%,transparent)] transition hover:bg-[var(--mist)] hover:text-[var(--ink)]"
+        >
+          <Pencil size={16} strokeWidth={1.75} />
+          <span className="hidden sm:inline">Editar semana</span>
+        </Link>
       </div>
 
       <section className="surface overflow-hidden p-0">
@@ -210,10 +199,6 @@ export default function AgendaPage() {
         Para criar ou reordenar blocos, use{" "}
         <Link href="/semana" className="text-[var(--signal)]">
           Editar semana
-        </Link>
-        . Preferências em{" "}
-        <Link href="/ajustes" className="text-[var(--signal)]">
-          Ajustes
         </Link>
         .
       </p>
