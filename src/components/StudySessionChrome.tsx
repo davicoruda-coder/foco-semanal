@@ -6,11 +6,44 @@ import { DialogFrame } from "@/components/DialogFrame";
 import { AutoGrowTextarea } from "@/components/AutoGrowTextarea";
 import { useApp } from "@/components/AppProvider";
 import { useStudyFlow } from "@/components/StudyFlowProvider";
+import type { Subject } from "@/lib/types";
 
 function formatClock(totalSeconds: number) {
   const m = Math.floor(totalSeconds / 60);
   const s = totalSeconds % 60;
   return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+}
+
+function NotesBlock({
+  subject,
+  draft,
+  onChange,
+}: {
+  subject: Subject;
+  draft: string;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <div className="mt-5 rounded-[var(--radius-tag)] border border-[var(--line)] bg-[var(--mist)]/60 p-3.5">
+      <p className="text-[11px] font-semibold uppercase tracking-wider text-[color-mix(in_srgb,var(--ink)_50%,transparent)]">
+        Anotações
+      </p>
+      <p className="mt-1 text-sm font-semibold text-[var(--ink)]">
+        {subject.name}
+      </p>
+      <p className="mt-0.5 text-xs text-[color-mix(in_srgb,var(--ink)_50%,transparent)]">
+        Edite se quiser — grava ao continuar. Não conta no tempo de estudo.
+      </p>
+      <AutoGrowTextarea
+        className="mt-2.5 w-full rounded-[10px] border border-[var(--line)] bg-[var(--surface)] px-3 py-2.5 text-sm leading-snug text-[var(--ink)] focus:border-[var(--signal)]"
+        value={draft}
+        onChange={onChange}
+        placeholder="Ex.: vídeo 12, próximo passo…"
+        minPx={72}
+        maxPx={140}
+      />
+    </div>
+  );
 }
 
 /** CTA / status da sessão — fica dentro do card Ciclo de Estudos. */
@@ -119,29 +152,73 @@ export function StudySessionChrome() {
   const { data, upsertSubject } = useApp();
   const [notesDraft, setNotesDraft] = useState("");
 
-  const lastSubject = useMemo(() => {
-    if (flow.phase !== "block_done" || flow.block.length === 0) return null;
-    const fromBlock = flow.block[flow.block.length - 1];
+  const notesSubject = useMemo(() => {
+    if (flow.block.length === 0) return null;
+    const fromBlock =
+      flow.phase === "subject_notes"
+        ? flow.block[flow.currentIndex]
+        : flow.phase === "block_done"
+          ? flow.block[flow.block.length - 1]
+          : null;
     if (!fromBlock) return null;
     return (
       (data.subjects ?? []).find((s) => s.id === fromBlock.id) ?? fromBlock
     );
-  }, [flow.phase, flow.block, data.subjects]);
+  }, [flow.phase, flow.block, flow.currentIndex, data.subjects]);
 
   useEffect(() => {
-    if (flow.phase !== "block_done" || !lastSubject) return;
-    setNotesDraft(lastSubject.notes ?? "");
-  }, [flow.phase, lastSubject?.id]);
+    if (
+      (flow.phase !== "subject_notes" && flow.phase !== "block_done") ||
+      !notesSubject
+    ) {
+      return;
+    }
+    setNotesDraft(notesSubject.notes ?? "");
+  }, [flow.phase, notesSubject?.id]);
+
+  function persistNotes() {
+    if (!notesSubject) return;
+    upsertSubject({ ...notesSubject, notes: notesDraft });
+  }
 
   function afterNotesThen(action: () => void) {
-    if (lastSubject) {
-      upsertSubject({ ...lastSubject, notes: notesDraft });
-    }
+    persistNotes();
     action();
   }
 
   return (
     <>
+      <DialogFrame
+        open={flow.phase === "subject_notes"}
+        onClose={() => afterNotesThen(flow.continueToNextSubject)}
+        labelledBy="subject-notes-title"
+        cardClassName="surface w-full max-w-md p-6 shadow-[var(--shadow-lg)]"
+      >
+        <h2
+          id="subject-notes-title"
+          className="font-display text-xl font-semibold"
+        >
+          Matéria concluída
+        </h2>
+        <p className="mt-2 text-sm text-[color-mix(in_srgb,var(--ink)_70%,transparent)]">
+          Anote onde parou antes da próxima. O tempo fica pausado.
+        </p>
+        {notesSubject ? (
+          <NotesBlock
+            subject={notesSubject}
+            draft={notesDraft}
+            onChange={setNotesDraft}
+          />
+        ) : null}
+        <button
+          type="button"
+          className="btn mt-5 w-full bg-[var(--signal)] text-white"
+          onClick={() => afterNotesThen(flow.continueToNextSubject)}
+        >
+          Continuar para a próxima
+        </button>
+      </DialogFrame>
+
       <DialogFrame
         open={flow.phase === "block_done"}
         onClose={() => afterNotesThen(flow.chooseFinish)}
@@ -155,27 +232,12 @@ export function StudySessionChrome() {
           {flow.blockSummary}. O que deseja fazer?
         </p>
 
-        {lastSubject ? (
-          <div className="mt-5 rounded-[var(--radius-tag)] border border-[var(--line)] bg-[var(--mist)]/60 p-3.5">
-            <p className="text-[11px] font-semibold uppercase tracking-wider text-[color-mix(in_srgb,var(--ink)_50%,transparent)]">
-              Anotações
-            </p>
-            <p className="mt-1 text-sm font-semibold text-[var(--ink)]">
-              {lastSubject.name}
-            </p>
-            <p className="mt-0.5 text-xs text-[color-mix(in_srgb,var(--ink)_50%,transparent)]">
-              Edite se quiser — grava ao escolher uma opção abaixo. Não conta no
-              tempo de estudo.
-            </p>
-            <AutoGrowTextarea
-              className="mt-2.5 w-full rounded-[10px] border border-[var(--line)] bg-[var(--surface)] px-3 py-2.5 text-sm leading-snug text-[var(--ink)] focus:border-[var(--signal)]"
-              value={notesDraft}
-              onChange={setNotesDraft}
-              placeholder="Ex.: vídeo 12, próximo passo…"
-              minPx={72}
-              maxPx={140}
-            />
-          </div>
+        {notesSubject ? (
+          <NotesBlock
+            subject={notesSubject}
+            draft={notesDraft}
+            onChange={setNotesDraft}
+          />
         ) : null}
 
         <div className="mt-5 flex flex-col gap-2">

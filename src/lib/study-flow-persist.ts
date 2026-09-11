@@ -6,6 +6,7 @@ export type StudyFlowPhase =
   | "idle"
   | "running"
   | "paused"
+  | "subject_notes"
   | "block_done"
   | "resting"
   | "rest_done";
@@ -24,6 +25,7 @@ const PHASES: StudyFlowPhase[] = [
   "idle",
   "running",
   "paused",
+  "subject_notes",
   "block_done",
   "resting",
   "rest_done",

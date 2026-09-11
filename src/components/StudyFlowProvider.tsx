@@ -40,6 +40,8 @@ type StudyFlowContextValue = {
   previewBlock: Subject[];
   previewSummary: string;
   currentSubjectId: string | null;
+  /** Índice da matéria atual no bloco (útil em subject_notes). */
+  currentIndex: number;
   restSecondsLeft: number;
   settings: BlockRangeSettings;
   refreshSettings: () => void;
@@ -56,6 +58,8 @@ type StudyFlowContextValue = {
   chooseRest: () => void;
   chooseContinue: () => void;
   chooseFinish: () => void;
+  /** Após anotar a matéria do meio do bloco, segue para a próxima. */
+  continueToNextSubject: () => void;
   endRestEarly: () => void;
   dismissRestDone: () => void;
 };
@@ -147,6 +151,7 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
       restored.length === 0 &&
       (saved.phase === "running" ||
         saved.phase === "paused" ||
+        saved.phase === "subject_notes" ||
         saved.phase === "block_done")
     ) {
       clearPersistedStudyFlow();
@@ -247,6 +252,7 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
   const sessionActive =
     phase === "running" ||
     phase === "paused" ||
+    phase === "subject_notes" ||
     phase === "block_done" ||
     phase === "resting" ||
     phase === "rest_done";
@@ -259,6 +265,7 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
       if (
         phase === "resting" ||
         phase === "rest_done" ||
+        phase === "subject_notes" ||
         phase === "block_done" ||
         phase === "paused"
       ) {
@@ -405,6 +412,21 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
     advancingRef.current = false;
   }, [runtime, subjectTimerKey, toggleSubjectTimer]);
 
+  const continueToNextSubject = useCallback(() => {
+    if (phaseRef.current !== "subject_notes") return;
+    const subjects = blockRef.current;
+    const nextIdx = indexRef.current + 1;
+    if (nextIdx >= subjects.length) {
+      setPhase("block_done");
+      advancingRef.current = false;
+      return;
+    }
+    advancingRef.current = false;
+    setCurrentIndex(nextIdx);
+    setPhase("running");
+    startSubjectAt(nextIdx, subjects);
+  }, [startSubjectAt]);
+
   const endRestEarly = useCallback(() => {
     setRestEndsAt(null);
     setPhase("idle");
@@ -432,11 +454,10 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
       advancingRef.current = true;
       const nextIdx = idx + 1;
       if (nextIdx < subjects.length) {
-        setCurrentIndex(nextIdx);
-        window.setTimeout(() => {
-          startSubjectAt(nextIdx, subjects);
-          advancingRef.current = false;
-        }, 900);
+        playAlarmTone();
+        notify("Foco Semanal", `${current.name} concluída — anote se quiser`);
+        setPhase("subject_notes");
+        advancingRef.current = false;
       } else {
         playAlarmTone();
         notify(
@@ -480,6 +501,7 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
       previewBlock,
       previewSummary,
       currentSubjectId,
+      currentIndex,
       restSecondsLeft,
       settings,
       refreshSettings,
@@ -494,6 +516,7 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
       chooseRest,
       chooseContinue,
       chooseFinish,
+      continueToNextSubject,
       endRestEarly,
       dismissRestDone,
     }),
@@ -504,6 +527,7 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
       previewBlock,
       previewSummary,
       currentSubjectId,
+      currentIndex,
       restSecondsLeft,
       settings,
       refreshSettings,
@@ -518,6 +542,7 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
       chooseRest,
       chooseContinue,
       chooseFinish,
+      continueToNextSubject,
       endRestEarly,
       dismissRestDone,
     ],
@@ -545,6 +570,8 @@ export function studyFlowStatusLabel(phase: StudyFlowPhase) {
       return "Em sessão";
     case "paused":
       return "Sessão pausada";
+    case "subject_notes":
+      return "Anotações entre matérias";
     case "block_done":
       return "Bloco concluído";
     case "resting":
