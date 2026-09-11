@@ -1,11 +1,13 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useId, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import {
   BookMarked,
   BookOpen,
   CalendarDays,
+  Ellipsis,
   Home,
   Settings,
   StickyNote,
@@ -24,12 +26,17 @@ const DESKTOP_NAV = [
   { href: "/ajustes", label: "Ajustes", icon: Settings },
 ];
 
-/** Mobile: abas por função. */
-const MOBILE_NAV = [
+/** Mobile: abas principais. */
+const MOBILE_PRIMARY = [
   { href: "/hoje", label: "Estudo", icon: BookMarked },
   { href: "/agenda", label: "Agenda", icon: CalendarDays },
   { href: "/lembretes", label: "Lembretes", icon: StickyNote },
+];
+
+/** Mobile: opções dentro do ⋯ */
+const MOBILE_MORE = [
   { href: "/materias", label: "Matérias", icon: BookOpen },
+  { href: "/estatisticas", label: "Estatísticas", icon: ChartColumn },
   { href: "/ajustes", label: "Ajustes", icon: Settings },
 ];
 
@@ -42,23 +49,112 @@ function desktopNavActive(pathname: string, href: string) {
   return pathname.startsWith(href);
 }
 
-function mobileNavActive(pathname: string, href: string) {
+function mobilePrimaryActive(pathname: string, href: string) {
   if (href === "/agenda") {
     return (
       pathname.startsWith("/agenda") || pathname.startsWith("/semana")
     );
   }
-  if (href === "/ajustes") {
-    return (
-      pathname.startsWith("/ajustes") || pathname.startsWith("/configuracoes")
-    );
-  }
   return pathname.startsWith(href);
+}
+
+function mobileMoreActive(pathname: string) {
+  return MOBILE_MORE.some(({ href }) => {
+    if (href === "/ajustes") {
+      return (
+        pathname.startsWith("/ajustes") ||
+        pathname.startsWith("/configuracoes")
+      );
+    }
+    return pathname.startsWith(href);
+  });
+}
+
+function MobileMoreMenu({
+  open,
+  onClose,
+  pathname,
+}: {
+  open: boolean;
+  onClose: () => void;
+  pathname: string;
+}) {
+  const panelRef = useRef<HTMLDivElement>(null);
+  const titleId = useId();
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open, onClose]);
+
+  if (!open) return null;
+
+  return (
+    <div className="fixed inset-0 z-40 lg:hidden" role="presentation">
+      <button
+        type="button"
+        className="absolute inset-0 bg-[color-mix(in_srgb,var(--ink)_28%,transparent)]"
+        aria-label="Fechar menu"
+        onClick={onClose}
+      />
+      <div
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        className="absolute inset-x-0 bottom-[calc(4.25rem+env(safe-area-inset-bottom))] mx-auto w-full max-w-lg px-2 pb-2"
+      >
+        <div className="overflow-hidden rounded-[18px] border border-[var(--line)] bg-[var(--surface)] shadow-[var(--shadow-md)]">
+          <p
+            id={titleId}
+            className="border-b border-[var(--line)] px-4 py-2.5 text-xs font-medium uppercase tracking-wider text-[color-mix(in_srgb,var(--ink)_50%,transparent)]"
+          >
+            Mais
+          </p>
+          <ul className="py-1">
+            {MOBILE_MORE.map(({ href, label, icon: Icon }) => {
+              const active =
+                href === "/ajustes"
+                  ? pathname.startsWith("/ajustes") ||
+                    pathname.startsWith("/configuracoes")
+                  : pathname.startsWith(href);
+              return (
+                <li key={href}>
+                  <Link
+                    href={href}
+                    onClick={onClose}
+                    aria-current={active ? "page" : undefined}
+                    className={`flex min-h-12 items-center gap-3 px-4 text-[15px] font-medium transition ${
+                      active
+                        ? "bg-[var(--signal-soft)] text-[var(--signal)]"
+                        : "text-[var(--ink)] active:bg-[var(--mist)]"
+                    }`}
+                  >
+                    <Icon size={20} strokeWidth={active ? 2.25 : 1.75} />
+                    {label}
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { user, ready, cloudSync } = useApp();
+  const [moreOpen, setMoreOpen] = useState(false);
+
+  useEffect(() => {
+    setMoreOpen(false);
+  }, [pathname]);
 
   if (!ready) {
     return (
@@ -71,6 +167,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   if (!user) {
     return <LoginScreen />;
   }
+
+  const moreActive = mobileMoreActive(pathname);
 
   return (
     <div className="relative z-0 min-h-screen pb-[calc(4.25rem+env(safe-area-inset-bottom))] lg:pb-0">
@@ -136,13 +234,19 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         {children}
       </main>
 
+      <MobileMoreMenu
+        open={moreOpen}
+        onClose={() => setMoreOpen(false)}
+        pathname={pathname}
+      />
+
       <nav
-        className="fixed inset-x-0 bottom-0 z-30 border-t border-[var(--line)] bg-[var(--surface)]/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl lg:hidden"
+        className="fixed inset-x-0 bottom-0 z-50 border-t border-[var(--line)] bg-[var(--surface)]/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl lg:hidden"
         aria-label="Navegação principal"
       >
-        <div className="mx-auto grid h-[4.25rem] max-w-lg grid-cols-5 px-1">
-          {MOBILE_NAV.map(({ href, label, icon: Icon }) => {
-            const active = mobileNavActive(pathname, href);
+        <div className="mx-auto grid h-[4.25rem] max-w-lg grid-cols-4 px-1">
+          {MOBILE_PRIMARY.map(({ href, label, icon: Icon }) => {
+            const active = mobilePrimaryActive(pathname, href);
             return (
               <Link
                 key={href}
@@ -162,6 +266,24 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               </Link>
             );
           })}
+          <button
+            type="button"
+            aria-label="Mais opções"
+            aria-expanded={moreOpen}
+            aria-haspopup="dialog"
+            onClick={() => setMoreOpen((v) => !v)}
+            className={`flex flex-col items-center justify-center gap-0.5 rounded-[var(--radius-btn)] text-[10px] font-medium transition-colors ${
+              moreOpen || moreActive
+                ? "text-[var(--signal)]"
+                : "text-[color-mix(in_srgb,var(--ink)_50%,transparent)]"
+            }`}
+          >
+            <Ellipsis
+              size={20}
+              strokeWidth={moreOpen || moreActive ? 2.25 : 1.75}
+            />
+            <span className="leading-none">Mais</span>
+          </button>
         </div>
       </nav>
     </div>

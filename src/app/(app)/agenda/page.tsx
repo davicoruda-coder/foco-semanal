@@ -173,8 +173,8 @@ export default function AgendaPage() {
             </div>
           </div>
         ) : (
-          <div className="bg-[var(--signal-soft)]/50 px-3.5 py-2.5 md:px-5 md:py-3">
-            <div className="flex flex-wrap items-center gap-2">
+          <div className="bg-[var(--signal-soft)]/50 px-3.5 py-3 md:px-5 md:py-3">
+            <div className="flex flex-col gap-2">
               {todayBlocks.length === 0 && (
                 <p className="text-sm opacity-55">Nenhum bloco hoje.</p>
               )}
@@ -183,7 +183,7 @@ export default function AgendaPage() {
                 return (
                   <div
                     key={b.id}
-                    className="rounded-full px-3 py-1.5 text-sm font-medium tabular-nums"
+                    className="rounded-[var(--radius-tag)] px-3 py-2.5 text-sm font-medium leading-snug break-words tabular-nums"
                     style={style.style}
                   >
                     {b.label}

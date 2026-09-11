@@ -436,20 +436,16 @@ export function ReminderBoard({ compact }: { compact?: boolean }) {
         </div>
       )}
 
-      {!compact && (
-        <p className="mb-6 opacity-65">
-          Bolinha pra trocar a cor · sino pra alarme · lixeira pra excluir.
-        </p>
-      )}
-
       {list.length === 0 && !pickingColor ? (
-        <p className="text-xs opacity-55">Nenhuma nota ainda.</p>
+        <p className={`text-xs opacity-55 ${compact ? "" : "mt-4"}`}>
+          Nenhuma nota ainda.
+        </p>
       ) : (
         <div
           className={
             compact
               ? "grid grid-cols-1 gap-2"
-              : "grid gap-2 sm:grid-cols-3 md:grid-cols-4"
+              : "mt-4 grid gap-2 sm:grid-cols-3 md:grid-cols-4"
           }
         >
           {list.map((r) => (
