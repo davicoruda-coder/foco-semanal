@@ -271,18 +271,25 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             aria-label="Mais opções"
             aria-expanded={moreOpen}
             aria-haspopup="dialog"
+            title="Mais opções"
             onClick={() => setMoreOpen((v) => !v)}
-            className={`flex flex-col items-center justify-center gap-0.5 rounded-[var(--radius-btn)] text-[10px] font-medium transition-colors ${
+            className={`flex flex-col items-center justify-center gap-0.5 rounded-[var(--radius-btn)] transition-colors ${
               moreOpen || moreActive
                 ? "text-[var(--signal)]"
                 : "text-[color-mix(in_srgb,var(--ink)_50%,transparent)]"
             }`}
           >
             <Ellipsis
-              size={20}
+              size={22}
               strokeWidth={moreOpen || moreActive ? 2.25 : 1.75}
             />
-            <span className="leading-none">Mais</span>
+            {/* Reserva a mesma altura do rótulo das outras abas */}
+            <span
+              className="invisible max-w-full truncate px-0.5 text-[10px] font-medium leading-none"
+              aria-hidden
+            >
+              —
+            </span>
           </button>
         </div>
       </nav>
