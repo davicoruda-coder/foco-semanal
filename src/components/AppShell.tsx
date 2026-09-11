@@ -283,13 +283,19 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 href={href}
                 aria-label={label}
                 aria-current={active ? "page" : undefined}
-                className={`flex min-w-0 flex-1 flex-col items-center justify-center gap-1 text-[11px] font-medium transition-colors ${
+                className={`flex min-w-0 flex-1 flex-col items-center justify-center gap-1 text-[11px] transition-colors ${
                   active
-                    ? "text-[var(--signal)]"
-                    : "text-[color-mix(in_srgb,var(--ink)_45%,transparent)]"
+                    ? "font-semibold text-[var(--signal)]"
+                    : "font-medium text-[color-mix(in_srgb,var(--ink)_45%,transparent)]"
                 }`}
               >
-                <Icon size={24} strokeWidth={2} />
+                <span
+                  className={`grid size-9 place-items-center rounded-xl transition-colors ${
+                    active ? "bg-[var(--signal-soft)]" : "bg-transparent"
+                  }`}
+                >
+                  <Icon size={24} strokeWidth={1.85} />
+                </span>
                 <span className="max-w-full truncate px-0.5 leading-none">
                   {label}
                 </span>
@@ -303,13 +309,21 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             aria-haspopup="dialog"
             title="Mais opções"
             onClick={() => setMoreOpen((v) => !v)}
-            className={`flex min-w-0 flex-1 flex-col items-center justify-center gap-1 text-[11px] font-medium transition-colors ${
+            className={`flex min-w-0 flex-1 flex-col items-center justify-center gap-1 text-[11px] transition-colors ${
               moreOpen || moreActive
-                ? "text-[var(--signal)]"
-                : "text-[color-mix(in_srgb,var(--ink)_45%,transparent)]"
+                ? "font-semibold text-[var(--signal)]"
+                : "font-medium text-[color-mix(in_srgb,var(--ink)_45%,transparent)]"
             }`}
           >
-            <Ellipsis size={24} strokeWidth={2} />
+            <span
+              className={`grid size-9 place-items-center rounded-xl transition-colors ${
+                moreOpen || moreActive
+                  ? "bg-[var(--signal-soft)]"
+                  : "bg-transparent"
+              }`}
+            >
+              <Ellipsis size={24} strokeWidth={1.85} />
+            </span>
             <span className="max-w-full truncate px-0.5 leading-none">
               Mais
             </span>
