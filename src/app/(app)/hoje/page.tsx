@@ -10,7 +10,14 @@ import {
 } from "lucide-react";
 import { useApp } from "@/components/AppProvider";
 import { DAYS, STATUS_LABEL } from "@/lib/types";
-import { blockStyle, freeRowClass, statusClass, statusRowClass, subjectShowsOnDay, todayIndex } from "@/lib/utils";
+import {
+  blockStyle,
+  freeRowClass,
+  statusClass,
+  statusRowClass,
+  subjectShowsOnDay,
+  todayIndex,
+} from "@/lib/utils";
 import { ReminderWatcher } from "@/components/ReminderWatcher";
 import { ReminderBoard } from "@/components/ReminderBoard";
 import { SessionClock } from "@/components/SessionClock";
@@ -43,7 +50,6 @@ export default function HojePage() {
       [...data.subjects]
         .filter((s) => s.active && subjectShowsOnDay(s, day))
         .sort((a, b) => {
-          // Livre no topo; depois o ciclo (Próxima/Concluída) por ordem.
           const freeA = Number(Boolean(a.is_free));
           const freeB = Number(Boolean(b.is_free));
           if (freeA !== freeB) return freeB - freeA;
@@ -60,8 +66,7 @@ export default function HojePage() {
     [data.week_blocks, day],
   );
 
-  const autoCompact =
-    subjects.length >= COMPACT_WEEK_THRESHOLD || narrow;
+  const autoCompact = subjects.length >= COMPACT_WEEK_THRESHOLD || narrow;
   const showFullWeek = weekOverride ?? !autoCompact;
   const showWeekToggle = autoCompact || weekOverride !== null;
 
@@ -75,11 +80,12 @@ export default function HojePage() {
         onClose={() => setCalendarOpen(false)}
       />
 
-      <div className="grid items-start gap-4 sm:gap-5 lg:grid-cols-[minmax(0,1fr)_300px] xl:grid-cols-[minmax(0,1fr)_320px]">
-        <div className="min-w-0 space-y-4 sm:space-y-5">
+      <div className="grid items-start gap-3 sm:gap-5 lg:grid-cols-[minmax(0,1fr)_300px] xl:grid-cols-[minmax(0,1fr)_320px]">
+        <div className="min-w-0 space-y-3 sm:space-y-5">
+          {/* Agenda do dia / semana */}
           <section className="surface overflow-hidden p-0">
             <div
-              className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 text-white md:px-5"
+              className="flex flex-wrap items-center justify-between gap-2 px-3.5 py-2.5 text-white md:px-5 md:py-3"
               style={{
                 background:
                   "linear-gradient(120deg, var(--signal), color-mix(in srgb, var(--signal) 55%, var(--accent-2)))",
@@ -89,7 +95,7 @@ export default function HojePage() {
                 type="button"
                 title="Abrir calendário do mês"
                 aria-label="Abrir calendário do mês"
-                className="font-display inline-flex items-center gap-2 rounded-[var(--radius-tag)] text-base font-semibold tracking-tight transition hover:opacity-85 md:text-lg"
+                className="font-display inline-flex min-h-10 items-center gap-2 rounded-[var(--radius-tag)] text-[15px] font-semibold tracking-tight transition hover:opacity-85 md:min-h-0 md:text-lg"
                 onClick={() => setCalendarOpen(true)}
               >
                 <CalendarDays size={18} strokeWidth={2} />
@@ -107,7 +113,7 @@ export default function HojePage() {
                   aria-label={
                     showFullWeek ? "Mostrar só hoje" : "Mostrar semana toda"
                   }
-                  className="inline-flex items-center gap-1 rounded-[var(--radius-tag)] bg-white/15 px-3 py-2 text-sm font-medium transition hover:bg-white/25 md:px-2 md:py-1 md:text-xs"
+                  className="inline-flex min-h-10 items-center gap-1 rounded-full bg-white/15 px-3.5 py-2 text-sm font-medium transition hover:bg-white/25 md:min-h-0 md:rounded-[var(--radius-tag)] md:px-2 md:py-1 md:text-xs"
                   onClick={() => setWeekOverride(!showFullWeek)}
                 >
                   {showFullWeek ? (
@@ -125,7 +131,6 @@ export default function HojePage() {
 
             {showFullWeek ? (
               <div className="-mx-0 overflow-x-auto overscroll-x-contain">
-                {/* No celular a semana fica maior (leitura rápida); a partir de md volta ao tamanho da grade. */}
                 <div className="grid min-w-[72rem] grid-cols-7 divide-x divide-[var(--line)] md:min-w-[46rem] lg:min-w-0">
                   {weekDays.map(({ name, i }) => {
                     const blocks = data.week_blocks
@@ -158,7 +163,9 @@ export default function HojePage() {
                         </div>
                         <div className="space-y-2 p-2 md:space-y-1.5">
                           {blocks.length === 0 && (
-                            <p className="px-1 text-sm opacity-40 md:text-xs">—</p>
+                            <p className="px-1 text-sm opacity-40 md:text-xs">
+                              —
+                            </p>
                           )}
                           {blocks.map((b) => {
                             const style = blockStyle(b, { muted: !isToday });
@@ -181,8 +188,8 @@ export default function HojePage() {
                 </div>
               </div>
             ) : (
-              <div className="bg-[var(--signal-soft)]/50 p-3 md:px-5">
-                <div className="flex flex-col items-start gap-2">
+              <div className="bg-[var(--signal-soft)]/50 px-3.5 py-2.5 md:px-5 md:py-3">
+                <div className="flex flex-wrap items-center gap-2">
                   {todayBlocks.length === 0 && (
                     <p className="text-sm opacity-55">Nenhum bloco hoje.</p>
                   )}
@@ -191,7 +198,7 @@ export default function HojePage() {
                     return (
                       <div
                         key={b.id}
-                        className="rounded-[var(--radius-tag)] px-3 py-1.5 text-sm font-medium tabular-nums"
+                        className="rounded-full px-3 py-1.5 text-sm font-medium tabular-nums"
                         style={style.style}
                       >
                         {b.label}
@@ -203,71 +210,73 @@ export default function HojePage() {
             )}
           </section>
 
-          <div className="surface p-4 lg:hidden">
-            <ReminderBoard compact />
-          </div>
-
+          {/* Ciclo — bloco principal no mobile */}
           <section className="surface overflow-hidden p-0">
-            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--line)] px-4 py-3 md:px-5">
-              <h2 className="font-display text-base font-semibold tracking-tight md:text-lg">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--line)] px-3.5 py-2.5 md:px-5 md:py-3">
+              <h2 className="font-display text-[15px] font-semibold tracking-tight md:text-lg">
                 Ciclo de Estudos
               </h2>
               <Link
                 href="/materias?from=hoje"
                 title="Gerenciar matérias"
                 aria-label="Gerenciar matérias"
-                className="rounded-full p-1.5 text-[color-mix(in_srgb,var(--ink)_45%,transparent)] transition hover:bg-[var(--mist)] hover:text-[var(--signal)]"
+                className="grid size-10 place-items-center rounded-full text-[color-mix(in_srgb,var(--ink)_45%,transparent)] transition hover:bg-[var(--mist)] hover:text-[var(--signal)] md:size-auto md:p-1.5"
               >
-                <SlidersHorizontal size={16} strokeWidth={1.75} />
+                <SlidersHorizontal size={18} strokeWidth={1.75} />
               </Link>
             </div>
 
             <StudySessionBar />
 
-            {/* Mobile: cards empilhados */}
-            <div className="divide-y divide-[var(--line)] md:hidden">
+            {/* Mobile: lista app-like */}
+            <div className="space-y-2 p-2.5 md:hidden">
               {subjects.map((s) => {
                 const free = Boolean(s.is_free);
                 return (
-                <div
-                  key={s.id}
-                  className={`space-y-2.5 px-4 py-3.5 ${free ? freeRowClass() : statusRowClass(s.status)}`}
-                >
-                  <div className="flex flex-wrap items-start justify-between gap-2">
-                    <div className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-2.5 gap-y-1">
-                      <p className="min-w-0 text-base font-medium leading-snug">
-                        {s.name}
-                      </p>
-                      <SessionSubjectClock subjectId={s.id} compact />
+                  <div
+                    key={s.id}
+                    className={`rounded-[14px] px-3.5 py-3 ${
+                      free ? freeRowClass() : statusRowClass(s.status)
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-2.5 gap-y-1">
+                        <p className="min-w-0 text-[15px] font-semibold leading-snug">
+                          {s.name}
+                        </p>
+                        <SessionSubjectClock subjectId={s.id} compact />
+                      </div>
+                      {!free && (
+                        <span
+                          className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-medium ${statusClass(s.status)}`}
+                        >
+                          {STATUS_LABEL[s.status]}
+                        </span>
+                      )}
+                      {free && (
+                        <span className="shrink-0 rounded-full bg-[var(--signal-soft)] px-2.5 py-1 text-[11px] font-medium text-[var(--signal)] ring-1 ring-[color-mix(in_srgb,var(--signal)_35%,transparent)]">
+                          Livre
+                        </span>
+                      )}
                     </div>
-                    {!free && (
-                      <span
-                        className={`shrink-0 rounded-full px-2.5 py-1.5 text-xs font-medium ${statusClass(s.status)}`}
-                      >
-                        {STATUS_LABEL[s.status]}
-                      </span>
-                    )}
-                    {free && (
-                      <span className="shrink-0 rounded-full bg-[var(--signal-soft)] px-2.5 py-1.5 text-xs font-medium text-[var(--signal)] ring-1 ring-[color-mix(in_srgb,var(--signal)_35%,transparent)]">
-                        Livre
-                      </span>
-                    )}
+                    <AutoGrowTextarea
+                      className="mt-2 w-full rounded-[10px] border border-[color-mix(in_srgb,var(--ink)_8%,transparent)] bg-[color-mix(in_srgb,var(--surface)_55%,transparent)] px-2.5 py-2 text-sm leading-snug text-[color-mix(in_srgb,var(--ink)_84%,transparent)] focus:border-[var(--signal)] focus:bg-[var(--surface)] focus:text-[var(--ink)]"
+                      value={s.notes}
+                      placeholder="Anotações…"
+                      minPx={40}
+                      maxPx={88}
+                      onChange={(notes) => upsertSubject({ ...s, notes })}
+                    />
                   </div>
-                  <AutoGrowTextarea
-                    className="w-full rounded-[var(--radius-tag)] border border-[var(--line)] bg-[var(--surface)]/70 px-2.5 py-2 text-[15px] text-[color-mix(in_srgb,var(--ink)_84%,transparent)] focus:border-[var(--signal)] focus:text-[var(--ink)]"
-                    value={s.notes}
-                    placeholder="Anotações…"
-                    minPx={48}
-                    maxPx={96}
-                    onChange={(notes) => upsertSubject({ ...s, notes })}
-                  />
-                </div>
                 );
               })}
-                  {subjects.length === 0 && (
-                <p className="px-4 py-8 text-sm opacity-55">
+              {subjects.length === 0 && (
+                <p className="px-2 py-8 text-center text-sm opacity-55">
                   Nenhuma matéria para hoje —{" "}
-                  <Link href="/materias?from=hoje" className="text-[var(--signal)]">
+                  <Link
+                    href="/materias?from=hoje"
+                    className="text-[var(--signal)]"
+                  >
                     gerenciar
                   </Link>
                 </p>
@@ -303,52 +312,59 @@ export default function HojePage() {
                         ? "border-b-2 border-[var(--surface)]"
                         : "";
                     return (
-                    <tr
-                      key={s.id}
-                      className={`transition-colors ${free ? freeRowClass() : statusRowClass(s.status)}`}
-                    >
-                      <td
-                        className={`break-words px-5 py-3 align-middle text-base font-medium leading-snug ${rowBorder}`}
+                      <tr
+                        key={s.id}
+                        className={`transition-colors ${free ? freeRowClass() : statusRowClass(s.status)}`}
                       >
-                        <div className="flex flex-wrap items-baseline gap-x-2.5 gap-y-1">
-                          <span className="min-w-0">{s.name}</span>
-                          <SessionSubjectClock subjectId={s.id} />
-                        </div>
-                      </td>
-                      <td className={`py-3 pl-2 pr-2 align-middle ${rowBorder}`}>
-                        {free ? (
-                          <span className="inline-flex rounded-full bg-[var(--signal-soft)] px-2.5 py-1.5 text-xs font-medium text-[var(--signal)] ring-1 ring-[color-mix(in_srgb,var(--signal)_35%,transparent)]">
-                            Livre
-                          </span>
-                        ) : (
-                          <span
-                            className={`inline-flex rounded-full px-2.5 py-1.5 text-xs font-medium ${statusClass(s.status)}`}
-                          >
-                            {STATUS_LABEL[s.status]}
-                          </span>
-                        )}
-                      </td>
-                      <td className={`px-5 py-3 align-middle ${rowBorder}`}>
-                        <div className="flex min-h-[2.25rem] items-start">
-                          <AutoGrowTextarea
-                            className="w-full break-words rounded-[var(--radius-tag)] border border-transparent bg-transparent px-0 py-0 text-[15px] font-normal leading-snug text-[color-mix(in_srgb,var(--ink)_84%,transparent)] focus:border-[var(--line)] focus:bg-[var(--surface)] focus:px-2 focus:py-1 focus:text-[var(--ink)]"
-                            value={s.notes}
-                            placeholder="Anotações…"
-                            minPx={22}
-                            maxPx={44}
-                            rows={1}
-                            onChange={(notes) => upsertSubject({ ...s, notes })}
-                          />
-                        </div>
-                      </td>
-                    </tr>
+                        <td
+                          className={`break-words px-5 py-3 align-middle text-base font-medium leading-snug ${rowBorder}`}
+                        >
+                          <div className="flex flex-wrap items-baseline gap-x-2.5 gap-y-1">
+                            <span className="min-w-0">{s.name}</span>
+                            <SessionSubjectClock subjectId={s.id} />
+                          </div>
+                        </td>
+                        <td
+                          className={`py-3 pl-2 pr-2 align-middle ${rowBorder}`}
+                        >
+                          {free ? (
+                            <span className="inline-flex rounded-full bg-[var(--signal-soft)] px-2.5 py-1.5 text-xs font-medium text-[var(--signal)] ring-1 ring-[color-mix(in_srgb,var(--signal)_35%,transparent)]">
+                              Livre
+                            </span>
+                          ) : (
+                            <span
+                              className={`inline-flex rounded-full px-2.5 py-1.5 text-xs font-medium ${statusClass(s.status)}`}
+                            >
+                              {STATUS_LABEL[s.status]}
+                            </span>
+                          )}
+                        </td>
+                        <td className={`px-5 py-3 align-middle ${rowBorder}`}>
+                          <div className="flex min-h-[2.25rem] items-start">
+                            <AutoGrowTextarea
+                              className="w-full break-words rounded-[var(--radius-tag)] border border-transparent bg-transparent px-0 py-0 text-[15px] font-normal leading-snug text-[color-mix(in_srgb,var(--ink)_84%,transparent)] focus:border-[var(--line)] focus:bg-[var(--surface)] focus:px-2 focus:py-1 focus:text-[var(--ink)]"
+                              value={s.notes}
+                              placeholder="Anotações…"
+                              minPx={22}
+                              maxPx={44}
+                              rows={1}
+                              onChange={(notes) =>
+                                upsertSubject({ ...s, notes })
+                              }
+                            />
+                          </div>
+                        </td>
+                      </tr>
                     );
                   })}
                   {subjects.length === 0 && (
                     <tr>
                       <td colSpan={3} className="px-5 py-8 text-sm opacity-55">
                         Nenhuma matéria para hoje —{" "}
-                        <Link href="/materias?from=hoje" className="text-[var(--signal)]">
+                        <Link
+                          href="/materias?from=hoje"
+                          className="text-[var(--signal)]"
+                        >
                           gerenciar
                         </Link>
                       </td>
@@ -359,9 +375,17 @@ export default function HojePage() {
             </div>
           </section>
 
-          <div className="space-y-4 lg:hidden">
-            <SessionClock layout="stack" variant="livre" />
-            <FocusTodayCard />
+          {/* Ferramentas compactas no mobile */}
+          <div className="surface overflow-hidden lg:hidden">
+            <SessionClock variant="livre" compact />
+            <div className="border-t border-[var(--line)]">
+              <FocusTodayCard compact embedded />
+            </div>
+          </div>
+
+          {/* Lembretes — secundário no mobile */}
+          <div className="surface p-3.5 lg:hidden">
+            <ReminderBoard compact />
           </div>
         </div>
 

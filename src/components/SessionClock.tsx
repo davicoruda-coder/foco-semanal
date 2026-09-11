@@ -394,10 +394,13 @@ function MiniRing({
 export function SessionClock({
   layout = "row",
   variant = "full",
+  compact = false,
 }: {
   layout?: ClockLayout;
-  /** No Hoje: só cronômetro Livre (sessão fica no CTA do ciclo). */
+  /** No Hoje: só cronômetro (sessão fica no CTA do ciclo). */
   variant?: "full" | "livre";
+  /** Faixa horizontal densa (mobile). */
+  compact?: boolean;
 }) {
   const { data } = useApp();
   const {
@@ -460,6 +463,29 @@ export function SessionClock({
         onToggle={() => toggleTimer(t.id)}
         onReset={() => resetTimer(t.id)}
       />
+    );
+  }
+
+  if (livreOnly && compact) {
+    return (
+      <div className="px-2.5 py-2">
+        <MiniRing
+          display={formatTime(stopwatchSeconds)}
+          label="Cronômetro"
+          size={52}
+          stroke={4}
+          progress={1}
+          accent="var(--signal)"
+          softRing
+          dense
+          active={stopwatch.running}
+          paused={swPaused}
+          flash={flash?.id === "stopwatch" ? flash.kind : null}
+          flashKey={flash?.id === "stopwatch" ? flash.key : undefined}
+          onToggle={toggleStopwatch}
+          onReset={resetStopwatch}
+        />
+      </div>
     );
   }
 

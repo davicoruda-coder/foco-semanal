@@ -104,7 +104,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       </header>
 
-      <main className="mx-auto max-w-7xl px-3 pb-6 pt-[max(0.75rem,env(safe-area-inset-top))] sm:px-5 md:px-8 lg:pb-10 lg:pt-6">
+      <main className="mx-auto max-w-7xl px-2.5 pb-5 pt-[max(0.5rem,env(safe-area-inset-top))] sm:px-5 sm:pb-6 sm:pt-[max(0.75rem,env(safe-area-inset-top))] md:px-8 lg:pb-10 lg:pt-6">
         {children}
       </main>
 
