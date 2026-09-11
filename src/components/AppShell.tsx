@@ -5,7 +5,6 @@ import { useEffect, useId, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import {
   BookMarked,
-  BookOpen,
   CalendarDays,
   Ellipsis,
   Home,
@@ -22,7 +21,6 @@ import { useOpenTransition } from "@/lib/use-open-transition";
 const DESKTOP_NAV = [
   { href: "/hoje", label: "Hoje", icon: Home },
   { href: "/semana", label: "Semana", icon: CalendarDays },
-  { href: "/materias", label: "Matérias", icon: BookOpen },
   { href: "/estatisticas", label: "Estatísticas", icon: ChartColumn },
   { href: "/ajustes", label: "Ajustes", icon: Settings },
 ];
@@ -36,10 +34,21 @@ const MOBILE_PRIMARY = [
 
 /** Mobile: opções dentro do ⋯ */
 const MOBILE_MORE = [
-  { href: "/materias", label: "Matérias", icon: BookOpen },
   { href: "/estatisticas", label: "Estatísticas", icon: ChartColumn },
   { href: "/ajustes", label: "Ajustes", icon: Settings },
 ];
+
+function mobilePrimaryActive(pathname: string, href: string) {
+  if (href === "/agenda") {
+    return (
+      pathname.startsWith("/agenda") || pathname.startsWith("/semana")
+    );
+  }
+  if (href === "/hoje") {
+    return pathname.startsWith("/hoje") || pathname.startsWith("/materias");
+  }
+  return pathname.startsWith(href);
+}
 
 function desktopNavActive(pathname: string, href: string) {
   if (href === "/ajustes") {
@@ -47,14 +56,8 @@ function desktopNavActive(pathname: string, href: string) {
       pathname.startsWith("/ajustes") || pathname.startsWith("/configuracoes")
     );
   }
-  return pathname.startsWith(href);
-}
-
-function mobilePrimaryActive(pathname: string, href: string) {
-  if (href === "/agenda") {
-    return (
-      pathname.startsWith("/agenda") || pathname.startsWith("/semana")
-    );
+  if (href === "/hoje") {
+    return pathname.startsWith("/hoje") || pathname.startsWith("/materias");
   }
   return pathname.startsWith(href);
 }
