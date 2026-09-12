@@ -523,13 +523,22 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
   );
   const focusLastRef = useRef<number | null>(null);
 
-  const flushFocusSeconds = useCallback(() => {
+  /** Acumula foco sem descartar ms sobrando entre flushes (evita subcontar ~1 min/hora). */
+  const flushFocusSeconds = useCallback((final = false) => {
     const now = Date.now();
     const last = focusLastRef.current;
     if (last == null) return;
-    const deltaSec = Math.floor((now - last) / 1000);
-    focusLastRef.current = now;
-    if (deltaSec > 0) addFocusSeconds(deltaSec);
+    const elapsed = now - last;
+    const deltaSec = final
+      ? Math.round(elapsed / 1000)
+      : Math.floor(elapsed / 1000);
+    if (deltaSec > 0) {
+      // Mantém o resto de milissegundos para o próximo flush (exceto no fim).
+      focusLastRef.current = final ? now : last + deltaSec * 1000;
+      addFocusSeconds(deltaSec);
+    } else if (final) {
+      focusLastRef.current = now;
+    }
   }, []);
 
   useEffect(() => {
@@ -543,7 +552,7 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
     focusLastRef.current = Date.now();
 
     const persistFocus = () => {
-      flushFocusSeconds();
+      flushFocusSeconds(false);
       window.dispatchEvent(new Event("foco-focus-log"));
     };
 
@@ -557,7 +566,7 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
     return () => {
       document.removeEventListener("visibilitychange", onHide);
       window.removeEventListener("pagehide", persistFocus);
-      flushFocusSeconds();
+      flushFocusSeconds(true);
       focusLastRef.current = null;
       // Pause / fim / reset: libera o total consolidado e espelha na nuvem.
       commitFocusDisplaySnapshot();
