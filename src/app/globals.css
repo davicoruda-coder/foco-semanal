@@ -455,27 +455,40 @@ a {
    para funcionar no claro e no escuro sem perder legibilidade. */
 @keyframes synaptic-flow {
   0% {
-    background-position: 0% 50%;
+    background-position: 0% 40%, 100% 60%, 50% 100%;
   }
-  50% {
-    background-position: 100% 50%;
+  33% {
+    background-position: 80% 20%, 20% 80%, 10% 40%;
+  }
+  66% {
+    background-position: 40% 90%, 70% 10%, 90% 50%;
   }
   100% {
-    background-position: 0% 50%;
+    background-position: 0% 40%, 100% 60%, 50% 100%;
   }
 }
 
 .synaptic-flow {
-  background: linear-gradient(
-    115deg,
-    color-mix(in srgb, var(--signal) 24%, var(--surface)),
-    var(--signal-soft),
-    color-mix(in srgb, var(--surface) 88%, var(--signal)),
-    color-mix(in srgb, var(--signal) 16%, var(--surface)),
-    var(--signal-soft)
-  );
-  background-size: 320% 320%;
-  animation: synaptic-flow 9s ease-in-out infinite;
+  background-color: var(--signal-soft);
+  background-image:
+    radial-gradient(
+      120% 90% at 15% 40%,
+      color-mix(in srgb, var(--signal) 42%, transparent),
+      transparent 58%
+    ),
+    radial-gradient(
+      110% 85% at 85% 55%,
+      color-mix(in srgb, var(--surface) 92%, var(--signal)),
+      transparent 55%
+    ),
+    radial-gradient(
+      100% 80% at 50% 100%,
+      color-mix(in srgb, var(--signal) 28%, var(--surface)),
+      transparent 60%
+    );
+  background-size: 180% 180%, 200% 200%, 160% 160%;
+  background-repeat: no-repeat;
+  animation: synaptic-flow 7s ease-in-out infinite;
   will-change: background-position;
 }
 
