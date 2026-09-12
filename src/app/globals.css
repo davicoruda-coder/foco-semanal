@@ -450,6 +450,47 @@ a {
   animation: dialog-card-out 140ms ease-in both;
 }
 
+/* Gradiente Sináptico Fluido — card "Em sessão".
+   Anima só background-position (compositor-friendly); tons na família do --signal
+   para funcionar no claro e no escuro sem perder legibilidade. */
+@keyframes synaptic-flow {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.synaptic-flow {
+  background: linear-gradient(
+    115deg,
+    color-mix(in srgb, var(--signal) 24%, var(--surface)),
+    var(--signal-soft),
+    color-mix(in srgb, var(--surface) 88%, var(--signal)),
+    color-mix(in srgb, var(--signal) 16%, var(--surface)),
+    var(--signal-soft)
+  );
+  background-size: 320% 320%;
+  animation: synaptic-flow 9s ease-in-out infinite;
+  will-change: background-position;
+}
+
+/* Sessão pausada: congela o fluxo. */
+.synaptic-flow.is-paused {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .synaptic-flow {
+    animation: none;
+    background: var(--signal-soft);
+  }
+}
+
 .nav-tab-active-chip {
   /* Claro: um pouco mais saturado que --signal-soft, para ler no branco */
   background: color-mix(in srgb, var(--signal) 20%, var(--surface));

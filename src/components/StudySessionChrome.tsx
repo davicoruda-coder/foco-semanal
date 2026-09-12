@@ -92,7 +92,11 @@ export function StudySessionBar() {
 
   return (
     <div className="border-b border-[var(--line)] px-4 py-2.5 md:px-5">
-      <div className="flex items-center gap-1.5 rounded-[var(--radius-tag)] border border-[color-mix(in_srgb,var(--signal)_28%,var(--line))] bg-[var(--signal-soft)] px-2 py-1.5 sm:gap-2">
+      <div
+        className={`synaptic-flow flex items-center gap-1.5 rounded-[var(--radius-tag)] border border-[color-mix(in_srgb,var(--signal)_28%,var(--line))] px-2 py-1.5 sm:gap-2 ${
+          flow.phase === "paused" ? "is-paused" : ""
+        }`}
+      >
         <button
           type="button"
           onClick={
