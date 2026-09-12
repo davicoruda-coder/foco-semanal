@@ -224,6 +224,24 @@ function MiniRing({
 
   // Cronômetro: tempo + play/pause e reset dentro do círculo
   if (softRing) {
+    const longDisplay = display.length > 5;
+    const timeSize =
+      size >= 160
+        ? longDisplay
+          ? "1.35rem"
+          : "1.55rem"
+        : size >= 120
+          ? longDisplay
+            ? "1.15rem"
+            : "1.25rem"
+          : size >= 100
+            ? longDisplay
+              ? "1.05rem"
+              : "1.15rem"
+            : longDisplay
+              ? "0.92rem"
+              : "1rem";
+
     return (
       <div
         className={`relative ${
@@ -236,11 +254,13 @@ function MiniRing({
         <div className="absolute inset-0 z-[1] flex items-center justify-center">
           <div className="flex translate-y-1 flex-col items-center gap-1">
             <span
-              className={`font-mono-num font-medium leading-none tracking-tight ${
+              className={`font-mono-num font-medium leading-none tracking-tight tabular-nums ${
                 paused ? "timer-paused" : ""
               }`}
               style={{
-                fontSize: size > 140 ? "1.75rem" : "1.45rem",
+                fontSize: timeSize,
+                maxWidth: size * 0.58,
+                textAlign: "center",
               }}
             >
               {display}
@@ -558,7 +578,7 @@ export function SessionClock({
         >
           <MiniRing
             display={formatTime(stopwatchSeconds)}
-            size={livreOnly ? (stack ? 108 : 96) : stack ? 170 : 128}
+            size={livreOnly ? (stack ? 124 : 112) : stack ? 170 : 128}
             stroke={livreOnly ? 4.5 : stack ? 6 : 4.5}
             progress={1}
             accent="var(--signal)"
