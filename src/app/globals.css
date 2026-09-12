@@ -453,55 +453,108 @@ a {
 /* Gradiente Sináptico Fluido — card "Em sessão".
    Anima só background-position (compositor-friendly); tons na família do --signal
    para funcionar no claro e no escuro sem perder legibilidade. */
+/* Gradiente Sináptico Fluido — próximo do mockup:
+   base lavanda + faixa clara horizontal + blobs suaves em movimento. */
 @keyframes synaptic-flow {
   0% {
-    background-position: 0% 40%, 100% 60%, 50% 100%;
+    transform: translate3d(-4%, -2%, 0) scale(1.05);
   }
-  33% {
-    background-position: 80% 20%, 20% 80%, 10% 40%;
+  40% {
+    transform: translate3d(5%, 3%, 0) scale(1.08);
   }
-  66% {
-    background-position: 40% 90%, 70% 10%, 90% 50%;
+  70% {
+    transform: translate3d(2%, -4%, 0) scale(1.06);
   }
   100% {
-    background-position: 0% 40%, 100% 60%, 50% 100%;
+    transform: translate3d(-4%, -2%, 0) scale(1.05);
   }
 }
 
 .synaptic-flow {
-  background-color: var(--signal-soft);
-  background-image:
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  border-color: color-mix(in srgb, var(--signal) 32%, var(--line)) !important;
+  background: color-mix(in srgb, var(--signal) 16%, var(--surface));
+}
+
+.synaptic-flow::before {
+  content: "";
+  position: absolute;
+  inset: -55%;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    /* faixa luminosa central (como no mockup) */
     radial-gradient(
-      120% 90% at 15% 40%,
-      color-mix(in srgb, var(--signal) 42%, transparent),
-      transparent 58%
+      90% 55% at 48% 48%,
+      color-mix(in srgb, var(--surface) 96%, var(--signal)),
+      transparent 62%
     ),
+    /* blob lavanda esquerda */
     radial-gradient(
-      110% 85% at 85% 55%,
-      color-mix(in srgb, var(--surface) 92%, var(--signal)),
-      transparent 55%
+      70% 80% at 18% 55%,
+      color-mix(in srgb, var(--signal) 38%, var(--surface)),
+      transparent 68%
     ),
+    /* blob roxo direita */
     radial-gradient(
-      100% 80% at 50% 100%,
-      color-mix(in srgb, var(--signal) 28%, var(--surface)),
-      transparent 60%
+      75% 85% at 82% 42%,
+      color-mix(in srgb, var(--signal) 46%, var(--surface)),
+      transparent 70%
+    ),
+    /* névoa inferior */
+    radial-gradient(
+      80% 60% at 55% 95%,
+      color-mix(in srgb, var(--signal) 22%, var(--surface)),
+      transparent 72%
     );
-  background-size: 180% 180%, 200% 200%, 160% 160%;
-  background-repeat: no-repeat;
-  animation: synaptic-flow 7s ease-in-out infinite;
-  will-change: background-position;
+  animation: synaptic-flow 11s ease-in-out infinite;
+  will-change: transform;
+}
+
+.synaptic-flow > * {
+  position: relative;
+  z-index: 1;
 }
 
 /* Sessão pausada: congela o fluxo. */
-.synaptic-flow.is-paused {
+.synaptic-flow.is-paused::before {
   animation-play-state: paused;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .synaptic-flow {
+  .synaptic-flow::before {
     animation: none;
-    background: var(--signal-soft);
   }
+}
+
+:root[data-theme="dark"] .synaptic-flow {
+  background: color-mix(in srgb, var(--signal) 22%, var(--surface));
+}
+
+:root[data-theme="dark"] .synaptic-flow::before {
+  background:
+    radial-gradient(
+      90% 55% at 48% 48%,
+      color-mix(in srgb, var(--signal) 28%, var(--surface)),
+      transparent 62%
+    ),
+    radial-gradient(
+      70% 80% at 18% 55%,
+      color-mix(in srgb, var(--signal) 40%, transparent),
+      transparent 68%
+    ),
+    radial-gradient(
+      75% 85% at 82% 42%,
+      color-mix(in srgb, var(--signal) 34%, transparent),
+      transparent 70%
+    ),
+    radial-gradient(
+      80% 60% at 55% 95%,
+      color-mix(in srgb, var(--signal) 18%, transparent),
+      transparent 72%
+    );
 }
 
 .nav-tab-active-chip {
