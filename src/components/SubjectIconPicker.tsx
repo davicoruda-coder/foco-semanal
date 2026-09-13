@@ -31,7 +31,7 @@ export function SubjectIconPicker({
         Ícone
       </p>
       <div className="flex flex-wrap items-center gap-2">
-        <SubjectIcon name={name || "?"} icon={value} size={40} />
+        <SubjectIcon name={name || "?"} icon={value} size={44} />
         <div className="flex flex-wrap gap-1.5">
           {SUBJECT_ICON_PRESETS.map((p) => {
             const active = presetId === p.id;

@@ -106,14 +106,56 @@ export function guessSubjectIconPresetId(name: string): string | null {
 /** Fundo neutro claro — combina com o tile do app (claro e escuro). */
 export const SUBJECT_ICON_UPLOAD_BG = "#F4F3F8";
 
-/** Fração do tile para a imagem enviada.
- *  > 1 corta a margem vazia da arte gerada (overflow no tile). */
-export const SUBJECT_ICON_GLYPH_RATIO = 1.16;
+/**
+ * Fração do tile para a imagem enviada.
+ * > 1 dá zoom leve e corta margem residual das artes já salvas.
+ */
+export const SUBJECT_ICON_GLYPH_RATIO = 1.32;
 
-/** No upload: quase preenche o canvas (a margem vem da arte). */
-const SUBJECT_ICON_UPLOAD_FILL = 0.98;
+/** Fração do canvas preenchida pelo conteúdo após trim. */
+const SUBJECT_ICON_UPLOAD_FILL = 0.88;
 
-/** Redimensiona, centraliza e comprime para data URL (JPEG). */
+function parseHexRgb(hex: string): { r: number; g: number; b: number } {
+  const h = hex.replace("#", "");
+  return {
+    r: parseInt(h.slice(0, 2), 16),
+    g: parseInt(h.slice(2, 4), 16),
+    b: parseInt(h.slice(4, 6), 16),
+  };
+}
+
+/** Recorta pixels próximos do fundo (margem vazia da arte gerada). */
+function contentBounds(
+  data: Uint8ClampedArray,
+  width: number,
+  height: number,
+  bg: { r: number; g: number; b: number },
+  threshold = 28,
+): { x: number; y: number; w: number; h: number } | null {
+  let minX = width;
+  let minY = height;
+  let maxX = -1;
+  let maxY = -1;
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const i = (y * width + x) * 4;
+      const a = data[i + 3];
+      if (a < 12) continue;
+      const dr = Math.abs(data[i] - bg.r);
+      const dg = Math.abs(data[i + 1] - bg.g);
+      const db = Math.abs(data[i + 2] - bg.b);
+      if (dr + dg + db < threshold) continue;
+      if (x < minX) minX = x;
+      if (y < minY) minY = y;
+      if (x > maxX) maxX = x;
+      if (y > maxY) maxY = y;
+    }
+  }
+  if (maxX < minX || maxY < minY) return null;
+  return { x: minX, y: minY, w: maxX - minX + 1, h: maxY - minY + 1 };
+}
+
+/** Redimensiona, corta margem, centraliza e comprime para data URL (JPEG). */
 export function fileToSubjectIconDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     if (!file.type.startsWith("image/")) {
@@ -126,6 +168,32 @@ export function fileToSubjectIconDataUrl(file: File): Promise<string> {
       const img = new Image();
       img.onerror = () => reject(new Error("Imagem inválida."));
       img.onload = () => {
+        const src = document.createElement("canvas");
+        src.width = img.width;
+        src.height = img.height;
+        const sctx = src.getContext("2d", { willReadFrequently: true });
+        if (!sctx) {
+          reject(new Error("Canvas indisponível."));
+          return;
+        }
+        sctx.drawImage(img, 0, 0);
+        const pixels = sctx.getImageData(0, 0, src.width, src.height);
+        const corner = {
+          r: pixels.data[0],
+          g: pixels.data[1],
+          b: pixels.data[2],
+        };
+        const bg = parseHexRgb(SUBJECT_ICON_UPLOAD_BG);
+        // Usa a cor do canto (fundo da arte) e o bege do app.
+        const bounds =
+          contentBounds(pixels.data, src.width, src.height, corner) ??
+          contentBounds(pixels.data, src.width, src.height, bg) ?? {
+            x: 0,
+            y: 0,
+            w: src.width,
+            h: src.height,
+          };
+
         const size = 128;
         const canvas = document.createElement("canvas");
         canvas.width = size;
@@ -140,12 +208,22 @@ export function fileToSubjectIconDataUrl(file: File): Promise<string> {
 
         const pad = size * ((1 - SUBJECT_ICON_UPLOAD_FILL) / 2);
         const box = size - pad * 2;
-        const scale = Math.min(box / img.width, box / img.height);
-        const dw = img.width * scale;
-        const dh = img.height * scale;
+        const scale = Math.min(box / bounds.w, box / bounds.h);
+        const dw = bounds.w * scale;
+        const dh = bounds.h * scale;
         const dx = (size - dw) / 2;
         const dy = (size - dh) / 2;
-        ctx.drawImage(img, dx, dy, dw, dh);
+        ctx.drawImage(
+          src,
+          bounds.x,
+          bounds.y,
+          bounds.w,
+          bounds.h,
+          dx,
+          dy,
+          dw,
+          dh,
+        );
 
         let quality = 0.88;
         let data = canvas.toDataURL("image/jpeg", quality);

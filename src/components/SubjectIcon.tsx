@@ -44,8 +44,9 @@ export function SubjectIcon({
           alt=""
           width={glyph}
           height={glyph}
-          className="object-contain"
+          className="max-h-none max-w-none object-contain object-center"
           style={{ width: glyph, height: glyph }}
+          draggable={false}
         />
       </span>
     );
