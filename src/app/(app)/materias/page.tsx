@@ -1,12 +1,25 @@
 "use client";
 
 import { useState } from "react";
-import { Trash2 } from "lucide-react";
+import { ChevronDown, ChevronUp, Repeat, Trash2, X } from "lucide-react";
 import { useApp } from "@/components/AppProvider";
 import { BackToHoje } from "@/components/BackToHoje";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
-import { DAYS, STATUS_LABEL, type Subject, type SubjectStatus } from "@/lib/types";
-import { freeRowClass, normalizeStudyDays, statusClass, statusRowClass } from "@/lib/utils";
+import { newId } from "@/lib/demo-store";
+import {
+  DAYS,
+  STATUS_LABEL,
+  type Subject,
+  type SubjectRotation,
+  type SubjectStatus,
+} from "@/lib/types";
+import {
+  freeRowClass,
+  normalizeRotation,
+  normalizeStudyDays,
+  statusClass,
+  statusRowClass,
+} from "@/lib/utils";
 
 type DraftFreq = {
   mode: "all" | "days";
@@ -102,6 +115,241 @@ function parseMinutes(raw: string, fallback = 25) {
   const n = Number.parseInt(raw, 10);
   if (!Number.isFinite(n) || n < 1) return fallback;
   return Math.min(n, 999);
+}
+
+/**
+ * Rodízio interno: disciplinas que se revezam dentro da matéria.
+ * A "da vez" avança quando a matéria é concluída; cada item guarda
+ * a própria anotação ("onde parei").
+ */
+function RotationEditor({
+  subject,
+  onSave,
+}: {
+  subject: Subject;
+  onSave: (rotation: SubjectRotation | null) => void;
+}) {
+  const rot = normalizeRotation(subject.rotation);
+  const [open, setOpen] = useState(Boolean(rot));
+  const [newName, setNewName] = useState("");
+  const [nameDrafts, setNameDrafts] = useState<Record<string, string>>({});
+  const [confirmOff, setConfirmOff] = useState(false);
+
+  function addItem() {
+    const name = newName.trim();
+    if (!name) return;
+    const base = rot ?? { items: [], index: 0 };
+    onSave({
+      items: [...base.items, { id: newId("rot"), name, notes: "" }],
+      index: base.index,
+    });
+    setNewName("");
+  }
+
+  function removeItem(id: string) {
+    if (!rot) return;
+    const idx = rot.items.findIndex((it) => it.id === id);
+    const items = rot.items.filter((it) => it.id !== id);
+    if (items.length === 0) {
+      onSave(null);
+      return;
+    }
+    let index = rot.index;
+    if (idx >= 0 && idx < rot.index) index -= 1;
+    onSave({ items, index: Math.min(Math.max(0, index), items.length - 1) });
+  }
+
+  function move(id: string, dir: -1 | 1) {
+    if (!rot) return;
+    const idx = rot.items.findIndex((it) => it.id === id);
+    const swap = idx + dir;
+    if (idx < 0 || swap < 0 || swap >= rot.items.length) return;
+    const items = [...rot.items];
+    [items[idx], items[swap]] = [items[swap], items[idx]];
+    // A "da vez" segue o item, não a posição.
+    const currentId = rot.items[rot.index]?.id;
+    const index = Math.max(
+      0,
+      items.findIndex((it) => it.id === currentId),
+    );
+    onSave({ items, index });
+  }
+
+  function setCurrent(id: string) {
+    if (!rot) return;
+    const index = rot.items.findIndex((it) => it.id === id);
+    if (index < 0 || index === rot.index) return;
+    onSave({ ...rot, index });
+  }
+
+  function renameItem(id: string) {
+    if (!rot) return;
+    const draft = (nameDrafts[id] ?? "").trim();
+    setNameDrafts((prev) => {
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
+    if (!draft) return;
+    onSave({
+      ...rot,
+      items: rot.items.map((it) =>
+        it.id === id ? { ...it, name: draft } : it,
+      ),
+    });
+  }
+
+  if (!open) {
+    return (
+      <button
+        type="button"
+        className="btn text-sm"
+        onClick={() => setOpen(true)}
+      >
+        <Repeat size={15} strokeWidth={1.75} /> Ativar rodízio de disciplinas
+      </button>
+    );
+  }
+
+  return (
+    <div className="mt-1 w-full rounded-[var(--radius-tag)] border border-[var(--line)] bg-[var(--mist)]/50 p-3">
+      <ConfirmDialog
+        open={confirmOff}
+        title="Desativar rodízio?"
+        message="As disciplinas do rodízio e as anotações de cada uma serão removidas. Essa ação não pode ser desfeita."
+        confirmLabel="Sim, desativar"
+        cancelLabel="Cancelar"
+        onCancel={() => setConfirmOff(false)}
+        onConfirm={() => {
+          setConfirmOff(false);
+          setOpen(false);
+          onSave(null);
+        }}
+      />
+      <div className="flex items-center justify-between gap-2">
+        <p className="inline-flex items-center gap-1.5 text-xs font-medium uppercase tracking-wider opacity-60">
+          <Repeat size={13} strokeWidth={2} /> Rodízio de disciplinas
+        </p>
+        <button
+          type="button"
+          className="rounded-full p-1.5 text-[color-mix(in_srgb,var(--ink)_45%,transparent)] transition hover:bg-[var(--surface)] hover:text-[var(--warn)]"
+          title="Desativar rodízio"
+          aria-label="Desativar rodízio"
+          onClick={() => {
+            if (rot) setConfirmOff(true);
+            else setOpen(false);
+          }}
+        >
+          <X size={15} strokeWidth={2} />
+        </button>
+      </div>
+      <p className="mt-1 text-xs leading-snug opacity-55">
+        A cada conclusão desta matéria, a disciplina “da vez” passa para a
+        próxima da lista. Cada uma guarda a própria anotação. Toque na bolinha
+        para escolher a da vez.
+      </p>
+
+      <ul className="mt-2.5 space-y-1.5">
+        {(rot?.items ?? []).map((it, i) => {
+          const current = rot != null && i === rot.index;
+          return (
+            <li key={it.id} className="flex items-center gap-2">
+              <button
+                type="button"
+                title={current ? "Da vez" : "Definir como a da vez"}
+                aria-label={
+                  current
+                    ? `${it.name} é a da vez`
+                    : `Definir ${it.name} como a da vez`
+                }
+                onClick={() => setCurrent(it.id)}
+                className={`grid size-5 shrink-0 place-items-center rounded-full ring-1 transition ${
+                  current
+                    ? "bg-[var(--signal)] ring-[var(--signal)]"
+                    : "bg-[var(--surface)] ring-[var(--line)] hover:ring-[var(--signal)]"
+                }`}
+              >
+                <span
+                  className={`size-1.5 rounded-full ${
+                    current ? "bg-white" : "bg-transparent"
+                  }`}
+                />
+              </button>
+              <div className="min-w-0 flex-1">
+                <input
+                  className="input w-full py-1.5 text-sm"
+                  value={nameDrafts[it.id] ?? it.name}
+                  onChange={(e) =>
+                    setNameDrafts((prev) => ({
+                      ...prev,
+                      [it.id]: e.target.value,
+                    }))
+                  }
+                  onBlur={() => renameItem(it.id)}
+                />
+                {it.notes.trim() && (
+                  <p className="mt-0.5 truncate px-1 text-xs opacity-50">
+                    {it.notes}
+                  </p>
+                )}
+              </div>
+              <button
+                type="button"
+                className="rounded-full p-1 text-[color-mix(in_srgb,var(--ink)_45%,transparent)] transition hover:bg-[var(--surface)] hover:text-[var(--ink)] disabled:opacity-30"
+                title="Subir"
+                aria-label={`Subir ${it.name}`}
+                disabled={i === 0}
+                onClick={() => move(it.id, -1)}
+              >
+                <ChevronUp size={15} strokeWidth={2} />
+              </button>
+              <button
+                type="button"
+                className="rounded-full p-1 text-[color-mix(in_srgb,var(--ink)_45%,transparent)] transition hover:bg-[var(--surface)] hover:text-[var(--ink)] disabled:opacity-30"
+                title="Descer"
+                aria-label={`Descer ${it.name}`}
+                disabled={rot != null && i === rot.items.length - 1}
+                onClick={() => move(it.id, 1)}
+              >
+                <ChevronDown size={15} strokeWidth={2} />
+              </button>
+              <button
+                type="button"
+                className="rounded-full p-1 text-[color-mix(in_srgb,var(--ink)_45%,transparent)] transition hover:bg-[var(--surface)] hover:text-[var(--warn)]"
+                title="Remover disciplina"
+                aria-label={`Remover ${it.name}`}
+                onClick={() => removeItem(it.id)}
+              >
+                <Trash2 size={14} strokeWidth={1.75} />
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+
+      <div className="mt-2.5 flex items-center gap-2">
+        <input
+          className="input flex-1 py-1.5 text-sm"
+          placeholder="Nova disciplina (ex.: RLM)"
+          value={newName}
+          onChange={(e) => setNewName(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              addItem();
+            }
+          }}
+        />
+        <button
+          type="button"
+          className="btn whitespace-nowrap text-sm"
+          onClick={addItem}
+        >
+          Adicionar
+        </button>
+      </div>
+    </div>
+  );
 }
 
 export default function MateriasPage() {
@@ -395,12 +643,24 @@ export default function MateriasPage() {
                   />
                 </div>
               </div>
-              <textarea
-                className="input mt-3 min-h-20"
-                placeholder="Anotações"
-                value={s.notes}
-                onChange={(e) => upsertSubject({ ...s, notes: e.target.value })}
-              />
+              {!free && (
+                <div className="mt-3">
+                  <RotationEditor
+                    subject={s}
+                    onSave={(rotation) => upsertSubject({ ...s, rotation })}
+                  />
+                </div>
+              )}
+              {!normalizeRotation(s.rotation) && (
+                <textarea
+                  className="input mt-3 min-h-20"
+                  placeholder="Anotações"
+                  value={s.notes}
+                  onChange={(e) =>
+                    upsertSubject({ ...s, notes: e.target.value })
+                  }
+                />
+              )}
               <div className="mt-3 flex flex-wrap gap-2">
                 <button type="button" className="btn" onClick={() => move(s.id, -1)}>
                   Subir no ciclo

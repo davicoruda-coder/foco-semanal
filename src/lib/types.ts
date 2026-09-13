@@ -11,6 +11,23 @@ export type SessionMode = "ciclo" | "unica";
 
 export type TimerPhase = "focus" | "break_short" | "break_long";
 
+/** Item do rodízio interno de uma matéria (ex.: disciplinas dentro de "Revisão"). */
+export interface RotationItem {
+  id: string;
+  name: string;
+  /** Anotação própria do item ("onde parei") — reaparece quando ele volta. */
+  notes: string;
+}
+
+/**
+ * Rodízio interno: a matéria reveza uma lista de disciplinas.
+ * `index` aponta a "da vez"; avança quando a matéria é concluída.
+ */
+export interface SubjectRotation {
+  items: RotationItem[];
+  index: number;
+}
+
 export interface Subject {
   id: string;
   name: string;
@@ -31,6 +48,8 @@ export interface Subject {
    * Sessão/cronômetro da lateral continuam disponíveis.
    */
   is_free: boolean;
+  /** Rodízio interno de disciplinas; `null` = matéria comum. */
+  rotation: SubjectRotation | null;
 }
 
 export interface WeekBlock {

@@ -1,4 +1,11 @@
-import type { BlockType, Subject, SubjectStatus, WeekBlock } from "./types";
+import type {
+  BlockType,
+  RotationItem,
+  Subject,
+  SubjectRotation,
+  SubjectStatus,
+  WeekBlock,
+} from "./types";
 
 export const BLOCK_COLORS = [
   "#E2E8F0", // trabalho / slate
@@ -136,4 +143,76 @@ export function subjectShowsOnDay(
   const days = normalizeStudyDays(subject.study_days);
   if (!days) return true;
   return days.includes(day);
+}
+
+const ROTATION_MAX_ITEMS = 30;
+const ROTATION_MAX_NAME = 80;
+const ROTATION_MAX_NOTES = 4000;
+
+/** Valida/normaliza o rodízio vindo de storage/nuvem/backup. */
+export function normalizeRotation(raw: unknown): SubjectRotation | null {
+  if (!raw || typeof raw !== "object") return null;
+  const obj = raw as { items?: unknown; index?: unknown };
+  if (!Array.isArray(obj.items)) return null;
+  const items: RotationItem[] = obj.items
+    .filter((it): it is Record<string, unknown> =>
+      Boolean(it) && typeof it === "object",
+    )
+    .map((it) => ({
+      id:
+        typeof it.id === "string" && it.id
+          ? it.id.slice(0, 64)
+          : `rot-${Math.random().toString(36).slice(2, 10)}`,
+      name:
+        typeof it.name === "string" ? it.name.slice(0, ROTATION_MAX_NAME) : "",
+      notes:
+        typeof it.notes === "string" ? it.notes.slice(0, ROTATION_MAX_NOTES) : "",
+    }))
+    .filter((it) => it.name.trim().length > 0)
+    .slice(0, ROTATION_MAX_ITEMS);
+  if (items.length === 0) return null;
+  const idxRaw = typeof obj.index === "number" ? Math.floor(obj.index) : 0;
+  const index = Math.min(Math.max(0, idxRaw), items.length - 1);
+  return { items, index };
+}
+
+/** Item "da vez" do rodízio da matéria (null se não usa rodízio). */
+export function rotationCurrent(
+  subject: Pick<Subject, "rotation">,
+): RotationItem | null {
+  const rot = normalizeRotation(subject.rotation);
+  if (!rot) return null;
+  return rot.items[rot.index] ?? null;
+}
+
+/**
+ * Item recém-estudado: como o ponteiro avança na conclusão, é o anterior
+ * ao da vez. Útil no diálogo de anotações pós-matéria.
+ */
+export function rotationJustStudied(
+  rotation: SubjectRotation,
+): RotationItem | null {
+  const len = rotation.items.length;
+  if (len === 0) return null;
+  return rotation.items[(rotation.index - 1 + len) % len] ?? null;
+}
+
+/** Atualiza a anotação de um item do rodízio (retorna o rotation novo). */
+export function rotationWithItemNotes(
+  rotation: SubjectRotation,
+  itemId: string,
+  notes: string,
+): SubjectRotation {
+  return {
+    ...rotation,
+    items: rotation.items.map((it) =>
+      it.id === itemId ? { ...it, notes } : it,
+    ),
+  };
+}
+
+/** Avança o ponteiro do rodízio (volta ao início após o último). */
+export function rotationAdvanced(rotation: SubjectRotation): SubjectRotation {
+  if (rotation.items.length === 0) return rotation;
+  return { ...rotation, index: (rotation.index + 1) % rotation.items.length };
 }

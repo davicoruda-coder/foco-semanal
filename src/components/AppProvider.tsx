@@ -30,7 +30,13 @@ import {
 } from "@/lib/supabase/sync";
 import { rememberLastKnownGood, loadLastKnownGood } from "@/lib/local-recovery";
 import { checkCurrentUserAccess } from "@/lib/supabase/access";
-import { subjectShowsOnDay, todayIndex, normalizeStudyDays } from "@/lib/utils";
+import {
+  subjectShowsOnDay,
+  todayIndex,
+  normalizeStudyDays,
+  normalizeRotation,
+  rotationAdvanced,
+} from "@/lib/utils";
 import type {
   AppData,
   FocusTimer,
@@ -604,6 +610,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
             if ("is_free" in subject) {
               patch.is_free = Boolean(subject.is_free);
             }
+            if ("rotation" in subject) {
+              patch.rotation = normalizeRotation(subject.rotation);
+            }
             return {
               ...prev,
               subjects: prev.subjects.map((s) =>
@@ -624,6 +633,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 ? Math.min(999, Math.floor(subject.study_minutes))
                 : 25,
             is_free: Boolean(subject.is_free),
+            rotation: normalizeRotation(subject.rotation),
           };
           return { ...prev, subjects: [...prev.subjects, row] };
         });
@@ -649,6 +659,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 : s,
             );
 
+          // Concluiu (Próx → Ok) e usa rodízio → a "da vez" avança.
+          const advanceIfTarget = (s: Subject): Subject => {
+            if (s.id !== id || target.status === "ok") return s;
+            const rot = normalizeRotation(s.rotation);
+            if (!rot) return s;
+            return { ...s, rotation: rotationAdvanced(rot) };
+          };
+
           if (status !== "ok") {
             return {
               ...prev,
@@ -661,13 +679,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
           // Último Ok do ciclo de hoje → reinicia: todas voltam pra Próx
           // (incluindo a última — nenhuma fica Concluída).
           if (idx === ordered.length - 1) {
-            return { ...prev, subjects: restartToday(prev.subjects) };
+            return {
+              ...prev,
+              subjects: restartToday(prev.subjects.map(advanceIfTarget)),
+            };
           }
 
           // Ok no meio → esta Ok; próxima (de hoje, com tempo) vira Próx.
           const next = ordered[idx + 1];
           const subjects = prev.subjects.map((s) => {
-            if (s.id === id) return { ...s, status: "ok" as const };
+            if (s.id === id)
+              return { ...advanceIfTarget(s), status: "ok" as const };
             if (next && s.id === next.id) return { ...s, status: "prox" as const };
             return s;
           });

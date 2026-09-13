@@ -6,7 +6,12 @@ import { DialogFrame } from "@/components/DialogFrame";
 import { AutoGrowTextarea } from "@/components/AutoGrowTextarea";
 import { useApp } from "@/components/AppProvider";
 import { useStudyFlow } from "@/components/StudyFlowProvider";
-import type { Subject } from "@/lib/types";
+import type { RotationItem, Subject } from "@/lib/types";
+import {
+  normalizeRotation,
+  rotationJustStudied,
+  rotationWithItemNotes,
+} from "@/lib/utils";
 
 function formatClock(totalSeconds: number) {
   const m = Math.floor(totalSeconds / 60);
@@ -16,10 +21,12 @@ function formatClock(totalSeconds: number) {
 
 function NotesBlock({
   subject,
+  rotationItem,
   draft,
   onChange,
 }: {
   subject: Subject;
+  rotationItem: RotationItem | null;
   draft: string;
   onChange: (value: string) => void;
 }) {
@@ -30,6 +37,9 @@ function NotesBlock({
       </p>
       <p className="mt-1 text-sm font-semibold text-[var(--ink)]">
         {subject.name}
+        {rotationItem ? (
+          <span className="text-[var(--signal)]"> · {rotationItem.name}</span>
+        ) : null}
       </p>
       <p className="mt-0.5 text-xs text-[color-mix(in_srgb,var(--ink)_50%,transparent)]">
         Edite se quiser — grava ao continuar. Não conta no tempo de estudo.
@@ -170,6 +180,14 @@ export function StudySessionChrome() {
     );
   }, [flow.phase, flow.block, flow.currentIndex, data.subjects]);
 
+  // Matéria com rodízio: anota no item recém-estudado (o ponteiro já avançou).
+  const notesRotationItem = useMemo(() => {
+    if (!notesSubject) return null;
+    const rot = normalizeRotation(notesSubject.rotation);
+    if (!rot) return null;
+    return rotationJustStudied(rot);
+  }, [notesSubject]);
+
   useEffect(() => {
     if (
       (flow.phase !== "subject_notes" && flow.phase !== "block_done") ||
@@ -177,11 +195,19 @@ export function StudySessionChrome() {
     ) {
       return;
     }
-    setNotesDraft(notesSubject.notes ?? "");
+    setNotesDraft(notesRotationItem?.notes ?? notesSubject.notes ?? "");
   }, [flow.phase, notesSubject?.id]);
 
   function persistNotes() {
     if (!notesSubject) return;
+    const rot = normalizeRotation(notesSubject.rotation);
+    if (rot && notesRotationItem) {
+      upsertSubject({
+        ...notesSubject,
+        rotation: rotationWithItemNotes(rot, notesRotationItem.id, notesDraft),
+      });
+      return;
+    }
     upsertSubject({ ...notesSubject, notes: notesDraft });
   }
 
@@ -210,6 +236,7 @@ export function StudySessionChrome() {
         {notesSubject ? (
           <NotesBlock
             subject={notesSubject}
+            rotationItem={notesRotationItem}
             draft={notesDraft}
             onChange={setNotesDraft}
           />
@@ -239,6 +266,7 @@ export function StudySessionChrome() {
         {notesSubject ? (
           <NotesBlock
             subject={notesSubject}
+            rotationItem={notesRotationItem}
             draft={notesDraft}
             onChange={setNotesDraft}
           />

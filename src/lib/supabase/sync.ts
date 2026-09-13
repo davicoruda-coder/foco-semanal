@@ -12,7 +12,7 @@ import type {
   ThemePref,
   WeekBlock,
 } from "@/lib/types";
-import { normalizeStudyDays } from "@/lib/utils";
+import { normalizeStudyDays, normalizeRotation } from "@/lib/utils";
 
 type Client = SupabaseClient;
 
@@ -161,6 +161,7 @@ export async function loadCloudData(
     study_days: normalizeStudyDays(s.study_days as number[] | null | undefined),
     study_minutes: normalizeStudyMinutes(s.study_minutes, 25),
     is_free: Boolean(s.is_free),
+    rotation: normalizeRotation(s.rotation),
   }));
   const subjects: Subject[] = [...subjectsRaw]
     .sort((a, b) => {
@@ -356,6 +357,7 @@ export async function saveCloudData(
       study_days: normalizeStudyDays(s.study_days),
       study_minutes: normalizeStudyMinutes(s.study_minutes, 25),
       is_free: Boolean(s.is_free),
+      rotation: normalizeRotation(s.rotation),
       ...LIVE,
     })),
     "subjects",

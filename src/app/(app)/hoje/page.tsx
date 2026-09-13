@@ -13,6 +13,8 @@ import { DAYS, STATUS_LABEL } from "@/lib/types";
 import {
   blockStyle,
   freeRowClass,
+  normalizeRotation,
+  rotationWithItemNotes,
   statusClass,
   statusRowClass,
   subjectShowsOnDay,
@@ -230,6 +232,8 @@ export default function HojePage() {
             <div className="space-y-2 p-2.5 md:hidden">
               {subjects.map((s) => {
                 const free = Boolean(s.is_free);
+                const rot = normalizeRotation(s.rotation);
+                const rotItem = rot ? rot.items[rot.index] : null;
                 return (
                   <div
                     key={s.id}
@@ -242,6 +246,11 @@ export default function HojePage() {
                         <p className="min-w-0 text-[15px] font-semibold leading-snug">
                           {s.name}
                         </p>
+                        {rotItem && (
+                          <span className="rounded-full bg-[var(--signal-soft)] px-2 py-0.5 text-[11px] font-medium text-[var(--signal)]">
+                            Da vez: {rotItem.name}
+                          </span>
+                        )}
                         <SessionSubjectClock subjectId={s.id} compact />
                       </div>
                       {!free && (
@@ -259,11 +268,22 @@ export default function HojePage() {
                     </div>
                     <AutoGrowTextarea
                       className="mt-2 w-full rounded-[10px] border border-[color-mix(in_srgb,var(--ink)_8%,transparent)] bg-[color-mix(in_srgb,var(--surface)_55%,transparent)] px-2.5 py-2 text-sm leading-snug text-[color-mix(in_srgb,var(--ink)_84%,transparent)] focus:border-[var(--signal)] focus:bg-[var(--surface)] focus:text-[var(--ink)]"
-                      value={s.notes}
+                      value={rotItem ? rotItem.notes : s.notes}
                       placeholder="Anotações…"
                       minPx={40}
                       maxPx={88}
-                      onChange={(notes) => upsertSubject({ ...s, notes })}
+                      onChange={(notes) =>
+                        rot && rotItem
+                          ? upsertSubject({
+                              ...s,
+                              rotation: rotationWithItemNotes(
+                                rot,
+                                rotItem.id,
+                                notes,
+                              ),
+                            })
+                          : upsertSubject({ ...s, notes })
+                      }
                     />
                   </div>
                 );
@@ -304,6 +324,8 @@ export default function HojePage() {
                 <tbody>
                   {subjects.map((s, i) => {
                     const free = Boolean(s.is_free);
+                    const rot = normalizeRotation(s.rotation);
+                    const rotItem = rot ? rot.items[rot.index] : null;
                     const rowBorder =
                       i < subjects.length - 1
                         ? "border-b-2 border-[var(--surface)]"
@@ -318,6 +340,11 @@ export default function HojePage() {
                         >
                           <div className="flex flex-wrap items-baseline gap-x-2.5 gap-y-1">
                             <span className="min-w-0">{s.name}</span>
+                            {rotItem && (
+                              <span className="rounded-full bg-[var(--signal-soft)] px-2 py-0.5 text-[11px] font-medium text-[var(--signal)]">
+                                Da vez: {rotItem.name}
+                              </span>
+                            )}
                             <SessionSubjectClock subjectId={s.id} />
                           </div>
                         </td>
@@ -340,13 +367,22 @@ export default function HojePage() {
                           <div className="flex min-h-[2.25rem] items-start">
                             <AutoGrowTextarea
                               className="w-full break-words rounded-[var(--radius-tag)] border border-transparent bg-transparent px-0 py-0 text-[15px] font-normal leading-snug text-[color-mix(in_srgb,var(--ink)_84%,transparent)] focus:border-[var(--line)] focus:bg-[var(--surface)] focus:px-2 focus:py-1 focus:text-[var(--ink)]"
-                              value={s.notes}
+                              value={rotItem ? rotItem.notes : s.notes}
                               placeholder="Anotações…"
                               minPx={22}
                               maxPx={44}
                               rows={1}
                               onChange={(notes) =>
-                                upsertSubject({ ...s, notes })
+                                rot && rotItem
+                                  ? upsertSubject({
+                                      ...s,
+                                      rotation: rotationWithItemNotes(
+                                        rot,
+                                        rotItem.id,
+                                        notes,
+                                      ),
+                                    })
+                                  : upsertSubject({ ...s, notes })
                               }
                             />
                           </div>

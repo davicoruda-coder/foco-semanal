@@ -1,4 +1,5 @@
 import type { AppData } from "./types";
+import { normalizeRotation } from "./utils";
 
 function id(_prefix: string) {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
@@ -91,6 +92,7 @@ export function loadDemoData(): AppData {
           ? Math.min(999, Math.floor(s.study_minutes))
           : 25,
       is_free: Boolean(s.is_free),
+      rotation: normalizeRotation(s.rotation),
     }));
     data.subjects = [...subjectsRaw]
       .sort((a, b) => {
