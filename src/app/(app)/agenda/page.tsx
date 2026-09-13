@@ -69,18 +69,12 @@ export default function AgendaPage() {
       </div>
 
       <section className="surface overflow-hidden p-0">
-        <div
-          className="flex flex-wrap items-center justify-between gap-2 px-3.5 py-2.5 text-white md:px-5 md:py-3"
-          style={{
-            background:
-              "linear-gradient(120deg, var(--signal), color-mix(in srgb, var(--signal) 55%, var(--accent-2)))",
-          }}
-        >
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--line)] bg-[var(--mist)] px-3.5 py-2.5 md:px-5 md:py-3">
           <button
             type="button"
             title="Abrir calendário do mês"
             aria-label="Abrir calendário do mês"
-            className="font-display inline-flex min-h-10 items-center gap-2 rounded-[var(--radius-tag)] text-[15px] font-semibold tracking-tight transition hover:opacity-85 md:min-h-0 md:text-lg"
+            className="font-display inline-flex min-h-11 items-center gap-2 rounded-[var(--radius-tag)] text-[15px] font-semibold tracking-tight text-[var(--ink)] transition hover:text-[var(--signal)] md:min-h-0 md:text-lg"
             onClick={() => setCalendarOpen(true)}
           >
             <CalendarDays size={18} strokeWidth={2} />
@@ -98,7 +92,7 @@ export default function AgendaPage() {
               aria-label={
                 showFullWeek ? "Mostrar só hoje" : "Mostrar semana toda"
               }
-              className="inline-flex min-h-10 items-center gap-1 rounded-full bg-white/15 px-3.5 py-2 text-sm font-medium transition hover:bg-white/25 md:min-h-0 md:rounded-[var(--radius-tag)] md:px-2 md:py-1 md:text-xs"
+              className="inline-flex min-h-11 items-center gap-1 rounded-full bg-[color-mix(in_srgb,var(--ink)_8%,transparent)] px-3.5 py-2 text-sm font-medium text-[color-mix(in_srgb,var(--ink)_70%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--ink)_12%,transparent)] hover:text-[var(--ink)] md:min-h-0 md:rounded-[var(--radius-tag)] md:px-2 md:py-1 md:text-xs"
               onClick={() => setWeekOverride(!showFullWeek)}
             >
               {showFullWeek ? (
@@ -130,16 +124,14 @@ export default function AgendaPage() {
                     <div
                       className={`border-b px-2 py-2.5 text-center text-xs font-semibold uppercase tracking-wider md:px-2 md:py-2 ${
                         isToday
-                          ? "relative z-[1] border-[color-mix(in_srgb,var(--signal)_18%,var(--line))] text-[var(--ink)]"
+                          ? "relative z-[1] border-[color-mix(in_srgb,var(--signal)_18%,var(--line))] text-[var(--signal)]"
                           : "border-[var(--line)] text-[color-mix(in_srgb,var(--ink)_72%,transparent)]"
                       }`}
                       style={
                         isToday
                           ? {
                               background:
-                                "color-mix(in srgb, var(--signal) 12%, var(--signal-soft))",
-                              boxShadow:
-                                "inset 0 0 10px color-mix(in srgb, var(--signal) 18%, transparent), 0 0 6px color-mix(in srgb, var(--signal) 10%, transparent)",
+                                "color-mix(in srgb, var(--signal) 10%, var(--surface))",
                             }
                           : undefined
                       }
@@ -173,10 +165,12 @@ export default function AgendaPage() {
             </div>
           </div>
         ) : (
-          <div className="bg-[var(--signal-soft)]/50 px-3.5 py-3 md:px-5 md:py-3">
+          <div className="bg-[var(--surface)] px-3.5 py-3 md:px-5">
             <div className="flex flex-col gap-2">
               {todayBlocks.length === 0 && (
-                <p className="text-sm opacity-55">Nenhum bloco hoje.</p>
+                <p className="text-sm text-[color-mix(in_srgb,var(--ink)_45%,transparent)]">
+                  Nenhum bloco hoje.
+                </p>
               )}
               {todayBlocks.map((b) => {
                 const style = blockStyle(b);

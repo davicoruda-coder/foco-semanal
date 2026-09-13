@@ -95,6 +95,51 @@ export default function HojePage() {
 
       <div className="grid items-start gap-3 sm:gap-5 lg:grid-cols-[minmax(0,1fr)_300px] xl:grid-cols-[minmax(0,1fr)_320px]">
         <div className="min-w-0 space-y-3 sm:space-y-5">
+          {/* Contexto do dia — mobile/tablet; no desktop a agenda completa cobre isso */}
+          <section className="surface overflow-hidden p-0 lg:hidden">
+            <div className="flex items-center justify-between gap-2 border-b border-[var(--line)] bg-[var(--mist)] px-3.5 py-2">
+              <button
+                type="button"
+                title="Abrir calendário do mês"
+                aria-label="Abrir calendário do mês"
+                className="font-display inline-flex min-h-11 items-center gap-2 text-[15px] font-semibold tracking-tight text-[var(--ink)]"
+                onClick={() => setCalendarOpen(true)}
+              >
+                <CalendarDays size={18} strokeWidth={2} />
+                {`${DAYS[day]} · ${new Date().toLocaleDateString("pt-BR", {
+                  day: "2-digit",
+                  month: "2-digit",
+                })}`}
+              </button>
+              <Link
+                href="/agenda"
+                className="inline-flex min-h-11 items-center rounded-full px-3 text-sm font-medium text-[var(--signal)]"
+              >
+                Agenda
+              </Link>
+            </div>
+            {todayBlocks.length > 0 ? (
+              <div className="flex gap-2 overflow-x-auto overscroll-x-contain px-3.5 py-2.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                {todayBlocks.map((b) => {
+                  const style = blockStyle(b);
+                  return (
+                    <div
+                      key={b.id}
+                      className="shrink-0 rounded-full px-3 py-1.5 text-sm font-medium tabular-nums"
+                      style={style.style}
+                    >
+                      {b.label}
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <p className="px-3.5 py-2.5 text-sm text-[color-mix(in_srgb,var(--ink)_45%,transparent)]">
+                Nenhum bloco hoje.
+              </p>
+            )}
+          </section>
+
           {/* Agenda — só no desktop; no mobile fica na aba Agenda */}
           <section className="surface hidden overflow-hidden p-0 lg:block">
             <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--line)] bg-[var(--mist)] px-3.5 py-2.5 md:px-5 md:py-3">
@@ -217,7 +262,7 @@ export default function HojePage() {
             )}
           </section>
 
-          <section className="surface overflow-hidden p-0">
+          <section className="surface p-0 max-lg:overflow-visible lg:overflow-hidden">
             <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--line)] px-3.5 py-3 md:px-5 md:py-3.5">
               <h2 className="font-display text-lg font-semibold tracking-tight text-[var(--signal)] md:text-xl">
                 Ciclo de Estudos
@@ -226,7 +271,7 @@ export default function HojePage() {
                 href="/materias?from=hoje"
                 title="Gerenciar matérias"
                 aria-label="Gerenciar matérias"
-                className="grid size-10 place-items-center rounded-full text-[color-mix(in_srgb,var(--ink)_45%,transparent)] transition hover:bg-[var(--mist)] hover:text-[var(--signal)] md:size-auto md:p-1.5"
+                className="grid size-11 place-items-center rounded-full text-[color-mix(in_srgb,var(--ink)_45%,transparent)] transition hover:bg-[var(--mist)] hover:text-[var(--signal)] lg:size-auto lg:p-1.5"
               >
                 <SlidersHorizontal size={18} strokeWidth={1.75} />
               </Link>
@@ -247,9 +292,11 @@ export default function HojePage() {
               </div>
             ) : null}
 
-            <StudySessionBar />
+            <div className="sticky top-[calc(3rem+env(safe-area-inset-top))] z-10 bg-[var(--surface)]/95 shadow-[0_10px_18px_-14px_color-mix(in_srgb,var(--ink)_45%,transparent)] backdrop-blur-md empty:hidden lg:static lg:bg-transparent lg:shadow-none lg:backdrop-blur-none">
+              <StudySessionBar />
+            </div>
 
-            <div className="space-y-2 p-2.5 md:hidden">
+            <div className="space-y-2.5 p-2.5 lg:hidden">
               {subjects.map((s) => {
                 const free = subjectTreatAsFree(s, day);
                 const exclusiveToday = free && !s.is_free;
@@ -261,22 +308,22 @@ export default function HojePage() {
                 return (
                   <div
                     key={s.id}
-                    className={`rounded-[14px] px-3.5 py-3 ${
+                    className={`rounded-[14px] px-3.5 py-3.5 ${
                       free
                         ? freeRowClass()
                         : (statusUi?.rowClass ?? "")
                     }`}
                   >
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-2.5 gap-y-1">
+                    <div className="flex items-start justify-between gap-2.5">
+                      <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2.5 gap-y-1.5">
                         <span className="inline-flex min-w-0 items-center gap-2.5">
-                          <SubjectIcon name={s.name} icon={s.icon} size={30} />
-                          <p className="min-w-0 text-[15px] font-semibold leading-snug">
+                          <SubjectIcon name={s.name} icon={s.icon} size={32} />
+                          <p className="min-w-0 text-base font-semibold leading-snug">
                             {s.name}
                           </p>
                         </span>
                         {rotItem && (
-                          <span className="rounded-full bg-[var(--signal-soft)] px-2 py-0.5 text-[11px] font-medium text-[var(--signal)]">
+                          <span className="rounded-full bg-[var(--signal-soft)] px-2.5 py-1 text-xs font-medium text-[var(--signal)]">
                             Da vez: {rotItem.name}
                           </span>
                         )}
@@ -284,14 +331,14 @@ export default function HojePage() {
                       </div>
                       {!free && statusUi && (
                         <span
-                          className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold ${statusUi.chipClass}`}
+                          className={`inline-flex min-h-8 shrink-0 items-center rounded-full px-2.5 py-1 text-xs font-semibold ${statusUi.chipClass}`}
                         >
                           {statusUi.label}
                         </span>
                       )}
                       {free && (
                         <span
-                          className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold ring-1 ${
+                          className={`inline-flex min-h-8 shrink-0 items-center rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ${
                             exclusiveToday
                               ? "bg-[color-mix(in_srgb,var(--ink)_6%,transparent)] text-[color-mix(in_srgb,var(--ink)_65%,transparent)] ring-[var(--line)]"
                               : "bg-[var(--signal-soft)] text-[var(--signal)] ring-[color-mix(in_srgb,var(--signal)_35%,transparent)]"
@@ -302,11 +349,11 @@ export default function HojePage() {
                       )}
                     </div>
                     <AutoGrowTextarea
-                      className="mt-2 w-full rounded-[10px] border border-[color-mix(in_srgb,var(--ink)_8%,transparent)] bg-[color-mix(in_srgb,var(--surface)_55%,transparent)] px-2.5 py-2 text-sm leading-snug text-[color-mix(in_srgb,var(--ink)_84%,transparent)] focus:border-[var(--signal)] focus:bg-[var(--surface)] focus:text-[var(--ink)]"
+                      className="mt-2.5 w-full rounded-[10px] border border-[color-mix(in_srgb,var(--ink)_8%,transparent)] bg-[color-mix(in_srgb,var(--surface)_55%,transparent)] px-3 py-2.5 text-base leading-snug text-[color-mix(in_srgb,var(--ink)_84%,transparent)] focus:border-[var(--signal)] focus:bg-[var(--surface)] focus:text-[var(--ink)]"
                       value={rotItem ? rotItem.notes : s.notes}
                       placeholder="Anotações…"
-                      minPx={40}
-                      maxPx={88}
+                      minPx={44}
+                      maxPx={120}
                       onChange={(notes) =>
                         rot && rotItem
                           ? upsertSubject({
@@ -336,7 +383,7 @@ export default function HojePage() {
               )}
             </div>
 
-            <div className="hidden md:block">
+            <div className="hidden lg:block">
               <table className="w-full table-fixed border-separate border-spacing-0 text-left">
                 <colgroup>
                   <col className="w-[22%]" />
@@ -460,11 +507,11 @@ export default function HojePage() {
             </div>
           </section>
 
-          {/* Ferramentas compactas — só mobile (aba Estudo) */}
+          {/* Ferramentas compactas — mobile/tablet (aba Estudo) */}
           <div className="surface overflow-hidden lg:hidden">
-            <SessionClock variant="livre" compact />
+            <FocusTodayCard compact embedded />
             <div className="border-t border-[var(--line)]">
-              <FocusTodayCard compact embedded />
+              <SessionClock variant="livre" compact />
             </div>
           </div>
         </div>

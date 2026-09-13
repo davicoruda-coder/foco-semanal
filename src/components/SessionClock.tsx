@@ -573,13 +573,13 @@ export function SessionClock({
 
   if (livreOnly && compact) {
     return (
-      <div className="px-2.5 py-2">
-        <div className="mb-1.5 flex items-center justify-between gap-2">
+      <div className="px-3 py-2.5">
+        <div className="mb-2 flex items-center justify-between gap-2">
           {livreTabs}
         </div>
         {showStopwatch
-          ? renderStopwatchRing(52, 4, true)
-          : renderSidebarRing(52, 4, true, !sidebarRunning && !sidebarPaused)}
+          ? renderStopwatchRing(56, 4, true)
+          : renderSidebarRing(56, 4, true, !sidebarRunning && !sidebarPaused)}
       </div>
     );
   }
