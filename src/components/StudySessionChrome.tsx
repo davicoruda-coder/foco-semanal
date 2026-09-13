@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Pause, Play, RotateCcw, X } from "lucide-react";
 import { DialogFrame } from "@/components/DialogFrame";
 import { AutoGrowTextarea } from "@/components/AutoGrowTextarea";
@@ -71,6 +71,18 @@ export function StudySessionBar() {
         flow.block[flow.currentIndex] ??
         null;
   const currentIsLibre = Boolean(currentLive?.is_free);
+  const [bursting, setBursting] = useState(false);
+  const prevPhase = useRef(flow.phase);
+
+  // Burst só no play (idle → running); resume da pausa fica quieto.
+  useEffect(() => {
+    const prev = prevPhase.current;
+    prevPhase.current = flow.phase;
+    if (prev !== "idle" || flow.phase !== "running") return;
+    setBursting(true);
+    const id = window.setTimeout(() => setBursting(false), 1100);
+    return () => window.clearTimeout(id);
+  }, [flow.phase]);
 
   if (
     flow.phase !== "idle" &&
@@ -118,7 +130,7 @@ export function StudySessionBar() {
       <div
         className={`synaptic-flow flex items-center gap-1.5 rounded-[var(--radius-tag)] border border-[color-mix(in_srgb,var(--signal)_28%,var(--line))] px-2 py-1.5 sm:gap-2 ${
           flow.phase === "paused" ? "is-paused" : ""
-        }`}
+        } ${bursting ? "is-bursting" : ""}`}
       >
         <button
           type="button"

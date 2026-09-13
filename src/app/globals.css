@@ -475,11 +475,8 @@ textarea:focus-visible {
   animation: dialog-card-out 140ms ease-in both;
 }
 
-/* Gradiente Sináptico Fluido — card "Em sessão".
-   Anima só background-position (compositor-friendly); tons na família do --signal
-   para funcionar no claro e no escuro sem perder legibilidade. */
-/* Gradiente Sináptico Fluido — próximo do mockup:
-   base lavanda + faixa clara horizontal + blobs suaves em movimento. */
+/* Gradiente Sináptico Fluido — barra "Em sessão".
+   Blobs (::before) + fitas/partículas (::after). Burst no play (idle→running). */
 @keyframes synaptic-flow {
   0% {
     transform: translate3d(-4%, -2%, 0) scale(1.05);
@@ -492,6 +489,49 @@ textarea:focus-visible {
   }
   100% {
     transform: translate3d(-4%, -2%, 0) scale(1.05);
+  }
+}
+
+@keyframes synaptic-waves {
+  0% {
+    transform: translate3d(-18%, 0, 0) rotate(-6deg);
+    opacity: 0.45;
+  }
+  50% {
+    transform: translate3d(8%, -12%, 0) rotate(-2deg);
+    opacity: 0.85;
+  }
+  100% {
+    transform: translate3d(28%, 6%, 0) rotate(-8deg);
+    opacity: 0.5;
+  }
+}
+
+@keyframes synaptic-burst-glow {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--signal) 0%, transparent);
+  }
+  35% {
+    box-shadow:
+      0 0 22px color-mix(in srgb, var(--signal) 38%, transparent),
+      inset 0 0 18px color-mix(in srgb, var(--signal) 14%, transparent);
+  }
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--signal) 0%, transparent);
+  }
+}
+
+@keyframes synaptic-burst-wave {
+  0% {
+    transform: translate3d(-55%, 0, 0) rotate(-8deg) scale(0.94);
+    opacity: 0;
+  }
+  22% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate3d(55%, -6%, 0) rotate(-4deg) scale(1.08);
+    opacity: 0;
   }
 }
 
@@ -510,25 +550,21 @@ textarea:focus-visible {
   z-index: 0;
   pointer-events: none;
   background:
-    /* faixa luminosa central (como no mockup) */
     radial-gradient(
       90% 55% at 48% 48%,
       color-mix(in srgb, var(--surface) 96%, var(--signal)),
       transparent 62%
     ),
-    /* blob lavanda esquerda */
     radial-gradient(
       70% 80% at 18% 55%,
       color-mix(in srgb, var(--signal) 38%, var(--surface)),
       transparent 68%
     ),
-    /* blob roxo direita */
     radial-gradient(
       75% 85% at 82% 42%,
       color-mix(in srgb, var(--signal) 46%, var(--surface)),
       transparent 70%
     ),
-    /* névoa inferior */
     radial-gradient(
       80% 60% at 55% 95%,
       color-mix(in srgb, var(--signal) 22%, var(--surface)),
@@ -538,19 +574,102 @@ textarea:focus-visible {
   will-change: transform;
 }
 
+/* Fitas de luz + bokeh (ref. light waves) — contidas na barra. */
+.synaptic-flow::after {
+  content: "";
+  position: absolute;
+  inset: -40% -20%;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(
+      105deg,
+      transparent 0%,
+      color-mix(in srgb, var(--surface) 55%, transparent) 28%,
+      color-mix(in srgb, var(--signal) 28%, transparent) 46%,
+      color-mix(in srgb, var(--surface) 70%, transparent) 58%,
+      transparent 78%
+    ),
+    linear-gradient(
+      98deg,
+      transparent 12%,
+      color-mix(in srgb, var(--signal) 18%, transparent) 38%,
+      transparent 62%
+    ),
+    radial-gradient(
+      circle at 18% 40%,
+      color-mix(in srgb, var(--surface) 90%, var(--signal)) 0 1.5px,
+      transparent 2.5px
+    ),
+    radial-gradient(
+      circle at 42% 70%,
+      color-mix(in srgb, var(--signal) 55%, var(--surface)) 0 1px,
+      transparent 2px
+    ),
+    radial-gradient(
+      circle at 68% 28%,
+      color-mix(in srgb, var(--surface) 95%, var(--signal)) 0 2px,
+      transparent 3px
+    ),
+    radial-gradient(
+      circle at 84% 62%,
+      color-mix(in srgb, var(--signal) 45%, transparent) 0 1.25px,
+      transparent 2.5px
+    ),
+    radial-gradient(
+      circle at 55% 45%,
+      color-mix(in srgb, var(--surface) 80%, transparent) 0 1px,
+      transparent 2px
+    );
+  background-size:
+    140% 140%,
+    160% 120%,
+    100% 100%,
+    100% 100%,
+    100% 100%,
+    100% 100%,
+    100% 100%;
+  opacity: 0.75;
+  mix-blend-mode: soft-light;
+  animation: synaptic-waves 7.5s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+
 .synaptic-flow > * {
   position: relative;
   z-index: 1;
 }
 
-/* Sessão pausada: congela o fluxo. */
-.synaptic-flow.is-paused::before {
+.synaptic-flow.is-paused::before,
+.synaptic-flow.is-paused::after {
   animation-play-state: paused;
 }
 
+/* Clique em Iniciar sessão: onda + glow curtos na barra. */
+.synaptic-flow.is-bursting {
+  animation: synaptic-burst-glow 1.05s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.synaptic-flow.is-bursting::before {
+  animation-duration: 2.4s;
+}
+
+.synaptic-flow.is-bursting::after {
+  mix-blend-mode: screen;
+  opacity: 1;
+  animation: synaptic-burst-wave 1.05s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .synaptic-flow::before {
+  .synaptic-flow::before,
+  .synaptic-flow::after,
+  .synaptic-flow.is-bursting {
     animation: none;
+  }
+
+  .synaptic-flow.is-bursting::after {
+    animation: none;
+    opacity: 0.55;
   }
 }
 
@@ -580,6 +699,11 @@ textarea:focus-visible {
       color-mix(in srgb, var(--signal) 18%, transparent),
       transparent 72%
     );
+}
+
+:root[data-theme="dark"] .synaptic-flow::after {
+  mix-blend-mode: screen;
+  opacity: 0.65;
 }
 
 .nav-tab-active-chip {
