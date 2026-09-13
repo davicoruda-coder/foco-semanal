@@ -256,7 +256,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   }`}
                 >
                   <Icon size={18} strokeWidth={active ? 2.25 : 1.75} />
-                  <span className="hidden xl:inline">{label}</span>
+                  <span className="hidden lg:inline">{label}</span>
                 </Link>
               );
             })}

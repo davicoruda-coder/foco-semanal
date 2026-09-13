@@ -97,13 +97,7 @@ export default function HojePage() {
         <div className="min-w-0 space-y-3 sm:space-y-5">
           {/* Agenda — só no desktop; no mobile fica na aba Agenda */}
           <section className="surface hidden overflow-hidden p-0 lg:block">
-            <div
-              className={`flex flex-wrap items-center justify-between gap-2 px-3.5 py-2.5 md:px-5 md:py-3 ${
-                showFullWeek
-                  ? "border-b border-[var(--line)] bg-[var(--mist)]"
-                  : "border-b border-[color-mix(in_srgb,var(--signal)_18%,var(--line))] bg-[color-mix(in_srgb,var(--signal)_8%,var(--mist))]"
-              }`}
-            >
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--line)] bg-[var(--mist)] px-3.5 py-2.5 md:px-5 md:py-3">
               <button
                 type="button"
                 title="Abrir calendário do mês"
@@ -158,16 +152,14 @@ export default function HojePage() {
                         <div
                           className={`border-b px-2 py-2.5 text-center text-xs font-semibold uppercase tracking-wider md:px-2 md:py-2 ${
                             isToday
-                              ? "relative z-[1] border-[color-mix(in_srgb,var(--signal)_18%,var(--line))] text-[var(--ink)]"
+                              ? "relative z-[1] border-[color-mix(in_srgb,var(--signal)_18%,var(--line))] text-[var(--signal)]"
                               : "border-[var(--line)] text-[color-mix(in_srgb,var(--ink)_72%,transparent)]"
                           }`}
                           style={
                             isToday
                               ? {
                                   background:
-                                    "color-mix(in srgb, var(--signal) 12%, var(--signal-soft))",
-                                  boxShadow:
-                                    "inset 0 0 10px color-mix(in srgb, var(--signal) 18%, transparent), 0 0 6px color-mix(in srgb, var(--signal) 10%, transparent)",
+                                    "color-mix(in srgb, var(--signal) 10%, var(--surface))",
                                 }
                               : undefined
                           }
@@ -201,10 +193,12 @@ export default function HojePage() {
                 </div>
               </div>
             ) : (
-              <div className="bg-[color-mix(in_srgb,var(--signal)_6%,var(--mist))] px-3.5 py-2.5 md:px-5 md:py-3">
+              <div className="bg-[var(--surface)] px-3.5 py-2.5 md:px-5 md:py-3">
                 <div className="flex flex-wrap items-center gap-2">
                   {todayBlocks.length === 0 && (
-                    <p className="text-sm opacity-55">Nenhum bloco hoje.</p>
+                    <p className="text-sm text-[color-mix(in_srgb,var(--ink)_45%,transparent)]">
+                      Nenhum bloco hoje.
+                    </p>
                   )}
                   {todayBlocks.map((b) => {
                     const style = blockStyle(b);
@@ -224,8 +218,8 @@ export default function HojePage() {
           </section>
 
           <section className="surface overflow-hidden p-0">
-            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--line)] px-3.5 py-2.5 md:px-5 md:py-3">
-              <h2 className="font-display text-[15px] font-semibold tracking-tight md:text-lg">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--line)] px-3.5 py-3 md:px-5 md:py-3.5">
+              <h2 className="font-display text-lg font-semibold tracking-tight text-[var(--signal)] md:text-xl">
                 Ciclo de Estudos
               </h2>
               <Link
@@ -239,16 +233,16 @@ export default function HojePage() {
             </div>
 
             {exclusiveTodaySubject ? (
-              <div className="border-b border-[color-mix(in_srgb,var(--signal)_20%,var(--line))] bg-[color-mix(in_srgb,var(--signal)_8%,var(--mist))] px-3.5 py-2.5 md:px-5">
-                <p className="text-sm font-medium text-[var(--ink)]">
+              <div className="border-b border-[color-mix(in_srgb,var(--signal)_22%,var(--line))] bg-[color-mix(in_srgb,var(--signal)_10%,var(--surface))] px-3.5 py-3 md:px-5">
+                <p className="text-sm font-semibold text-[var(--ink)] md:text-[15px]">
                   Hoje é só{" "}
                   <span className="text-[var(--signal)]">
                     {exclusiveTodaySubject.name}
-                  </span>{" "}
-                  — ciclo pausado
+                  </span>
                 </p>
-                <p className="mt-0.5 text-xs text-[color-mix(in_srgb,var(--ink)_55%,transparent)]">
-                  Só anotações neste dia. Amanhã o ciclo volta como estava.
+                <p className="mt-1 text-xs leading-snug text-[color-mix(in_srgb,var(--ink)_58%,transparent)] md:text-sm">
+                  Ciclo pausado — só anotações neste dia. Amanhã volta como
+                  estava.
                 </p>
               </div>
             ) : null}
@@ -275,8 +269,8 @@ export default function HojePage() {
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-2.5 gap-y-1">
-                        <span className="inline-flex min-w-0 items-center gap-2">
-                          <SubjectIcon name={s.name} icon={s.icon} size={26} />
+                        <span className="inline-flex min-w-0 items-center gap-2.5">
+                          <SubjectIcon name={s.name} icon={s.icon} size={30} />
                           <p className="min-w-0 text-[15px] font-semibold leading-snug">
                             {s.name}
                           </p>
@@ -290,14 +284,14 @@ export default function HojePage() {
                       </div>
                       {!free && statusUi && (
                         <span
-                          className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-medium ${statusUi.chipClass}`}
+                          className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold ${statusUi.chipClass}`}
                         >
                           {statusUi.label}
                         </span>
                       )}
                       {free && (
                         <span
-                          className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-medium ring-1 ${
+                          className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold ring-1 ${
                             exclusiveToday
                               ? "bg-[color-mix(in_srgb,var(--ink)_6%,transparent)] text-[color-mix(in_srgb,var(--ink)_65%,transparent)] ring-[var(--line)]"
                               : "bg-[var(--signal-soft)] text-[var(--signal)] ring-[color-mix(in_srgb,var(--signal)_35%,transparent)]"
@@ -385,11 +379,11 @@ export default function HojePage() {
                         }`}
                       >
                         <td
-                          className={`break-words px-5 py-3 align-middle text-base font-medium leading-snug ${rowBorder}`}
+                          className={`break-words px-5 py-3.5 align-middle text-base font-medium leading-snug ${rowBorder}`}
                         >
-                          <div className="flex flex-wrap items-baseline gap-x-2.5 gap-y-1">
-                            <span className="inline-flex min-w-0 items-center gap-2.5">
-                              <SubjectIcon name={s.name} icon={s.icon} size={28} />
+                          <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
+                            <span className="inline-flex min-w-0 items-center gap-3">
+                              <SubjectIcon name={s.name} icon={s.icon} size={32} />
                               <span className="min-w-0">{s.name}</span>
                             </span>
                             {rotItem && (
@@ -401,11 +395,11 @@ export default function HojePage() {
                           </div>
                         </td>
                         <td
-                          className={`py-3 pl-2 pr-2 align-middle ${rowBorder}`}
+                          className={`py-3.5 pl-2 pr-2 align-middle ${rowBorder}`}
                         >
                           {free ? (
                             <span
-                              className={`inline-flex rounded-full px-2.5 py-1.5 text-xs font-medium ring-1 ${
+                              className={`inline-flex rounded-full px-2.5 py-1.5 text-xs font-semibold ring-1 ${
                                 exclusiveToday
                                   ? "bg-[color-mix(in_srgb,var(--ink)_6%,transparent)] text-[color-mix(in_srgb,var(--ink)_65%,transparent)] ring-[var(--line)]"
                                   : "bg-[var(--signal-soft)] text-[var(--signal)] ring-[color-mix(in_srgb,var(--signal)_35%,transparent)]"
@@ -415,13 +409,13 @@ export default function HojePage() {
                             </span>
                           ) : statusUi ? (
                             <span
-                              className={`inline-flex rounded-full px-2.5 py-1.5 text-xs font-medium ${statusUi.chipClass}`}
+                              className={`inline-flex rounded-full px-2.5 py-1.5 text-xs font-semibold ${statusUi.chipClass}`}
                             >
                               {statusUi.label}
                             </span>
                           ) : null}
                         </td>
-                        <td className={`px-5 py-3 align-middle ${rowBorder}`}>
+                        <td className={`px-5 py-3.5 align-middle ${rowBorder}`}>
                           <div className="flex min-h-[2.25rem] items-start">
                             <AutoGrowTextarea
                               className="w-full break-words rounded-[var(--radius-tag)] border border-transparent bg-transparent px-0 py-0 text-[15px] font-normal leading-snug text-[color-mix(in_srgb,var(--ink)_84%,transparent)] focus:border-[var(--line)] focus:bg-[var(--surface)] focus:px-2 focus:py-1 focus:text-[var(--ink)]"
@@ -479,8 +473,8 @@ export default function HojePage() {
           <div className="surface p-3">
             <ReminderBoard compact />
           </div>
-          <SessionClock layout="stack" variant="livre" />
           <FocusTodayCard />
+          <SessionClock layout="stack" variant="livre" />
         </aside>
       </div>
     </div>

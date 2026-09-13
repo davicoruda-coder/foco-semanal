@@ -77,26 +77,26 @@ export function StudySessionBar() {
   if (flow.phase === "idle") {
     if (exclusiveToday) return null;
     return (
-      <div className="border-b border-[var(--line)] px-4 py-2.5 md:px-5">
+      <div className="border-b border-[var(--line)] px-4 py-3 md:px-5">
         <button
           type="button"
           disabled={!flow.canStart}
           onClick={flow.startSession}
-          className="flex w-full items-center justify-between gap-2.5 rounded-[var(--radius-tag)] bg-[var(--signal)] px-3 py-2 text-left text-white transition enabled:hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-45"
+          className="flex w-full items-center justify-between gap-3 rounded-[var(--radius-btn)] bg-[var(--signal)] px-3.5 py-2.5 text-left text-white shadow-[var(--shadow-sm)] transition enabled:hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-45 md:px-4 md:py-3"
         >
           <span className="min-w-0">
-            <span className="block text-[13px] font-semibold tracking-tight">
+            <span className="block text-sm font-semibold tracking-tight md:text-[15px]">
               Iniciar sessão
             </span>
-            <span className="mt-0.5 block truncate text-[11px] text-white/75">
+            <span className="mt-0.5 block truncate text-xs text-white/80">
               {flow.canStart
                 ? flow.previewSummary
                 : "Nenhuma matéria com tempo na fila"}
             </span>
           </span>
-          <span className="grid size-8 shrink-0 place-items-center rounded-full bg-white/20">
+          <span className="grid size-9 shrink-0 place-items-center rounded-full bg-white/20 md:size-10">
             <Play
-              size={14}
+              size={16}
               fill="currentColor"
               strokeWidth={0}
               className="translate-x-px"

@@ -17,13 +17,14 @@
   --row-prox: color-mix(in srgb, var(--ink) 5.5%, var(--mist));
   /* Linha Livre: lilás suave (família do chip/signal) */
   --row-free: color-mix(in srgb, var(--signal) 10%, var(--surface));
-  --status-ok-bg: #16a34a;
-  --status-ok-fg: #ffffff;
-  --status-ok-ring: color-mix(in srgb, #16a34a 35%, transparent);
-  /* Chip Próximo: acompanha a linha; laranja no texto/anel (sem branco puro) */
-  --status-prox-bg: var(--row-prox);
-  --status-prox-fg: var(--warn);
-  --status-prox-ring: color-mix(in srgb, var(--warn) 42%, transparent);
+  /* Chip Concluída: soft fill + green type (scannable, less shouty than solid) */
+  --status-ok-bg: color-mix(in srgb, #16a34a 12%, #ffffff);
+  --status-ok-fg: #15803d;
+  --status-ok-ring: color-mix(in srgb, #16a34a 38%, transparent);
+  /* Chip Próxima: warn-soft + laranja (hierarquia clara vs Na fila) */
+  --status-prox-bg: var(--warn-soft);
+  --status-prox-fg: #c2410c;
+  --status-prox-ring: color-mix(in srgb, var(--warn) 48%, transparent);
   --next: #64748b;
   --line: #c9c7d8;
   --radius: 18px;

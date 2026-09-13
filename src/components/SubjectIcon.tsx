@@ -18,6 +18,8 @@ export function SubjectIcon({
     ? SUBJECT_ICON_PRESETS.find((p) => p.id === presetId)
     : null;
   const initial = (name.trim().charAt(0) || "?").toUpperCase();
+  const tile =
+    "shrink-0 rounded-[10px] ring-1 ring-[color-mix(in_srgb,var(--ink)_10%,var(--line))]";
 
   if (icon?.startsWith("data:image/")) {
     return (
@@ -27,7 +29,7 @@ export function SubjectIcon({
         alt=""
         width={size}
         height={size}
-        className={`shrink-0 rounded-lg object-cover ring-1 ring-[var(--line)] ${className}`}
+        className={`${tile} object-cover ${className}`}
         style={{ width: size, height: size }}
       />
     );
@@ -37,18 +39,18 @@ export function SubjectIcon({
     const Icon = preset.Icon;
     return (
       <span
-        className={`grid shrink-0 place-items-center rounded-lg bg-[var(--signal-soft)] text-[var(--signal)] ring-1 ring-[color-mix(in_srgb,var(--signal)_25%,transparent)] ${className}`}
+        className={`grid place-items-center bg-[var(--signal-soft)] text-[var(--signal)] ${tile} ${className}`}
         style={{ width: size, height: size }}
         aria-hidden
       >
-        <Icon size={Math.round(size * 0.55)} strokeWidth={2} />
+        <Icon size={Math.round(size * 0.52)} strokeWidth={2} />
       </span>
     );
   }
 
   return (
     <span
-      className={`grid shrink-0 place-items-center rounded-lg bg-[color-mix(in_srgb,var(--ink)_8%,transparent)] text-[11px] font-semibold text-[color-mix(in_srgb,var(--ink)_65%,transparent)] ring-1 ring-[var(--line)] ${className}`}
+      className={`grid place-items-center bg-[color-mix(in_srgb,var(--ink)_7%,var(--mist))] text-[11px] font-semibold text-[color-mix(in_srgb,var(--ink)_62%,transparent)] ${tile} ${className}`}
       style={{ width: size, height: size }}
       aria-hidden
     >

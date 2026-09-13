@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { Target } from "lucide-react";
 import { SIDEBAR_TIMER_ID, useTimerRuntime } from "@/components/TimerRuntimeProvider";
 import {
   dateKey,
@@ -58,6 +59,11 @@ export function FocusTodayCard({
 
   const today = getDay(log, dateKey());
   const max = Math.max(1, ...today.byHour);
+  // Barra só visual (densidade do dia), sem meta nem “X de Y sessões”.
+  const softFill = Math.min(
+    100,
+    Math.round((today.seconds / (2 * 60 * 60)) * 100),
+  );
 
   return (
     <Link
@@ -65,23 +71,40 @@ export function FocusTodayCard({
       className={`group block transition ${
         embedded
           ? "px-3.5 py-3 hover:bg-[color-mix(in_srgb,var(--mist)_70%,transparent)]"
-          : "surface px-3 py-2.5 hover:border-[color-mix(in_srgb,var(--signal)_45%,var(--line))]"
+          : "surface px-3.5 py-3 hover:border-[color-mix(in_srgb,var(--signal)_45%,var(--line))]"
       }`}
     >
-      <div className="flex items-baseline justify-between gap-2">
-        <p className="text-xs font-semibold uppercase tracking-wider text-[color-mix(in_srgb,var(--ink)_55%,transparent)]">
+      <div className="flex items-center justify-between gap-2">
+        <p className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-[color-mix(in_srgb,var(--ink)_55%,transparent)]">
+          <Target
+            size={14}
+            strokeWidth={2.25}
+            className="text-[var(--signal)]"
+            aria-hidden
+          />
           Foco hoje
         </p>
         <p
-          className={`font-mono-num font-medium tracking-tight ${
+          className={`font-mono-num font-semibold tracking-tight text-[var(--ink)] ${
             compact ? "text-[15px]" : "text-base"
           }`}
         >
           {formatFocusDuration(today.seconds)}
         </p>
       </div>
+      {!compact ? (
+        <div
+          className="mt-2.5 h-2 overflow-hidden rounded-full bg-[color-mix(in_srgb,var(--ink)_8%,transparent)]"
+          aria-hidden
+        >
+          <div
+            className="h-full rounded-full bg-[var(--signal)] transition-[width] duration-500 ease-out"
+            style={{ width: `${softFill}%` }}
+          />
+        </div>
+      ) : null}
       <div
-        className={`mt-1.5 flex items-end gap-px ${compact ? "h-3" : "h-4"}`}
+        className={`mt-2 flex items-end gap-px ${compact ? "h-3" : "h-3.5"}`}
         aria-hidden
       >
         {today.byHour.map((seconds, h) => (
@@ -91,7 +114,7 @@ export function FocusTodayCard({
             style={{
               height:
                 seconds > 0
-                  ? `${Math.max(compact ? 14 : 18, Math.round((seconds / max) * 100))}%`
+                  ? `${Math.max(compact ? 14 : 16, Math.round((seconds / max) * 100))}%`
                   : "2px",
               background:
                 seconds > 0
@@ -102,11 +125,11 @@ export function FocusTodayCard({
         ))}
       </div>
       {tracking ? (
-        <p className="mt-1 text-xs text-[color-mix(in_srgb,var(--ink)_45%,transparent)]">
+        <p className="mt-1.5 text-xs text-[color-mix(in_srgb,var(--ink)_45%,transparent)]">
           em andamento
         </p>
       ) : !compact ? (
-        <p className="mt-1 text-xs font-medium text-[color-mix(in_srgb,var(--signal)_70%,var(--ink))] opacity-0 transition group-hover:opacity-100">
+        <p className="mt-1.5 text-xs font-medium text-[color-mix(in_srgb,var(--signal)_70%,var(--ink))] opacity-0 transition group-hover:opacity-100">
           Ver estatísticas →
         </p>
       ) : null}

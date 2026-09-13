@@ -117,7 +117,7 @@ export function freeRowClass(): string {
 
 /** Chip muted para matérias ainda na fila (não são a "Próxima" de verdade). */
 export function queuePendingClass(): string {
-  return "bg-[color-mix(in_srgb,var(--ink)_5%,transparent)] text-[color-mix(in_srgb,var(--ink)_55%,transparent)] ring-1 ring-[var(--line)]";
+  return "bg-transparent text-[color-mix(in_srgb,var(--ink)_48%,transparent)] ring-1 ring-[color-mix(in_srgb,var(--ink)_12%,transparent)]";
 }
 
 export function queuePendingRowClass(): string {
