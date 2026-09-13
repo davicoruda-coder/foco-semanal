@@ -349,7 +349,7 @@ export default function HojePage() {
                       )}
                     </div>
                     <AutoGrowTextarea
-                      className="mt-2.5 w-full rounded-[10px] border border-[color-mix(in_srgb,var(--ink)_8%,transparent)] bg-[color-mix(in_srgb,var(--surface)_55%,transparent)] px-3 py-2.5 text-base leading-snug text-[color-mix(in_srgb,var(--ink)_84%,transparent)] focus:border-[var(--signal)] focus:bg-[var(--surface)] focus:text-[var(--ink)]"
+                      className="mt-2.5 w-full rounded-[10px] border border-[color-mix(in_srgb,var(--ink)_8%,transparent)] bg-[color-mix(in_srgb,var(--surface)_55%,transparent)] px-3 py-2.5 text-base leading-snug text-[color-mix(in_srgb,var(--ink)_84%,transparent)] placeholder:text-[color-mix(in_srgb,var(--ink)_38%,transparent)] focus:border-[var(--signal)] focus:bg-[var(--surface)] focus:text-[var(--ink)] focus:shadow-[0_0_0_3px_color-mix(in_srgb,var(--signal)_16%,transparent)]"
                       value={rotItem ? rotItem.notes : s.notes}
                       placeholder="Anotações…"
                       minPx={44}
@@ -386,12 +386,12 @@ export default function HojePage() {
             <div className="hidden lg:block">
               <table className="w-full table-fixed border-separate border-spacing-0 text-left">
                 <colgroup>
-                  <col className="w-[22%]" />
-                  <col className="w-[8.5rem]" />
+                  <col className="w-[30%]" />
+                  <col className="w-[7.25rem]" />
                   <col />
                 </colgroup>
                 <thead>
-                  <tr className="bg-[var(--mist)] text-xs font-medium uppercase tracking-wider text-[color-mix(in_srgb,var(--ink)_55%,transparent)]">
+                  <tr className="bg-[var(--mist)] text-[11px] font-medium uppercase tracking-[0.06em] text-[color-mix(in_srgb,var(--ink)_55%,transparent)]">
                     <th className="border-b border-[var(--line)] px-5 py-3 text-left">
                       Matéria
                     </th>
@@ -465,7 +465,7 @@ export default function HojePage() {
                         <td className={`px-5 py-3.5 align-middle ${rowBorder}`}>
                           <div className="flex min-h-[2.25rem] items-start">
                             <AutoGrowTextarea
-                              className="w-full break-words rounded-[var(--radius-tag)] border border-transparent bg-transparent px-0 py-0 text-[15px] font-normal leading-snug text-[color-mix(in_srgb,var(--ink)_84%,transparent)] focus:border-[var(--line)] focus:bg-[var(--surface)] focus:px-2 focus:py-1 focus:text-[var(--ink)]"
+                              className="w-full break-words rounded-[var(--radius-tag)] border border-transparent bg-transparent px-0 py-0 text-[15px] font-normal leading-snug text-[color-mix(in_srgb,var(--ink)_84%,transparent)] placeholder:text-[color-mix(in_srgb,var(--ink)_38%,transparent)] focus:border-[var(--line)] focus:bg-[var(--surface)] focus:px-2 focus:py-1 focus:text-[var(--ink)] focus:shadow-[0_0_0_3px_color-mix(in_srgb,var(--signal)_14%,transparent)]"
                               value={rotItem ? rotItem.notes : s.notes}
                               placeholder="Anotações…"
                               minPx={22}

@@ -249,6 +249,29 @@ a {
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--signal) 16%, transparent);
 }
 
+::selection {
+  background: color-mix(in srgb, var(--signal) 28%, transparent);
+  color: var(--ink);
+}
+
+html {
+  caret-color: var(--signal);
+}
+
+:focus {
+  outline: none;
+}
+
+:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--signal) 70%, var(--ink));
+  outline-offset: 2px;
+}
+
+.input:focus-visible,
+textarea:focus-visible {
+  outline: none;
+}
+
 .dot-board {
   background-color: #fafafa;
   background-image: radial-gradient(#c5cdc8 1px, transparent 1px);

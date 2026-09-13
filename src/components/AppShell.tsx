@@ -167,7 +167,17 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   if (!ready) {
     return (
-      <div className="flex min-h-screen items-center justify-center text-[color-mix(in_srgb,var(--ink)_55%,transparent)]">
+      <div className="flex min-h-screen flex-col items-center justify-center gap-2 text-sm text-[color-mix(in_srgb,var(--ink)_55%,transparent)]">
+        <span
+          className="grid size-9 place-items-center rounded-xl text-white"
+          style={{
+            background:
+              "linear-gradient(135deg, var(--signal), var(--accent-2))",
+          }}
+          aria-hidden
+        >
+          <Target size={16} strokeWidth={2.25} />
+        </span>
         Carregando…
       </div>
     );

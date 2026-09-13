@@ -82,7 +82,7 @@ export function StudySessionBar() {
           type="button"
           disabled={!flow.canStart}
           onClick={flow.startSession}
-          className="flex w-full items-center justify-between gap-3 rounded-[var(--radius-btn)] bg-[var(--signal)] px-3.5 py-2.5 text-left text-white shadow-[var(--shadow-sm)] transition enabled:hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-45 md:px-4 md:py-3"
+          className="flex w-full items-center justify-between gap-3 rounded-[var(--radius-btn)] bg-[var(--signal)] px-3.5 py-2.5 text-left text-white shadow-[var(--shadow-sm)] transition enabled:hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-45 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/80 md:px-4 md:py-3"
         >
           <span className="min-w-0">
             <span className="block text-sm font-semibold tracking-tight md:text-[15px]">
@@ -119,7 +119,7 @@ export function StudySessionBar() {
           onClick={
             flow.phase === "running" ? flow.pauseSession : flow.resumeSession
           }
-          className="grid size-8 shrink-0 place-items-center rounded-full bg-[var(--signal)] text-white"
+          className="grid size-8 shrink-0 place-items-center rounded-full bg-[var(--signal)] text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--signal)]"
           title={flow.phase === "running" ? "Pausar sessão" : "Retomar sessão"}
           aria-label={
             flow.phase === "running" ? "Pausar sessão" : "Retomar sessão"
