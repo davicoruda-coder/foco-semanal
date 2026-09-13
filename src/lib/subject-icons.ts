@@ -74,6 +74,35 @@ export function isSubjectIconUpload(icon: string | null | undefined): boolean {
   return Boolean(icon?.startsWith("data:image/"));
 }
 
+/** Sugestão só de exibição (não grava) a partir do nome da matéria. */
+const NAME_ICON_HINTS: ReadonlyArray<readonly [RegExp, string]> = [
+  [/python|programa|c[oó]digo|codigo|javascript|typescript|\bjava\b|\bdev\b/i, "code"],
+  [/terminal|linux|shell|\bgit\b/i, "terminal"],
+  [/banco|sql|dados|database|postgres/i, "database"],
+  [/ingl[eê]s|english|espanhol|franc[eê]s|idioma/i, "languages"],
+  [/mundo|geograf|atualidades/i, "globe"],
+  [/rlm|racioc[ií]nio|l[oó]gica/i, "brain"],
+  [/matem|c[aá]lculo|estat[ií]st|\bsigma\b/i, "sigma"],
+  [/reda[cç]|escrita|portugu/i, "pen"],
+  [/quest[aã]o|questões|questoes/i, "questions"],
+  [/checklist|lista|tarefas/i, "checks"],
+  [/faculdade|univers|gradua|aula/i, "grad"],
+  [/ci[eê]ncia|f[ií]sica|qu[ií]mica|biolog/i, "flask"],
+  [/projeto|trabalho|carreira/i, "briefcase"],
+  [/m[uú]sica|music/i, "music"],
+  [/revis[aã]o|resumo|leitura|livro/i, "book"],
+  [/livre|pausa|ideia/i, "idea"],
+];
+
+export function guessSubjectIconPresetId(name: string): string | null {
+  const n = name.trim();
+  if (!n) return null;
+  for (const [re, id] of NAME_ICON_HINTS) {
+    if (re.test(n) && PRESET_IDS.has(id)) return id;
+  }
+  return null;
+}
+
 /** Redimensiona e comprime o arquivo para data URL (JPEG). */
 export function fileToSubjectIconDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {

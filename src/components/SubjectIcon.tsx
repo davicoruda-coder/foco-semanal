@@ -1,6 +1,10 @@
 "use client";
 
-import { SUBJECT_ICON_PRESETS, subjectIconPresetId } from "@/lib/subject-icons";
+import {
+  SUBJECT_ICON_PRESETS,
+  guessSubjectIconPresetId,
+  subjectIconPresetId,
+} from "@/lib/subject-icons";
 
 export function SubjectIcon({
   name,
@@ -14,12 +18,16 @@ export function SubjectIcon({
   className?: string;
 }) {
   const presetId = subjectIconPresetId(icon);
-  const preset = presetId
-    ? SUBJECT_ICON_PRESETS.find((p) => p.id === presetId)
+  const guessedId = presetId ? null : guessSubjectIconPresetId(name);
+  const resolvedId = presetId ?? guessedId;
+  const preset = resolvedId
+    ? SUBJECT_ICON_PRESETS.find((p) => p.id === resolvedId)
     : null;
   const initial = (name.trim().charAt(0) || "?").toUpperCase();
   const tile =
     "shrink-0 rounded-[10px] ring-1 ring-[color-mix(in_srgb,var(--ink)_10%,var(--line))]";
+  const guessedTile =
+    "shrink-0 rounded-[10px] ring-1 ring-[color-mix(in_srgb,var(--signal)_18%,var(--line))]";
 
   if (icon?.startsWith("data:image/")) {
     return (
@@ -37,11 +45,15 @@ export function SubjectIcon({
 
   if (preset) {
     const Icon = preset.Icon;
+    const guessed = Boolean(guessedId && !presetId);
     return (
       <span
-        className={`grid place-items-center bg-[var(--signal-soft)] text-[var(--signal)] ${tile} ${className}`}
+        className={`grid place-items-center bg-[var(--signal-soft)] text-[var(--signal)] ${
+          guessed ? guessedTile : tile
+        } ${className}`}
         style={{ width: size, height: size }}
         aria-hidden
+        title={guessed ? "Sugestão pelo nome — escolha em Matérias" : undefined}
       >
         <Icon size={Math.round(size * 0.52)} strokeWidth={2} />
       </span>

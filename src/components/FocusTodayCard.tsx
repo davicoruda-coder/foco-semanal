@@ -85,11 +85,15 @@ export function FocusTodayCard({
           Foco hoje
         </p>
         <p
-          className={`font-mono-num font-semibold tracking-tight text-[var(--ink)] ${
-            compact ? "text-[15px]" : "text-base"
-          }`}
+          className={`font-mono-num font-semibold tracking-tight ${
+            today.seconds === 0 && !tracking
+              ? "text-[color-mix(in_srgb,var(--ink)_45%,transparent)]"
+              : "text-[var(--ink)]"
+          } ${compact ? "text-[15px]" : "text-base"}`}
         >
-          {formatFocusDuration(today.seconds)}
+          {today.seconds === 0 && !tracking
+            ? "—"
+            : formatFocusDuration(today.seconds)}
         </p>
       </div>
       {!compact ? (
@@ -127,6 +131,10 @@ export function FocusTodayCard({
       {tracking ? (
         <p className="mt-1.5 text-xs text-[color-mix(in_srgb,var(--ink)_45%,transparent)]">
           em andamento
+        </p>
+      ) : today.seconds === 0 ? (
+        <p className="mt-1.5 text-xs text-[color-mix(in_srgb,var(--ink)_45%,transparent)]">
+          ainda sem foco registrado
         </p>
       ) : !compact ? (
         <p className="mt-1.5 text-xs font-medium text-[color-mix(in_srgb,var(--signal)_70%,var(--ink))] opacity-0 transition group-hover:opacity-100">

@@ -522,64 +522,73 @@ export function SessionClock({
   }
 
   const livreTabs = (
-    <>
-      <div className="flex items-center rounded-full bg-[color-mix(in_srgb,var(--ink)_7%,transparent)] p-0.5">
-        {(
-          [
-            ["timers", "Temporizador"],
-            ["stopwatch", "Cronômetro"],
-          ] as const
-        ).map(([value, label]) => {
-          const active = mode === value;
-          const runningHidden =
-            !active &&
-            ((value === "stopwatch" && stopwatch.running) ||
-              (value === "timers" && sidebarRunning));
-          return (
-            <button
-              key={value}
-              type="button"
-              onClick={() => setMode(value)}
-              className={`rounded-full px-2.5 py-1 text-xs font-medium transition sm:px-3 sm:py-1.5 ${
-                active
-                  ? "bg-[var(--surface)] text-[var(--signal)] shadow-sm"
-                  : runningHidden
-                    ? "tab-running-hint"
-                    : "text-[color-mix(in_srgb,var(--ink)_55%,transparent)] hover:text-[var(--ink)]"
-              }`}
-              title={
-                runningHidden
-                  ? value === "stopwatch"
-                    ? "Cronômetro em andamento"
-                    : "Temporizador em andamento"
-                  : undefined
-              }
-            >
-              {label}
-            </button>
-          );
-        })}
-      </div>
-      <Link
-        href="/ajustes#temporizador"
-        title="Ajustes do temporizador"
-        aria-label="Ajustes do temporizador"
-        className="shrink-0 rounded-full p-1.5 text-[color-mix(in_srgb,var(--ink)_45%,transparent)] transition hover:bg-[var(--mist)] hover:text-[var(--signal)]"
-      >
-        <SlidersHorizontal size={16} strokeWidth={1.75} />
-      </Link>
-    </>
+    <div className="flex items-center rounded-full bg-[color-mix(in_srgb,var(--ink)_7%,transparent)] p-0.5">
+      {(
+        [
+          ["timers", "Temporizador"],
+          ["stopwatch", "Cronômetro"],
+        ] as const
+      ).map(([value, label]) => {
+        const active = mode === value;
+        const runningHidden =
+          !active &&
+          ((value === "stopwatch" && stopwatch.running) ||
+            (value === "timers" && sidebarRunning));
+        return (
+          <button
+            key={value}
+            type="button"
+            onClick={() => setMode(value)}
+            className={`rounded-full px-2.5 py-1 text-xs font-medium transition sm:px-3 sm:py-1.5 ${
+              active
+                ? "bg-[var(--surface)] text-[color-mix(in_srgb,var(--ink)_78%,transparent)] shadow-sm"
+                : runningHidden
+                  ? "tab-running-hint"
+                  : "text-[color-mix(in_srgb,var(--ink)_55%,transparent)] hover:text-[var(--ink)]"
+            }`}
+            title={
+              runningHidden
+                ? value === "stopwatch"
+                  ? "Cronômetro em andamento"
+                  : "Temporizador em andamento"
+                : undefined
+            }
+          >
+            {label}
+          </button>
+        );
+      })}
+    </div>
+  );
+
+  const livreGear = (
+    <Link
+      href="/ajustes#temporizador"
+      title="Ajustes do temporizador"
+      aria-label="Ajustes do temporizador"
+      className="shrink-0 rounded-full p-1.5 text-[color-mix(in_srgb,var(--ink)_45%,transparent)] transition hover:bg-[var(--mist)] hover:text-[var(--signal)]"
+    >
+      <SlidersHorizontal size={16} strokeWidth={1.75} />
+    </Link>
   );
 
   if (livreOnly && compact) {
     return (
       <div className="px-3 py-2.5">
-        <div className="mb-2 flex items-center justify-between gap-2">
-          {livreTabs}
+        <div className="mb-1.5 flex items-center justify-between gap-2">
+          <p className="text-[11px] font-medium tracking-wide text-[color-mix(in_srgb,var(--ink)_48%,transparent)]">
+            Relógio livre
+            <span className="font-normal text-[color-mix(in_srgb,var(--ink)_38%,transparent)]">
+              {" "}
+              · fora do ciclo
+            </span>
+          </p>
+          {livreGear}
         </div>
+        <div className="mb-2">{livreTabs}</div>
         {showStopwatch
-          ? renderStopwatchRing(56, 4, true)
-          : renderSidebarRing(56, 4, true, !sidebarRunning && !sidebarPaused)}
+          ? renderStopwatchRing(52, 4, true)
+          : renderSidebarRing(52, 4, true, !sidebarRunning && !sidebarPaused)}
       </div>
     );
   }
@@ -624,7 +633,21 @@ export function SessionClock({
         }`}
       >
         {livreOnly ? (
-          livreTabs
+          <>
+            <div className="min-w-0 flex-1">
+              <p className="mb-1.5 text-[11px] font-medium tracking-wide text-[color-mix(in_srgb,var(--ink)_48%,transparent)]">
+                Relógio livre
+                <span className="font-normal text-[color-mix(in_srgb,var(--ink)_38%,transparent)]">
+                  {" "}
+                  · fora do ciclo
+                </span>
+              </p>
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                {livreTabs}
+                {livreGear}
+              </div>
+            </div>
+          </>
         ) : (
           <>
           <div className="flex items-center rounded-full bg-[color-mix(in_srgb,var(--ink)_7%,transparent)] p-0.5">
@@ -684,8 +707,8 @@ export function SessionClock({
               className={`flex justify-center ${stack ? "px-3 py-3" : "px-3 py-4"}`}
             >
               {renderStopwatchRing(
-                stack ? 124 : 112,
-                stack ? 4.5 : 4.5,
+                stack ? 108 : 100,
+                4,
                 false,
                 !stopwatch.running && !swPaused,
               )}
@@ -700,8 +723,8 @@ export function SessionClock({
                 </p>
               )}
               {renderSidebarRing(
-                stack ? 124 : 112,
-                4.5,
+                stack ? 108 : 100,
+                4,
                 false,
                 !sidebarRunning && !sidebarPaused,
               )}

@@ -3,10 +3,10 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import {
+  BookMarked,
   CalendarDays,
   ChevronDown,
   ChevronUp,
-  SlidersHorizontal,
 } from "lucide-react";
 import { useApp } from "@/components/AppProvider";
 import { DAYS } from "@/lib/types";
@@ -264,7 +264,7 @@ export default function HojePage() {
 
           <section className="surface p-0 max-lg:overflow-visible lg:overflow-hidden">
             <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--line)] px-3.5 py-3 md:px-5 md:py-3.5">
-              <h2 className="font-display text-lg font-semibold tracking-tight text-[var(--signal)] md:text-xl">
+              <h2 className="font-display text-lg font-semibold tracking-tight text-[var(--ink)] md:text-xl">
                 Ciclo de Estudos
               </h2>
               <Link
@@ -273,7 +273,7 @@ export default function HojePage() {
                 aria-label="Gerenciar matérias"
                 className="grid size-11 place-items-center rounded-full text-[color-mix(in_srgb,var(--ink)_45%,transparent)] transition hover:bg-[var(--mist)] hover:text-[var(--signal)] lg:size-auto lg:p-1.5"
               >
-                <SlidersHorizontal size={18} strokeWidth={1.75} />
+                <BookMarked size={18} strokeWidth={1.75} />
               </Link>
             </div>
 
