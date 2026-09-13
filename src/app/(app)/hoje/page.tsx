@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   BookMarked,
   CalendarDays,
@@ -34,23 +34,12 @@ import { StudySessionBar } from "@/components/StudySessionChrome";
 import { SessionSubjectClock } from "@/components/SessionSubjectClock";
 import { SubjectIcon } from "@/components/SubjectIcon";
 
-/** Com o ciclo grande, a semana encolhe para "só hoje" e o ciclo sobe. */
-const COMPACT_WEEK_THRESHOLD = 6;
-
 export default function HojePage() {
   const { data, upsertSubject } = useApp();
   const [calendarOpen, setCalendarOpen] = useState(false);
+  /** null = padrão (só hoje); true = semana; false = só hoje forçado */
   const [weekOverride, setWeekOverride] = useState<boolean | null>(null);
-  const [narrow, setNarrow] = useState(false);
   const day = todayIndex();
-
-  useEffect(() => {
-    const mq = window.matchMedia("(max-width: 767px)");
-    const sync = () => setNarrow(mq.matches);
-    sync();
-    mq.addEventListener("change", sync);
-    return () => mq.removeEventListener("change", sync);
-  }, []);
 
   const subjects = useMemo(
     () =>
@@ -89,10 +78,8 @@ export default function HojePage() {
     [data.week_blocks, day],
   );
 
-  const autoCompact = subjects.length >= COMPACT_WEEK_THRESHOLD || narrow;
-  const showFullWeek = weekOverride ?? !autoCompact;
-  const showWeekToggle = autoCompact || weekOverride !== null;
-
+  // Padrão: só o dia — libera espaço pro ciclo. Botão Semana expande.
+  const showFullWeek = weekOverride === true;
   const weekDays = DAYS.map((name, i) => ({ name, i }));
 
   return (
@@ -166,29 +153,27 @@ export default function HojePage() {
                   month: "2-digit",
                 })}`}
               </button>
-              {showWeekToggle && (
-                <button
-                  type="button"
-                  title={
-                    showFullWeek ? "Mostrar só hoje" : "Mostrar semana toda"
-                  }
-                  aria-label={
-                    showFullWeek ? "Mostrar só hoje" : "Mostrar semana toda"
-                  }
-                  className="inline-flex min-h-10 items-center gap-1 rounded-full bg-[color-mix(in_srgb,var(--ink)_8%,transparent)] px-3.5 py-2 text-sm font-medium text-[color-mix(in_srgb,var(--ink)_70%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--ink)_12%,transparent)] hover:text-[var(--ink)] md:min-h-0 md:rounded-[var(--radius-tag)] md:px-2 md:py-1 md:text-xs"
-                  onClick={() => setWeekOverride(!showFullWeek)}
-                >
-                  {showFullWeek ? (
-                    <>
-                      <ChevronUp size={14} strokeWidth={2} /> Só hoje
-                    </>
-                  ) : (
-                    <>
-                      <ChevronDown size={14} strokeWidth={2} /> Semana
-                    </>
-                  )}
-                </button>
-              )}
+              <button
+                type="button"
+                title={
+                  showFullWeek ? "Mostrar só hoje" : "Mostrar semana toda"
+                }
+                aria-label={
+                  showFullWeek ? "Mostrar só hoje" : "Mostrar semana toda"
+                }
+                className="inline-flex min-h-10 items-center gap-1 rounded-full bg-[color-mix(in_srgb,var(--ink)_8%,transparent)] px-3.5 py-2 text-sm font-medium text-[color-mix(in_srgb,var(--ink)_70%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--ink)_12%,transparent)] hover:text-[var(--ink)] md:min-h-0 md:rounded-[var(--radius-tag)] md:px-2 md:py-1 md:text-xs"
+                onClick={() => setWeekOverride(showFullWeek ? false : true)}
+              >
+                {showFullWeek ? (
+                  <>
+                    <ChevronUp size={14} strokeWidth={2} /> Só hoje
+                  </>
+                ) : (
+                  <>
+                    <ChevronDown size={14} strokeWidth={2} /> Semana
+                  </>
+                )}
+              </button>
             </div>
 
             {showFullWeek ? (
@@ -202,7 +187,7 @@ export default function HojePage() {
                     return (
                       <div
                         key={name}
-                        className="min-h-[min(58vh,28rem)] min-w-0 bg-[var(--mist)] md:min-h-44"
+                        className="min-h-36 min-w-0 bg-[var(--mist)] md:min-h-40"
                       >
                         <div
                           className={`border-b px-2 py-2.5 text-center text-xs font-semibold uppercase tracking-wider md:px-2 md:py-2 ${
