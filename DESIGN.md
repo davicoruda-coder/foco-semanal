@@ -169,7 +169,7 @@ Híbrido: **borda + sombra suave** em `.surface`; fundo `paper` com radiais leve
 - Running: `synaptic-flow` só na barra ativa (nunca em linhas concluídas).
 
 ### Signature: Relógio livre
-- Rotulado “Relógio livre · fora do ciclo”; visualmente demovido vs CTA de sessão.
+- Rotulado “Relógio livre · não avança o ciclo”; visualmente demovido vs CTA de sessão.
 
 ## Do's and Don'ts
 

@@ -110,7 +110,7 @@ export function statusRowClass(status: SubjectStatus): string {
   }
 }
 
-/** Fundo da linha/card de matéria Livre (fora do ciclo). */
+/** Fundo da linha/card de matéria Livre (no ciclo; cronômetro sem meta). */
 export function freeRowClass(): string {
   return "bg-[var(--row-free)]";
 }

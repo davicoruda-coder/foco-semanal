@@ -266,9 +266,12 @@ export default function HojePage() {
                 href="/materias?from=hoje"
                 title="Gerenciar matérias"
                 aria-label="Gerenciar matérias"
-                className="grid size-11 place-items-center rounded-full text-[color-mix(in_srgb,var(--ink)_45%,transparent)] transition hover:bg-[var(--mist)] hover:text-[var(--signal)] lg:size-auto lg:p-1.5"
+                className="inline-flex size-11 items-center justify-center gap-1.5 rounded-full text-[color-mix(in_srgb,var(--ink)_45%,transparent)] transition hover:bg-[var(--mist)] hover:text-[var(--signal)] lg:size-auto lg:rounded-[var(--radius-tag)] lg:px-2 lg:py-1.5"
               >
                 <BookMarked size={18} strokeWidth={1.75} />
+                <span className="hidden text-xs font-medium lg:inline">
+                  Matérias
+                </span>
               </Link>
             </div>
 
@@ -328,7 +331,7 @@ export default function HojePage() {
                     <div className="flex items-start justify-between gap-2.5">
                       <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2.5 gap-y-1.5">
                         <span className="inline-flex min-w-0 items-center gap-2.5">
-                          <SubjectIcon name={s.name} icon={s.icon} size={36} />
+                          <SubjectIcon name={s.name} icon={s.icon} size={32} />
                           <p className="min-w-0 text-base font-semibold leading-snug">
                             {s.name}
                           </p>
@@ -446,7 +449,7 @@ export default function HojePage() {
                         >
                           <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
                             <span className="inline-flex min-w-0 items-center gap-3">
-                              <SubjectIcon name={s.name} icon={s.icon} size={36} />
+                              <SubjectIcon name={s.name} icon={s.icon} size={32} />
                               <span className="min-w-0">{s.name}</span>
                             </span>
                             {libreInCycle && (

@@ -57,7 +57,9 @@ function MiniRing({
   const safeAccent = sanitizeCssColor(accent, "var(--signal)");
   // color-mix não passa no sanitize; valor fixo e seguro para o cronômetro
   const ringStroke = softRing
-    ? "color-mix(in srgb, var(--signal) 68%, var(--surface))"
+    ? active || paused
+      ? "color-mix(in srgb, var(--signal) 68%, var(--surface))"
+      : "color-mix(in srgb, var(--ink) 22%, var(--line))"
     : safeAccent;
   const r = (size - stroke) / 2;
   const c = 2 * Math.PI * r;
@@ -245,7 +247,7 @@ function MiniRing({
     return (
       <div
         className={`relative ${
-          active || paused ? "opacity-100" : "opacity-90"
+          active || paused ? "opacity-100" : "opacity-80"
         }`}
         style={{ width: size, height: size }}
       >
@@ -261,6 +263,10 @@ function MiniRing({
                 fontSize: timeSize,
                 maxWidth: size * 0.58,
                 textAlign: "center",
+                color:
+                  active || paused
+                    ? undefined
+                    : "color-mix(in srgb, var(--ink) 72%, transparent)",
               }}
             >
               {display}
@@ -277,7 +283,11 @@ function MiniRing({
                       ? "Pausar cronômetro"
                       : "Iniciar cronômetro"
                 }
-                className="grid size-8 place-items-center rounded-full text-[var(--signal)] transition hover:bg-[color-mix(in_srgb,var(--signal)_10%,transparent)]"
+                className={`grid size-8 place-items-center rounded-full transition ${
+                  active || paused
+                    ? "text-[var(--signal)] hover:bg-[color-mix(in_srgb,var(--signal)_10%,transparent)]"
+                    : "text-[color-mix(in_srgb,var(--ink)_42%,transparent)] hover:bg-[var(--mist)] hover:text-[color-mix(in_srgb,var(--ink)_70%,transparent)]"
+                }`}
               >
                 {active ? (
                   <Pause
@@ -580,7 +590,7 @@ export function SessionClock({
             Relógio livre
             <span className="font-normal text-[color-mix(in_srgb,var(--ink)_38%,transparent)]">
               {" "}
-              · fora do ciclo
+              · não avança o ciclo
             </span>
           </p>
           {livreGear}
@@ -639,7 +649,7 @@ export function SessionClock({
                 Relógio livre
                 <span className="font-normal text-[color-mix(in_srgb,var(--ink)_38%,transparent)]">
                   {" "}
-                  · fora do ciclo
+                  · não avança o ciclo
                 </span>
               </p>
               <div className="flex flex-wrap items-center justify-between gap-2">

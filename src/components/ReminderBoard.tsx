@@ -17,11 +17,11 @@ import type { Reminder } from "@/lib/types";
 import { sanitizeCssColor } from "@/lib/utils";
 
 /** Altura mínima do campo; a nota cresce com o texto (sem barra de rolagem). */
-const NOTE_TEXT_MIN_PX = { compact: 72, full: 60 } as const;
+const NOTE_TEXT_MIN_PX = { compact: 48, full: 60 } as const;
 
 /** 0 = tamanho atual (máximo); 1–2 = um pouco menores. Valores em px p/ transição suave. */
 const NOTE_FONT_PX = {
-  compact: [18, 16, 14],
+  compact: [15, 14, 13],
   full: [16, 14, 12],
 } as const;
 
@@ -188,12 +188,20 @@ function NoteCard({
     );
   }
 
+  // Aside Hoje: cor misturada no mist — menos “post-it gritante”, ainda identificável.
+  const cardBg = compact
+    ? `color-mix(in srgb, ${currentColor} 38%, var(--mist))`
+    : currentColor;
+  const cardInk = compact ? "var(--ink)" : "#292524";
+
   return (
     <article
-      className="note-enter relative flex min-h-[128px] flex-col rounded-[var(--radius-tag)] p-3 shadow-sm"
+      className={`note-enter relative flex flex-col rounded-[var(--radius-tag)] shadow-sm ${
+        compact ? "min-h-0 p-2.5" : "min-h-[128px] p-3"
+      }`}
       style={{
-        background: currentColor,
-        color: "#292524",
+        background: cardBg,
+        color: cardInk,
       }}
     >
       <textarea
@@ -444,7 +452,7 @@ export function ReminderBoard({ compact }: { compact?: boolean }) {
         <div
           className={
             compact
-              ? "grid grid-cols-1 gap-2"
+              ? "grid max-h-[14.5rem] grid-cols-1 gap-2 overflow-y-auto pe-0.5"
               : "mt-4 grid gap-2 sm:grid-cols-3 md:grid-cols-4"
           }
         >
