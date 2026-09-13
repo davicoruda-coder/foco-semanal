@@ -343,7 +343,7 @@ export default function HojePage() {
                     <div className="flex items-start justify-between gap-2.5">
                       <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2.5 gap-y-1.5">
                         <span className="inline-flex min-w-0 items-center gap-2.5">
-                          <SubjectIcon name={s.name} icon={s.icon} size={36} />
+                          <SubjectIcon name={s.name} icon={s.icon} size={40} />
                           <p className="min-w-0 text-base font-semibold leading-snug">
                             {s.name}
                           </p>
@@ -461,7 +461,7 @@ export default function HojePage() {
                         >
                           <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
                             <span className="inline-flex min-w-0 items-center gap-3">
-                              <SubjectIcon name={s.name} icon={s.icon} size={36} />
+                              <SubjectIcon name={s.name} icon={s.icon} size={40} />
                               <span className="min-w-0">{s.name}</span>
                             </span>
                             {libreInCycle && (

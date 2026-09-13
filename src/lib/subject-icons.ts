@@ -107,8 +107,8 @@ export function guessSubjectIconPresetId(name: string): string | null {
 export const SUBJECT_ICON_UPLOAD_BG = "#F4F3F8";
 
 /** Fração do tile para a imagem enviada.
- *  Imagens do prompt já trazem margem (~12%); quase enche o tile. */
-export const SUBJECT_ICON_GLYPH_RATIO = 0.94;
+ *  > 1 corta a margem vazia da arte gerada (overflow no tile). */
+export const SUBJECT_ICON_GLYPH_RATIO = 1.16;
 
 /** No upload: quase preenche o canvas (a margem vem da arte). */
 const SUBJECT_ICON_UPLOAD_FILL = 0.98;
