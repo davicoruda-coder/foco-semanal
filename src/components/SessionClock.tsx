@@ -587,8 +587,8 @@ export function SessionClock({
         </div>
         <div className="mb-2">{livreTabs}</div>
         {showStopwatch
-          ? renderStopwatchRing(52, 4, true)
-          : renderSidebarRing(52, 4, true, !sidebarRunning && !sidebarPaused)}
+          ? renderStopwatchRing(52, 4, true, true)
+          : renderSidebarRing(52, 4, true, true)}
       </div>
     );
   }
@@ -710,7 +710,7 @@ export function SessionClock({
                 stack ? 108 : 100,
                 4,
                 false,
-                !stopwatch.running && !swPaused,
+                true,
               )}
             </div>
           ) : (
@@ -726,7 +726,7 @@ export function SessionClock({
                 stack ? 108 : 100,
                 4,
                 false,
-                !sidebarRunning && !sidebarPaused,
+                true,
               )}
             </div>
           )}
