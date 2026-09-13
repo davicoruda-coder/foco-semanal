@@ -342,11 +342,6 @@ export default function HojePage() {
                           {statusUi.label}
                         </span>
                       )}
-                      {free && (
-                        <span className="inline-flex min-h-8 shrink-0 items-center rounded-full px-2.5 py-1 text-xs font-semibold ring-1 bg-[color-mix(in_srgb,var(--ink)_6%,transparent)] text-[color-mix(in_srgb,var(--ink)_65%,transparent)] ring-[var(--line)]">
-                          Em foco
-                        </span>
-                      )}
                     </div>
                     <AutoGrowTextarea
                       className="mt-2.5 w-full rounded-[10px] border border-[color-mix(in_srgb,var(--ink)_8%,transparent)] bg-[color-mix(in_srgb,var(--surface)_55%,transparent)] px-3 py-2.5 text-base leading-snug text-[color-mix(in_srgb,var(--ink)_84%,transparent)] placeholder:text-[color-mix(in_srgb,var(--ink)_38%,transparent)] focus:border-[var(--signal)] focus:bg-[var(--surface)] focus:text-[var(--ink)] focus:shadow-[0_0_0_3px_color-mix(in_srgb,var(--signal)_16%,transparent)]"
@@ -456,8 +451,8 @@ export default function HojePage() {
                           className={`py-3.5 pl-2 pr-2 align-middle ${rowBorder}`}
                         >
                           {free ? (
-                            <span className="inline-flex rounded-full px-2.5 py-1.5 text-xs font-semibold ring-1 bg-[color-mix(in_srgb,var(--ink)_6%,transparent)] text-[color-mix(in_srgb,var(--ink)_65%,transparent)] ring-[var(--line)]">
-                              Em foco
+                            <span className="text-xs text-[color-mix(in_srgb,var(--ink)_35%,transparent)]">
+                              —
                             </span>
                           ) : statusUi ? (
                             <span
