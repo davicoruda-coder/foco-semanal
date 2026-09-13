@@ -103,7 +103,13 @@ export function guessSubjectIconPresetId(name: string): string | null {
   return null;
 }
 
-/** Redimensiona e comprime o arquivo para data URL (JPEG). */
+/** Fundo neutro claro — combina com o tile do app (claro e escuro). */
+export const SUBJECT_ICON_UPLOAD_BG = "#F4F3F8";
+
+/** Fração do tile ocupada pelo símbolo (resto = margem). */
+export const SUBJECT_ICON_GLYPH_RATIO = 0.76;
+
+/** Redimensiona, centraliza com margem e comprime para data URL (JPEG). */
 export function fileToSubjectIconDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     if (!file.type.startsWith("image/")) {
@@ -116,7 +122,7 @@ export function fileToSubjectIconDataUrl(file: File): Promise<string> {
       const img = new Image();
       img.onerror = () => reject(new Error("Imagem inválida."));
       img.onload = () => {
-        const size = 96;
+        const size = 128;
         const canvas = document.createElement("canvas");
         canvas.width = size;
         canvas.height = size;
@@ -125,11 +131,20 @@ export function fileToSubjectIconDataUrl(file: File): Promise<string> {
           reject(new Error("Canvas indisponível."));
           return;
         }
-        const min = Math.min(img.width, img.height);
-        const sx = (img.width - min) / 2;
-        const sy = (img.height - min) / 2;
-        ctx.drawImage(img, sx, sy, min, min, 0, 0, size, size);
-        let quality = 0.82;
+        ctx.fillStyle = SUBJECT_ICON_UPLOAD_BG;
+        ctx.fillRect(0, 0, size, size);
+
+        // object-contain + margem (~12% cada lado → símbolo ~76%).
+        const pad = size * ((1 - SUBJECT_ICON_GLYPH_RATIO) / 2);
+        const box = size - pad * 2;
+        const scale = Math.min(box / img.width, box / img.height);
+        const dw = img.width * scale;
+        const dh = img.height * scale;
+        const dx = (size - dw) / 2;
+        const dy = (size - dh) / 2;
+        ctx.drawImage(img, dx, dy, dw, dh);
+
+        let quality = 0.88;
         let data = canvas.toDataURL("image/jpeg", quality);
         while (data.length > MAX_UPLOAD_CHARS && quality > 0.4) {
           quality -= 0.1;

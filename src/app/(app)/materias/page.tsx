@@ -1,10 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ChevronDown, ChevronUp, Repeat, Trash2, X } from "lucide-react";
 import { useApp } from "@/components/AppProvider";
 import { BackToHoje } from "@/components/BackToHoje";
-import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { SubjectIconPicker } from "@/components/SubjectIconPicker";
 import { newId } from "@/lib/demo-store";
 import {
@@ -259,36 +258,59 @@ function RotationEditor({
 
   return (
     <div className="mt-1 w-full rounded-[var(--radius-tag)] border border-[var(--line)] bg-[var(--mist)]/50 p-3">
-      <ConfirmDialog
-        open={confirmOff}
-        title="Desativar rodízio?"
-        message="As disciplinas do rodízio e as anotações de cada uma serão removidas. Essa ação não pode ser desfeita."
-        confirmLabel="Sim, desativar"
-        cancelLabel="Cancelar"
-        onCancel={() => setConfirmOff(false)}
-        onConfirm={() => {
-          setConfirmOff(false);
-          setOpen(false);
-          onSave(null);
-        }}
-      />
       <div className="flex items-center justify-between gap-2">
         <p className="inline-flex items-center gap-1.5 text-xs font-medium uppercase tracking-wider opacity-60">
           <Repeat size={13} strokeWidth={2} /> Rodízio de disciplinas
         </p>
-        <button
-          type="button"
-          className="rounded-full p-1.5 text-[color-mix(in_srgb,var(--ink)_45%,transparent)] transition hover:bg-[var(--surface)] hover:text-[var(--warn)]"
-          title="Desativar rodízio"
-          aria-label="Desativar rodízio"
-          onClick={() => {
-            if (rot) setConfirmOff(true);
-            else setOpen(false);
-          }}
-        >
-          <X size={15} strokeWidth={2} />
-        </button>
+        {confirmOff ? null : (
+          <button
+            type="button"
+            className="rounded-full p-1.5 text-[color-mix(in_srgb,var(--ink)_45%,transparent)] transition hover:bg-[var(--surface)] hover:text-[var(--warn)]"
+            title="Desativar rodízio"
+            aria-label="Desativar rodízio"
+            onClick={() => {
+              if (rot) setConfirmOff(true);
+              else setOpen(false);
+            }}
+          >
+            <X size={15} strokeWidth={2} />
+          </button>
+        )}
       </div>
+      {confirmOff ? (
+        <div
+          className="mt-2 rounded-[var(--radius-tag)] border border-[color-mix(in_srgb,var(--warn)_35%,var(--line))] bg-[color-mix(in_srgb,var(--warn)_8%,var(--surface))] p-3"
+          role="alertdialog"
+        >
+          <p className="text-sm font-semibold text-[var(--warn)]">
+            Desativar rodízio?
+          </p>
+          <p className="mt-1 text-xs leading-snug text-[color-mix(in_srgb,var(--ink)_65%,transparent)]">
+            As disciplinas e as anotações de cada uma serão removidas. Não pode
+            ser desfeito.
+          </p>
+          <div className="mt-3 flex flex-wrap justify-end gap-2">
+            <button
+              type="button"
+              className="btn"
+              onClick={() => setConfirmOff(false)}
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              className="btn border-[var(--warn)] bg-[color-mix(in_srgb,var(--warn)_12%,var(--surface))] text-[var(--warn)]"
+              onClick={() => {
+                setConfirmOff(false);
+                setOpen(false);
+                onSave(null);
+              }}
+            >
+              Sim, desativar
+            </button>
+          </div>
+        </div>
+      ) : null}
       <p className="mt-1 text-xs leading-snug opacity-55">
         A cada conclusão desta matéria, a disciplina “da vez” passa para a
         próxima da lista. Cada uma guarda a própria anotação. Toque na bolinha
@@ -412,6 +434,13 @@ export default function MateriasPage() {
     name: string;
   } | null>(null);
 
+  useEffect(() => {
+    if (!pendingDelete) return;
+    document
+      .getElementById(`delete-confirm-${pendingDelete.id}`)
+      ?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  }, [pendingDelete]);
+
   const subjects = [...data.subjects].sort((a, b) => a.cycle_order - b.cycle_order);
 
   function move(id: string, dir: -1 | 1) {
@@ -463,36 +492,13 @@ export default function MateriasPage() {
 
   return (
     <div className="mx-auto max-w-3xl">
-      <ConfirmDialog
-        open={Boolean(pendingDelete)}
-        title="Excluir matéria?"
-        message={
-          pendingDelete
-            ? `Deseja mesmo excluir "${pendingDelete.name}"? Essa ação não pode ser desfeita.`
-            : ""
-        }
-        confirmLabel="Sim, excluir"
-        cancelLabel="Cancelar"
-        onCancel={() => setPendingDelete(null)}
-        onConfirm={() => {
-          if (pendingDelete) {
-            deleteSubject(pendingDelete.id);
-            setFreqDrafts((prev) => {
-              const next = { ...prev };
-              delete next[pendingDelete.id];
-              return next;
-            });
-          }
-          setPendingDelete(null);
-        }}
-      />
       <BackToHoje />
       <h1 className="font-display pb-0.5 text-2xl font-semibold leading-normal tracking-tight md:text-3xl">
         Matérias
       </h1>
       <p className="mt-2 opacity-65">
-        Com tempo (ciclo e timer) ou Livre (só nome e anotações). Em Só hoje:
-        1 matéria = anotações; 2+ no mesmo dia = mini-ciclo entre elas.
+        Com tempo (timer com meta) ou Livre (cronômetro na sessão; Concluída
+        manual). Em Só hoje: 1 matéria = anotações; 2+ = mini-ciclo entre elas.
       </p>
 
       <form
@@ -615,8 +621,7 @@ export default function MateriasPage() {
                       Livre
                     </button>
                   </div>
-                  {!free && (
-                    <div className="inline-flex items-center gap-0.5 rounded-full border border-[var(--line)] bg-[color-mix(in_srgb,var(--ink)_6%,transparent)] p-0.5">
+                  <div className="inline-flex items-center gap-0.5 rounded-full border border-[var(--line)] bg-[color-mix(in_srgb,var(--ink)_6%,transparent)] p-0.5">
                       {(["ok", "prox"] as SubjectStatus[]).map((st) => {
                         const active = s.status === st;
                         return (
@@ -635,7 +640,6 @@ export default function MateriasPage() {
                         );
                       })}
                     </div>
-                  )}
                 </div>
               </div>
               <div className="mt-3">
@@ -729,21 +733,74 @@ export default function MateriasPage() {
                   }
                 />
               )}
-              <div className="mt-3 flex flex-wrap gap-2">
-                <button type="button" className="btn" onClick={() => move(s.id, -1)}>
-                  Subir no ciclo
-                </button>
-                <button type="button" className="btn" onClick={() => move(s.id, 1)}>
-                  Descer
-                </button>
-                <button
-                  type="button"
-                  className="btn ml-auto text-[var(--warn)]"
-                  onClick={() => setPendingDelete({ id: s.id, name: s.name })}
+              {pendingDelete?.id === s.id ? (
+                <div
+                  id={`delete-confirm-${s.id}`}
+                  className="mt-3 rounded-[var(--radius-tag)] border border-[color-mix(in_srgb,var(--warn)_40%,var(--line))] bg-[color-mix(in_srgb,var(--warn)_10%,var(--surface))] p-3"
+                  role="alertdialog"
+                  aria-labelledby={`delete-title-${s.id}`}
                 >
-                  <Trash2 size={16} strokeWidth={1.75} /> Excluir
-                </button>
-              </div>
+                  <p
+                    id={`delete-title-${s.id}`}
+                    className="text-sm font-semibold text-[var(--warn)]"
+                  >
+                    Excluir “{s.name}”?
+                  </p>
+                  <p className="mt-1 text-xs leading-snug text-[color-mix(in_srgb,var(--ink)_65%,transparent)]">
+                    Essa ação não pode ser desfeita.
+                  </p>
+                  <div className="mt-3 flex flex-wrap items-center gap-2">
+                    <button
+                      type="button"
+                      className="btn"
+                      onClick={() => setPendingDelete(null)}
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      type="button"
+                      className="btn ml-auto border-[var(--warn)] bg-[color-mix(in_srgb,var(--warn)_12%,var(--surface))] text-[var(--warn)]"
+                      onClick={() => {
+                        deleteSubject(s.id);
+                        setFreqDrafts((prev) => {
+                          const next = { ...prev };
+                          delete next[s.id];
+                          return next;
+                        });
+                        setPendingDelete(null);
+                      }}
+                    >
+                      <Trash2 size={16} strokeWidth={1.75} /> Sim, excluir
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    className="btn"
+                    onClick={() => move(s.id, -1)}
+                  >
+                    Subir no ciclo
+                  </button>
+                  <button
+                    type="button"
+                    className="btn"
+                    onClick={() => move(s.id, 1)}
+                  >
+                    Descer
+                  </button>
+                  <button
+                    type="button"
+                    className="btn ml-auto text-[var(--warn)]"
+                    onClick={() =>
+                      setPendingDelete({ id: s.id, name: s.name })
+                    }
+                  >
+                    <Trash2 size={16} strokeWidth={1.75} /> Excluir
+                  </button>
+                </div>
+              )}
             </li>
           );
         })}

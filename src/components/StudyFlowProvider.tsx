@@ -62,6 +62,8 @@ type StudyFlowContextValue = {
   continueToNextSubject: () => void;
   endRestEarly: () => void;
   dismissRestDone: () => void;
+  /** Matéria Livre na sessão: marca Concluída (manual) e avança. */
+  completeCurrentLibre: () => void;
 };
 
 const StudyFlowContext = createContext<StudyFlowContextValue | null>(null);
@@ -83,8 +85,17 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
     resetSubjectTimer,
     runtime,
     subjectTimerKey,
+    subjectStopwatches,
     clocksReady,
   } = useTimerRuntime();
+
+  const isClockRunning = useCallback(
+    (subjectId: string, isFree: boolean) => {
+      if (isFree) return Boolean(subjectStopwatches[subjectId]?.running);
+      return Boolean(runtime[subjectTimerKey(subjectId)]?.running);
+    },
+    [runtime, subjectStopwatches, subjectTimerKey],
+  );
 
   const [settings, setSettings] = useState<BlockRangeSettings>(() =>
     readBlockRange(
@@ -304,23 +315,21 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
 
   const pauseSession = useCallback(() => {
     if (phaseRef.current !== "running") return;
-    const id = blockRef.current[indexRef.current]?.id;
-    if (id) {
-      const key = subjectTimerKey(id);
-      if (runtime[key]?.running) toggleSubjectTimer(id);
+    const current = blockRef.current[indexRef.current];
+    if (current && isClockRunning(current.id, current.is_free)) {
+      toggleSubjectTimer(current.id);
     }
     setPhase("paused");
-  }, [runtime, subjectTimerKey, toggleSubjectTimer]);
+  }, [isClockRunning, toggleSubjectTimer]);
 
   const resumeSession = useCallback(() => {
     if (phaseRef.current !== "paused") return;
-    const id = blockRef.current[indexRef.current]?.id;
+    const current = blockRef.current[indexRef.current];
     setPhase("running");
-    if (id) {
-      const key = subjectTimerKey(id);
-      if (!runtime[key]?.running) toggleSubjectTimer(id);
+    if (current && !isClockRunning(current.id, current.is_free)) {
+      toggleSubjectTimer(current.id);
     }
-  }, [runtime, subjectTimerKey, toggleSubjectTimer]);
+  }, [isClockRunning, toggleSubjectTimer]);
 
   const resetSession = useCallback(() => {
     if (phaseRef.current !== "running" && phaseRef.current !== "paused") return;
@@ -328,10 +337,9 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
     if (subjects.length === 0) return;
 
     const wasRunning = phaseRef.current === "running";
-    const currentId = subjects[indexRef.current]?.id;
-    if (currentId) {
-      const key = subjectTimerKey(currentId);
-      if (runtime[key]?.running) toggleSubjectTimer(currentId);
+    const current = subjects[indexRef.current];
+    if (current && isClockRunning(current.id, current.is_free)) {
+      toggleSubjectTimer(current.id);
     }
 
     advancingRef.current = false;
@@ -353,8 +361,7 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
     }
   }, [
     data.subjects,
-    runtime,
-    subjectTimerKey,
+    isClockRunning,
     toggleSubjectTimer,
     resetSubjectTimer,
     setSubjectStatus,
@@ -397,17 +404,27 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
   }, [data.subjects, settings, startSubjectAt]);
 
   const chooseFinish = useCallback(() => {
-    const id = blockRef.current[indexRef.current]?.id;
-    if (id) {
-      const key = subjectTimerKey(id);
-      if (runtime[key]?.running) toggleSubjectTimer(id);
+    const current = blockRef.current[indexRef.current];
+    if (current && isClockRunning(current.id, current.is_free)) {
+      toggleSubjectTimer(current.id);
     }
     setPhase("idle");
     setBlock([]);
     setCurrentIndex(0);
     setRestEndsAt(null);
     advancingRef.current = false;
-  }, [runtime, subjectTimerKey, toggleSubjectTimer]);
+  }, [isClockRunning, toggleSubjectTimer]);
+
+  /** Livre: marca Concluída à mão e avança a sessão. */
+  const completeCurrentLibre = useCallback(() => {
+    if (phaseRef.current !== "running" && phaseRef.current !== "paused") return;
+    if (advancingRef.current) return;
+    const current = blockRef.current[indexRef.current];
+    if (!current?.is_free) return;
+    if (isClockRunning(current.id, true)) toggleSubjectTimer(current.id);
+    setSubjectStatus(current.id, "ok");
+    // O efeito de status Ok dispara o avanço (igual ao fim do timer).
+  }, [isClockRunning, toggleSubjectTimer, setSubjectStatus]);
 
   const continueToNextSubject = useCallback(() => {
     if (phaseRef.current !== "subject_notes") return;
@@ -435,40 +452,68 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
   }, []);
 
   // Conclusão de matéria → avança o bloco ou abre o diálogo.
+  const advanceAfterComplete = useCallback((subjectId: string) => {
+    if (phaseRef.current !== "running" && phaseRef.current !== "paused") return;
+    if (advancingRef.current) return;
+
+    const subjects = blockRef.current;
+    const idx = indexRef.current;
+    const current = subjects[idx];
+    if (!current || current.id !== subjectId) return;
+
+    advancingRef.current = true;
+    const nextIdx = idx + 1;
+    if (nextIdx < subjects.length) {
+      playAlarmTone();
+      notify("Foco Semanal", `${current.name} concluída — anote se quiser`);
+      setPhase("subject_notes");
+      advancingRef.current = false;
+    } else {
+      playAlarmTone();
+      notify(
+        "Foco Semanal",
+        `Bloco concluído · ${blockTotalMinutes(subjects)} min`,
+      );
+      setPhase("block_done");
+      advancingRef.current = false;
+    }
+  }, []);
+
   useEffect(() => {
     function onComplete(ev: Event) {
       const detail = (ev as CustomEvent<{ subjectId: string }>).detail;
       const subjectId = detail?.subjectId;
       if (!subjectId) return;
-      if (phaseRef.current !== "running") return;
-      if (advancingRef.current) return;
-
-      const subjects = blockRef.current;
-      const idx = indexRef.current;
-      const current = subjects[idx];
-      if (!current || current.id !== subjectId) return;
-
-      advancingRef.current = true;
-      const nextIdx = idx + 1;
-      if (nextIdx < subjects.length) {
-        playAlarmTone();
-        notify("Foco Semanal", `${current.name} concluída — anote se quiser`);
-        setPhase("subject_notes");
-        advancingRef.current = false;
-      } else {
-        playAlarmTone();
-        notify(
-          "Foco Semanal",
-          `Bloco concluído · ${blockTotalMinutes(subjects)} min`,
-        );
-        setPhase("block_done");
-        advancingRef.current = false;
-      }
+      advanceAfterComplete(subjectId);
     }
 
     window.addEventListener(SUBJECT_COMPLETE_EVENT, onComplete);
     return () => window.removeEventListener(SUBJECT_COMPLETE_EVENT, onComplete);
-  }, [startSubjectAt]);
+  }, [advanceAfterComplete]);
+
+  // Livre: Concluída manual (status) → avança como o fim do timer.
+  useEffect(() => {
+    if (phase !== "running" && phase !== "paused") return;
+    const current = block[currentIndex];
+    if (!current?.is_free) return;
+    const live = (data.subjects ?? []).find((s) => s.id === current.id);
+    if (!live) return;
+    const day = todayIndex();
+    const exclusiveCycle = isExclusiveCycleDay(data.subjects ?? [], day);
+    const done =
+      (exclusiveCycle ? live.exclusive_status ?? "prox" : live.status) === "ok";
+    if (!done) return;
+    if (isClockRunning(current.id, true)) toggleSubjectTimer(current.id);
+    advanceAfterComplete(current.id);
+  }, [
+    phase,
+    block,
+    currentIndex,
+    data.subjects,
+    isClockRunning,
+    toggleSubjectTimer,
+    advanceAfterComplete,
+  ]);
 
   // Tick do descanso (não conta foco — só UI).
   useEffect(() => {
@@ -516,6 +561,7 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
       continueToNextSubject,
       endRestEarly,
       dismissRestDone,
+      completeCurrentLibre,
     }),
     [
       phase,
@@ -542,6 +588,7 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
       continueToNextSubject,
       endRestEarly,
       dismissRestDone,
+      completeCurrentLibre,
     ],
   );
 

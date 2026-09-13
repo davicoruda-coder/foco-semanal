@@ -666,17 +666,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setSubjectStatus: (id, status) => {
         setData((prev) => {
           const target = prev.subjects.find((s) => s.id === id);
-          if (!target || target.is_free) return prev;
-
-          const day = todayIndex();
-          const exclusiveCycle = isExclusiveCycleDay(prev.subjects, day);
+          if (!target) return prev;
           // Solo exclusivo: sem Concluída/Próxima.
+          const day = todayIndex();
           if (
-            !exclusiveCycle &&
+            !isExclusiveCycleDay(prev.subjects, day) &&
             cycleSubjectsOnDay(prev.subjects, day).length === 0
           ) {
             return prev;
           }
+
+          const exclusiveCycle = isExclusiveCycleDay(prev.subjects, day);
 
           const ordered = cycleSubjectsOnDay(prev.subjects, day);
           const idx = ordered.findIndex((s) => s.id === id);

@@ -1,6 +1,8 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { useOpenTransition } from "@/lib/use-open-transition";
 
 export function DialogFrame({
@@ -21,9 +23,25 @@ export function DialogFrame({
   children: ReactNode;
 }) {
   const { shown, leaving } = useOpenTransition(open);
-  if (!shown) return null;
+  const [mounted, setMounted] = useState(false);
 
-  return (
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Trava o scroll do body enquanto o diálogo está aberto.
+  useEffect(() => {
+    if (!shown) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [shown]);
+
+  if (!shown || !mounted) return null;
+
+  return createPortal(
     <div
       className={`dialog-overlay ${leaving ? "is-leaving" : ""} ${overlayClassName}`}
       role="dialog"
@@ -38,6 +56,7 @@ export function DialogFrame({
       >
         {children}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

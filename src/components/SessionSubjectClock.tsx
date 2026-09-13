@@ -1,7 +1,9 @@
 "use client";
 
+import { useApp } from "@/components/AppProvider";
 import { useStudyFlow } from "@/components/StudyFlowProvider";
 import { useTimerRuntime } from "@/components/TimerRuntimeProvider";
+import { subjectUsesStopwatch, todayIndex } from "@/lib/utils";
 
 function formatTime(totalSeconds: number) {
   const m = Math.floor(totalSeconds / 60);
@@ -9,7 +11,7 @@ function formatTime(totalSeconds: number) {
   return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
 }
 
-/** Countdown da matéria atual — só com sessão em play ou pause. */
+/** Relógio da matéria atual na sessão (countdown ou cronômetro Livre). */
 export function SessionSubjectClock({
   subjectId,
   compact,
@@ -17,8 +19,14 @@ export function SessionSubjectClock({
   subjectId: string;
   compact?: boolean;
 }) {
+  const { data } = useApp();
   const { phase, currentSubjectId } = useStudyFlow();
-  const { secondsForSubject, runtime, subjectTimerKey } = useTimerRuntime();
+  const {
+    secondsForSubject,
+    runtime,
+    subjectTimerKey,
+    subjectStopwatches,
+  } = useTimerRuntime();
 
   if (
     (phase !== "running" && phase !== "paused") ||
@@ -27,8 +35,14 @@ export function SessionSubjectClock({
     return null;
   }
 
+  const sub = (data.subjects ?? []).find((s) => s.id === subjectId);
+  const stopwatch = sub
+    ? subjectUsesStopwatch(sub, todayIndex(), data.subjects)
+    : false;
   const seconds = secondsForSubject(subjectId);
-  const running = Boolean(runtime[subjectTimerKey(subjectId)]?.running);
+  const running = stopwatch
+    ? Boolean(subjectStopwatches[subjectId]?.running)
+    : Boolean(runtime[subjectTimerKey(subjectId)]?.running);
 
   return (
     <span
@@ -39,7 +53,11 @@ export function SessionSubjectClock({
           ? "text-[var(--signal)]"
           : "timer-paused text-[color-mix(in_srgb,var(--ink)_65%,transparent)]"
       }`}
-      aria-label={`Tempo restante ${formatTime(seconds)}`}
+      aria-label={
+        stopwatch
+          ? `Tempo decorrido ${formatTime(seconds)}`
+          : `Tempo restante ${formatTime(seconds)}`
+      }
     >
       {formatTime(seconds)}
     </span>

@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  SUBJECT_ICON_GLYPH_RATIO,
   SUBJECT_ICON_PRESETS,
   guessSubjectIconPresetId,
   subjectIconPresetId,
@@ -30,16 +31,23 @@ export function SubjectIcon({
     "shrink-0 rounded-[10px] ring-1 ring-[color-mix(in_srgb,var(--signal)_18%,var(--line))]";
 
   if (icon?.startsWith("data:image/")) {
+    const glyph = Math.round(size * SUBJECT_ICON_GLYPH_RATIO);
     return (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img
-        src={icon}
-        alt=""
-        width={size}
-        height={size}
-        className={`${tile} object-cover ${className}`}
+      <span
+        className={`grid place-items-center overflow-hidden bg-[var(--surface)] ${tile} ${className}`}
         style={{ width: size, height: size }}
-      />
+        aria-hidden
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={icon}
+          alt=""
+          width={glyph}
+          height={glyph}
+          className="object-contain"
+          style={{ width: glyph, height: glyph }}
+        />
+      </span>
     );
   }
 

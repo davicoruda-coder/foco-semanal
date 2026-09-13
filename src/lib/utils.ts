@@ -190,15 +190,15 @@ export function exclusiveSubjectOnDay<
   return exclusiveSubjectsOnDay(subjects, day)[0] ?? null;
 }
 
-/** Com tempo no modo exclusivo do dia (ignora Livre permanente). */
+/** Com tempo ou Livre no modo exclusivo do dia. */
 export function exclusiveCycleSubjectsOnDay<T extends Subject>(
   subjects: T[],
   day: number,
 ): T[] {
-  return exclusiveSubjectsOnDay(subjects, day).filter((s) => !s.is_free);
+  return exclusiveSubjectsOnDay(subjects, day);
 }
 
-/** Mini-ciclo ativo: 2+ matérias com tempo no dia exclusivo. */
+/** Mini-ciclo ativo: 2+ matérias no dia exclusivo. */
 export function isExclusiveCycleDay(
   subjects: Subject[],
   day: number,
@@ -206,28 +206,34 @@ export function isExclusiveCycleDay(
   return exclusiveCycleSubjectsOnDay(subjects, day).length >= 2;
 }
 
-/** Dia exclusivo com só 1 matéria com tempo (só anotações). */
+/** Dia exclusivo com só 1 matéria (só anotações, sem status). */
 export function isExclusiveSoloDay(
   subjects: Subject[],
   day: number,
 ): boolean {
-  const exclusives = exclusiveSubjectsOnDay(subjects, day);
-  if (!exclusives.length) return false;
-  return exclusiveCycleSubjectsOnDay(subjects, day).length < 2;
+  return exclusiveSubjectsOnDay(subjects, day).length === 1;
 }
 
 /**
- * Livre permanente, ou dia exclusivo solo (1 com tempo → só anotações).
- * Com 2+ exclusivas com tempo, elas entram no mini-ciclo (não “free”).
+ * Dia exclusivo solo → só anotações (sem Concluída/Próxima).
+ * Livre permanente NÃO entra aqui: Livre participa do ciclo com status.
  */
 export function subjectTreatAsFree(
   subject: Pick<Subject, "id" | "is_free" | "exclusive_days">,
   day: number,
   allSubjects: Subject[],
 ): boolean {
-  if (subject.is_free) return true;
   if (!subjectExclusiveOnDay(subject, day)) return false;
   return !isExclusiveCycleDay(allSubjects, day);
+}
+
+/** Cronômetro que sobe: Livre ou dia exclusivo solo. */
+export function subjectUsesStopwatch(
+  subject: Pick<Subject, "id" | "is_free" | "exclusive_days">,
+  day: number,
+  allSubjects: Subject[],
+): boolean {
+  return Boolean(subject.is_free) || subjectTreatAsFree(subject, day, allSubjects);
 }
 
 /** Matérias visíveis no Hoje: dia exclusivo mostra só as exclusivas. */
@@ -245,8 +251,8 @@ export function subjectsOnDay<T extends Subject>(
 }
 
 /**
- * Fila Concluída/Próxima do dia.
- * Dia exclusivo com 2+ → mini-ciclo delas. Solo exclusivo → vazia.
+ * Fila Concluída/Próxima do dia (inclui Livre).
+ * Dia exclusivo com 2+ → mini-ciclo. Solo exclusivo → vazia.
  */
 export function cycleSubjectsOnDay<T extends Subject>(
   subjects: T[],
@@ -256,7 +262,7 @@ export function cycleSubjectsOnDay<T extends Subject>(
   if (exclusiveTimed.length >= 2) return exclusiveTimed as T[];
   if (exclusiveSubjectsOnDay(subjects, day).length > 0) return [];
   return [...subjects]
-    .filter((s) => s.active && !s.is_free && subjectShowsOnDay(s, day))
+    .filter((s) => s.active && subjectShowsOnDay(s, day))
     .sort((a, b) => a.cycle_order - b.cycle_order);
 }
 

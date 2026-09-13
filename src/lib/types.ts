@@ -53,9 +53,10 @@ export interface Subject {
   exclusive_status: SubjectStatus;
   /** Minutos do temporizador desta matéria (play no ciclo). */
   study_minutes: number;
-  /** Livre permanente = aparece no dia só com nome e anotações
-   * (sem timer da matéria e sem Concluída/Próxima).
-   * Sessão/cronômetro da lateral continuam disponíveis.
+  /**
+   * Livre = entra no ciclo com Concluída/Próxima; na sessão o relógio sobe
+   * (cronômetro) e só termina quando marcar Concluída à mão.
+   * Temporizador/cronômetro da lateral são independentes.
    */
   is_free: boolean;
   /** Rodízio interno de disciplinas; `null` = matéria comum. */

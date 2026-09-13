@@ -322,7 +322,7 @@ export default function HojePage() {
             <div className="space-y-2.5 p-2.5 lg:hidden">
               {subjects.map((s) => {
                 const free = subjectTreatAsFree(s, day, data.subjects);
-                const exclusiveToday = free && !s.is_free;
+                const libreInCycle = Boolean(s.is_free) && !free;
                 const rot = normalizeRotation(s.rotation);
                 const rotItem = rot ? rot.items[rot.index] : null;
                 const displayStatus = exclusiveCycleToday
@@ -348,6 +348,11 @@ export default function HojePage() {
                             {s.name}
                           </p>
                         </span>
+                        {libreInCycle && (
+                          <span className="rounded-full bg-[var(--signal-soft)] px-2 py-0.5 text-[11px] font-medium text-[var(--signal)]">
+                            Livre
+                          </span>
+                        )}
                         {rotItem && (
                           <span className="rounded-full bg-[var(--signal-soft)] px-2.5 py-1 text-xs font-medium text-[var(--signal)]">
                             Da vez: {rotItem.name}
@@ -363,14 +368,8 @@ export default function HojePage() {
                         </span>
                       )}
                       {free && (
-                        <span
-                          className={`inline-flex min-h-8 shrink-0 items-center rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ${
-                            exclusiveToday
-                              ? "bg-[color-mix(in_srgb,var(--ink)_6%,transparent)] text-[color-mix(in_srgb,var(--ink)_65%,transparent)] ring-[var(--line)]"
-                              : "bg-[var(--signal-soft)] text-[var(--signal)] ring-[color-mix(in_srgb,var(--signal)_35%,transparent)]"
-                          }`}
-                        >
-                          {exclusiveToday ? "Só hoje" : "Livre"}
+                        <span className="inline-flex min-h-8 shrink-0 items-center rounded-full px-2.5 py-1 text-xs font-semibold ring-1 bg-[color-mix(in_srgb,var(--ink)_6%,transparent)] text-[color-mix(in_srgb,var(--ink)_65%,transparent)] ring-[var(--line)]">
+                          Só hoje
                         </span>
                       )}
                     </div>
@@ -432,7 +431,7 @@ export default function HojePage() {
                 <tbody>
                   {subjects.map((s, i) => {
                     const free = subjectTreatAsFree(s, day, data.subjects);
-                    const exclusiveToday = free && !s.is_free;
+                    const libreInCycle = Boolean(s.is_free) && !free;
                     const rot = normalizeRotation(s.rotation);
                     const rotItem = rot ? rot.items[rot.index] : null;
                     const displayStatus = exclusiveCycleToday
@@ -465,6 +464,11 @@ export default function HojePage() {
                               <SubjectIcon name={s.name} icon={s.icon} size={32} />
                               <span className="min-w-0">{s.name}</span>
                             </span>
+                            {libreInCycle && (
+                              <span className="rounded-full bg-[var(--signal-soft)] px-2 py-0.5 text-[11px] font-medium text-[var(--signal)]">
+                                Livre
+                              </span>
+                            )}
                             {rotItem && (
                               <span className="rounded-full bg-[var(--signal-soft)] px-2 py-0.5 text-[11px] font-medium text-[var(--signal)]">
                                 Da vez: {rotItem.name}
@@ -477,14 +481,8 @@ export default function HojePage() {
                           className={`py-3.5 pl-2 pr-2 align-middle ${rowBorder}`}
                         >
                           {free ? (
-                            <span
-                              className={`inline-flex rounded-full px-2.5 py-1.5 text-xs font-semibold ring-1 ${
-                                exclusiveToday
-                                  ? "bg-[color-mix(in_srgb,var(--ink)_6%,transparent)] text-[color-mix(in_srgb,var(--ink)_65%,transparent)] ring-[var(--line)]"
-                                  : "bg-[var(--signal-soft)] text-[var(--signal)] ring-[color-mix(in_srgb,var(--signal)_35%,transparent)]"
-                              }`}
-                            >
-                              {exclusiveToday ? "Só hoje" : "Livre"}
+                            <span className="inline-flex rounded-full px-2.5 py-1.5 text-xs font-semibold ring-1 bg-[color-mix(in_srgb,var(--ink)_6%,transparent)] text-[color-mix(in_srgb,var(--ink)_65%,transparent)] ring-[var(--line)]">
+                              Só hoje
                             </span>
                           ) : statusUi ? (
                             <span
