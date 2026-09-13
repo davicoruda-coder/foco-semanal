@@ -1,0 +1,166 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-13T16:50:00Z",
+  "title": "Design System: Foco Semanal",
+  "extensions": {
+    "colorMeta": {
+      "signal": {
+        "role": "primary",
+        "displayName": "Signal Violet",
+        "canonical": "#6d5ef8"
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Ink",
+        "canonical": "#16171f"
+      },
+      "paper": {
+        "role": "neutral",
+        "displayName": "Cool Paper",
+        "canonical": "#e4e1f4"
+      },
+      "warn": {
+        "role": "secondary",
+        "displayName": "Warn Orange",
+        "canonical": "#f97316"
+      },
+      "ok": {
+        "role": "secondary",
+        "displayName": "Ok Green",
+        "canonical": "#16a34a"
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "Section titles (Ciclo, page headings)."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "UI copy, subject names, notes."
+      },
+      "mono": {
+        "displayName": "Mono num",
+        "purpose": "Timers and focus totals only."
+      }
+    },
+    "shadows": [
+      {
+        "name": "shadow-sm",
+        "value": "0 1px 2px rgba(22, 23, 31, 0.06), 0 4px 12px rgba(22, 23, 31, 0.08)",
+        "purpose": "Default .surface elevation."
+      },
+      {
+        "name": "shadow-md",
+        "value": "0 8px 20px -6px rgba(22, 23, 31, 0.14), 0 2px 6px rgba(22, 23, 31, 0.06)",
+        "purpose": "Sheets, menus, stronger lift."
+      }
+    ],
+    "motion": [
+      {
+        "name": "state-ease",
+        "value": "160ms ease",
+        "purpose": "Hover/border/background on controls."
+      },
+      {
+        "name": "synaptic-flow",
+        "value": "class synaptic-flow on active session bar only",
+        "purpose": "Living session indicator; never on idle cycle rows."
+      }
+    ],
+    "breakpoints": [
+      { "name": "md", "value": "768px" },
+      { "name": "lg", "value": "1024px" },
+      { "name": "xl", "value": "1280px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Session CTA",
+      "kind": "button",
+      "refersTo": "button-signal",
+      "description": "Primary Operate action: start study session.",
+      "html": "<button type=\"button\" class=\"ds-session-cta\"><span class=\"ds-session-cta__label\">Iniciar sessão</span><span class=\"ds-session-cta__meta\">Inglês + RLM · ~40 min</span></button>",
+      "css": ".ds-session-cta { display: flex; width: 100%; align-items: center; justify-content: space-between; gap: 12px; border: none; border-radius: 12px; background: var(--signal, #6d5ef8); color: #fff; padding: 12px 16px; text-align: left; box-shadow: var(--shadow-sm); cursor: pointer; } .ds-session-cta__label { display: block; font-weight: 600; font-size: 15px; } .ds-session-cta__meta { display: block; margin-top: 2px; font-size: 12px; color: rgba(255,255,255,0.8); } .ds-session-cta:focus-visible { outline: 2px solid rgba(255,255,255,0.8); outline-offset: 2px; } .ds-session-cta:disabled { opacity: 0.45; cursor: not-allowed; }"
+    },
+    {
+      "name": "Surface card",
+      "kind": "card",
+      "refersTo": "surface-card",
+      "description": "Default panel for cycle, agenda, tools.",
+      "html": "<div class=\"ds-surface\"><p class=\"ds-surface__title\">Ciclo de Estudos</p></div>",
+      "css": ".ds-surface { background: var(--surface, #fff); border: 1px solid var(--line, #c9c7d8); border-radius: 18px; box-shadow: var(--shadow-sm); padding: 14px 16px; color: var(--ink, #16171f); } .ds-surface__title { margin: 0; font-family: Syne, system-ui, sans-serif; font-weight: 600; font-size: 1.125rem; }"
+    },
+    {
+      "name": "Status chip Próxima",
+      "kind": "chip",
+      "refersTo": "chip-proxima",
+      "description": "Only the queue head uses this chip.",
+      "html": "<span class=\"ds-chip ds-chip--proxima\">Próxima</span>",
+      "css": ".ds-chip { display: inline-flex; align-items: center; border-radius: 999px; padding: 6px 10px; font-size: 12px; font-weight: 600; ring: 1px; } .ds-chip--proxima { background: var(--warn-soft, #fff1e6); color: #c2410c; box-shadow: inset 0 0 0 1px color-mix(in srgb, #f97316 48%, transparent); }"
+    },
+    {
+      "name": "Status chip Concluída",
+      "kind": "chip",
+      "refersTo": "chip-concluida",
+      "description": "Completed cycle subject.",
+      "html": "<span class=\"ds-chip ds-chip--ok\">Concluída</span>",
+      "css": ".ds-chip--ok { background: color-mix(in srgb, #16a34a 12%, #fff); color: #15803d; box-shadow: inset 0 0 0 1px color-mix(in srgb, #16a34a 38%, transparent); }"
+    },
+    {
+      "name": "Subject icon tile",
+      "kind": "custom",
+      "refersTo": null,
+      "description": "Preset or guessed icon tile beside subject name.",
+      "html": "<span class=\"ds-subject-icon\" aria-hidden=\"true\"></span>",
+      "css": ".ds-subject-icon { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 10px; background: var(--signal-soft, #ece9fe); color: var(--signal, #6d5ef8); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ink) 10%, var(--line, #c9c7d8)); }"
+    }
+  ],
+  "narrative": {
+    "northStar": "A Mesa do Ciclo",
+    "overview": "Interface Operate para estudo diário: calma o suficiente para longas sessões, clara o suficiente para decidir a próxima matéria em um olhar. O roxo signal é a voz da ação; o resto é tinta, névoa e superfícies.",
+    "keyCharacteristics": [
+      "Operate first (scan + ação), não Persuade",
+      "Signal raro e intencional",
+      "Chips semânticos de status",
+      "Syne + DM Sans + Plex Mono",
+      "Claro/escuro via data-theme"
+    ],
+    "rules": [
+      {
+        "name": "The One Signal Rule",
+        "body": "Signal pinta ação e identidade pontual — nunca fundos de página inteiros nem toda a tipografia de seção.",
+        "section": "colors"
+      },
+      {
+        "name": "The Status Speaks Rule",
+        "body": "Verde = feito, laranja = próxima real, cinza quieto = na fila.",
+        "section": "colors"
+      },
+      {
+        "name": "The CTA Owns Violet Rule",
+        "body": "Títulos de seção não competem em signal com Iniciar sessão.",
+        "section": "typography"
+      },
+      {
+        "name": "The Flat Rest Rule",
+        "body": "Sombra acompanha superfície padrão; não empilhar borda + halo colorido zero-offset.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do manter uma única Próxima visual na fila.",
+      "Do preservar anotações editáveis como coluna/campo de trabalho.",
+      "Do usar Syne/DM Sans/Plex Mono e tokens --ink/--signal/--mist/...",
+      "Do distinguir sessão de ciclo vs relógio livre.",
+      "Do preferir refinamento Operate a redesign de marketing."
+    ],
+    "donts": [
+      "Don't inventar colunas ORDEM/DETALHES no lugar das anotações.",
+      "Don't aplicar synaptic/gradiente de sessão em linhas idle ou concluídas.",
+      "Don't trocar a stack tipográfica por Inter/system default.",
+      "Don't explicar o timer com parede de texto; contrato curto ou visual.",
+      "Don't tratar mockups de docs/design-mockups/ como wireframe de dados."
+    ]
+  }
+}
