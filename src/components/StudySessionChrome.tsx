@@ -8,7 +8,7 @@ import { useApp } from "@/components/AppProvider";
 import { useStudyFlow } from "@/components/StudyFlowProvider";
 import type { RotationItem, Subject } from "@/lib/types";
 import {
-  exclusiveSubjectOnDay,
+  isExclusiveSoloDay,
   normalizeRotation,
   rotationJustStudied,
   rotationWithItemNotes,
@@ -62,9 +62,8 @@ function NotesBlock({
 export function StudySessionBar() {
   const flow = useStudyFlow();
   const { data } = useApp();
-  const exclusiveToday = Boolean(
-    exclusiveSubjectOnDay(data.subjects, todayIndex()),
-  );
+  const day = todayIndex();
+  const exclusiveSoloToday = isExclusiveSoloDay(data.subjects, day);
 
   if (
     flow.phase !== "idle" &&
@@ -75,7 +74,7 @@ export function StudySessionBar() {
   }
 
   if (flow.phase === "idle") {
-    if (exclusiveToday) return null;
+    if (exclusiveSoloToday) return null;
     return (
       <div className="border-b border-[var(--line)] px-4 py-3 md:px-5">
         <button

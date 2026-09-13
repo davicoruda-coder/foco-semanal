@@ -20,8 +20,9 @@ create table if not exists public.subjects (
   active boolean not null default true,
   -- null = todos os dias; senão 0=Seg … 6=Dom (1–6 dias)
   study_days int[] null,
-  -- Dias em que esta matéria é a única do dia (anotações só; ciclo não avança)
+  -- Dias exclusivos: 1 = só anotações; 2+ = mini-ciclo (exclusive_status)
   exclusive_days int[] null,
+  exclusive_status text not null default 'prox',
   study_minutes int not null default 25,
   is_free boolean not null default false,
   -- Rodízio interno: {"items":[{"id","name","notes"}],"index":0}; null = sem rodízio
@@ -44,6 +45,7 @@ create table if not exists public.subjects (
       and exclusive_days <@ array[0, 1, 2, 3, 4, 5, 6]
     )
   ),
+  constraint subjects_exclusive_status_valid check (exclusive_status in ('ok', 'prox')),
   constraint subjects_study_minutes_range check (study_minutes between 1 and 999)
 );
 

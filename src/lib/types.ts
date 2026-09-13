@@ -41,11 +41,16 @@ export interface Subject {
    */
   study_days: number[] | null;
   /**
-   * Dias em que esta matéria é a única do dia (0=Seg … 6=Dom).
-   * Nesse dia vale só anotações — o ciclo não avança.
-   * `null` = nenhum dia exclusivo.
+   * Dias em que esta matéria entra no modo exclusivo (0=Seg … 6=Dom).
+   * 1 matéria: só anotações. 2+: mini-ciclo entre elas (exclusive_status).
+   * O status do ciclo normal não muda. `null` = nenhum.
    */
   exclusive_days: number[] | null;
+  /**
+   * Status só do mini-ciclo em dias exclusivos com 2+ matérias.
+   * Não altera `status` (ciclo normal).
+   */
+  exclusive_status: SubjectStatus;
   /** Minutos do temporizador desta matéria (play no ciclo). */
   study_minutes: number;
   /** Livre permanente = aparece no dia só com nome e anotações

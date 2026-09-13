@@ -25,8 +25,16 @@ import { emitSubjectComplete } from "@/lib/study-flow-events";
 import {
   cycleSubjectsOnDay,
   normalizeSidebarTimerMinutes,
+  subjectTreatAsFree,
   todayIndex,
 } from "@/lib/utils";
+
+function notesOnlyToday(
+  sub: { id: string; is_free: boolean; exclusive_days: number[] | null },
+  all: Parameters<typeof subjectTreatAsFree>[2],
+) {
+  return subjectTreatAsFree(sub, todayIndex(), all);
+}
 
 export type TimerRuntime = {
   secondsLeft: number;
@@ -414,7 +422,9 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
         if (!isSubjectTimerKey(id)) next[id] = r;
       }
 
-      const timedSubjects = subjects.filter((s) => !s.is_free);
+      const timedSubjects = subjects.filter(
+        (s) => !notesOnlyToday(s, subjects),
+      );
       const activeIds = new Set(timedSubjects.map((s) => s.id));
       for (const s of timedSubjects) {
         const key = subjectTimerKey(s.id);
@@ -547,7 +557,7 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
 
     setSubjectStopwatches((prev) => {
       const freeIds = new Set(
-        subjects.filter((s) => s.is_free).map((s) => s.id),
+        subjects.filter((s) => notesOnlyToday(s, subjects)).map((s) => s.id),
       );
       let changed = false;
       const next: Record<string, StopwatchState> = {};
@@ -679,7 +689,7 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
           };
           const sid = subjectIdFromKey(tid);
           const sub = subjectsRef.current.find((s) => s.id === sid);
-          if (sub && !sub.is_free) {
+          if (sub && !notesOnlyToday(sub, subjectsRef.current)) {
             completedSubjects.push({ key: tid, name: sub.name });
           }
         }
@@ -716,7 +726,7 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
       const completed: { key: string; name: string }[] = [];
 
       for (const s of subjectsRef.current) {
-        if (s.is_free) continue;
+        if (notesOnlyToday(s, subjectsRef.current)) continue;
         const key = subjectTimerKey(s.id);
         const r = prev[key];
         if (!r?.running) continue;
@@ -865,7 +875,7 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
     }
 
     for (const s of subjects) {
-      if (s.is_free) continue;
+      if (notesOnlyToday(s, subjects)) continue;
       const key = subjectTimerKey(s.id);
       const r = runtime[key];
       const minutes = Math.max(1, s.study_minutes ?? 25);
@@ -1131,8 +1141,8 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
       const sub = subjects.find((s) => s.id === subjectId);
       if (!sub) return;
 
-      // Matéria Livre: cronômetro que sobe (sem Concluída).
-      if (sub.is_free) {
+      // Livre / dia exclusivo solo: cronômetro que sobe (sem Concluída).
+      if (notesOnlyToday(sub, subjects)) {
         const freeWillRun = !(
           subjectStopwatchesRef.current[subjectId] ?? DEFAULT_STOPWATCH
         ).running;
@@ -1322,7 +1332,7 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
       const sub = subjects.find((s) => s.id === subjectId);
       if (!sub) return;
 
-      if (sub.is_free) {
+      if (notesOnlyToday(sub, subjects)) {
         setSubjectStopwatches((prev) => {
           if (!prev[subjectId]) return prev;
           const next = { ...prev };
@@ -1359,7 +1369,7 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
   const secondsForSubject = useCallback(
     (subjectId: string) => {
       const sub = subjects.find((s) => s.id === subjectId);
-      if (sub?.is_free) {
+      if (sub && notesOnlyToday(sub, subjects)) {
         return Math.floor(
           liveStopwatchMs(subjectStopwatches[subjectId] ?? DEFAULT_STOPWATCH) /
             1000,

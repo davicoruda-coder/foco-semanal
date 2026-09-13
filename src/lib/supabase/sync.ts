@@ -163,6 +163,7 @@ export async function loadCloudData(
     exclusive_days: normalizeExclusiveDays(
       s.exclusive_days as number[] | null | undefined,
     ),
+    exclusive_status: s.exclusive_status === "ok" ? "ok" : "prox",
     study_minutes: normalizeStudyMinutes(s.study_minutes, 25),
     is_free: Boolean(s.is_free),
     rotation: normalizeRotation(s.rotation),
@@ -367,6 +368,7 @@ export async function saveCloudData(
       active: s.active,
       study_days: normalizeStudyDays(s.study_days),
       exclusive_days: normalizeExclusiveDays(s.exclusive_days),
+      exclusive_status: s.exclusive_status === "ok" ? "ok" : "prox",
       study_minutes: normalizeStudyMinutes(s.study_minutes, 25),
       is_free: Boolean(s.is_free),
       rotation: normalizeRotation(s.rotation),

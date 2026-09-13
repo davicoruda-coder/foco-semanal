@@ -95,6 +95,7 @@ export function loadDemoData(): AppData {
           ? s.exclusive_days.filter((d): d is number => typeof d === "number")
           : null,
       ),
+      exclusive_status: (s.exclusive_status === "ok" ? "ok" : "prox") as typeof s.status,
       study_minutes:
         typeof s.study_minutes === "number" && s.study_minutes >= 1
           ? Math.min(999, Math.floor(s.study_minutes))

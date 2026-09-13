@@ -149,8 +149,8 @@ function ExclusiveDaysPicker({
       </div>
       {value.length > 0 && (
         <p className="text-xs opacity-55">
-          Nesses dias só esta matéria aparece, só com anotações. O ciclo não
-          avança.
+          1 matéria: só anotações. 2+ no mesmo dia: mini-ciclo entre elas (sem
+          mudar o ciclo normal).
         </p>
       )}
     </div>
@@ -491,9 +491,8 @@ export default function MateriasPage() {
         Matérias
       </h1>
       <p className="mt-2 opacity-65">
-        Com tempo (ciclo e timer) ou Livre (só nome e anotações). Dias
-        exclusivos: ela fica sozinha no dia, só com anotações, sem mudar o
-        ciclo.
+        Com tempo (ciclo e timer) ou Livre (só nome e anotações). Em Só hoje:
+        1 matéria = anotações; 2+ no mesmo dia = mini-ciclo entre elas.
       </p>
 
       <form
@@ -701,7 +700,8 @@ export default function MateriasPage() {
                     Só hoje
                   </p>
                   <p className="mb-1.5 text-[11px] leading-snug opacity-50">
-                    Nestes dias só esta matéria aparece — ciclo pausado.
+                    Nestes dias só as matérias marcadas aparecem. 1 = anotações;
+                    2+ = mini-ciclo (ciclo normal intacto).
                   </p>
                   <ExclusiveDaysPicker
                     value={normalizeExclusiveDays(s.exclusive_days) ?? []}

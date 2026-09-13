@@ -174,35 +174,69 @@ export function subjectExclusiveOnDay(
   return Boolean(normalizeExclusiveDays(subject.exclusive_days)?.includes(day));
 }
 
-/** Matéria ativa que toma o dia (a de menor cycle_order, se houver empate). */
+/** Todas as matérias ativas marcadas como exclusivas neste dia. */
+export function exclusiveSubjectsOnDay<
+  T extends Pick<Subject, "id" | "active" | "exclusive_days" | "cycle_order">,
+>(subjects: T[], day: number): T[] {
+  return subjects
+    .filter((s) => s.active && subjectExclusiveOnDay(s, day))
+    .sort((a, b) => a.cycle_order - b.cycle_order);
+}
+
+/** @deprecated Prefira exclusiveSubjectsOnDay — mantido p/ 1ª do dia. */
 export function exclusiveSubjectOnDay<
   T extends Pick<Subject, "id" | "active" | "exclusive_days" | "cycle_order">,
 >(subjects: T[], day: number): T | null {
-  const matches = subjects.filter(
-    (s) => s.active && subjectExclusiveOnDay(s, day),
-  );
-  if (!matches.length) return null;
-  return [...matches].sort((a, b) => a.cycle_order - b.cycle_order)[0] ?? null;
+  return exclusiveSubjectsOnDay(subjects, day)[0] ?? null;
 }
 
-/** Livre permanente, ou o dia exclusivo dela. */
-export function subjectTreatAsFree(
-  subject: Pick<Subject, "is_free" | "exclusive_days">,
+/** Com tempo no modo exclusivo do dia (ignora Livre permanente). */
+export function exclusiveCycleSubjectsOnDay<T extends Subject>(
+  subjects: T[],
+  day: number,
+): T[] {
+  return exclusiveSubjectsOnDay(subjects, day).filter((s) => !s.is_free);
+}
+
+/** Mini-ciclo ativo: 2+ matérias com tempo no dia exclusivo. */
+export function isExclusiveCycleDay(
+  subjects: Subject[],
   day: number,
 ): boolean {
-  return Boolean(subject.is_free) || subjectExclusiveOnDay(subject, day);
+  return exclusiveCycleSubjectsOnDay(subjects, day).length >= 2;
 }
 
-/** Matérias visíveis no Hoje: dia exclusivo esconde as outras. */
+/** Dia exclusivo com só 1 matéria com tempo (só anotações). */
+export function isExclusiveSoloDay(
+  subjects: Subject[],
+  day: number,
+): boolean {
+  const exclusives = exclusiveSubjectsOnDay(subjects, day);
+  if (!exclusives.length) return false;
+  return exclusiveCycleSubjectsOnDay(subjects, day).length < 2;
+}
+
+/**
+ * Livre permanente, ou dia exclusivo solo (1 com tempo → só anotações).
+ * Com 2+ exclusivas com tempo, elas entram no mini-ciclo (não “free”).
+ */
+export function subjectTreatAsFree(
+  subject: Pick<Subject, "id" | "is_free" | "exclusive_days">,
+  day: number,
+  allSubjects: Subject[],
+): boolean {
+  if (subject.is_free) return true;
+  if (!subjectExclusiveOnDay(subject, day)) return false;
+  return !isExclusiveCycleDay(allSubjects, day);
+}
+
+/** Matérias visíveis no Hoje: dia exclusivo mostra só as exclusivas. */
 export function subjectsOnDay<T extends Subject>(
   subjects: T[],
   day: number,
 ): T[] {
-  const exclusive = exclusiveSubjectOnDay(subjects, day);
-  if (exclusive) {
-    const found = subjects.find((s) => s.id === exclusive.id);
-    return found ? [found] : [];
-  }
+  const exclusives = exclusiveSubjectsOnDay(subjects, day);
+  if (exclusives.length) return exclusives as T[];
   return subjects.filter(
     (s) =>
       s.active &&
@@ -210,15 +244,25 @@ export function subjectsOnDay<T extends Subject>(
   );
 }
 
-/** Fila do ciclo (Concluída/Próxima). Vazia num dia exclusivo. */
+/**
+ * Fila Concluída/Próxima do dia.
+ * Dia exclusivo com 2+ → mini-ciclo delas. Solo exclusivo → vazia.
+ */
 export function cycleSubjectsOnDay<T extends Subject>(
   subjects: T[],
   day: number,
 ): T[] {
-  if (exclusiveSubjectOnDay(subjects, day)) return [];
+  const exclusiveTimed = exclusiveCycleSubjectsOnDay(subjects, day);
+  if (exclusiveTimed.length >= 2) return exclusiveTimed as T[];
+  if (exclusiveSubjectsOnDay(subjects, day).length > 0) return [];
   return [...subjects]
     .filter((s) => s.active && !s.is_free && subjectShowsOnDay(s, day))
     .sort((a, b) => a.cycle_order - b.cycle_order);
+}
+
+function statusOnDay(s: Subject, day: number, all: Subject[]): SubjectStatus {
+  if (isExclusiveCycleDay(all, day)) return s.exclusive_status ?? "prox";
+  return s.status;
 }
 
 /** Id da próxima matéria do ciclo de hoje (1ª não Concluída). */
@@ -226,7 +270,9 @@ export function nextCycleSubjectId(
   subjects: Subject[],
   day: number,
 ): string | null {
-  const next = cycleSubjectsOnDay(subjects, day).find((s) => s.status !== "ok");
+  const next = cycleSubjectsOnDay(subjects, day).find(
+    (s) => statusOnDay(s, day, subjects) !== "ok",
+  );
   return next?.id ?? null;
 }
 
@@ -254,17 +300,6 @@ export function cycleStatusPresentation(
     chipClass: queuePendingClass(),
     rowClass: queuePendingRowClass(),
   };
-}
-
-export function withoutExclusiveDays(
-  days: number[] | null | undefined,
-  taken: number[],
-): number[] | null {
-  if (!taken.length) return normalizeExclusiveDays(days);
-  const takenSet = new Set(taken);
-  return normalizeExclusiveDays(
-    (normalizeExclusiveDays(days) ?? []).filter((d) => !takenSet.has(d)),
-  );
 }
 
 export const DEFAULT_SIDEBAR_TIMER_NAME = "Temporizador";

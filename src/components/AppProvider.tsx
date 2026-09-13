@@ -32,6 +32,7 @@ import { rememberLastKnownGood, loadLastKnownGood } from "@/lib/local-recovery";
 import { checkCurrentUserAccess } from "@/lib/supabase/access";
 import {
   cycleSubjectsOnDay,
+  isExclusiveCycleDay,
   todayIndex,
   normalizeStudyDays,
   normalizeExclusiveDays,
@@ -39,7 +40,6 @@ import {
   normalizeSidebarTimerName,
   normalizeSidebarTimerMinutes,
   rotationAdvanced,
-  withoutExclusiveDays,
 } from "@/lib/utils";
 import { parseSubjectIcon } from "@/lib/subject-icons";
 import type {
@@ -626,32 +626,27 @@ export function AppProvider({ children }: { children: ReactNode }) {
             if ("icon" in subject) {
               patch.icon = parseSubjectIcon(subject.icon);
             }
+            // exclusive_status só via setSubjectStatus (mini-ciclo).
+            delete (patch as { exclusive_status?: SubjectStatus }).exclusive_status;
             return {
               ...prev,
-              subjects: prev.subjects.map((s) => {
-                if (s.id === subject.id) {
-                  return { ...s, ...patch, status: s.status };
-                }
-                if (
-                  "exclusive_days" in patch &&
-                  patch.exclusive_days?.length
-                ) {
-                  return {
-                    ...s,
-                    exclusive_days: withoutExclusiveDays(
-                      s.exclusive_days,
-                      patch.exclusive_days,
-                    ),
-                  };
-                }
-                return s;
-              }),
+              subjects: prev.subjects.map((s) =>
+                s.id === subject.id
+                  ? {
+                      ...s,
+                      ...patch,
+                      status: s.status,
+                      exclusive_status: s.exclusive_status,
+                    }
+                  : s,
+              ),
             };
           }
           const row: Subject = {
             id: newId("sub"),
             name: subject.name,
             status: subject.status ?? "prox",
+            exclusive_status: subject.exclusive_status ?? "prox",
             notes: subject.notes ?? "",
             cycle_order: subject.cycle_order ?? prev.subjects.length,
             active: subject.active ?? true,
@@ -665,17 +660,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
             rotation: normalizeRotation(subject.rotation),
             icon: parseSubjectIcon(subject.icon),
           };
-          const taken = row.exclusive_days ?? [];
-          const subjects = taken.length
-            ? [
-                ...prev.subjects.map((s) => ({
-                  ...s,
-                  exclusive_days: withoutExclusiveDays(s.exclusive_days, taken),
-                })),
-                row,
-              ]
-            : [...prev.subjects, row];
-          return { ...prev, subjects };
+          return { ...prev, subjects: [...prev.subjects, row] };
         });
       },
       setSubjectStatus: (id, status) => {
@@ -684,20 +669,37 @@ export function AppProvider({ children }: { children: ReactNode }) {
           if (!target || target.is_free) return prev;
 
           const day = todayIndex();
+          const exclusiveCycle = isExclusiveCycleDay(prev.subjects, day);
+          // Solo exclusivo: sem Concluída/Próxima.
+          if (
+            !exclusiveCycle &&
+            cycleSubjectsOnDay(prev.subjects, day).length === 0
+          ) {
+            return prev;
+          }
+
           const ordered = cycleSubjectsOnDay(prev.subjects, day);
           const idx = ordered.findIndex((s) => s.id === id);
           if (idx < 0) return prev;
 
+          const readStatus = (s: Subject): SubjectStatus =>
+            exclusiveCycle ? (s.exclusive_status ?? "prox") : s.status;
+
+          const writeStatus = (s: Subject, next: SubjectStatus): Subject =>
+            exclusiveCycle
+              ? { ...s, exclusive_status: next }
+              : { ...s, status: next };
+
           const restartToday = (subjects: typeof prev.subjects) => {
             const ids = new Set(cycleSubjectsOnDay(subjects, day).map((s) => s.id));
             return subjects.map((s) =>
-              ids.has(s.id) ? { ...s, status: "prox" as const } : s,
+              ids.has(s.id) ? writeStatus(s, "prox") : s,
             );
           };
 
-          // Concluiu (Próx → Ok) e usa rodízio → a "da vez" avança.
+          // Concluiu e usa rodízio → a "da vez" avança (nos dois modos).
           const advanceIfTarget = (s: Subject): Subject => {
-            if (s.id !== id || target.status === "ok") return s;
+            if (s.id !== id || readStatus(target) === "ok") return s;
             const rot = normalizeRotation(s.rotation);
             if (!rot) return s;
             return { ...s, rotation: rotationAdvanced(rot) };
@@ -707,13 +709,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
             return {
               ...prev,
               subjects: prev.subjects.map((s) =>
-                s.id === id ? { ...s, status } : s,
+                s.id === id ? writeStatus(s, status) : s,
               ),
             };
           }
 
-          // Último Ok do ciclo de hoje → reinicia: todas voltam pra Próx
-          // (incluindo a última — nenhuma fica Concluída).
           if (idx === ordered.length - 1) {
             return {
               ...prev,
@@ -721,20 +721,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
             };
           }
 
-          // Ok no meio → esta Ok; próxima (de hoje, com tempo) vira Próx.
           const next = ordered[idx + 1];
           const subjects = prev.subjects.map((s) => {
-            if (s.id === id)
-              return { ...advanceIfTarget(s), status: "ok" as const };
-            if (next && s.id === next.id) return { ...s, status: "prox" as const };
+            if (s.id === id) return writeStatus(advanceIfTarget(s), "ok");
+            if (next && s.id === next.id) return writeStatus(s, "prox");
             return s;
           });
 
-          // Rede de segurança: se todas as de hoje ficaram Ok, reinicia o ciclo.
           const todayAfter = cycleSubjectsOnDay(subjects, day);
           if (
             todayAfter.length > 0 &&
-            todayAfter.every((s) => s.status === "ok")
+            todayAfter.every((s) => readStatus(s) === "ok")
           ) {
             return { ...prev, subjects: restartToday(subjects) };
           }

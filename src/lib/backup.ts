@@ -108,6 +108,7 @@ function parseSubject(raw: unknown, index: number): Subject | null {
         ? raw.exclusive_days.filter((d): d is number => typeof d === "number")
         : null,
     ),
+    exclusive_status: raw.exclusive_status === "ok" ? "ok" : "prox",
     study_minutes: Math.min(999, Math.max(1, asInt(raw.study_minutes, 25, 1, 999))),
     is_free: asBool(raw.is_free, false),
     rotation: normalizeRotation(raw.rotation),

@@ -13,7 +13,9 @@ import { DAYS } from "@/lib/types";
 import {
   blockStyle,
   cycleStatusPresentation,
-  exclusiveSubjectOnDay,
+  exclusiveSubjectsOnDay,
+  isExclusiveCycleDay,
+  isExclusiveSoloDay,
   freeRowClass,
   normalizeRotation,
   nextCycleSubjectId,
@@ -53,8 +55,8 @@ export default function HojePage() {
   const subjects = useMemo(
     () =>
       [...subjectsOnDay(data.subjects, day)].sort((a, b) => {
-        const freeA = Number(subjectTreatAsFree(a, day));
-        const freeB = Number(subjectTreatAsFree(b, day));
+        const freeA = Number(subjectTreatAsFree(a, day, data.subjects));
+        const freeB = Number(subjectTreatAsFree(b, day, data.subjects));
         if (freeA !== freeB) return freeB - freeA;
         return a.cycle_order - b.cycle_order;
       }),
@@ -66,8 +68,16 @@ export default function HojePage() {
     [data.subjects, day],
   );
 
-  const exclusiveTodaySubject = useMemo(
-    () => exclusiveSubjectOnDay(data.subjects, day),
+  const exclusiveTodayList = useMemo(
+    () => exclusiveSubjectsOnDay(data.subjects, day),
+    [data.subjects, day],
+  );
+  const exclusiveCycleToday = useMemo(
+    () => isExclusiveCycleDay(data.subjects, day),
+    [data.subjects, day],
+  );
+  const exclusiveSoloToday = useMemo(
+    () => isExclusiveSoloDay(data.subjects, day),
     [data.subjects, day],
   );
 
@@ -277,17 +287,30 @@ export default function HojePage() {
               </Link>
             </div>
 
-            {exclusiveTodaySubject ? (
+            {exclusiveSoloToday && exclusiveTodayList[0] ? (
               <div className="border-b border-[color-mix(in_srgb,var(--signal)_22%,var(--line))] bg-[color-mix(in_srgb,var(--signal)_10%,var(--surface))] px-3.5 py-3 md:px-5">
                 <p className="text-sm font-semibold text-[var(--ink)] md:text-[15px]">
                   Hoje é só{" "}
                   <span className="text-[var(--signal)]">
-                    {exclusiveTodaySubject.name}
+                    {exclusiveTodayList[0].name}
                   </span>
                 </p>
                 <p className="mt-1 text-xs leading-snug text-[color-mix(in_srgb,var(--ink)_58%,transparent)] md:text-sm">
                   Ciclo pausado — só anotações neste dia. Amanhã volta como
                   estava.
+                </p>
+              </div>
+            ) : exclusiveCycleToday ? (
+              <div className="border-b border-[color-mix(in_srgb,var(--signal)_22%,var(--line))] bg-[color-mix(in_srgb,var(--signal)_10%,var(--surface))] px-3.5 py-3 md:px-5">
+                <p className="text-sm font-semibold text-[var(--ink)] md:text-[15px]">
+                  Hoje:{" "}
+                  <span className="text-[var(--signal)]">
+                    {exclusiveTodayList.map((s) => s.name).join(", ")}
+                  </span>
+                </p>
+                <p className="mt-1 text-xs leading-snug text-[color-mix(in_srgb,var(--ink)_58%,transparent)] md:text-sm">
+                  Mini-ciclo só destas matérias. O ciclo dos outros dias não
+                  muda.
                 </p>
               </div>
             ) : null}
@@ -298,13 +321,16 @@ export default function HojePage() {
 
             <div className="space-y-2.5 p-2.5 lg:hidden">
               {subjects.map((s) => {
-                const free = subjectTreatAsFree(s, day);
+                const free = subjectTreatAsFree(s, day, data.subjects);
                 const exclusiveToday = free && !s.is_free;
                 const rot = normalizeRotation(s.rotation);
                 const rotItem = rot ? rot.items[rot.index] : null;
+                const displayStatus = exclusiveCycleToday
+                  ? (s.exclusive_status ?? "prox")
+                  : s.status;
                 const statusUi = free
                   ? null
-                  : cycleStatusPresentation(s.status, s.id === queueHeadId);
+                  : cycleStatusPresentation(displayStatus, s.id === queueHeadId);
                 return (
                   <div
                     key={s.id}
@@ -405,13 +431,19 @@ export default function HojePage() {
                 </thead>
                 <tbody>
                   {subjects.map((s, i) => {
-                    const free = subjectTreatAsFree(s, day);
+                    const free = subjectTreatAsFree(s, day, data.subjects);
                     const exclusiveToday = free && !s.is_free;
                     const rot = normalizeRotation(s.rotation);
                     const rotItem = rot ? rot.items[rot.index] : null;
+                    const displayStatus = exclusiveCycleToday
+                      ? (s.exclusive_status ?? "prox")
+                      : s.status;
                     const statusUi = free
                       ? null
-                      : cycleStatusPresentation(s.status, s.id === queueHeadId);
+                      : cycleStatusPresentation(
+                          displayStatus,
+                          s.id === queueHeadId,
+                        );
                     const rowBorder =
                       i < subjects.length - 1
                         ? "border-b-2 border-[var(--surface)]"
