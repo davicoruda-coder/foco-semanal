@@ -4,6 +4,7 @@ import {
   SUBJECT_ICON_GLYPH_RATIO,
   SUBJECT_ICON_PRESETS,
   guessSubjectIconPresetId,
+  isSubjectIconImage,
   subjectIconPresetId,
 } from "@/lib/subject-icons";
 
@@ -30,7 +31,7 @@ export function SubjectIcon({
   const guessedTile =
     "shrink-0 rounded-[10px] ring-1 ring-[color-mix(in_srgb,var(--signal)_18%,var(--line))]";
 
-  if (icon?.startsWith("data:image/")) {
+  if (isSubjectIconImage(icon)) {
     const glyph = Math.round(size * SUBJECT_ICON_GLYPH_RATIO);
     return (
       <span
@@ -40,7 +41,7 @@ export function SubjectIcon({
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src={icon}
+          src={icon!}
           alt=""
           width={glyph}
           height={glyph}

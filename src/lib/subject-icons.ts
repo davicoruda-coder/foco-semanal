@@ -52,6 +52,8 @@ export function presetIconValue(id: string): string {
   return `${PRESET_PREFIX}${id}`;
 }
 
+const STATIC_ICON_PREFIX = "/subject-icons/";
+
 export function parseSubjectIcon(raw: unknown): string | null {
   if (typeof raw !== "string") return null;
   const v = raw.trim();
@@ -61,6 +63,13 @@ export function parseSubjectIcon(raw: unknown): string | null {
     return PRESET_IDS.has(id) ? v : null;
   }
   if (v.startsWith("data:image/") && v.length <= MAX_UPLOAD_CHARS) return v;
+  // Ícones processados servidos em /public/subject-icons/
+  if (
+    v.startsWith(STATIC_ICON_PREFIX) &&
+    /^\/subject-icons\/[a-z0-9_-]+\.jpe?g$/i.test(v)
+  ) {
+    return v;
+  }
   return null;
 }
 
@@ -71,7 +80,13 @@ export function subjectIconPresetId(icon: string | null | undefined): string | n
 }
 
 export function isSubjectIconUpload(icon: string | null | undefined): boolean {
-  return Boolean(icon?.startsWith("data:image/"));
+  return Boolean(
+    icon?.startsWith("data:image/") || icon?.startsWith(STATIC_ICON_PREFIX),
+  );
+}
+
+export function isSubjectIconImage(icon: string | null | undefined): boolean {
+  return isSubjectIconUpload(icon);
 }
 
 /** Sugestão só de exibição (não grava) a partir do nome da matéria. */
@@ -108,9 +123,9 @@ export const SUBJECT_ICON_UPLOAD_BG = "#F4F3F8";
 
 /**
  * Fração do tile para a imagem enviada.
- * > 1 dá zoom leve e corta margem residual das artes já salvas.
+ * Artes processadas já vêm preenchidas; 1.0 = sem zoom extra.
  */
-export const SUBJECT_ICON_GLYPH_RATIO = 1.32;
+export const SUBJECT_ICON_GLYPH_RATIO = 1;
 
 /** Fração do canvas preenchida pelo conteúdo após trim. */
 const SUBJECT_ICON_UPLOAD_FILL = 0.88;
