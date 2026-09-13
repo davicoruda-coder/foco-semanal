@@ -282,6 +282,15 @@ export function nextCycleSubjectId(
   return next?.id ?? null;
 }
 
+/** Lista matérias em pt-BR: "A", "A e B", "A, B e C". */
+export function formatSubjectFocusList(names: string[]): string {
+  const clean = names.map((n) => n.trim()).filter(Boolean);
+  if (clean.length === 0) return "";
+  if (clean.length === 1) return clean[0];
+  if (clean.length === 2) return `${clean[0]} e ${clean[1]}`;
+  return `${clean.slice(0, -1).join(", ")} e ${clean[clean.length - 1]}`;
+}
+
 /** Rótulo/estilo de status no Hoje: só a cabeça da fila é "Próxima". */
 export function cycleStatusPresentation(
   status: SubjectStatus,

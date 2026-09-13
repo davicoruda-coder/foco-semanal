@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { Target } from "lucide-react";
+import { useApp } from "@/components/AppProvider";
 import { SIDEBAR_TIMER_ID, useTimerRuntime } from "@/components/TimerRuntimeProvider";
 import {
   dateKey,
@@ -11,8 +12,9 @@ import {
   loadFocusDisplaySnapshot,
   type FocusLog,
 } from "@/lib/focus-log";
+import { syncFocusLogWithCloud } from "@/lib/supabase/focus-sync";
 
-/** Mini-card "Foco hoje": total consolidado (pause/fim da matéria ou ao abrir Estatísticas). */
+/** Mini-card "Foco hoje": total consolidado (pause/fim da matéria ou sync nuvem). */
 export function FocusTodayCard({
   compact = false,
   embedded = false,
@@ -22,9 +24,12 @@ export function FocusTodayCard({
   /** Sem borda/surface própria (já está dentro de outro card). */
   embedded?: boolean;
 }) {
+  const { user, cloud } = useApp();
   const { runtime, subjectStopwatches, stopwatch } = useTimerRuntime();
   const [log, setLog] = useState<FocusLog>({ version: 1, days: {} });
+  const [syncing, setSyncing] = useState(false);
   const wasTracking = useRef(false);
+  const syncingRef = useRef(false);
 
   // Mesma regra do provider: matéria em play (sessão) ou cronômetro.
   const tracking = useMemo(
@@ -38,9 +43,44 @@ export function FocusTodayCard({
     [runtime, subjectStopwatches, stopwatch.running],
   );
 
+  const refreshFocus = useCallback(async () => {
+    if (syncingRef.current) return;
+    if (!cloud || !user) {
+      setLog(loadFocusDisplaySnapshot());
+      return;
+    }
+    syncingRef.current = true;
+    setSyncing(true);
+    try {
+      const merged = await syncFocusLogWithCloud();
+      setLog(merged);
+    } catch {
+      setLog(loadFocusDisplaySnapshot());
+    } finally {
+      syncingRef.current = false;
+      setSyncing(false);
+    }
+  }, [cloud, user]);
+
+  // Abre Hoje / pull-to-refresh (reload) / volta do app: puxa da nuvem.
   useEffect(() => {
-    setLog(loadFocusDisplaySnapshot());
-  }, []);
+    void refreshFocus();
+  }, [refreshFocus]);
+
+  useEffect(() => {
+    const onVis = () => {
+      if (document.visibilityState === "visible") void refreshFocus();
+    };
+    const onPageShow = (e: PageTransitionEvent) => {
+      if (e.persisted) void refreshFocus();
+    };
+    document.addEventListener("visibilitychange", onVis);
+    window.addEventListener("pageshow", onPageShow);
+    return () => {
+      document.removeEventListener("visibilitychange", onVis);
+      window.removeEventListener("pageshow", onPageShow);
+    };
+  }, [refreshFocus]);
 
   useEffect(() => {
     if (wasTracking.current && !tracking) {
@@ -91,9 +131,11 @@ export function FocusTodayCard({
               : "text-[var(--ink)]"
           } ${compact ? "text-[15px]" : "text-base"}`}
         >
-          {today.seconds === 0 && !tracking
-            ? "—"
-            : formatFocusDuration(today.seconds)}
+          {syncing && today.seconds === 0 && !tracking
+            ? "…"
+            : today.seconds === 0 && !tracking
+              ? "—"
+              : formatFocusDuration(today.seconds)}
         </p>
       </div>
       {!compact ? (
@@ -131,6 +173,10 @@ export function FocusTodayCard({
       {tracking ? (
         <p className="mt-1.5 text-xs text-[color-mix(in_srgb,var(--ink)_45%,transparent)]">
           em andamento
+        </p>
+      ) : syncing ? (
+        <p className="mt-1.5 text-xs text-[color-mix(in_srgb,var(--ink)_45%,transparent)]">
+          atualizando…
         </p>
       ) : today.seconds === 0 ? (
         <p className="mt-1.5 text-xs text-[color-mix(in_srgb,var(--ink)_45%,transparent)]">

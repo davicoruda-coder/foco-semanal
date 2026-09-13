@@ -649,7 +649,7 @@ export default function MateriasPage() {
                   onChange={(icon) => upsertSubject({ ...s, icon })}
                 />
               </div>
-              <div className="mt-3 flex flex-wrap items-end gap-4">
+              <div className="mt-3 space-y-4">
                 {!free && (
                   <div>
                     <p className="mb-1.5 text-xs font-medium uppercase tracking-wider opacity-50">
@@ -690,29 +690,32 @@ export default function MateriasPage() {
                     </label>
                   </div>
                 )}
-                <div className="min-w-0 flex-1">
-                  <p className="mb-1.5 text-xs font-medium uppercase tracking-wider opacity-50">
-                    Frequência
-                  </p>
-                  <StudyDaysPicker
-                    value={freq}
-                    onChange={(next) => updateStudyDays(s, next)}
-                  />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="mb-1.5 text-xs font-medium uppercase tracking-wider opacity-50">
-                    Só hoje
-                  </p>
-                  <p className="mb-1.5 text-[11px] leading-snug opacity-50">
-                    Nestes dias só as matérias marcadas aparecem. 1 = anotações;
-                    2+ = mini-ciclo (ciclo normal intacto).
-                  </p>
-                  <ExclusiveDaysPicker
-                    value={normalizeExclusiveDays(s.exclusive_days) ?? []}
-                    onChange={(days) =>
-                      upsertSubject({ ...s, exclusive_days: days })
-                    }
-                  />
+                {/* Empilha no mobile: side-by-side deixava “Só hoje” em coluna estreita por cima da Frequência. */}
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:items-start">
+                  <div className="min-w-0">
+                    <p className="mb-1.5 text-xs font-medium uppercase tracking-wider opacity-50">
+                      Frequência
+                    </p>
+                    <StudyDaysPicker
+                      value={freq}
+                      onChange={(next) => updateStudyDays(s, next)}
+                    />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="mb-1.5 text-xs font-medium uppercase tracking-wider opacity-50">
+                      Só hoje
+                    </p>
+                    <p className="mb-1.5 text-[11px] leading-snug opacity-50">
+                      Nestes dias só as matérias marcadas — ciclo normal
+                      pausado.
+                    </p>
+                    <ExclusiveDaysPicker
+                      value={normalizeExclusiveDays(s.exclusive_days) ?? []}
+                      onChange={(days) =>
+                        upsertSubject({ ...s, exclusive_days: days })
+                      }
+                    />
+                  </div>
                 </div>
               </div>
               {!free && (

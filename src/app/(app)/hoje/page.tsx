@@ -17,6 +17,7 @@ import {
   isExclusiveCycleDay,
   isExclusiveSoloDay,
   freeRowClass,
+  formatSubjectFocusList,
   normalizeRotation,
   nextCycleSubjectId,
   rotationWithItemNotes,
@@ -275,30 +276,16 @@ export default function HojePage() {
               </Link>
             </div>
 
-            {exclusiveSoloToday && exclusiveTodayList[0] ? (
+            {(exclusiveSoloToday || exclusiveCycleToday) &&
+            exclusiveTodayList.length > 0 ? (
               <div className="border-b border-[color-mix(in_srgb,var(--signal)_22%,var(--line))] bg-[color-mix(in_srgb,var(--signal)_10%,var(--surface))] px-3.5 py-3 md:px-5">
                 <p className="text-sm font-semibold text-[var(--ink)] md:text-[15px]">
-                  Hoje é só{" "}
+                  Hoje o foco é{" "}
                   <span className="text-[var(--signal)]">
-                    {exclusiveTodayList[0].name}
+                    {formatSubjectFocusList(
+                      exclusiveTodayList.map((s) => s.name),
+                    )}
                   </span>
-                </p>
-                <p className="mt-1 text-xs leading-snug text-[color-mix(in_srgb,var(--ink)_58%,transparent)] md:text-sm">
-                  Ciclo pausado — só anotações neste dia. Amanhã volta como
-                  estava.
-                </p>
-              </div>
-            ) : exclusiveCycleToday ? (
-              <div className="border-b border-[color-mix(in_srgb,var(--signal)_22%,var(--line))] bg-[color-mix(in_srgb,var(--signal)_10%,var(--surface))] px-3.5 py-3 md:px-5">
-                <p className="text-sm font-semibold text-[var(--ink)] md:text-[15px]">
-                  Hoje:{" "}
-                  <span className="text-[var(--signal)]">
-                    {exclusiveTodayList.map((s) => s.name).join(", ")}
-                  </span>
-                </p>
-                <p className="mt-1 text-xs leading-snug text-[color-mix(in_srgb,var(--ink)_58%,transparent)] md:text-sm">
-                  Mini-ciclo só destas matérias. O ciclo dos outros dias não
-                  muda.
                 </p>
               </div>
             ) : null}
@@ -357,7 +344,7 @@ export default function HojePage() {
                       )}
                       {free && (
                         <span className="inline-flex min-h-8 shrink-0 items-center rounded-full px-2.5 py-1 text-xs font-semibold ring-1 bg-[color-mix(in_srgb,var(--ink)_6%,transparent)] text-[color-mix(in_srgb,var(--ink)_65%,transparent)] ring-[var(--line)]">
-                          Só hoje
+                          Em foco
                         </span>
                       )}
                     </div>
@@ -470,7 +457,7 @@ export default function HojePage() {
                         >
                           {free ? (
                             <span className="inline-flex rounded-full px-2.5 py-1.5 text-xs font-semibold ring-1 bg-[color-mix(in_srgb,var(--ink)_6%,transparent)] text-[color-mix(in_srgb,var(--ink)_65%,transparent)] ring-[var(--line)]">
-                              Só hoje
+                              Em foco
                             </span>
                           ) : statusUi ? (
                             <span
