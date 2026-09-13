@@ -577,11 +577,6 @@ export function SessionClock({
         <div className="mb-1.5 flex items-center justify-between gap-2">
           {livreTabs}
         </div>
-        <p className="mb-2 text-[10px] leading-snug text-[color-mix(in_srgb,var(--ink)_50%,transparent)]">
-          {showStopwatch
-            ? "Sobe o tempo · conta em Foco hoje"
-            : "Desce com alarme · não marca Concluída · conta em Foco hoje"}
-        </p>
         {showStopwatch
           ? renderStopwatchRing(52, 4, true)
           : renderSidebarRing(52, 4, true, !sidebarRunning && !sidebarPaused)}
@@ -684,11 +679,6 @@ export function SessionClock({
       <div key={mode} className="fade-in">
       {livreOnly ? (
         <>
-          <p className="border-b border-[var(--line)] px-3 py-1.5 text-[11px] leading-snug text-[color-mix(in_srgb,var(--ink)_50%,transparent)]">
-            {showStopwatch
-              ? "Sobe o tempo · conta em Foco hoje"
-              : "Desce com alarme · não marca Concluída · conta em Foco hoje"}
-          </p>
           {showStopwatch ? (
             <div
               className={`flex justify-center ${stack ? "px-3 py-3" : "px-3 py-4"}`}
