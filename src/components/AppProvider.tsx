@@ -41,6 +41,7 @@ import {
   rotationAdvanced,
   withoutExclusiveDays,
 } from "@/lib/utils";
+import { parseSubjectIcon } from "@/lib/subject-icons";
 import type {
   AppData,
   FocusTimer,
@@ -622,6 +623,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
             if ("rotation" in subject) {
               patch.rotation = normalizeRotation(subject.rotation);
             }
+            if ("icon" in subject) {
+              patch.icon = parseSubjectIcon(subject.icon);
+            }
             return {
               ...prev,
               subjects: prev.subjects.map((s) => {
@@ -659,6 +663,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 : 25,
             is_free: Boolean(subject.is_free),
             rotation: normalizeRotation(subject.rotation),
+            icon: parseSubjectIcon(subject.icon),
           };
           const taken = row.exclusive_days ?? [];
           const subjects = taken.length

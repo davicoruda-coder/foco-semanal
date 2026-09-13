@@ -1,5 +1,6 @@
 import type { AppData } from "./types";
 import { normalizeRotation, normalizeExclusiveDays, normalizeSidebarTimerName, normalizeSidebarTimerMinutes } from "./utils";
+import { parseSubjectIcon } from "./subject-icons";
 
 function id(_prefix: string) {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
@@ -100,6 +101,7 @@ export function loadDemoData(): AppData {
           : 25,
       is_free: Boolean(s.is_free),
       rotation: normalizeRotation(s.rotation),
+      icon: parseSubjectIcon(s.icon),
     }));
     data.subjects = [...subjectsRaw]
       .sort((a, b) => {

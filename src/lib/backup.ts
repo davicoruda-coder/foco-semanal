@@ -22,6 +22,7 @@ import {
   normalizeSidebarTimerName,
   normalizeSidebarTimerMinutes,
 } from "@/lib/utils";
+import { parseSubjectIcon } from "@/lib/subject-icons";
 
 export const MAX_BACKUP_BYTES = 1_048_576;
 const MAX_ITEMS = 500;
@@ -110,6 +111,7 @@ function parseSubject(raw: unknown, index: number): Subject | null {
     study_minutes: Math.min(999, Math.max(1, asInt(raw.study_minutes, 25, 1, 999))),
     is_free: asBool(raw.is_free, false),
     rotation: normalizeRotation(raw.rotation),
+    icon: parseSubjectIcon(raw.icon),
   };
 }
 

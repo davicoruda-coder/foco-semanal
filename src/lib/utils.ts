@@ -115,6 +115,15 @@ export function freeRowClass(): string {
   return "bg-[var(--row-free)]";
 }
 
+/** Chip muted para matérias ainda na fila (não são a "Próxima" de verdade). */
+export function queuePendingClass(): string {
+  return "bg-[color-mix(in_srgb,var(--ink)_5%,transparent)] text-[color-mix(in_srgb,var(--ink)_55%,transparent)] ring-1 ring-[var(--line)]";
+}
+
+export function queuePendingRowClass(): string {
+  return "bg-[var(--surface)]";
+}
+
 /** Monday=0 ... Sunday=6 (planilha style) */
 export function todayIndex(): number {
   const js = new Date().getDay(); // 0 Sun
@@ -166,10 +175,9 @@ export function subjectExclusiveOnDay(
 }
 
 /** Matéria ativa que toma o dia (a de menor cycle_order, se houver empate). */
-export function exclusiveSubjectOnDay(
-  subjects: Pick<Subject, "id" | "active" | "exclusive_days" | "cycle_order">[],
-  day: number,
-): (typeof subjects)[number] | null {
+export function exclusiveSubjectOnDay<
+  T extends Pick<Subject, "id" | "active" | "exclusive_days" | "cycle_order">,
+>(subjects: T[], day: number): T | null {
   const matches = subjects.filter(
     (s) => s.active && subjectExclusiveOnDay(s, day),
   );
@@ -211,6 +219,41 @@ export function cycleSubjectsOnDay<T extends Subject>(
   return [...subjects]
     .filter((s) => s.active && !s.is_free && subjectShowsOnDay(s, day))
     .sort((a, b) => a.cycle_order - b.cycle_order);
+}
+
+/** Id da próxima matéria do ciclo de hoje (1ª não Concluída). */
+export function nextCycleSubjectId(
+  subjects: Subject[],
+  day: number,
+): string | null {
+  const next = cycleSubjectsOnDay(subjects, day).find((s) => s.status !== "ok");
+  return next?.id ?? null;
+}
+
+/** Rótulo/estilo de status no Hoje: só a cabeça da fila é "Próxima". */
+export function cycleStatusPresentation(
+  status: SubjectStatus,
+  isQueueHead: boolean,
+): { label: string; chipClass: string; rowClass: string } {
+  if (status === "ok") {
+    return {
+      label: "Concluída",
+      chipClass: statusClass("ok"),
+      rowClass: statusRowClass("ok"),
+    };
+  }
+  if (isQueueHead) {
+    return {
+      label: "Próxima",
+      chipClass: statusClass("prox"),
+      rowClass: statusRowClass("prox"),
+    };
+  }
+  return {
+    label: "Na fila",
+    chipClass: queuePendingClass(),
+    rowClass: queuePendingRowClass(),
+  };
 }
 
 export function withoutExclusiveDays(

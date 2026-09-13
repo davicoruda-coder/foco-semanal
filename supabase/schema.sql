@@ -26,6 +26,8 @@ create table if not exists public.subjects (
   is_free boolean not null default false,
   -- Rodízio interno: {"items":[{"id","name","notes"}],"index":0}; null = sem rodízio
   rotation jsonb,
+  -- Ícone: preset:<id> | data URL | null
+  icon text,
   created_at timestamptz not null default now(),
   deleted_at timestamptz,
   constraint subjects_study_days_valid check (

@@ -48,14 +48,18 @@ export interface Subject {
   exclusive_days: number[] | null;
   /** Minutos do temporizador desta matéria (play no ciclo). */
   study_minutes: number;
-  /**
-   * Livre = aparece no dia só com nome e anotações
+  /** Livre permanente = aparece no dia só com nome e anotações
    * (sem timer da matéria e sem Concluída/Próxima).
    * Sessão/cronômetro da lateral continuam disponíveis.
    */
   is_free: boolean;
   /** Rodízio interno de disciplinas; `null` = matéria comum. */
   rotation: SubjectRotation | null;
+  /**
+   * Ícone visual: `preset:<id>` do pack, data URL de upload, ou null
+   * (inicial do nome).
+   */
+  icon: string | null;
 }
 
 export interface WeekBlock {

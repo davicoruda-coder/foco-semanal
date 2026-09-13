@@ -13,6 +13,7 @@ import type {
   WeekBlock,
 } from "@/lib/types";
 import { normalizeStudyDays, normalizeExclusiveDays, normalizeRotation, normalizeSidebarTimerName, normalizeSidebarTimerMinutes } from "@/lib/utils";
+import { parseSubjectIcon } from "@/lib/subject-icons";
 
 type Client = SupabaseClient;
 
@@ -165,6 +166,7 @@ export async function loadCloudData(
     study_minutes: normalizeStudyMinutes(s.study_minutes, 25),
     is_free: Boolean(s.is_free),
     rotation: normalizeRotation(s.rotation),
+    icon: parseSubjectIcon(s.icon),
   }));
   const subjects: Subject[] = [...subjectsRaw]
     .sort((a, b) => {
@@ -368,6 +370,7 @@ export async function saveCloudData(
       study_minutes: normalizeStudyMinutes(s.study_minutes, 25),
       is_free: Boolean(s.is_free),
       rotation: normalizeRotation(s.rotation),
+      icon: parseSubjectIcon(s.icon),
       ...LIVE,
     })),
     "subjects",

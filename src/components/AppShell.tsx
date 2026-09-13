@@ -249,13 +249,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   title={label}
                   aria-label={label}
                   aria-current={active ? "page" : undefined}
-                  className={`grid h-10 w-10 place-items-center rounded-[var(--radius-btn)] transition ${
+                  className={`inline-flex h-10 items-center gap-1.5 rounded-[var(--radius-btn)] px-2.5 text-sm font-medium transition ${
                     active
                       ? "bg-[var(--signal-soft)] text-[var(--signal)]"
                       : "text-[color-mix(in_srgb,var(--ink)_55%,transparent)] hover:bg-[var(--mist)] hover:text-[var(--ink)]"
                   }`}
                 >
                   <Icon size={18} strokeWidth={active ? 2.25 : 1.75} />
+                  <span className="hidden xl:inline">{label}</span>
                 </Link>
               );
             })}

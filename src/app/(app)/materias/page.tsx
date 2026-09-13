@@ -5,6 +5,7 @@ import { ChevronDown, ChevronUp, Repeat, Trash2, X } from "lucide-react";
 import { useApp } from "@/components/AppProvider";
 import { BackToHoje } from "@/components/BackToHoje";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { SubjectIconPicker } from "@/components/SubjectIconPicker";
 import { newId } from "@/lib/demo-store";
 import {
   DAYS,
@@ -638,6 +639,13 @@ export default function MateriasPage() {
                   )}
                 </div>
               </div>
+              <div className="mt-3">
+                <SubjectIconPicker
+                  name={s.name}
+                  value={s.icon}
+                  onChange={(icon) => upsertSubject({ ...s, icon })}
+                />
+              </div>
               <div className="mt-3 flex flex-wrap items-end gap-4">
                 {!free && (
                   <div>
@@ -690,7 +698,10 @@ export default function MateriasPage() {
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="mb-1.5 text-xs font-medium uppercase tracking-wider opacity-50">
-                    Só ela no dia
+                    Só hoje
+                  </p>
+                  <p className="mb-1.5 text-[11px] leading-snug opacity-50">
+                    Nestes dias só esta matéria aparece — ciclo pausado.
                   </p>
                   <ExclusiveDaysPicker
                     value={normalizeExclusiveDays(s.exclusive_days) ?? []}

@@ -471,6 +471,7 @@ export function SessionClock({
     ringSize: number,
     stroke: number,
     dense?: boolean,
+    soft = false,
   ) {
     return (
       <MiniRing
@@ -480,6 +481,7 @@ export function SessionClock({
         stroke={stroke}
         progress={1 - secondsForSidebar / sidebarTotal}
         accent="var(--signal)"
+        softRing={soft}
         active={sidebarRunning}
         paused={sidebarPaused}
         dense={dense}
@@ -572,12 +574,17 @@ export function SessionClock({
   if (livreOnly && compact) {
     return (
       <div className="px-2.5 py-2">
-        <div className="mb-2 flex items-center justify-between gap-2">
+        <div className="mb-1.5 flex items-center justify-between gap-2">
           {livreTabs}
         </div>
+        <p className="mb-2 text-[10px] leading-snug text-[color-mix(in_srgb,var(--ink)_50%,transparent)]">
+          {showStopwatch
+            ? "Sobe o tempo · conta em Foco hoje"
+            : "Desce com alarme · não marca Concluída · conta em Foco hoje"}
+        </p>
         {showStopwatch
           ? renderStopwatchRing(52, 4, true)
-          : renderSidebarRing(52, 4, true)}
+          : renderSidebarRing(52, 4, true, !sidebarRunning && !sidebarPaused)}
       </div>
     );
   }
@@ -611,29 +618,6 @@ export function SessionClock({
         onToggle={() => toggleTimer(t.id)}
         onReset={() => resetTimer(t.id)}
       />
-    );
-  }
-
-  if (livreOnly && compact) {
-    return (
-      <div className="px-2.5 py-2">
-        <MiniRing
-          display={formatTime(stopwatchSeconds)}
-          label="Cronômetro"
-          size={52}
-          stroke={4}
-          progress={1}
-          accent="var(--signal)"
-          softRing
-          dense
-          active={stopwatch.running}
-          paused={swPaused}
-          flash={flash?.id === "stopwatch" ? flash.kind : null}
-          flashKey={flash?.id === "stopwatch" ? flash.key : undefined}
-          onToggle={toggleStopwatch}
-          onReset={resetStopwatch}
-        />
-      </div>
     );
   }
 
@@ -699,27 +683,41 @@ export function SessionClock({
 
       <div key={mode} className="fade-in">
       {livreOnly ? (
-        showStopwatch ? (
-          <div
-            className={`flex justify-center ${stack ? "px-3 py-3" : "px-3 py-4"}`}
-          >
-            {renderStopwatchRing(
-              stack ? 124 : 112,
-              stack ? 4.5 : 4.5,
-            )}
-          </div>
-        ) : (
-          <div
-            className={`flex flex-col items-center ${stack ? "px-3 py-3" : "px-3 py-4"}`}
-          >
-            {sidebarTimerName !== "Temporizador" && (
-              <p className="mb-2 max-w-full truncate text-xs font-medium text-[color-mix(in_srgb,var(--ink)_55%,transparent)]">
-                {sidebarTimerName}
-              </p>
-            )}
-            {renderSidebarRing(stack ? 124 : 112, 4.5)}
-          </div>
-        )
+        <>
+          <p className="border-b border-[var(--line)] px-3 py-1.5 text-[11px] leading-snug text-[color-mix(in_srgb,var(--ink)_50%,transparent)]">
+            {showStopwatch
+              ? "Sobe o tempo · conta em Foco hoje"
+              : "Desce com alarme · não marca Concluída · conta em Foco hoje"}
+          </p>
+          {showStopwatch ? (
+            <div
+              className={`flex justify-center ${stack ? "px-3 py-3" : "px-3 py-4"}`}
+            >
+              {renderStopwatchRing(
+                stack ? 124 : 112,
+                stack ? 4.5 : 4.5,
+                false,
+                !stopwatch.running && !swPaused,
+              )}
+            </div>
+          ) : (
+            <div
+              className={`flex flex-col items-center ${stack ? "px-3 py-3" : "px-3 py-4"}`}
+            >
+              {sidebarTimerName !== "Temporizador" && (
+                <p className="mb-2 max-w-full truncate text-xs font-medium text-[color-mix(in_srgb,var(--ink)_55%,transparent)]">
+                  {sidebarTimerName}
+                </p>
+              )}
+              {renderSidebarRing(
+                stack ? 124 : 112,
+                4.5,
+                false,
+                !sidebarRunning && !sidebarPaused,
+              )}
+            </div>
+          )}
+        </>
       ) : showStopwatch ? (
         <div
           className={`flex justify-center ${livreOnly ? (stack ? "px-3 py-3" : "px-3 py-4") : stack ? "px-3 py-5" : "px-3 py-6"}`}

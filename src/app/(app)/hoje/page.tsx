@@ -9,14 +9,15 @@ import {
   SlidersHorizontal,
 } from "lucide-react";
 import { useApp } from "@/components/AppProvider";
-import { DAYS, STATUS_LABEL } from "@/lib/types";
+import { DAYS } from "@/lib/types";
 import {
   blockStyle,
+  cycleStatusPresentation,
+  exclusiveSubjectOnDay,
   freeRowClass,
   normalizeRotation,
+  nextCycleSubjectId,
   rotationWithItemNotes,
-  statusClass,
-  statusRowClass,
   subjectsOnDay,
   subjectTreatAsFree,
   todayIndex,
@@ -29,6 +30,7 @@ import { MonthCalendarDialog } from "@/components/MonthCalendar";
 import { AutoGrowTextarea } from "@/components/AutoGrowTextarea";
 import { StudySessionBar } from "@/components/StudySessionChrome";
 import { SessionSubjectClock } from "@/components/SessionSubjectClock";
+import { SubjectIcon } from "@/components/SubjectIcon";
 
 /** Com o ciclo grande, a semana encolhe para "só hoje" e o ciclo sobe. */
 const COMPACT_WEEK_THRESHOLD = 6;
@@ -59,6 +61,16 @@ export default function HojePage() {
     [data.subjects, day],
   );
 
+  const queueHeadId = useMemo(
+    () => nextCycleSubjectId(data.subjects, day),
+    [data.subjects, day],
+  );
+
+  const exclusiveTodaySubject = useMemo(
+    () => exclusiveSubjectOnDay(data.subjects, day),
+    [data.subjects, day],
+  );
+
   const todayBlocks = useMemo(
     () =>
       data.week_blocks
@@ -86,17 +98,17 @@ export default function HojePage() {
           {/* Agenda — só no desktop; no mobile fica na aba Agenda */}
           <section className="surface hidden overflow-hidden p-0 lg:block">
             <div
-              className="flex flex-wrap items-center justify-between gap-2 px-3.5 py-2.5 text-white md:px-5 md:py-3"
-              style={{
-                background:
-                  "linear-gradient(120deg, var(--signal), color-mix(in srgb, var(--signal) 55%, var(--accent-2)))",
-              }}
+              className={`flex flex-wrap items-center justify-between gap-2 px-3.5 py-2.5 md:px-5 md:py-3 ${
+                showFullWeek
+                  ? "border-b border-[var(--line)] bg-[var(--mist)]"
+                  : "border-b border-[color-mix(in_srgb,var(--signal)_18%,var(--line))] bg-[color-mix(in_srgb,var(--signal)_8%,var(--mist))]"
+              }`}
             >
               <button
                 type="button"
                 title="Abrir calendário do mês"
                 aria-label="Abrir calendário do mês"
-                className="font-display inline-flex min-h-10 items-center gap-2 rounded-[var(--radius-tag)] text-[15px] font-semibold tracking-tight transition hover:opacity-85 md:min-h-0 md:text-lg"
+                className="font-display inline-flex min-h-10 items-center gap-2 rounded-[var(--radius-tag)] text-[15px] font-semibold tracking-tight text-[var(--ink)] transition hover:text-[var(--signal)] md:min-h-0 md:text-lg"
                 onClick={() => setCalendarOpen(true)}
               >
                 <CalendarDays size={18} strokeWidth={2} />
@@ -114,7 +126,7 @@ export default function HojePage() {
                   aria-label={
                     showFullWeek ? "Mostrar só hoje" : "Mostrar semana toda"
                   }
-                  className="inline-flex min-h-10 items-center gap-1 rounded-full bg-white/15 px-3.5 py-2 text-sm font-medium transition hover:bg-white/25 md:min-h-0 md:rounded-[var(--radius-tag)] md:px-2 md:py-1 md:text-xs"
+                  className="inline-flex min-h-10 items-center gap-1 rounded-full bg-[color-mix(in_srgb,var(--ink)_8%,transparent)] px-3.5 py-2 text-sm font-medium text-[color-mix(in_srgb,var(--ink)_70%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--ink)_12%,transparent)] hover:text-[var(--ink)] md:min-h-0 md:rounded-[var(--radius-tag)] md:px-2 md:py-1 md:text-xs"
                   onClick={() => setWeekOverride(!showFullWeek)}
                 >
                   {showFullWeek ? (
@@ -189,7 +201,7 @@ export default function HojePage() {
                 </div>
               </div>
             ) : (
-              <div className="bg-[var(--signal-soft)]/50 px-3.5 py-2.5 md:px-5 md:py-3">
+              <div className="bg-[color-mix(in_srgb,var(--signal)_6%,var(--mist))] px-3.5 py-2.5 md:px-5 md:py-3">
                 <div className="flex flex-wrap items-center gap-2">
                   {todayBlocks.length === 0 && (
                     <p className="text-sm opacity-55">Nenhum bloco hoje.</p>
@@ -226,6 +238,21 @@ export default function HojePage() {
               </Link>
             </div>
 
+            {exclusiveTodaySubject ? (
+              <div className="border-b border-[color-mix(in_srgb,var(--signal)_20%,var(--line))] bg-[color-mix(in_srgb,var(--signal)_8%,var(--mist))] px-3.5 py-2.5 md:px-5">
+                <p className="text-sm font-medium text-[var(--ink)]">
+                  Hoje é só{" "}
+                  <span className="text-[var(--signal)]">
+                    {exclusiveTodaySubject.name}
+                  </span>{" "}
+                  — ciclo pausado
+                </p>
+                <p className="mt-0.5 text-xs text-[color-mix(in_srgb,var(--ink)_55%,transparent)]">
+                  Só anotações neste dia. Amanhã o ciclo volta como estava.
+                </p>
+              </div>
+            ) : null}
+
             <StudySessionBar />
 
             <div className="space-y-2 p-2.5 md:hidden">
@@ -234,18 +261,26 @@ export default function HojePage() {
                 const exclusiveToday = free && !s.is_free;
                 const rot = normalizeRotation(s.rotation);
                 const rotItem = rot ? rot.items[rot.index] : null;
+                const statusUi = free
+                  ? null
+                  : cycleStatusPresentation(s.status, s.id === queueHeadId);
                 return (
                   <div
                     key={s.id}
                     className={`rounded-[14px] px-3.5 py-3 ${
-                      free ? freeRowClass() : statusRowClass(s.status)
+                      free
+                        ? freeRowClass()
+                        : (statusUi?.rowClass ?? "")
                     }`}
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-2.5 gap-y-1">
-                        <p className="min-w-0 text-[15px] font-semibold leading-snug">
-                          {s.name}
-                        </p>
+                        <span className="inline-flex min-w-0 items-center gap-2">
+                          <SubjectIcon name={s.name} icon={s.icon} size={26} />
+                          <p className="min-w-0 text-[15px] font-semibold leading-snug">
+                            {s.name}
+                          </p>
+                        </span>
                         {rotItem && (
                           <span className="rounded-full bg-[var(--signal-soft)] px-2 py-0.5 text-[11px] font-medium text-[var(--signal)]">
                             Da vez: {rotItem.name}
@@ -253,15 +288,21 @@ export default function HojePage() {
                         )}
                         <SessionSubjectClock subjectId={s.id} compact />
                       </div>
-                      {!free && (
+                      {!free && statusUi && (
                         <span
-                          className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-medium ${statusClass(s.status)}`}
+                          className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-medium ${statusUi.chipClass}`}
                         >
-                          {STATUS_LABEL[s.status]}
+                          {statusUi.label}
                         </span>
                       )}
                       {free && (
-                        <span className="shrink-0 rounded-full bg-[var(--signal-soft)] px-2.5 py-1 text-[11px] font-medium text-[var(--signal)] ring-1 ring-[color-mix(in_srgb,var(--signal)_35%,transparent)]">
+                        <span
+                          className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-medium ring-1 ${
+                            exclusiveToday
+                              ? "bg-[color-mix(in_srgb,var(--ink)_6%,transparent)] text-[color-mix(in_srgb,var(--ink)_65%,transparent)] ring-[var(--line)]"
+                              : "bg-[var(--signal-soft)] text-[var(--signal)] ring-[color-mix(in_srgb,var(--signal)_35%,transparent)]"
+                          }`}
+                        >
                           {exclusiveToday ? "Só hoje" : "Livre"}
                         </span>
                       )}
@@ -327,6 +368,9 @@ export default function HojePage() {
                     const exclusiveToday = free && !s.is_free;
                     const rot = normalizeRotation(s.rotation);
                     const rotItem = rot ? rot.items[rot.index] : null;
+                    const statusUi = free
+                      ? null
+                      : cycleStatusPresentation(s.status, s.id === queueHeadId);
                     const rowBorder =
                       i < subjects.length - 1
                         ? "border-b-2 border-[var(--surface)]"
@@ -334,13 +378,20 @@ export default function HojePage() {
                     return (
                       <tr
                         key={s.id}
-                        className={`transition-colors ${free ? freeRowClass() : statusRowClass(s.status)}`}
+                        className={`transition-colors ${
+                          free
+                            ? freeRowClass()
+                            : (statusUi?.rowClass ?? "")
+                        }`}
                       >
                         <td
                           className={`break-words px-5 py-3 align-middle text-base font-medium leading-snug ${rowBorder}`}
                         >
                           <div className="flex flex-wrap items-baseline gap-x-2.5 gap-y-1">
-                            <span className="min-w-0">{s.name}</span>
+                            <span className="inline-flex min-w-0 items-center gap-2.5">
+                              <SubjectIcon name={s.name} icon={s.icon} size={28} />
+                              <span className="min-w-0">{s.name}</span>
+                            </span>
                             {rotItem && (
                               <span className="rounded-full bg-[var(--signal-soft)] px-2 py-0.5 text-[11px] font-medium text-[var(--signal)]">
                                 Da vez: {rotItem.name}
@@ -353,16 +404,22 @@ export default function HojePage() {
                           className={`py-3 pl-2 pr-2 align-middle ${rowBorder}`}
                         >
                           {free ? (
-                            <span className="inline-flex rounded-full bg-[var(--signal-soft)] px-2.5 py-1.5 text-xs font-medium text-[var(--signal)] ring-1 ring-[color-mix(in_srgb,var(--signal)_35%,transparent)]">
+                            <span
+                              className={`inline-flex rounded-full px-2.5 py-1.5 text-xs font-medium ring-1 ${
+                                exclusiveToday
+                                  ? "bg-[color-mix(in_srgb,var(--ink)_6%,transparent)] text-[color-mix(in_srgb,var(--ink)_65%,transparent)] ring-[var(--line)]"
+                                  : "bg-[var(--signal-soft)] text-[var(--signal)] ring-[color-mix(in_srgb,var(--signal)_35%,transparent)]"
+                              }`}
+                            >
                               {exclusiveToday ? "Só hoje" : "Livre"}
                             </span>
-                          ) : (
+                          ) : statusUi ? (
                             <span
-                              className={`inline-flex rounded-full px-2.5 py-1.5 text-xs font-medium ${statusClass(s.status)}`}
+                              className={`inline-flex rounded-full px-2.5 py-1.5 text-xs font-medium ${statusUi.chipClass}`}
                             >
-                              {STATUS_LABEL[s.status]}
+                              {statusUi.label}
                             </span>
-                          )}
+                          ) : null}
                         </td>
                         <td className={`px-5 py-3 align-middle ${rowBorder}`}>
                           <div className="flex min-h-[2.25rem] items-start">
