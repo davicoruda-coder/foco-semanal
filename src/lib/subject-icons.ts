@@ -106,10 +106,14 @@ export function guessSubjectIconPresetId(name: string): string | null {
 /** Fundo neutro claro — combina com o tile do app (claro e escuro). */
 export const SUBJECT_ICON_UPLOAD_BG = "#F4F3F8";
 
-/** Fração do tile ocupada pelo símbolo (resto = margem). */
-export const SUBJECT_ICON_GLYPH_RATIO = 0.76;
+/** Fração do tile para a imagem enviada.
+ *  Imagens do prompt já trazem margem (~12%); quase enche o tile. */
+export const SUBJECT_ICON_GLYPH_RATIO = 0.94;
 
-/** Redimensiona, centraliza com margem e comprime para data URL (JPEG). */
+/** No upload: quase preenche o canvas (a margem vem da arte). */
+const SUBJECT_ICON_UPLOAD_FILL = 0.98;
+
+/** Redimensiona, centraliza e comprime para data URL (JPEG). */
 export function fileToSubjectIconDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     if (!file.type.startsWith("image/")) {
@@ -134,8 +138,7 @@ export function fileToSubjectIconDataUrl(file: File): Promise<string> {
         ctx.fillStyle = SUBJECT_ICON_UPLOAD_BG;
         ctx.fillRect(0, 0, size, size);
 
-        // object-contain + margem (~12% cada lado → símbolo ~76%).
-        const pad = size * ((1 - SUBJECT_ICON_GLYPH_RATIO) / 2);
+        const pad = size * ((1 - SUBJECT_ICON_UPLOAD_FILL) / 2);
         const box = size - pad * 2;
         const scale = Math.min(box / img.width, box / img.height);
         const dw = img.width * scale;
