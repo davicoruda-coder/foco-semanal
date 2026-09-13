@@ -707,7 +707,7 @@ export function SessionClock({
               className={`flex justify-center ${stack ? "px-3 py-3" : "px-3 py-4"}`}
             >
               {renderStopwatchRing(
-                stack ? 108 : 100,
+                stack ? 120 : 116,
                 4,
                 false,
                 true,
@@ -723,7 +723,7 @@ export function SessionClock({
                 </p>
               )}
               {renderSidebarRing(
-                stack ? 108 : 100,
+                stack ? 120 : 116,
                 4,
                 false,
                 true,
