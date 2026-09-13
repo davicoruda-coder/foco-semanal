@@ -30,7 +30,7 @@ import {
   type StudyFlowPhase,
 } from "@/lib/study-flow-persist";
 import type { Subject } from "@/lib/types";
-import { subjectShowsOnDay, todayIndex } from "@/lib/utils";
+import { cycleSubjectsOnDay, todayIndex } from "@/lib/utils";
 
 export type { StudyFlowPhase };
 type StudyFlowContextValue = {
@@ -68,15 +68,7 @@ const StudyFlowContext = createContext<StudyFlowContextValue | null>(null);
 
 function todayQueue(subjects: Subject[]): Subject[] {
   const day = todayIndex();
-  return [...subjects]
-    .filter(
-      (s) =>
-        s.active &&
-        !s.is_free &&
-        s.status !== "ok" &&
-        subjectShowsOnDay(s, day),
-    )
-    .sort((a, b) => a.cycle_order - b.cycle_order);
+  return cycleSubjectsOnDay(subjects, day).filter((s) => s.status !== "ok");
 }
 
 export function StudyFlowProvider({ children }: { children: ReactNode }) {

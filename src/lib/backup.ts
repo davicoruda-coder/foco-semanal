@@ -17,7 +17,10 @@ import type {
 import {
   sanitizeCssColor,
   normalizeStudyDays,
+  normalizeExclusiveDays,
   normalizeRotation,
+  normalizeSidebarTimerName,
+  normalizeSidebarTimerMinutes,
 } from "@/lib/utils";
 
 export const MAX_BACKUP_BYTES = 1_048_576;
@@ -99,6 +102,11 @@ function parseSubject(raw: unknown, index: number): Subject | null {
     cycle_order: asInt(raw.cycle_order, index, 0, 9_999),
     active: asBool(raw.active, true),
     study_days: normalizeStudyDays(studyDaysRaw),
+    exclusive_days: normalizeExclusiveDays(
+      Array.isArray(raw.exclusive_days)
+        ? raw.exclusive_days.filter((d): d is number => typeof d === "number")
+        : null,
+    ),
     study_minutes: Math.min(999, Math.max(1, asInt(raw.study_minutes, 25, 1, 999))),
     is_free: asBool(raw.is_free, false),
     rotation: normalizeRotation(raw.rotation),
@@ -212,6 +220,13 @@ function parseSettings(raw: unknown): SessionSettings {
       defaults.break_long_minutes,
       1,
       120,
+    ),
+    sidebar_timer_name: normalizeSidebarTimerName(
+      raw.sidebar_timer_name ?? defaults.sidebar_timer_name,
+    ),
+    sidebar_timer_minutes: normalizeSidebarTimerMinutes(
+      raw.sidebar_timer_minutes,
+      defaults.sidebar_timer_minutes,
     ),
   };
 }

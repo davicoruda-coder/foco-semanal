@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { useTimerRuntime } from "@/components/TimerRuntimeProvider";
+import { SIDEBAR_TIMER_ID, useTimerRuntime } from "@/components/TimerRuntimeProvider";
 import {
   dateKey,
   formatFocusDuration,
@@ -32,7 +32,8 @@ export function FocusTodayCard({
         ([id, r]) => id.startsWith("sub:") && r.running,
       ) ||
       Object.values(subjectStopwatches).some((s) => s.running) ||
-      stopwatch.running,
+      stopwatch.running ||
+      Boolean(runtime[SIDEBAR_TIMER_ID]?.running),
     [runtime, subjectStopwatches, stopwatch.running],
   );
 

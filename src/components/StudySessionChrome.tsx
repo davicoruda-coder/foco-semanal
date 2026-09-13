@@ -8,9 +8,11 @@ import { useApp } from "@/components/AppProvider";
 import { useStudyFlow } from "@/components/StudyFlowProvider";
 import type { RotationItem, Subject } from "@/lib/types";
 import {
+  exclusiveSubjectOnDay,
   normalizeRotation,
   rotationJustStudied,
   rotationWithItemNotes,
+  todayIndex,
 } from "@/lib/utils";
 
 function formatClock(totalSeconds: number) {
@@ -59,6 +61,10 @@ function NotesBlock({
 /** CTA / status da sessão — fica dentro do card Ciclo de Estudos. */
 export function StudySessionBar() {
   const flow = useStudyFlow();
+  const { data } = useApp();
+  const exclusiveToday = Boolean(
+    exclusiveSubjectOnDay(data.subjects, todayIndex()),
+  );
 
   if (
     flow.phase !== "idle" &&
@@ -69,6 +75,7 @@ export function StudySessionBar() {
   }
 
   if (flow.phase === "idle") {
+    if (exclusiveToday) return null;
     return (
       <div className="border-b border-[var(--line)] px-4 py-2.5 md:px-5">
         <button

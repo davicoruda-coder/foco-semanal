@@ -1,5 +1,5 @@
 import type { AppData } from "./types";
-import { normalizeRotation } from "./utils";
+import { normalizeRotation, normalizeExclusiveDays, normalizeSidebarTimerName, normalizeSidebarTimerMinutes } from "./utils";
 
 function id(_prefix: string) {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
@@ -20,6 +20,8 @@ export function createDefaultData(): AppData {
       focus_minutes: 40,
       break_short_minutes: 5,
       break_long_minutes: 20,
+      sidebar_timer_name: "Temporizador",
+      sidebar_timer_minutes: 40,
     },
     timers: [
       {
@@ -87,6 +89,11 @@ export function loadDemoData(): AppData {
       study_days: Array.isArray(s.study_days)
         ? s.study_days.filter((d): d is number => typeof d === "number")
         : null,
+      exclusive_days: normalizeExclusiveDays(
+        Array.isArray(s.exclusive_days)
+          ? s.exclusive_days.filter((d): d is number => typeof d === "number")
+          : null,
+      ),
       study_minutes:
         typeof s.study_minutes === "number" && s.study_minutes >= 1
           ? Math.min(999, Math.floor(s.study_minutes))
@@ -114,6 +121,8 @@ export function loadDemoData(): AppData {
         focus_minutes: 40,
         break_short_minutes: 5,
         break_long_minutes: 20,
+        sidebar_timer_name: "Temporizador",
+        sidebar_timer_minutes: 40,
       };
       data.timers = [
         {
@@ -132,6 +141,17 @@ export function loadDemoData(): AppData {
         },
       ];
     }
+    data.session_settings = {
+      focus_minutes: data.session_settings?.focus_minutes ?? 40,
+      break_short_minutes: data.session_settings?.break_short_minutes ?? 5,
+      break_long_minutes: data.session_settings?.break_long_minutes ?? 20,
+      sidebar_timer_name: normalizeSidebarTimerName(
+        data.session_settings?.sidebar_timer_name,
+      ),
+      sidebar_timer_minutes: normalizeSidebarTimerMinutes(
+        data.session_settings?.sidebar_timer_minutes,
+      ),
+    };
     const main = (data.timers ?? []).find((t) => t.sort_order === 0);
     if (main?.name === "Sessão") {
       data.timers = data.timers.map((t) =>

@@ -17,7 +17,8 @@ import {
   rotationWithItemNotes,
   statusClass,
   statusRowClass,
-  subjectShowsOnDay,
+  subjectsOnDay,
+  subjectTreatAsFree,
   todayIndex,
 } from "@/lib/utils";
 import { ReminderWatcher } from "@/components/ReminderWatcher";
@@ -49,14 +50,12 @@ export default function HojePage() {
 
   const subjects = useMemo(
     () =>
-      [...data.subjects]
-        .filter((s) => s.active && subjectShowsOnDay(s, day))
-        .sort((a, b) => {
-          const freeA = Number(Boolean(a.is_free));
-          const freeB = Number(Boolean(b.is_free));
-          if (freeA !== freeB) return freeB - freeA;
-          return a.cycle_order - b.cycle_order;
-        }),
+      [...subjectsOnDay(data.subjects, day)].sort((a, b) => {
+        const freeA = Number(subjectTreatAsFree(a, day));
+        const freeB = Number(subjectTreatAsFree(b, day));
+        if (freeA !== freeB) return freeB - freeA;
+        return a.cycle_order - b.cycle_order;
+      }),
     [data.subjects, day],
   );
 
@@ -231,7 +230,8 @@ export default function HojePage() {
 
             <div className="space-y-2 p-2.5 md:hidden">
               {subjects.map((s) => {
-                const free = Boolean(s.is_free);
+                const free = subjectTreatAsFree(s, day);
+                const exclusiveToday = free && !s.is_free;
                 const rot = normalizeRotation(s.rotation);
                 const rotItem = rot ? rot.items[rot.index] : null;
                 return (
@@ -262,7 +262,7 @@ export default function HojePage() {
                       )}
                       {free && (
                         <span className="shrink-0 rounded-full bg-[var(--signal-soft)] px-2.5 py-1 text-[11px] font-medium text-[var(--signal)] ring-1 ring-[color-mix(in_srgb,var(--signal)_35%,transparent)]">
-                          Livre
+                          {exclusiveToday ? "Só hoje" : "Livre"}
                         </span>
                       )}
                     </div>
@@ -323,7 +323,8 @@ export default function HojePage() {
                 </thead>
                 <tbody>
                   {subjects.map((s, i) => {
-                    const free = Boolean(s.is_free);
+                    const free = subjectTreatAsFree(s, day);
+                    const exclusiveToday = free && !s.is_free;
                     const rot = normalizeRotation(s.rotation);
                     const rotItem = rot ? rot.items[rot.index] : null;
                     const rowBorder =
@@ -353,7 +354,7 @@ export default function HojePage() {
                         >
                           {free ? (
                             <span className="inline-flex rounded-full bg-[var(--signal-soft)] px-2.5 py-1.5 text-xs font-medium text-[var(--signal)] ring-1 ring-[color-mix(in_srgb,var(--signal)_35%,transparent)]">
-                              Livre
+                              {exclusiveToday ? "Só hoje" : "Livre"}
                             </span>
                           ) : (
                             <span

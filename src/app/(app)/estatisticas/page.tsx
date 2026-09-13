@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight, Download, Plus } from "lucide-react";
 import { useApp } from "@/components/AppProvider";
-import { useTimerRuntime } from "@/components/TimerRuntimeProvider";
+import { SIDEBAR_TIMER_ID, useTimerRuntime } from "@/components/TimerRuntimeProvider";
 import { BackToHoje } from "@/components/BackToHoje";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { DialogFrame } from "@/components/DialogFrame";
@@ -113,8 +113,8 @@ function shiftPeriod(date: Date, range: Range, amount: number): Date {
 }
 
 export default function EstatisticasPage() {
-  const { data, user } = useApp();
-  const { runtime, stopwatch } = useTimerRuntime();
+  const { user } = useApp();
+  const { runtime, stopwatch, subjectStopwatches } = useTimerRuntime();
   const [range, setRange] = useState<Range>("semana");
   const [referenceDate, setReferenceDate] = useState(() => new Date());
   const [log, setLog] = useState<FocusLog>({ version: 1, days: {} });
@@ -177,14 +177,13 @@ export default function EstatisticasPage() {
     };
   }, [user]);
 
-  const session = useMemo(
-    () =>
-      [...(data.timers ?? [])].sort((a, b) => a.sort_order - b.sort_order)[0] ??
-      null,
-    [data.timers],
-  );
   const tracking =
-    Boolean(session && runtime[session.id]?.running) || stopwatch.running;
+    Object.entries(runtime).some(
+      ([id, r]) =>
+        r.running && (id === SIDEBAR_TIMER_ID || id.startsWith("sub:")),
+    ) ||
+    stopwatch.running ||
+    Object.values(subjectStopwatches).some((s) => s.running);
 
   const currentDay = getDay(log, dateKey());
   const currentWeek = useMemo(() => weekSeries(log), [log]);

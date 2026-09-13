@@ -22,7 +22,11 @@ import {
 import { addFocusSeconds, commitFocusDisplaySnapshot } from "@/lib/focus-log";
 import { syncFocusLogWithCloud } from "@/lib/supabase/focus-sync";
 import { emitSubjectComplete } from "@/lib/study-flow-events";
-import { subjectShowsOnDay, todayIndex } from "@/lib/utils";
+import {
+  cycleSubjectsOnDay,
+  normalizeSidebarTimerMinutes,
+  todayIndex,
+} from "@/lib/utils";
 
 export type TimerRuntime = {
   secondsLeft: number;
@@ -65,6 +69,11 @@ type TimerRuntimeContextValue = {
   stopwatchSeconds: number;
   toggleStopwatch: () => void;
   resetStopwatch: () => void;
+  toggleSidebarTimer: () => void;
+  resetSidebarTimer: () => void;
+  secondsForSidebar: number;
+  sidebarTimerName: string;
+  sidebarTimerMinutes: number;
   /** Relógios já lidos do aparelho. */
   clocksReady: boolean;
 };
@@ -77,6 +86,8 @@ const SUBJECT_SW_KEY = "foco_semanal_subject_stopwatch_v1";
 /** Backup no aparelho enquanto roda — a tela usa o relógio, não este intervalo. */
 const PERSIST_MS = 5000;
 export const SUBJECT_TIMER_PREFIX = "sub:";
+/** Temporizador da lateral (Hoje) — countdown que não mexe no ciclo. */
+export const SIDEBAR_TIMER_ID = "sidebar";
 
 export function subjectTimerKey(subjectId: string) {
   return `${SUBJECT_TIMER_PREFIX}${subjectId}`;
@@ -219,6 +230,11 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
   const { data, addStudySession, setSubjectStatus, ready: appReady } = useApp();
   const timers = data.timers ?? [];
   const subjects = data.subjects ?? [];
+  const sidebarTimerName =
+    data.session_settings?.sidebar_timer_name?.trim() || "Temporizador";
+  const sidebarTimerMinutes = normalizeSidebarTimerMinutes(
+    data.session_settings?.sidebar_timer_minutes,
+  );
   const [runtime, setRuntime] = useState<Record<string, TimerRuntime>>({});
   const [stopwatch, setStopwatch] = useState<StopwatchState>(DEFAULT_STOPWATCH);
   const [subjectStopwatches, setSubjectStopwatches] = useState<
@@ -329,7 +345,7 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
       const next: Record<string, TimerRuntime> = {};
       // Mantém timers de matéria (não são da lista de FocusTimer).
       for (const [id, r] of Object.entries(prev)) {
-        if (isSubjectTimerKey(id)) next[id] = r;
+        if (isSubjectTimerKey(id) || id === SIDEBAR_TIMER_ID) next[id] = r;
       }
       const claimed = new Set<string>();
 
@@ -469,6 +485,62 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
     });
   }, [subjects, ready, appReady]);
 
+  // Alinha o temporizador da lateral à duração em Ajustes.
+  useEffect(() => {
+    if (!ready || !appReady) return;
+    const minutes = sidebarTimerMinutes;
+    const full = Math.max(1, minutes) * 60;
+
+    setRuntime((prev) => {
+      const existing = prev[SIDEBAR_TIMER_ID];
+      let nextState: TimerRuntime;
+
+      if (!existing) {
+        nextState = {
+          secondsLeft: full,
+          running: false,
+          endsAt: null,
+          startedAt: null,
+        };
+      } else if (existing.running && existing.endsAt) {
+        const left = liveSeconds(existing, minutes);
+        nextState =
+          left <= 0
+            ? { ...existing, secondsLeft: 0 }
+            : { ...existing, secondsLeft: left };
+      } else if (!existing.startedAt) {
+        nextState = {
+          secondsLeft: full,
+          running: false,
+          endsAt: null,
+          startedAt: null,
+        };
+      } else {
+        const left = Math.min(full, Math.max(0, existing.secondsLeft));
+        nextState = {
+          secondsLeft: left,
+          running: false,
+          endsAt: null,
+          startedAt: existing.startedAt,
+        };
+      }
+
+      if (
+        existing &&
+        existing.secondsLeft === nextState.secondsLeft &&
+        existing.running === nextState.running &&
+        existing.endsAt === nextState.endsAt &&
+        existing.startedAt === nextState.startedAt
+      ) {
+        return prev;
+      }
+
+      const next = { ...prev, [SIDEBAR_TIMER_ID]: nextState };
+      writeStored(next);
+      return next;
+    });
+  }, [sidebarTimerMinutes, ready, appReady]);
+
   // Alinha cronômetros Livre: só matérias is_free; remove órfãos parados.
   useEffect(() => {
     if (!ready || !appReady) return;
@@ -511,11 +583,12 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
   const anyRunning =
     anyTimerRunning || stopwatch.running || anySubjectStopwatchRunning;
 
-  // Conta foco: sessão (timers das matérias) ou cronômetro Livre da lateral.
+  // Conta foco: matéria em play, cronômetro Livre da lateral ou temporizador da lateral.
   const trackingFocus = useMemo(
     () =>
       Object.entries(runtime).some(
-        ([id, r]) => isSubjectTimerKey(id) && r.running,
+        ([id, r]) =>
+          r.running && (isSubjectTimerKey(id) || id === SIDEBAR_TIMER_ID),
       ) ||
       anySubjectStopwatchRunning ||
       stopwatch.running,
@@ -742,9 +815,7 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
 
       if (t.sort_order === 0) {
         const day = todayIndex();
-        const todaySubjects = [...data.subjects]
-          .filter((s) => s.active && !s.is_free && subjectShowsOnDay(s, day))
-          .sort((a, b) => a.cycle_order - b.cycle_order);
+        const todaySubjects = cycleSubjectsOnDay(data.subjects, day);
         const next =
           todaySubjects.find((s) => s.status === "prox") ??
           todaySubjects[0] ??
@@ -761,6 +832,35 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
             completed: true,
           });
         }
+      }
+    }
+
+    const sidebar = runtime[SIDEBAR_TIMER_ID];
+    if (!sidebar?.running) {
+      if (sidebar && sidebar.secondsLeft > 0) {
+        doneRef.current[SIDEBAR_TIMER_ID] = false;
+      }
+    } else {
+      const left = liveSeconds(sidebar, sidebarTimerMinutes);
+      if (left > 0) {
+        doneRef.current[SIDEBAR_TIMER_ID] = false;
+      } else if (!doneRef.current[SIDEBAR_TIMER_ID]) {
+        doneRef.current[SIDEBAR_TIMER_ID] = true;
+        setRuntime((prev) => {
+          const updated = {
+            ...prev,
+            [SIDEBAR_TIMER_ID]: {
+              secondsLeft: 0,
+              running: false,
+              endsAt: null,
+              startedAt: null,
+            },
+          };
+          writeStored(updated);
+          return updated;
+        });
+        playAlarmTone();
+        notify("Foco Semanal", `${sidebarTimerName} concluído`);
       }
     }
 
@@ -812,6 +912,8 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
     data.subjects,
     addStudySession,
     setSubjectStatus,
+    sidebarTimerMinutes,
+    sidebarTimerName,
   ]);
 
   const showFlash = useCallback((id: string, kind: FlashKind) => {
@@ -872,6 +974,54 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
     [subjects],
   );
 
+  const pauseSidebarTimer = useCallback(
+    (prev: Record<string, TimerRuntime>) => {
+      const r = prev[SIDEBAR_TIMER_ID];
+      if (!r?.running) return prev;
+      const left = liveSeconds(r, sidebarTimerMinutes);
+      return {
+        ...prev,
+        [SIDEBAR_TIMER_ID]: {
+          secondsLeft: left,
+          running: false,
+          endsAt: null,
+          startedAt: r.startedAt,
+        },
+      };
+    },
+    [sidebarTimerMinutes],
+  );
+
+  const pauseOthersForSidebar = useCallback(
+    (prev: Record<string, TimerRuntime>) => {
+      const next = { ...prev };
+      for (const [id, r] of Object.entries(prev)) {
+        if (id === SIDEBAR_TIMER_ID || !r.running) continue;
+        const minutes = isSubjectTimerKey(id)
+          ? Math.max(
+              1,
+              subjects.find((s) => s.id === subjectIdFromKey(id))
+                ?.study_minutes ?? 25,
+            )
+          : Math.max(
+              1,
+              timers.find((t) => t.id === id)?.minutes ?? 25,
+            );
+        const left = liveSeconds(r, minutes);
+        next[id] = {
+          secondsLeft: left,
+          running: false,
+          endsAt: null,
+          startedAt: r.startedAt,
+          sortOrder: r.sortOrder,
+        };
+      }
+      linkedPausedSubjectsRef.current = [];
+      return next;
+    },
+    [subjects, timers],
+  );
+
   const toggleTimer = useCallback(
     (id: string) => {
       const def = timers.find((t) => t.id === id);
@@ -905,6 +1055,7 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
             },
           };
           if (isSession) updated = resumeLinkedSubjects(updated);
+          updated = pauseSidebarTimer(updated);
           writeStored(updated);
           writeHeartbeat();
           return updated;
@@ -935,12 +1086,13 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
             ? resumeLinkedSubjects(updated)
             : pauseLinkedSubjects(updated);
         }
+        if (willRun) updated = pauseSidebarTimer(updated);
         writeStored(updated);
         if (willRun) writeHeartbeat();
         return updated;
       });
     },
-    [timers, showFlash, pauseLinkedSubjects, resumeLinkedSubjects],
+    [timers, showFlash, pauseLinkedSubjects, resumeLinkedSubjects, pauseSidebarTimer],
   );
 
   const resetTimer = useCallback(
@@ -981,6 +1133,9 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
 
       // Matéria Livre: cronômetro que sobe (sem Concluída).
       if (sub.is_free) {
+        const freeWillRun = !(
+          subjectStopwatchesRef.current[subjectId] ?? DEFAULT_STOPWATCH
+        ).running;
         setSubjectStopwatches((prev) => {
           const current = prev[subjectId] ?? DEFAULT_STOPWATCH;
           const willRun = !current.running;
@@ -1010,7 +1165,7 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
         // Um de cada vez: pausa countdowns de outras matérias.
         setRuntime((prev) => {
           let changed = false;
-          const next = { ...prev };
+          let next = { ...prev };
           for (const [id, r] of Object.entries(prev)) {
             if (!isSubjectTimerKey(id) || !r.running) continue;
             const otherId = subjectIdFromKey(id);
@@ -1024,6 +1179,13 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
               startedAt: r.startedAt,
             };
             changed = true;
+          }
+          if (freeWillRun) {
+            const paused = pauseSidebarTimer(next);
+            if (paused !== next) {
+              next = paused;
+              changed = true;
+            }
           }
           if (!changed) return prev;
           linkedPausedSubjectsRef.current = [];
@@ -1097,12 +1259,13 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
             endsAt: Date.now() + full * 1000,
             startedAt: new Date().toISOString(),
           };
+          const paused = pauseSidebarTimer(next);
           linkedPausedSubjectsRef.current =
             linkedPausedSubjectsRef.current.filter((id) => id === key);
-          runtimeRef.current = next;
-          writeStored(next);
+          runtimeRef.current = paused;
+          writeStored(paused);
           writeHeartbeat();
-          return next;
+          return paused;
         }
 
         const willRun = !current.running;
@@ -1143,13 +1306,14 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
             linkedPausedSubjectsRef.current.filter((id) => id !== key);
         }
 
-        runtimeRef.current = next;
-        writeStored(next);
+        const stored = willRun ? pauseSidebarTimer(next) : next;
+        runtimeRef.current = stored;
+        writeStored(stored);
         if (willRun) writeHeartbeat();
-        return next;
+        return stored;
       });
     },
-    [subjects, showFlash],
+    [subjects, showFlash, pauseSidebarTimer],
   );
 
   const resetSubjectTimer = useCallback(
@@ -1230,19 +1394,115 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
       return next;
     });
     setRuntime((prev) => {
-      const updated = wasRunning
+      let updated = wasRunning
         ? pauseLinkedSubjects(prev)
         : resumeLinkedSubjects(prev);
+      if (!wasRunning) updated = pauseSidebarTimer(updated);
       if (updated !== prev) writeStored(updated);
       return updated;
     });
-  }, [showFlash, pauseLinkedSubjects, resumeLinkedSubjects]);
+  }, [showFlash, pauseLinkedSubjects, resumeLinkedSubjects, pauseSidebarTimer]);
 
   const resetStopwatch = useCallback(() => {
     const next = DEFAULT_STOPWATCH;
     writeStopwatch(next);
     setStopwatch(next);
   }, []);
+
+  const secondsForSidebar = liveSeconds(
+    runtime[SIDEBAR_TIMER_ID],
+    sidebarTimerMinutes,
+  );
+
+  const toggleSidebarTimer = useCallback(() => {
+    setStopwatch((prev) => {
+      if (!prev.running) return prev;
+      const next = pauseStopwatchState(prev);
+      writeStopwatch(next);
+      return next;
+    });
+    setSubjectStopwatches((prev) => {
+      let changed = false;
+      const next: Record<string, StopwatchState> = { ...prev };
+      for (const [id, s] of Object.entries(prev)) {
+        if (!s.running) continue;
+        next[id] = pauseStopwatchState(s);
+        changed = true;
+      }
+      if (!changed) return prev;
+      subjectStopwatchesRef.current = next;
+      writeSubjectStopwatches(next);
+      return next;
+    });
+    setRuntime((prev) => {
+      const minutes = sidebarTimerMinutes;
+      const current =
+        prev[SIDEBAR_TIMER_ID] ??
+        ({
+          secondsLeft: minutes * 60,
+          running: false,
+          endsAt: null,
+          startedAt: null,
+        } satisfies TimerRuntime);
+      const left = liveSeconds(current, minutes);
+      if (left <= 0 && !current.running) {
+        doneRef.current[SIDEBAR_TIMER_ID] = false;
+        const full = minutes * 60;
+        showFlash(SIDEBAR_TIMER_ID, "play");
+        const updated = pauseOthersForSidebar({
+          ...prev,
+          [SIDEBAR_TIMER_ID]: {
+            secondsLeft: full,
+            running: true,
+            endsAt: Date.now() + full * 1000,
+            startedAt: new Date().toISOString(),
+          },
+        });
+        writeStored(updated);
+        writeHeartbeat();
+        return updated;
+      }
+      const willRun = !current.running;
+      showFlash(SIDEBAR_TIMER_ID, willRun ? "play" : "pause");
+      let updated: Record<string, TimerRuntime> = {
+        ...prev,
+        [SIDEBAR_TIMER_ID]: willRun
+          ? {
+              secondsLeft: left,
+              running: true,
+              endsAt: Date.now() + left * 1000,
+              startedAt: current.startedAt ?? new Date().toISOString(),
+            }
+          : {
+              secondsLeft: left,
+              running: false,
+              endsAt: null,
+              startedAt: current.startedAt,
+            },
+      };
+      if (willRun) updated = pauseOthersForSidebar(updated);
+      writeStored(updated);
+      if (willRun) writeHeartbeat();
+      return updated;
+    });
+  }, [showFlash, sidebarTimerMinutes, pauseOthersForSidebar]);
+
+  const resetSidebarTimer = useCallback(() => {
+    doneRef.current[SIDEBAR_TIMER_ID] = false;
+    setRuntime((prev) => {
+      const updated = {
+        ...prev,
+        [SIDEBAR_TIMER_ID]: {
+          secondsLeft: sidebarTimerMinutes * 60,
+          running: false,
+          endsAt: null,
+          startedAt: null,
+        },
+      };
+      writeStored(updated);
+      return updated;
+    });
+  }, [sidebarTimerMinutes]);
 
   const value = useMemo(
     () => ({
@@ -1262,6 +1522,11 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
       stopwatchSeconds,
       toggleStopwatch,
       resetStopwatch,
+      toggleSidebarTimer,
+      resetSidebarTimer,
+      secondsForSidebar,
+      sidebarTimerName,
+      sidebarTimerMinutes,
       clocksReady: ready,
     }),
     [
@@ -1280,6 +1545,11 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
       stopwatchSeconds,
       toggleStopwatch,
       resetStopwatch,
+      toggleSidebarTimer,
+      resetSidebarTimer,
+      secondsForSidebar,
+      sidebarTimerName,
+      sidebarTimerMinutes,
       ready,
     ],
   );

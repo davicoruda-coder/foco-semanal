@@ -145,6 +145,102 @@ export function subjectShowsOnDay(
   return days.includes(day);
 }
 
+/** Normaliza dias exclusivos: null/vazio = nenhum. 1–7 dias válidos. */
+export function normalizeExclusiveDays(
+  days: number[] | null | undefined,
+): number[] | null {
+  if (!days?.length) return null;
+  const uniq = [
+    ...new Set(
+      days.filter((d) => Number.isInteger(d) && d >= 0 && d <= 6),
+    ),
+  ].sort((a, b) => a - b);
+  return uniq.length === 0 ? null : uniq;
+}
+
+export function subjectExclusiveOnDay(
+  subject: Pick<Subject, "exclusive_days">,
+  day: number,
+): boolean {
+  return Boolean(normalizeExclusiveDays(subject.exclusive_days)?.includes(day));
+}
+
+/** Matéria ativa que toma o dia (a de menor cycle_order, se houver empate). */
+export function exclusiveSubjectOnDay(
+  subjects: Pick<Subject, "id" | "active" | "exclusive_days" | "cycle_order">[],
+  day: number,
+): (typeof subjects)[number] | null {
+  const matches = subjects.filter(
+    (s) => s.active && subjectExclusiveOnDay(s, day),
+  );
+  if (!matches.length) return null;
+  return [...matches].sort((a, b) => a.cycle_order - b.cycle_order)[0] ?? null;
+}
+
+/** Livre permanente, ou o dia exclusivo dela. */
+export function subjectTreatAsFree(
+  subject: Pick<Subject, "is_free" | "exclusive_days">,
+  day: number,
+): boolean {
+  return Boolean(subject.is_free) || subjectExclusiveOnDay(subject, day);
+}
+
+/** Matérias visíveis no Hoje: dia exclusivo esconde as outras. */
+export function subjectsOnDay<T extends Subject>(
+  subjects: T[],
+  day: number,
+): T[] {
+  const exclusive = exclusiveSubjectOnDay(subjects, day);
+  if (exclusive) {
+    const found = subjects.find((s) => s.id === exclusive.id);
+    return found ? [found] : [];
+  }
+  return subjects.filter(
+    (s) =>
+      s.active &&
+      (subjectShowsOnDay(s, day) || subjectExclusiveOnDay(s, day)),
+  );
+}
+
+/** Fila do ciclo (Concluída/Próxima). Vazia num dia exclusivo. */
+export function cycleSubjectsOnDay<T extends Subject>(
+  subjects: T[],
+  day: number,
+): T[] {
+  if (exclusiveSubjectOnDay(subjects, day)) return [];
+  return [...subjects]
+    .filter((s) => s.active && !s.is_free && subjectShowsOnDay(s, day))
+    .sort((a, b) => a.cycle_order - b.cycle_order);
+}
+
+export function withoutExclusiveDays(
+  days: number[] | null | undefined,
+  taken: number[],
+): number[] | null {
+  if (!taken.length) return normalizeExclusiveDays(days);
+  const takenSet = new Set(taken);
+  return normalizeExclusiveDays(
+    (normalizeExclusiveDays(days) ?? []).filter((d) => !takenSet.has(d)),
+  );
+}
+
+export const DEFAULT_SIDEBAR_TIMER_NAME = "Temporizador";
+
+export function normalizeSidebarTimerName(raw: unknown): string {
+  if (typeof raw !== "string") return DEFAULT_SIDEBAR_TIMER_NAME;
+  const t = raw.trim().slice(0, 40);
+  return t || DEFAULT_SIDEBAR_TIMER_NAME;
+}
+
+export function normalizeSidebarTimerMinutes(
+  raw: unknown,
+  fallback = 40,
+): number {
+  const n = typeof raw === "number" ? raw : Number(raw);
+  if (!Number.isFinite(n) || n < 1) return fallback;
+  return Math.min(180, Math.floor(n));
+}
+
 const ROTATION_MAX_ITEMS = 30;
 const ROTATION_MAX_NAME = 80;
 const ROTATION_MAX_NOTES = 4000;

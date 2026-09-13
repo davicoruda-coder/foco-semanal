@@ -12,7 +12,7 @@ import type {
   ThemePref,
   WeekBlock,
 } from "@/lib/types";
-import { normalizeStudyDays, normalizeRotation } from "@/lib/utils";
+import { normalizeStudyDays, normalizeExclusiveDays, normalizeRotation, normalizeSidebarTimerName, normalizeSidebarTimerMinutes } from "@/lib/utils";
 
 type Client = SupabaseClient;
 
@@ -159,6 +159,9 @@ export async function loadCloudData(
     cycle_order: s.cycle_order ?? 0,
     active: s.active ?? true,
     study_days: normalizeStudyDays(s.study_days as number[] | null | undefined),
+    exclusive_days: normalizeExclusiveDays(
+      s.exclusive_days as number[] | null | undefined,
+    ),
     study_minutes: normalizeStudyMinutes(s.study_minutes, 25),
     is_free: Boolean(s.is_free),
     rotation: normalizeRotation(s.rotation),
@@ -185,6 +188,12 @@ export async function loadCloudData(
         focus_minutes: settingsRes.data.focus_minutes,
         break_short_minutes: settingsRes.data.break_short_minutes,
         break_long_minutes: settingsRes.data.break_long_minutes,
+        sidebar_timer_name: normalizeSidebarTimerName(
+          settingsRes.data.sidebar_timer_name,
+        ),
+        sidebar_timer_minutes: normalizeSidebarTimerMinutes(
+          settingsRes.data.sidebar_timer_minutes,
+        ),
       }
     : defaults.session_settings;
 
@@ -355,6 +364,7 @@ export async function saveCloudData(
       cycle_order: s.cycle_order,
       active: s.active,
       study_days: normalizeStudyDays(s.study_days),
+      exclusive_days: normalizeExclusiveDays(s.exclusive_days),
       study_minutes: normalizeStudyMinutes(s.study_minutes, 25),
       is_free: Boolean(s.is_free),
       rotation: normalizeRotation(s.rotation),

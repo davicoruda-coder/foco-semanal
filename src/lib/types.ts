@@ -40,6 +40,12 @@ export interface Subject {
    * `null` = todos os dias.
    */
   study_days: number[] | null;
+  /**
+   * Dias em que esta matéria é a única do dia (0=Seg … 6=Dom).
+   * Nesse dia vale só anotações — o ciclo não avança.
+   * `null` = nenhum dia exclusivo.
+   */
+  exclusive_days: number[] | null;
   /** Minutos do temporizador desta matéria (play no ciclo). */
   study_minutes: number;
   /**
@@ -109,6 +115,10 @@ export interface SessionSettings {
   focus_minutes: number;
   break_short_minutes: number;
   break_long_minutes: number;
+  /** Nome do temporizador da lateral (Hoje). */
+  sidebar_timer_name: string;
+  /** Duração em minutos do temporizador da lateral. */
+  sidebar_timer_minutes: number;
 }
 
 /** Temporizadores da tela principal (Bloco, Estudo, …) */

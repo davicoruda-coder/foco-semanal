@@ -25,6 +25,11 @@ import {
   type BlockRangeSettings,
 } from "@/lib/session-block";
 import type { ThemePref } from "@/lib/types";
+import {
+  DEFAULT_SIDEBAR_TIMER_NAME,
+  normalizeSidebarTimerMinutes,
+  normalizeSidebarTimerName,
+} from "@/lib/utils";
 
 const OPTIONS: { value: ThemePref; label: string; icon: typeof Sun }[] = [
   { value: "light", label: "Claro", icon: Sun },
@@ -222,6 +227,8 @@ export default function AjustesPage() {
       </section>
 
       <SessionBlockSettings />
+
+      <SidebarTimerSettings />
 
       <AlarmSettings />
 
@@ -447,6 +454,85 @@ export default function AjustesPage() {
         </div>
       </section>
     </div>
+  );
+}
+
+function SidebarTimerSettings() {
+  const { data, updateSettings } = useApp();
+  const name =
+    data.session_settings?.sidebar_timer_name ?? DEFAULT_SIDEBAR_TIMER_NAME;
+  const minutes = normalizeSidebarTimerMinutes(
+    data.session_settings?.sidebar_timer_minutes,
+  );
+  const [draftName, setDraftName] = useState(name);
+  const [draftMinutes, setDraftMinutes] = useState(String(minutes));
+  const [savedMsg, setSavedMsg] = useState<string | null>(null);
+
+  useEffect(() => {
+    setDraftName(name);
+    setDraftMinutes(String(minutes));
+  }, [name, minutes]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (window.location.hash !== "#temporizador") return;
+    document
+      .getElementById("temporizador")
+      ?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, []);
+
+  function onSave() {
+    updateSettings({
+      sidebar_timer_name: normalizeSidebarTimerName(draftName),
+      sidebar_timer_minutes: normalizeSidebarTimerMinutes(draftMinutes),
+    });
+    setDraftName(normalizeSidebarTimerName(draftName));
+    setDraftMinutes(String(normalizeSidebarTimerMinutes(draftMinutes)));
+    setSavedMsg("Temporizador salvo.");
+  }
+
+  return (
+    <section id="temporizador" className="surface mt-4 scroll-mt-24 p-4 md:p-5">
+      <h2 className="font-display text-base font-semibold tracking-tight md:text-lg">
+        Temporizador
+      </h2>
+      <p className="mt-1 text-xs opacity-55">
+        Nome e duração do temporizador da tela Hoje. O tempo conta nas
+        estatísticas e não altera o ciclo.
+      </p>
+      <div className="mt-3 grid gap-3 sm:grid-cols-2">
+        <label className="block text-sm">
+          <span className="opacity-70">Nome</span>
+          <input
+            className="input mt-1 w-full"
+            maxLength={40}
+            value={draftName}
+            onChange={(e) => {
+              setDraftName(e.target.value);
+              setSavedMsg(null);
+            }}
+          />
+        </label>
+        <label className="block text-sm">
+          <span className="opacity-70">Tempo (min)</span>
+          <input
+            type="number"
+            min={1}
+            max={180}
+            className="input mt-1 w-full"
+            value={draftMinutes}
+            onChange={(e) => {
+              setDraftMinutes(e.target.value);
+              setSavedMsg(null);
+            }}
+          />
+        </label>
+      </div>
+      <button type="button" className="btn btn-primary mt-3" onClick={onSave}>
+        Salvar
+      </button>
+      {savedMsg && <p className="mt-2 text-sm opacity-70">{savedMsg}</p>}
+    </section>
   );
 }
 

@@ -20,6 +20,8 @@ create table if not exists public.subjects (
   active boolean not null default true,
   -- null = todos os dias; senão 0=Seg … 6=Dom (1–6 dias)
   study_days int[] null,
+  -- Dias em que esta matéria é a única do dia (anotações só; ciclo não avança)
+  exclusive_days int[] null,
   study_minutes int not null default 25,
   is_free boolean not null default false,
   -- Rodízio interno: {"items":[{"id","name","notes"}],"index":0}; null = sem rodízio
@@ -31,6 +33,13 @@ create table if not exists public.subjects (
     or (
       cardinality(study_days) between 1 and 6
       and study_days <@ array[0, 1, 2, 3, 4, 5, 6]
+    )
+  ),
+  constraint subjects_exclusive_days_valid check (
+    exclusive_days is null
+    or (
+      cardinality(exclusive_days) between 1 and 7
+      and exclusive_days <@ array[0, 1, 2, 3, 4, 5, 6]
     )
   ),
   constraint subjects_study_minutes_range check (study_minutes between 1 and 999)
@@ -51,7 +60,11 @@ create table if not exists public.session_settings (
   user_id uuid primary key references auth.users(id) on delete cascade,
   focus_minutes int not null default 40,
   break_short_minutes int not null default 5,
-  break_long_minutes int not null default 10
+  break_long_minutes int not null default 10,
+  sidebar_timer_name text not null default 'Temporizador',
+  sidebar_timer_minutes int not null default 40,
+  constraint session_settings_sidebar_timer_minutes_range
+    check (sidebar_timer_minutes between 1 and 180)
 );
 
 create table if not exists public.focus_timers (

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useMemo } from "react";
 import { Pause, Play, RotateCcw, SlidersHorizontal } from "lucide-react";
 import { useApp } from "@/components/AppProvider";
-import { useTimerRuntime } from "@/components/TimerRuntimeProvider";
+import { SIDEBAR_TIMER_ID, useTimerRuntime } from "@/components/TimerRuntimeProvider";
 import { sanitizeCssColor } from "@/lib/utils";
 
 type FlashKind = "play" | "pause";
@@ -417,7 +417,7 @@ export function SessionClock({
   compact = false,
 }: {
   layout?: ClockLayout;
-  /** No Hoje: só cronômetro (sessão fica no CTA do ciclo). */
+  /** No Hoje: temporizador da lateral + cronômetro (sessão do ciclo fica no CTA). */
   variant?: "full" | "livre";
   /** Faixa horizontal densa (mobile). */
   compact?: boolean;
@@ -435,6 +435,11 @@ export function SessionClock({
     stopwatchSeconds,
     toggleStopwatch,
     resetStopwatch,
+    toggleSidebarTimer,
+    resetSidebarTimer,
+    secondsForSidebar,
+    sidebarTimerName,
+    sidebarTimerMinutes,
   } = useTimerRuntime();
 
   const timers = useMemo(
@@ -452,7 +457,130 @@ export function SessionClock({
   const swPaused = !stopwatch.running && stopwatch.accumulatedMs > 0;
   const anySessionRunning = sessionTimers.some((t) => runtime[t.id]?.running);
   const livreOnly = variant === "livre";
-  const showStopwatch = livreOnly || mode === "stopwatch";
+  const showStopwatch = mode === "stopwatch";
+  const sidebar = runtime[SIDEBAR_TIMER_ID];
+  const sidebarTotal = Math.max(1, sidebarTimerMinutes) * 60;
+  const sidebarRunning = Boolean(sidebar?.running);
+  const sidebarPaused =
+    !sidebarRunning &&
+    secondsForSidebar > 0 &&
+    secondsForSidebar < sidebarTotal &&
+    Boolean(sidebar?.startedAt);
+
+  function renderSidebarRing(
+    ringSize: number,
+    stroke: number,
+    dense?: boolean,
+  ) {
+    return (
+      <MiniRing
+        display={formatTime(secondsForSidebar)}
+        label={sidebarTimerName}
+        size={ringSize}
+        stroke={stroke}
+        progress={1 - secondsForSidebar / sidebarTotal}
+        accent="var(--signal)"
+        active={sidebarRunning}
+        paused={sidebarPaused}
+        dense={dense}
+        flash={flash?.id === SIDEBAR_TIMER_ID ? flash.kind : null}
+        flashKey={
+          flash?.id === SIDEBAR_TIMER_ID ? flash.key : undefined
+        }
+        onToggle={toggleSidebarTimer}
+        onReset={resetSidebarTimer}
+      />
+    );
+  }
+
+  function renderStopwatchRing(
+    ringSize: number,
+    stroke: number,
+    dense?: boolean,
+    soft = true,
+  ) {
+    return (
+      <MiniRing
+        display={formatTime(stopwatchSeconds)}
+        label="Cronômetro"
+        size={ringSize}
+        stroke={stroke}
+        progress={1}
+        accent="var(--signal)"
+        softRing={soft}
+        dense={dense}
+        active={stopwatch.running}
+        paused={swPaused}
+        flash={flash?.id === "stopwatch" ? flash.kind : null}
+        flashKey={flash?.id === "stopwatch" ? flash.key : undefined}
+        onToggle={toggleStopwatch}
+        onReset={resetStopwatch}
+      />
+    );
+  }
+
+  const livreTabs = (
+    <>
+      <div className="flex items-center rounded-full bg-[color-mix(in_srgb,var(--ink)_7%,transparent)] p-0.5">
+        {(
+          [
+            ["timers", "Temporizador"],
+            ["stopwatch", "Cronômetro"],
+          ] as const
+        ).map(([value, label]) => {
+          const active = mode === value;
+          const runningHidden =
+            !active &&
+            ((value === "stopwatch" && stopwatch.running) ||
+              (value === "timers" && sidebarRunning));
+          return (
+            <button
+              key={value}
+              type="button"
+              onClick={() => setMode(value)}
+              className={`rounded-full px-2.5 py-1 text-xs font-medium transition sm:px-3 sm:py-1.5 ${
+                active
+                  ? "bg-[var(--surface)] text-[var(--signal)] shadow-sm"
+                  : runningHidden
+                    ? "tab-running-hint"
+                    : "text-[color-mix(in_srgb,var(--ink)_55%,transparent)] hover:text-[var(--ink)]"
+              }`}
+              title={
+                runningHidden
+                  ? value === "stopwatch"
+                    ? "Cronômetro em andamento"
+                    : "Temporizador em andamento"
+                  : undefined
+              }
+            >
+              {label}
+            </button>
+          );
+        })}
+      </div>
+      <Link
+        href="/ajustes#temporizador"
+        title="Ajustes do temporizador"
+        aria-label="Ajustes do temporizador"
+        className="shrink-0 rounded-full p-1.5 text-[color-mix(in_srgb,var(--ink)_45%,transparent)] transition hover:bg-[var(--mist)] hover:text-[var(--signal)]"
+      >
+        <SlidersHorizontal size={16} strokeWidth={1.75} />
+      </Link>
+    </>
+  );
+
+  if (livreOnly && compact) {
+    return (
+      <div className="px-2.5 py-2">
+        <div className="mb-2 flex items-center justify-between gap-2">
+          {livreTabs}
+        </div>
+        {showStopwatch
+          ? renderStopwatchRing(52, 4, true)
+          : renderSidebarRing(52, 4, true)}
+      </div>
+    );
+  }
 
   function renderTimerRing(
     t: (typeof timers)[number],
@@ -517,9 +645,7 @@ export function SessionClock({
         }`}
       >
         {livreOnly ? (
-          <p className="text-xs font-semibold uppercase tracking-wider text-[color-mix(in_srgb,var(--ink)_55%,transparent)]">
-            Cronômetro
-          </p>
+          livreTabs
         ) : (
           <>
           <div className="flex items-center rounded-full bg-[color-mix(in_srgb,var(--ink)_7%,transparent)] p-0.5">
@@ -571,8 +697,30 @@ export function SessionClock({
         )}
       </div>
 
-      <div key={livreOnly ? "livre" : mode} className="fade-in">
-      {showStopwatch ? (
+      <div key={mode} className="fade-in">
+      {livreOnly ? (
+        showStopwatch ? (
+          <div
+            className={`flex justify-center ${stack ? "px-3 py-3" : "px-3 py-4"}`}
+          >
+            {renderStopwatchRing(
+              stack ? 124 : 112,
+              stack ? 4.5 : 4.5,
+            )}
+          </div>
+        ) : (
+          <div
+            className={`flex flex-col items-center ${stack ? "px-3 py-3" : "px-3 py-4"}`}
+          >
+            {sidebarTimerName !== "Temporizador" && (
+              <p className="mb-2 max-w-full truncate text-xs font-medium text-[color-mix(in_srgb,var(--ink)_55%,transparent)]">
+                {sidebarTimerName}
+              </p>
+            )}
+            {renderSidebarRing(stack ? 124 : 112, 4.5)}
+          </div>
+        )
+      ) : showStopwatch ? (
         <div
           className={`flex justify-center ${livreOnly ? (stack ? "px-3 py-3" : "px-3 py-4") : stack ? "px-3 py-5" : "px-3 py-6"}`}
         >

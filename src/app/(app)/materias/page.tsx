@@ -17,6 +17,7 @@ import {
   freeRowClass,
   normalizeRotation,
   normalizeStudyDays,
+  normalizeExclusiveDays,
   statusClass,
   statusRowClass,
 } from "@/lib/utils";
@@ -105,6 +106,50 @@ function StudyDaysPicker({
       {value.mode === "days" && value.days.length === 0 && (
         <p className="text-xs text-[var(--warn)]">
           Selecione pelo menos um dia (ou volte para todos os dias).
+        </p>
+      )}
+    </div>
+  );
+}
+
+function ExclusiveDaysPicker({
+  value,
+  onChange,
+}: {
+  value: number[];
+  onChange: (days: number[]) => void;
+}) {
+  return (
+    <div className="space-y-2">
+      <div className="flex flex-wrap gap-1.5">
+        {DAYS.map((name, i) => {
+          const on = value.includes(i);
+          return (
+            <button
+              key={name}
+              type="button"
+              title={name}
+              className={`rounded-full px-2.5 py-1 text-xs font-medium transition ring-1 ${
+                on
+                  ? "bg-[var(--signal-soft)] text-[var(--signal)] ring-[color-mix(in_srgb,var(--signal)_35%,transparent)]"
+                  : "text-[color-mix(in_srgb,var(--ink)_50%,transparent)] ring-[var(--line)] hover:text-[var(--ink)]"
+              }`}
+              onClick={() => {
+                const days = on
+                  ? value.filter((d) => d !== i)
+                  : [...value, i].sort((a, b) => a - b);
+                onChange(days);
+              }}
+            >
+              {name.slice(0, 3)}
+            </button>
+          );
+        })}
+      </div>
+      {value.length > 0 && (
+        <p className="text-xs opacity-55">
+          Nesses dias só esta matéria aparece, só com anotações. O ciclo não
+          avança.
         </p>
       )}
     </div>
@@ -445,8 +490,9 @@ export default function MateriasPage() {
         Matérias
       </h1>
       <p className="mt-2 opacity-65">
-        Com tempo (ciclo e timer) ou Livre (só nome e anotações). Dias e ordem
-        valem para os dois modos.
+        Com tempo (ciclo e timer) ou Livre (só nome e anotações). Dias
+        exclusivos: ela fica sozinha no dia, só com anotações, sem mudar o
+        ciclo.
       </p>
 
       <form
@@ -640,6 +686,17 @@ export default function MateriasPage() {
                   <StudyDaysPicker
                     value={freq}
                     onChange={(next) => updateStudyDays(s, next)}
+                  />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="mb-1.5 text-xs font-medium uppercase tracking-wider opacity-50">
+                    Só ela no dia
+                  </p>
+                  <ExclusiveDaysPicker
+                    value={normalizeExclusiveDays(s.exclusive_days) ?? []}
+                    onChange={(days) =>
+                      upsertSubject({ ...s, exclusive_days: days })
+                    }
                   />
                 </div>
               </div>

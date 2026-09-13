@@ -31,11 +31,15 @@ import {
 import { rememberLastKnownGood, loadLastKnownGood } from "@/lib/local-recovery";
 import { checkCurrentUserAccess } from "@/lib/supabase/access";
 import {
-  subjectShowsOnDay,
+  cycleSubjectsOnDay,
   todayIndex,
   normalizeStudyDays,
+  normalizeExclusiveDays,
   normalizeRotation,
+  normalizeSidebarTimerName,
+  normalizeSidebarTimerMinutes,
   rotationAdvanced,
+  withoutExclusiveDays,
 } from "@/lib/utils";
 import type {
   AppData,
@@ -602,6 +606,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
             if ("study_days" in subject) {
               patch.study_days = normalizeStudyDays(subject.study_days);
             }
+            if ("exclusive_days" in subject) {
+              patch.exclusive_days = normalizeExclusiveDays(
+                subject.exclusive_days,
+              );
+            }
             if ("study_minutes" in subject) {
               const n = Number(subject.study_minutes);
               patch.study_minutes =
@@ -615,9 +624,24 @@ export function AppProvider({ children }: { children: ReactNode }) {
             }
             return {
               ...prev,
-              subjects: prev.subjects.map((s) =>
-                s.id === subject.id ? { ...s, ...patch, status: s.status } : s,
-              ),
+              subjects: prev.subjects.map((s) => {
+                if (s.id === subject.id) {
+                  return { ...s, ...patch, status: s.status };
+                }
+                if (
+                  "exclusive_days" in patch &&
+                  patch.exclusive_days?.length
+                ) {
+                  return {
+                    ...s,
+                    exclusive_days: withoutExclusiveDays(
+                      s.exclusive_days,
+                      patch.exclusive_days,
+                    ),
+                  };
+                }
+                return s;
+              }),
             };
           }
           const row: Subject = {
@@ -628,6 +652,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
             cycle_order: subject.cycle_order ?? prev.subjects.length,
             active: subject.active ?? true,
             study_days: normalizeStudyDays(subject.study_days),
+            exclusive_days: normalizeExclusiveDays(subject.exclusive_days),
             study_minutes:
               typeof subject.study_minutes === "number" && subject.study_minutes >= 1
                 ? Math.min(999, Math.floor(subject.study_minutes))
@@ -635,7 +660,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
             is_free: Boolean(subject.is_free),
             rotation: normalizeRotation(subject.rotation),
           };
-          return { ...prev, subjects: [...prev.subjects, row] };
+          const taken = row.exclusive_days ?? [];
+          const subjects = taken.length
+            ? [
+                ...prev.subjects.map((s) => ({
+                  ...s,
+                  exclusive_days: withoutExclusiveDays(s.exclusive_days, taken),
+                })),
+                row,
+              ]
+            : [...prev.subjects, row];
+          return { ...prev, subjects };
         });
       },
       setSubjectStatus: (id, status) => {
@@ -644,20 +679,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
           if (!target || target.is_free) return prev;
 
           const day = todayIndex();
-          const ordered = [...prev.subjects]
-            .filter(
-              (s) => s.active && !s.is_free && subjectShowsOnDay(s, day),
-            )
-            .sort((a, b) => a.cycle_order - b.cycle_order);
+          const ordered = cycleSubjectsOnDay(prev.subjects, day);
           const idx = ordered.findIndex((s) => s.id === id);
           if (idx < 0) return prev;
 
-          const restartToday = (subjects: typeof prev.subjects) =>
-            subjects.map((s) =>
-              s.active && !s.is_free && subjectShowsOnDay(s, day)
-                ? { ...s, status: "prox" as const }
-                : s,
+          const restartToday = (subjects: typeof prev.subjects) => {
+            const ids = new Set(cycleSubjectsOnDay(subjects, day).map((s) => s.id));
+            return subjects.map((s) =>
+              ids.has(s.id) ? { ...s, status: "prox" as const } : s,
             );
+          };
 
           // Concluiu (Próx → Ok) e usa rodízio → a "da vez" avança.
           const advanceIfTarget = (s: Subject): Subject => {
@@ -695,10 +726,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           });
 
           // Rede de segurança: se todas as de hoje ficaram Ok, reinicia o ciclo.
-          const todayAfter = subjects
-            .filter(
-              (s) => s.active && !s.is_free && subjectShowsOnDay(s, day),
-            );
+          const todayAfter = cycleSubjectsOnDay(subjects, day);
           if (
             todayAfter.length > 0 &&
             todayAfter.every((s) => s.status === "ok")
@@ -835,7 +863,24 @@ export function AppProvider({ children }: { children: ReactNode }) {
       updateSettings: (settings) =>
         setData((prev) => ({
           ...prev,
-          session_settings: { ...prev.session_settings, ...settings },
+          session_settings: {
+            ...prev.session_settings,
+            ...settings,
+            ...(settings.sidebar_timer_name !== undefined
+              ? {
+                  sidebar_timer_name: normalizeSidebarTimerName(
+                    settings.sidebar_timer_name,
+                  ),
+                }
+              : {}),
+            ...(settings.sidebar_timer_minutes !== undefined
+              ? {
+                  sidebar_timer_minutes: normalizeSidebarTimerMinutes(
+                    settings.sidebar_timer_minutes,
+                  ),
+                }
+              : {}),
+          },
         })),
       upsertTimer: (timer) => {
         setData((prev) => {
