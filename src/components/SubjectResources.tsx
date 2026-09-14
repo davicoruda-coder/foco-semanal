@@ -41,7 +41,11 @@ export function SubjectResources({ recursos = [], onChange, compact }: Props) {
     setTitle("");
   }
 
-  function handleRemove(id: string) {
+  function handleRemove(id: string, name?: string) {
+    const label = name ? `"${name}"` : "este link";
+    if (typeof window !== "undefined" && !window.confirm(`Deseja realmente remover ${label}?`)) {
+      return;
+    }
     onChange(recursos.filter((r) => r.id !== id));
   }
 
@@ -70,7 +74,7 @@ export function SubjectResources({ recursos = [], onChange, compact }: Props) {
             </a>
             <button
               type="button"
-              onClick={() => handleRemove(r.id)}
+              onClick={() => handleRemove(r.id, getResourceDisplayTitle(r))}
               className="ml-0.5 rounded-full p-0.5 opacity-50 transition hover:bg-[color-mix(in_srgb,var(--warn)_20%,transparent)] hover:text-[var(--warn)] hover:opacity-100"
               title="Remover link"
             >
