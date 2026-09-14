@@ -20,7 +20,9 @@ import {
   normalizeExclusiveDays,
   statusClass,
   statusRowClass,
+  rotationWithItemRecursos,
 } from "@/lib/utils";
+import { SubjectResources } from "@/components/SubjectResources";
 
 type DraftFreq = {
   mode: "all" | "days";
@@ -359,6 +361,21 @@ function RotationEditor({
                     {it.notes}
                   </p>
                 )}
+                <div className="mt-1">
+                  <SubjectResources
+                    compact
+                    recursos={it.recursos}
+                    onChange={(recursos) => {
+                      if (!rot) return;
+                      onSave({
+                        ...rot,
+                        items: rot.items.map((item) =>
+                          item.id === it.id ? { ...item, recursos } : item
+                        ),
+                      });
+                    }}
+                  />
+                </div>
               </div>
               <button
                 type="button"
@@ -714,14 +731,20 @@ export default function MateriasPage() {
                 </div>
               )}
               {!normalizeRotation(s.rotation) && (
-                <textarea
-                  className="input mt-3 min-h-20"
-                  placeholder="Anotações"
-                  value={s.notes}
-                  onChange={(e) =>
-                    upsertSubject({ ...s, notes: e.target.value })
-                  }
-                />
+                <div className="mt-3">
+                  <textarea
+                    className="input w-full min-h-20"
+                    placeholder="Anotações"
+                    value={s.notes}
+                    onChange={(e) =>
+                      upsertSubject({ ...s, notes: e.target.value })
+                    }
+                  />
+                  <SubjectResources
+                    recursos={s.recursos}
+                    onChange={(recursos) => upsertSubject({ ...s, recursos })}
+                  />
+                </div>
               )}
               <div className="mt-3">
                 <SubjectIconPicker

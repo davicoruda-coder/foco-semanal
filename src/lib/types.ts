@@ -11,12 +11,20 @@ export type SessionMode = "ciclo" | "unica";
 
 export type TimerPhase = "focus" | "break_short" | "break_long";
 
+export interface SubjectResource {
+  id: string;
+  title?: string;
+  url: string;
+}
+
 /** Item do rodízio interno de uma matéria (ex.: disciplinas dentro de "Revisão"). */
 export interface RotationItem {
   id: string;
   name: string;
   /** Anotação própria do item ("onde parei") — reaparece quando ele volta. */
   notes: string;
+  /** Links e recursos úteis para esta disciplina. */
+  recursos?: SubjectResource[];
 }
 
 /**
@@ -66,6 +74,8 @@ export interface Subject {
    * (inicial do nome).
    */
   icon: string | null;
+  /** Links e recursos úteis para a matéria. */
+  recursos?: SubjectResource[];
 }
 
 export interface WeekBlock {

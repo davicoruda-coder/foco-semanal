@@ -21,10 +21,12 @@ import {
   normalizeRotation,
   nextCycleSubjectId,
   rotationWithItemNotes,
+  rotationWithItemRecursos,
   subjectsOnDay,
   subjectTreatAsFree,
   todayIndex,
 } from "@/lib/utils";
+import { SubjectResources } from "@/components/SubjectResources";
 import { ReminderWatcher } from "@/components/ReminderWatcher";
 import { ReminderBoard } from "@/components/ReminderBoard";
 import { SessionClock } from "@/components/SessionClock";
@@ -362,6 +364,21 @@ export default function HojePage() {
                           : upsertSubject({ ...s, notes })
                       }
                     />
+                    <SubjectResources
+                      recursos={rotItem ? rotItem.recursos : s.recursos}
+                      onChange={(recursos) =>
+                        rot && rotItem
+                          ? upsertSubject({
+                              ...s,
+                              rotation: rotationWithItemRecursos(
+                                rot,
+                                rotItem.id,
+                                recursos,
+                              ),
+                            })
+                          : upsertSubject({ ...s, recursos })
+                      }
+                    />
                   </div>
                 );
               })}
@@ -485,6 +502,22 @@ export default function HojePage() {
                               }
                             />
                           </div>
+                          <SubjectResources
+                            compact
+                            recursos={rotItem ? rotItem.recursos : s.recursos}
+                            onChange={(recursos) =>
+                              rot && rotItem
+                                ? upsertSubject({
+                                    ...s,
+                                    rotation: rotationWithItemRecursos(
+                                      rot,
+                                      rotItem.id,
+                                      recursos,
+                                    ),
+                                  })
+                                : upsertSubject({ ...s, recursos })
+                            }
+                          />
                         </td>
                       </tr>
                     );

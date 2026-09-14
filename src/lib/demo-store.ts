@@ -1,5 +1,5 @@
 import type { AppData } from "./types";
-import { normalizeRotation, normalizeExclusiveDays, normalizeSidebarTimerName, normalizeSidebarTimerMinutes } from "./utils";
+import { normalizeRotation, normalizeExclusiveDays, normalizeSidebarTimerName, normalizeSidebarTimerMinutes, normalizeRecursos } from "./utils";
 import { parseSubjectIcon } from "./subject-icons";
 
 function id(_prefix: string) {
@@ -103,6 +103,7 @@ export function loadDemoData(): AppData {
       is_free: Boolean(s.is_free),
       rotation: normalizeRotation(s.rotation),
       icon: parseSubjectIcon(s.icon),
+      recursos: normalizeRecursos(s.recursos),
     }));
     data.subjects = [...subjectsRaw]
       .sort((a, b) => {

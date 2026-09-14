@@ -21,6 +21,7 @@ import {
   normalizeRotation,
   normalizeSidebarTimerName,
   normalizeSidebarTimerMinutes,
+  normalizeRecursos,
 } from "@/lib/utils";
 import { parseSubjectIcon } from "@/lib/subject-icons";
 
@@ -113,6 +114,7 @@ function parseSubject(raw: unknown, index: number): Subject | null {
     is_free: asBool(raw.is_free, false),
     rotation: normalizeRotation(raw.rotation),
     icon: parseSubjectIcon(raw.icon),
+    recursos: normalizeRecursos(raw.recursos),
   };
 }
 

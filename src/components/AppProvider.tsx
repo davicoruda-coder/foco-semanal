@@ -40,6 +40,7 @@ import {
   normalizeSidebarTimerName,
   normalizeSidebarTimerMinutes,
   rotationAdvanced,
+  normalizeRecursos,
 } from "@/lib/utils";
 import { parseSubjectIcon } from "@/lib/subject-icons";
 import type {
@@ -626,6 +627,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
             if ("icon" in subject) {
               patch.icon = parseSubjectIcon(subject.icon);
             }
+            if ("recursos" in subject) {
+              patch.recursos = normalizeRecursos(subject.recursos);
+            }
             // exclusive_status só via setSubjectStatus (mini-ciclo).
             delete (patch as { exclusive_status?: SubjectStatus }).exclusive_status;
             return {
@@ -659,6 +663,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
             is_free: Boolean(subject.is_free),
             rotation: normalizeRotation(subject.rotation),
             icon: parseSubjectIcon(subject.icon),
+            recursos: normalizeRecursos(subject.recursos),
           };
           return { ...prev, subjects: [...prev.subjects, row] };
         });

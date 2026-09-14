@@ -4,6 +4,7 @@ import type {
   Subject,
   SubjectRotation,
   SubjectStatus,
+  SubjectResource,
   WeekBlock,
 } from "./types";
 
@@ -337,6 +338,45 @@ export function normalizeSidebarTimerMinutes(
 const ROTATION_MAX_ITEMS = 30;
 const ROTATION_MAX_NAME = 80;
 const ROTATION_MAX_NOTES = 4000;
+const RECURSOS_MAX_ITEMS = 30;
+
+export function normalizeRecursos(raw: unknown): SubjectResource[] | undefined {
+  if (!Array.isArray(raw)) return undefined;
+  const valid = raw
+    .filter(
+      (r): r is Record<string, unknown> => Boolean(r) && typeof r === "object",
+    )
+    .map((r) => {
+      const id = typeof r.id === "string" && r.id ? r.id.slice(0, 64) : `rec-${Math.random().toString(36).slice(2, 10)}`;
+      const title = typeof r.title === "string" ? r.title.slice(0, 200).trim() : undefined;
+      const url = typeof r.url === "string" ? r.url.slice(0, 2000).trim() : "";
+      return { id, title: title || undefined, url };
+    })
+    .filter((r) => r.url.length > 0)
+    .slice(0, RECURSOS_MAX_ITEMS);
+  return valid.length > 0 ? valid : undefined;
+}
+
+export function ensureProtocolUrl(url: string): string {
+  const trimmed = url.trim();
+  if (!trimmed) return "";
+  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+  return `https://${trimmed}`;
+}
+
+export function getResourceDisplayTitle(res: SubjectResource): string {
+  if (res.title) return res.title;
+  try {
+    const url = new URL(ensureProtocolUrl(res.url));
+    let hostname = url.hostname.replace(/^www\./i, "");
+    if (url.pathname && url.pathname !== "/") {
+      hostname += url.pathname.slice(0, 15) + (url.pathname.length > 15 ? "…" : "");
+    }
+    return hostname;
+  } catch {
+    return res.url.slice(0, 30) + (res.url.length > 30 ? "…" : "");
+  }
+}
 
 /** Valida/normaliza o rodízio vindo de storage/nuvem/backup. */
 export function normalizeRotation(raw: unknown): SubjectRotation | null {
@@ -356,6 +396,7 @@ export function normalizeRotation(raw: unknown): SubjectRotation | null {
         typeof it.name === "string" ? it.name.slice(0, ROTATION_MAX_NAME) : "",
       notes:
         typeof it.notes === "string" ? it.notes.slice(0, ROTATION_MAX_NOTES) : "",
+      recursos: normalizeRecursos(it.recursos),
     }))
     .filter((it) => it.name.trim().length > 0)
     .slice(0, ROTATION_MAX_ITEMS);
@@ -396,6 +437,20 @@ export function rotationWithItemNotes(
     ...rotation,
     items: rotation.items.map((it) =>
       it.id === itemId ? { ...it, notes } : it,
+    ),
+  };
+}
+
+/** Atualiza os recursos de um item do rodízio. */
+export function rotationWithItemRecursos(
+  rotation: SubjectRotation,
+  itemId: string,
+  recursos: SubjectResource[] | undefined,
+): SubjectRotation {
+  return {
+    ...rotation,
+    items: rotation.items.map((it) =>
+      it.id === itemId ? { ...it, recursos } : it,
     ),
   };
 }

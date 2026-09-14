@@ -6,14 +6,16 @@ import { DialogFrame } from "@/components/DialogFrame";
 import { AutoGrowTextarea } from "@/components/AutoGrowTextarea";
 import { useApp } from "@/components/AppProvider";
 import { useStudyFlow } from "@/components/StudyFlowProvider";
-import type { RotationItem, Subject } from "@/lib/types";
+import type { RotationItem, Subject, SubjectResource } from "@/lib/types";
 import {
   isExclusiveSoloDay,
   normalizeRotation,
   rotationJustStudied,
   rotationWithItemNotes,
+  rotationWithItemRecursos,
   todayIndex,
 } from "@/lib/utils";
+import { SubjectResources } from "@/components/SubjectResources";
 
 function formatClock(totalSeconds: number) {
   const m = Math.floor(totalSeconds / 60);
@@ -26,11 +28,13 @@ function NotesBlock({
   rotationItem,
   draft,
   onChange,
+  onChangeRecursos,
 }: {
   subject: Subject;
   rotationItem: RotationItem | null;
   draft: string;
   onChange: (value: string) => void;
+  onChangeRecursos: (recursos: SubjectResource[]) => void;
 }) {
   return (
     <div className="mt-5 rounded-[var(--radius-tag)] border border-[var(--line)] bg-[var(--mist)]/60 p-3.5">
@@ -54,6 +58,13 @@ function NotesBlock({
         minPx={72}
         maxPx={140}
       />
+      <div className="mt-2">
+        <SubjectResources
+          compact
+          recursos={rotationItem ? rotationItem.recursos : subject.recursos}
+          onChange={onChangeRecursos}
+        />
+      </div>
     </div>
   );
 }
@@ -246,6 +257,19 @@ export function StudySessionChrome() {
     upsertSubject({ ...notesSubject, notes: notesDraft });
   }
 
+  function handleRecursosChange(recursos: SubjectResource[]) {
+    if (!notesSubject) return;
+    const rot = normalizeRotation(notesSubject.rotation);
+    if (rot && notesRotationItem) {
+      upsertSubject({
+        ...notesSubject,
+        rotation: rotationWithItemRecursos(rot, notesRotationItem.id, recursos),
+      });
+      return;
+    }
+    upsertSubject({ ...notesSubject, recursos });
+  }
+
   function afterNotesThen(action: () => void) {
     persistNotes();
     action();
@@ -274,6 +298,7 @@ export function StudySessionChrome() {
             rotationItem={notesRotationItem}
             draft={notesDraft}
             onChange={setNotesDraft}
+            onChangeRecursos={handleRecursosChange}
           />
         ) : null}
         <button
@@ -304,6 +329,7 @@ export function StudySessionChrome() {
             rotationItem={notesRotationItem}
             draft={notesDraft}
             onChange={setNotesDraft}
+            onChangeRecursos={handleRecursosChange}
           />
         ) : null}
 
