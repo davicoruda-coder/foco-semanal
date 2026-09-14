@@ -642,13 +642,6 @@ export default function MateriasPage() {
                     </div>
                 </div>
               </div>
-              <div className="mt-3">
-                <SubjectIconPicker
-                  name={s.name}
-                  value={s.icon}
-                  onChange={(icon) => upsertSubject({ ...s, icon })}
-                />
-              </div>
               <div className="mt-3 space-y-4">
                 {!free && (
                   <div>
@@ -735,6 +728,13 @@ export default function MateriasPage() {
                   }
                 />
               )}
+              <div className="mt-3">
+                <SubjectIconPicker
+                  name={s.name}
+                  value={s.icon}
+                  onChange={(icon) => upsertSubject({ ...s, icon })}
+                />
+              </div>
               {pendingDelete?.id === s.id ? (
                 <div
                   id={`delete-confirm-${s.id}`}
