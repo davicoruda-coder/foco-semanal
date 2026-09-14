@@ -495,11 +495,6 @@ export default function MateriasPage() {
       <h1 className="font-display pb-0.5 text-2xl font-semibold leading-normal tracking-tight md:text-3xl">
         Matérias
       </h1>
-      <p className="mt-2 opacity-65">
-        Com tempo (timer com meta) ou Livre (cronômetro na sessão; Concluída
-        manual). Foco do dia: 1 matéria = anotações; 2+ = mini-ciclo entre
-        elas.
-      </p>
 
       <form
         className="surface mt-8 flex flex-col gap-3 p-4"
