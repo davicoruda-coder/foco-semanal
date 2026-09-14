@@ -494,16 +494,16 @@ textarea:focus-visible {
 
 @keyframes synaptic-waves {
   0% {
-    transform: translate3d(-18%, 0, 0) rotate(-6deg);
+    transform: translate3d(-14%, 0, 0) rotate(-5deg);
     opacity: 0.45;
   }
   50% {
-    transform: translate3d(8%, -12%, 0) rotate(-2deg);
+    transform: translate3d(14%, -6%, 0) rotate(-2deg);
     opacity: 0.85;
   }
   100% {
-    transform: translate3d(28%, 6%, 0) rotate(-8deg);
-    opacity: 0.5;
+    transform: translate3d(-14%, 0, 0) rotate(-5deg);
+    opacity: 0.45;
   }
 }
 
@@ -631,7 +631,7 @@ textarea:focus-visible {
     100% 100%;
   opacity: 0.75;
   mix-blend-mode: soft-light;
-  animation: synaptic-waves 7.5s ease-in-out infinite;
+  animation: synaptic-waves 10s ease-in-out infinite;
   will-change: transform, opacity;
 }
 
