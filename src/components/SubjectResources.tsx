@@ -54,7 +54,7 @@ export function SubjectResources({ recursos = [], onChange, compact }: Props) {
           <button
             type="button"
             onClick={() => setIsAdding(true)}
-            className="flex items-center justify-center p-1 text-[color-mix(in_srgb,var(--ink)_40%,transparent)] transition hover:text-[var(--signal)]"
+            className="flex items-center justify-center p-1 text-[color-mix(in_srgb,var(--ink)_55%,transparent)] transition hover:text-[var(--signal)]"
             title="Adicionar recurso"
           >
             <Link2 size={14} strokeWidth={2.5} />
@@ -100,7 +100,7 @@ export function SubjectResources({ recursos = [], onChange, compact }: Props) {
               <button
                 type="button"
                 onClick={() => setIsAdding(true)}
-                className="flex items-center justify-center p-1 text-[color-mix(in_srgb,var(--ink)_40%,transparent)] transition hover:text-[var(--signal)]"
+                className="flex items-center justify-center p-1 text-[color-mix(in_srgb,var(--ink)_55%,transparent)] transition hover:text-[var(--signal)]"
                 title="Adicionar recurso"
               >
                 <Link2 size={14} strokeWidth={2.5} />
