@@ -48,15 +48,18 @@ export function SubjectResources({ recursos = [], onChange, compact }: Props) {
   const hasItems = recursos.length > 0;
 
   return (
-    <div className={`mt-3 ${compact ? "px-1" : ""}`}>
+    <div className={`mt-1.5 ${compact ? "px-1" : ""}`}>
       {!hasItems && !isAdding && (
-        <button
-          type="button"
-          onClick={() => setIsAdding(true)}
-          className="text-xs font-medium text-[color-mix(in_srgb,var(--ink)_50%,transparent)] transition hover:text-[var(--signal)]"
-        >
-          [+ Adicionar recurso]
-        </button>
+        <div className="flex items-center">
+          <button
+            type="button"
+            onClick={() => setIsAdding(true)}
+            className="flex size-[22px] items-center justify-center rounded-full border border-[var(--line)] bg-[var(--surface)] text-[color-mix(in_srgb,var(--ink)_65%,transparent)] transition hover:border-[var(--signal)] hover:text-[var(--signal)]"
+            title="Adicionar recurso"
+          >
+            +
+          </button>
+        </div>
       )}
 
       {hasItems && (

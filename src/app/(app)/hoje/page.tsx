@@ -349,8 +349,9 @@ export default function HojePage() {
                       className="mt-2.5 w-full rounded-[10px] border border-[color-mix(in_srgb,var(--ink)_8%,transparent)] bg-[color-mix(in_srgb,var(--surface)_55%,transparent)] px-3 py-2.5 text-base leading-snug text-[color-mix(in_srgb,var(--ink)_84%,transparent)] placeholder:text-[color-mix(in_srgb,var(--ink)_38%,transparent)] focus:border-[var(--signal)] focus:bg-[var(--surface)] focus:text-[var(--ink)] focus:shadow-[0_0_0_3px_color-mix(in_srgb,var(--signal)_16%,transparent)]"
                       value={rotItem ? rotItem.notes : s.notes}
                       placeholder="Anotações…"
-                      minPx={44}
+                      minPx={22}
                       maxPx={120}
+                      rows={1}
                       onChange={(notes) =>
                         rot && rotItem
                           ? upsertSubject({
