@@ -14,7 +14,7 @@ export const SynapticPlayBurst = memo(function SynapticPlayBurst({
   return (
     <div
       aria-hidden="true"
-      className="pointer-events-none absolute inset-0 z-0 overflow-hidden rounded-[inherit]"
+      className="pointer-events-none absolute inset-0 z-[2] overflow-hidden rounded-[inherit]"
     >
       {/* Feixe elétrico principal que viaja da esquerda para a direita (como no Vídeo 1) */}
       <div className="synaptic-impulse-beam" />

@@ -86,14 +86,20 @@ export function StudySessionBar() {
   const [bursting, setBursting] = useState(false);
   const prevPhase = useRef(flow.phase);
 
-  // Burst só no play (idle → running); resume da pausa fica quieto.
+  // Burst no play ao iniciar sessão (idle → running) e ao despausar (paused → running)
   useEffect(() => {
     const prev = prevPhase.current;
     prevPhase.current = flow.phase;
-    if (prev !== "idle" || flow.phase !== "running") return;
-    setBursting(true);
-    const id = window.setTimeout(() => setBursting(false), 1350);
-    return () => window.clearTimeout(id);
+    if ((prev !== "idle" && prev !== "paused") || flow.phase !== "running") return;
+    setBursting(false);
+    const raf = requestAnimationFrame(() => {
+      setBursting(true);
+    });
+    const id = window.setTimeout(() => setBursting(false), 1400);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.clearTimeout(id);
+    };
   }, [flow.phase]);
 
   if (
