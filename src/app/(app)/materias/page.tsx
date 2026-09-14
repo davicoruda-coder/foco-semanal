@@ -594,7 +594,7 @@ export default function MateriasPage() {
           return (
             <li
               key={s.id}
-              className={`surface p-4 ${free ? freeRowClass() : statusRowClass(s.status)}`}
+              className={`surface px-4 py-3 ${free ? freeRowClass() : statusRowClass(s.status)}`}
             >
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <input
