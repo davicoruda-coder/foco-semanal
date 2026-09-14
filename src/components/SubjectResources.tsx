@@ -57,7 +57,7 @@ export function SubjectResources({ recursos = [], onChange, compact }: Props) {
             className="flex size-[22px] items-center justify-center rounded-full border border-[var(--line)] bg-[var(--surface)] text-[color-mix(in_srgb,var(--ink)_65%,transparent)] transition hover:border-[var(--signal)] hover:text-[var(--signal)]"
             title="Adicionar recurso"
           >
-            +
+            <Link2 size={12} strokeWidth={2.5} />
           </button>
         </div>
       )}
@@ -103,7 +103,7 @@ export function SubjectResources({ recursos = [], onChange, compact }: Props) {
                 className="flex size-[22px] items-center justify-center rounded-full border border-[var(--line)] bg-[var(--surface)] text-[color-mix(in_srgb,var(--ink)_65%,transparent)] transition hover:border-[var(--signal)] hover:text-[var(--signal)]"
                 title="Adicionar recurso"
               >
-                +
+                <Link2 size={12} strokeWidth={2.5} />
               </button>
             )}
           </div>
