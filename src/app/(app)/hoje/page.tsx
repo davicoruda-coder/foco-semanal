@@ -445,7 +445,7 @@ export default function HojePage() {
                         }`}
                       >
                         <td
-                          className={`break-words px-4 py-2 align-middle text-base font-medium leading-snug ${rowBorder}`}
+                          className={`break-words px-4 py-3.5 align-middle text-base font-medium leading-snug ${rowBorder}`}
                         >
                           <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
                             <span className="inline-flex min-w-0 items-center gap-3">
@@ -466,7 +466,7 @@ export default function HojePage() {
                           </div>
                         </td>
                         <td
-                          className={`py-2 px-2 align-middle ${rowBorder}`}
+                          className={`py-3.5 px-2 align-middle ${rowBorder}`}
                         >
                           {free ? (
                             <span className="text-xs text-[color-mix(in_srgb,var(--ink)_35%,transparent)]">
@@ -480,7 +480,7 @@ export default function HojePage() {
                             </span>
                           ) : null}
                         </td>
-                        <td className={`px-4 py-2 align-middle ${rowBorder}`}>
+                        <td className={`px-4 py-3.5 align-middle ${rowBorder}`}>
                           <div className="flex items-start">
                             <AutoGrowTextarea
                               className="w-full break-words rounded-[var(--radius-tag)] border border-transparent bg-transparent px-0 py-0 text-[15px] font-normal leading-snug text-[color-mix(in_srgb,var(--ink)_84%,transparent)] placeholder:text-[color-mix(in_srgb,var(--ink)_38%,transparent)] focus:border-[var(--line)] focus:bg-[var(--surface)] focus:px-2 focus:py-1 focus:text-[var(--ink)] focus:shadow-[0_0_0_3px_color-mix(in_srgb,var(--signal)_14%,transparent)]"
