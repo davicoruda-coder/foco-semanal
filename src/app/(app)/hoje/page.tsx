@@ -332,7 +332,7 @@ export default function HojePage() {
                         )}
                         {rotItem && (
                           <span className="rounded-full bg-[var(--signal-soft)] px-2.5 py-1 text-xs font-medium text-[var(--signal)]">
-                            Da vez: {rotItem.name}
+                            {rotItem.name}
                           </span>
                         )}
                         <SessionSubjectClock subjectId={s.id} compact />
@@ -459,7 +459,7 @@ export default function HojePage() {
                             )}
                             {rotItem && (
                               <span className="rounded-full bg-[var(--signal-soft)] px-2 py-0.5 text-[11px] font-medium text-[var(--signal)]">
-                                Da vez: {rotItem.name}
+                                {rotItem.name}
                               </span>
                             )}
                             <SessionSubjectClock subjectId={s.id} />
