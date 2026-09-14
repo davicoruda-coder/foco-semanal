@@ -585,17 +585,10 @@ export function SessionClock({
   if (livreOnly && compact) {
     return (
       <div className="px-3 py-2.5">
-        <div className="mb-1.5 flex items-center justify-between gap-2">
-          <p className="text-[11px] font-medium tracking-wide text-[color-mix(in_srgb,var(--ink)_48%,transparent)]">
-            Relógio livre
-            <span className="font-normal text-[color-mix(in_srgb,var(--ink)_38%,transparent)]">
-              {" "}
-              · não avança o ciclo
-            </span>
-          </p>
+        <div className="mb-2 flex items-center justify-between gap-2">
+          {livreTabs}
           {livreGear}
         </div>
-        <div className="mb-2">{livreTabs}</div>
         {showStopwatch
           ? renderStopwatchRing(52, 4, true, true)
           : renderSidebarRing(52, 4, true, true)}
@@ -643,21 +636,10 @@ export function SessionClock({
         }`}
       >
         {livreOnly ? (
-          <>
-            <div className="min-w-0 flex-1">
-              <p className="mb-1.5 text-[11px] font-medium tracking-wide text-[color-mix(in_srgb,var(--ink)_48%,transparent)]">
-                Relógio livre
-                <span className="font-normal text-[color-mix(in_srgb,var(--ink)_38%,transparent)]">
-                  {" "}
-                  · não avança o ciclo
-                </span>
-              </p>
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                {livreTabs}
-                {livreGear}
-              </div>
-            </div>
-          </>
+          <div className="flex min-w-0 flex-1 flex-wrap items-center justify-between gap-2">
+            {livreTabs}
+            {livreGear}
+          </div>
         ) : (
           <>
           <div className="flex items-center rounded-full bg-[color-mix(in_srgb,var(--ink)_7%,transparent)] p-0.5">

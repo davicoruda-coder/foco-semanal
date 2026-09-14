@@ -16,6 +16,7 @@ import {
   todayIndex,
 } from "@/lib/utils";
 import { SubjectResources } from "@/components/SubjectResources";
+import { SynapticPlayBurst } from "@/components/SynapticPlayBurst";
 
 function formatClock(totalSeconds: number) {
   const m = Math.floor(totalSeconds / 60);
@@ -91,7 +92,7 @@ export function StudySessionBar() {
     prevPhase.current = flow.phase;
     if (prev !== "idle" || flow.phase !== "running") return;
     setBursting(true);
-    const id = window.setTimeout(() => setBursting(false), 1100);
+    const id = window.setTimeout(() => setBursting(false), 1350);
     return () => window.clearTimeout(id);
   }, [flow.phase]);
 
@@ -143,6 +144,7 @@ export function StudySessionBar() {
           flow.phase === "paused" ? "is-paused" : ""
         } ${bursting ? "is-bursting" : ""}`}
       >
+        <SynapticPlayBurst active={bursting} />
         <button
           type="button"
           onClick={
