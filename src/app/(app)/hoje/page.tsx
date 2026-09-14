@@ -481,7 +481,7 @@ export default function HojePage() {
                           ) : null}
                         </td>
                         <td className={`px-4 py-2 align-middle ${rowBorder}`}>
-                          <div className="flex min-h-[2.25rem] items-start">
+                          <div className="flex items-start">
                             <AutoGrowTextarea
                               className="w-full break-words rounded-[var(--radius-tag)] border border-transparent bg-transparent px-0 py-0 text-[15px] font-normal leading-snug text-[color-mix(in_srgb,var(--ink)_84%,transparent)] placeholder:text-[color-mix(in_srgb,var(--ink)_38%,transparent)] focus:border-[var(--line)] focus:bg-[var(--surface)] focus:px-2 focus:py-1 focus:text-[var(--ink)] focus:shadow-[0_0_0_3px_color-mix(in_srgb,var(--signal)_14%,transparent)]"
                               value={rotItem ? rotItem.notes : s.notes}

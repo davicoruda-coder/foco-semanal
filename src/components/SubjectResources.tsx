@@ -48,7 +48,7 @@ export function SubjectResources({ recursos = [], onChange, compact }: Props) {
   const hasItems = recursos.length > 0;
 
   return (
-    <div className={`mt-1.5 ${compact ? "px-1" : ""}`}>
+    <div className={`mt-0.5 ${compact ? "px-0" : ""}`}>
       <div className="flex flex-wrap items-center gap-1.5">
         {recursos.map((r) => (
           <div
@@ -82,10 +82,10 @@ export function SubjectResources({ recursos = [], onChange, compact }: Props) {
           <button
             type="button"
             onClick={() => setIsAdding(true)}
-            className="flex items-center justify-center p-1 text-[color-mix(in_srgb,var(--ink)_55%,transparent)] transition hover:text-[var(--signal)]"
+            className="flex items-center justify-center p-0.5 text-[color-mix(in_srgb,var(--ink)_55%,transparent)] transition hover:text-[var(--signal)]"
             title="Adicionar link"
           >
-            <Link2 size={14} strokeWidth={2.5} />
+            <Link2 size={13} strokeWidth={2.25} />
           </button>
         )}
       </div>
