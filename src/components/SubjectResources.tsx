@@ -49,66 +49,46 @@ export function SubjectResources({ recursos = [], onChange, compact }: Props) {
 
   return (
     <div className={`mt-1.5 ${compact ? "px-1" : ""}`}>
-      {!hasItems && !isAdding && (
-        <div className="flex items-center">
+      <div className="flex flex-wrap items-center gap-1.5">
+        {recursos.map((r) => (
+          <div
+            key={r.id}
+            className="group flex items-center gap-1 rounded-full border border-[color-mix(in_srgb,var(--signal)_25%,var(--line))] bg-[color-mix(in_srgb,var(--signal)_8%,var(--surface))] py-0.5 pl-2.5 pr-1 text-xs font-medium text-[var(--ink)] transition hover:border-[var(--signal)]"
+          >
+            <a
+              href={ensureProtocolUrl(r.url)}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              className="flex items-center gap-1.5 transition hover:text-[var(--signal)]"
+              title={r.url}
+            >
+              <Link2 size={13} strokeWidth={2} />
+              <span className="truncate max-w-[150px]">
+                {getResourceDisplayTitle(r)}
+              </span>
+            </a>
+            <button
+              type="button"
+              onClick={() => handleRemove(r.id)}
+              className="ml-0.5 rounded-full p-0.5 opacity-50 transition hover:bg-[color-mix(in_srgb,var(--warn)_20%,transparent)] hover:text-[var(--warn)] hover:opacity-100"
+              title="Remover link"
+            >
+              <X size={12} strokeWidth={2} />
+            </button>
+          </div>
+        ))}
+        {!isAdding && (
           <button
             type="button"
             onClick={() => setIsAdding(true)}
             className="flex items-center justify-center p-1 text-[color-mix(in_srgb,var(--ink)_55%,transparent)] transition hover:text-[var(--signal)]"
-            title="Adicionar recurso"
+            title="Adicionar link"
           >
             <Link2 size={14} strokeWidth={2.5} />
           </button>
-        </div>
-      )}
-
-      {hasItems && (
-        <div className="flex flex-col gap-1.5">
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-[color-mix(in_srgb,var(--ink)_50%,transparent)]">
-            Recursos
-          </p>
-          <div className="flex flex-wrap items-center gap-1.5">
-            {recursos.map((r) => (
-              <div
-                key={r.id}
-                className="group flex items-center gap-1 rounded-full border border-[color-mix(in_srgb,var(--signal)_25%,var(--line))] bg-[color-mix(in_srgb,var(--signal)_8%,var(--surface))] py-1 pl-2.5 pr-1 text-xs font-medium text-[var(--ink)] transition hover:border-[var(--signal)]"
-              >
-                <a
-                  href={ensureProtocolUrl(r.url)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={(e) => e.stopPropagation()}
-                  className="flex items-center gap-1.5 transition hover:text-[var(--signal)]"
-                  title={r.url}
-                >
-                  <Link2 size={13} strokeWidth={2} />
-                  <span className="truncate max-w-[150px]">
-                    {getResourceDisplayTitle(r)}
-                  </span>
-                </a>
-                <button
-                  type="button"
-                  onClick={() => handleRemove(r.id)}
-                  className="ml-0.5 rounded-full p-0.5 opacity-50 transition hover:bg-[color-mix(in_srgb,var(--warn)_20%,transparent)] hover:text-[var(--warn)] hover:opacity-100"
-                  title="Remover recurso"
-                >
-                  <X size={12} strokeWidth={2} />
-                </button>
-              </div>
-            ))}
-            {!isAdding && (
-              <button
-                type="button"
-                onClick={() => setIsAdding(true)}
-                className="flex items-center justify-center p-1 text-[color-mix(in_srgb,var(--ink)_55%,transparent)] transition hover:text-[var(--signal)]"
-                title="Adicionar recurso"
-              >
-                <Link2 size={14} strokeWidth={2.5} />
-              </button>
-            )}
-          </div>
-        </div>
-      )}
+        )}
+      </div>
 
       {isAdding && (
         <div className="mt-2 rounded-[var(--radius-tag)] border border-[var(--line)] bg-[var(--mist)] p-2">
