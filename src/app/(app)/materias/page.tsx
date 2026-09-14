@@ -148,8 +148,7 @@ function ExclusiveDaysPicker({
       </div>
       {value.length > 0 && (
         <p className="text-xs opacity-55">
-          1 matéria: só anotações. 2+ no mesmo dia: mini-ciclo entre elas (sem
-          mudar o ciclo normal).
+          1 matéria: só anotações. 2+ no mesmo dia: mini-ciclo entre elas.
         </p>
       )}
     </div>
@@ -498,7 +497,8 @@ export default function MateriasPage() {
       </h1>
       <p className="mt-2 opacity-65">
         Com tempo (timer com meta) ou Livre (cronômetro na sessão; Concluída
-        manual). Em Só hoje: 1 matéria = anotações; 2+ = mini-ciclo entre elas.
+        manual). Foco do dia: 1 matéria = anotações; 2+ = mini-ciclo entre
+        elas.
       </p>
 
       <form
@@ -690,7 +690,7 @@ export default function MateriasPage() {
                     </label>
                   </div>
                 )}
-                {/* Empilha no mobile: side-by-side deixava “Só hoje” em coluna estreita por cima da Frequência. */}
+                {/* Empilha no mobile: side-by-side deixava Foco do dia em coluna estreita por cima da Frequência. */}
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:items-start">
                   <div className="min-w-0">
                     <p className="mb-1.5 text-xs font-medium uppercase tracking-wider opacity-50">
@@ -703,11 +703,10 @@ export default function MateriasPage() {
                   </div>
                   <div className="min-w-0">
                     <p className="mb-1.5 text-xs font-medium uppercase tracking-wider opacity-50">
-                      Só hoje
+                      Foco do dia
                     </p>
                     <p className="mb-1.5 text-[11px] leading-snug opacity-50">
-                      Nestes dias só as matérias marcadas — ciclo normal
-                      pausado.
+                      Nestes dias o foco é só as matérias marcadas.
                     </p>
                     <ExclusiveDaysPicker
                       value={normalizeExclusiveDays(s.exclusive_days) ?? []}
