@@ -306,6 +306,28 @@ async function upsertCollection(
 ): Promise<void> {
   if (rows.length === 0) return;
   const { error } = await supabase.from(table).upsert(rows, { onConflict: "id" });
+  if (
+    error &&
+    table === "subjects" &&
+    (error.code === "PGRST204" ||
+      error.code === "42703" ||
+      error.message?.includes("recursos") ||
+      error.message?.includes("schema cache"))
+  ) {
+    const fallbackRows = rows.map((r) => {
+      const { recursos: _ignored, ...rest } = r;
+      return rest;
+    });
+    const retry = await supabase
+      .from(table)
+      .upsert(fallbackRows, { onConflict: "id" });
+    if (!retry.error) {
+      console.warn(
+        "[foco] Coluna 'recursos' ainda não existe no Supabase. Matérias salvas com sucesso sem esse campo para garantir persistência de anotações e status.",
+      );
+      return;
+    }
+  }
   assertOk(`${label} upsert`, error);
 }
 

@@ -71,11 +71,14 @@ const StudyFlowContext = createContext<StudyFlowContextValue | null>(null);
 function todayQueue(subjects: Subject[]): Subject[] {
   const day = todayIndex();
   const exclusiveCycle = isExclusiveCycleDay(subjects, day);
-  return cycleSubjectsOnDay(subjects, day).filter((s) =>
+  const fullCycle = cycleSubjectsOnDay(subjects, day);
+  const remaining = fullCycle.filter((s) =>
     exclusiveCycle
       ? (s.exclusive_status ?? "prox") !== "ok"
       : s.status !== "ok",
   );
+  // Pad the queue with the full cycle so blocks can wrap around seamlessly
+  return [...remaining, ...fullCycle, ...fullCycle];
 }
 
 export function StudyFlowProvider({ children }: { children: ReactNode }) {
