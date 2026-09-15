@@ -535,7 +535,7 @@ textarea:focus-visible {
   }
 }
 
-/* Feixe elétrico potente correndo da esquerda para a direita (Vídeo 1) */
+/* Pulso suave de luz ao dar Play — abstrato, quase invisível */
 .synaptic-impulse-beam {
   position: absolute;
   top: 0;
@@ -545,15 +545,14 @@ textarea:focus-visible {
   background: linear-gradient(
     90deg,
     transparent 0%,
-    rgba(34, 211, 238, 0.25) 20%,
-    rgba(56, 189, 248, 0.85) 55%,
-    #ffffff 82%,
-    rgba(34, 211, 238, 0.95) 92%,
+    color-mix(in srgb, var(--signal) 15%, transparent) 25%,
+    color-mix(in srgb, var(--signal) 30%, white) 55%,
+    rgba(255, 255, 255, 0.35) 75%,
     transparent 100%
   );
-  filter: blur(4px);
-  mix-blend-mode: screen;
-  animation: synaptic-beam-travel 1.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  filter: blur(8px);
+  mix-blend-mode: soft-light;
+  animation: synaptic-beam-travel 1.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   will-change: transform, opacity;
 }
 
@@ -562,12 +561,12 @@ textarea:focus-visible {
     transform: translate3d(0, 0, 0) scaleX(0.7);
     opacity: 0;
   }
-  12% {
-    opacity: 1;
+  15% {
+    opacity: 0.7;
     transform: translate3d(60%, 0, 0) scaleX(1.1);
   }
-  60% {
-    opacity: 1;
+  55% {
+    opacity: 0.6;
     transform: translate3d(240%, 0, 0) scaleX(1.3);
   }
   100% {
@@ -576,71 +575,99 @@ textarea:focus-visible {
   }
 }
 
-/* Fibras axônicas neurais percorridas pela corrente */
-.synaptic-path-dash {
-  stroke-dasharray: 220 700;
-  stroke-dashoffset: 300;
-  animation: synaptic-path-flow 1.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  filter: drop-shadow(0 0 6px #22d3ee) drop-shadow(0 0 12px #38bdf8);
-}
-
-.synaptic-path-dash.path-2 {
-  animation-delay: 0.05s;
-  animation-duration: 1.25s;
-}
-
-.synaptic-path-dash.path-3 {
-  animation-delay: 0.1s;
-  animation-duration: 1.25s;
-}
-
-@keyframes synaptic-path-flow {
-  0% {
-    stroke-dashoffset: 350;
-    opacity: 0;
-  }
-  15% {
-    opacity: 1;
-  }
-  80% {
-    opacity: 0.95;
-  }
-  100% {
-    stroke-dashoffset: -450;
-    opacity: 0;
-  }
-}
-
-/* Nós sinápticos dourados/âmbar acendendo em cascata (Vídeo 2) */
-.syn-node {
-  transform-origin: center;
-  transform-box: fill-box;
+/* ── Névoas abstratas (syn-wisp) ─────────────────────────────── */
+.syn-wisp {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(
+    ellipse at center,
+    currentColor 0%,
+    transparent 70%
+  );
   opacity: 0;
-  filter: drop-shadow(0 0 8px #f59e0b) drop-shadow(0 0 14px #fbbf24);
-  animation: syn-node-flash 0.65s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: syn-drift var(--sw-dur, 10s) var(--sw-ease, linear) infinite;
+  animation-delay: var(--sw-delay, 0s);
+  will-change: transform;
 }
 
-.syn-node.node-1 { animation-delay: 0.12s; }
-.syn-node.node-2 { animation-delay: 0.22s; }
-.syn-node.node-3 { animation-delay: 0.35s; }
-.syn-node.node-4 { animation-delay: 0.48s; }
-.syn-node.node-5 { animation-delay: 0.62s; }
+.syn-wisp.is-paused {
+  animation-play-state: paused;
+  opacity: 0.06 !important;
+}
 
-@keyframes syn-node-flash {
+/* Cada wisp: tamanho, posição vertical, blur, velocidade, delay únicos */
+.sw-1 {
+  --sw-dur: 9s;
+  --sw-delay: 0s;
+  width: 60px; height: 14px;
+  top: 20%;
+  filter: blur(10px);
+}
+.sw-2 {
+  --sw-dur: 13s;
+  --sw-delay: -4s;
+  width: 90px; height: 18px;
+  top: 55%;
+  filter: blur(14px);
+}
+.sw-3 {
+  --sw-dur: 7.5s;
+  --sw-delay: -2s;
+  width: 40px; height: 10px;
+  top: 35%;
+  filter: blur(7px);
+}
+.sw-4 {
+  --sw-dur: 16s;
+  --sw-delay: -8s;
+  --sw-ease: ease-in-out;
+  width: 110px; height: 22px;
+  top: 70%;
+  filter: blur(18px);
+}
+.sw-5 {
+  --sw-dur: 11s;
+  --sw-delay: -6s;
+  width: 50px; height: 12px;
+  top: 10%;
+  filter: blur(9px);
+}
+.sw-6 {
+  --sw-dur: 8s;
+  --sw-delay: -1s;
+  width: 35px; height: 8px;
+  top: 80%;
+  filter: blur(6px);
+}
+.sw-7 {
+  --sw-dur: 14s;
+  --sw-delay: -10s;
+  width: 75px; height: 16px;
+  top: 45%;
+  filter: blur(12px);
+}
+
+@keyframes syn-drift {
   0% {
-    transform: scale(0.2);
+    transform: translate3d(-12%, 0, 0);
     opacity: 0;
   }
-  30% {
-    transform: scale(1.4);
-    opacity: 1;
+  8% {
+    opacity: 0.22;
   }
-  60% {
-    transform: scale(1.1);
-    opacity: 0.85;
+  35% {
+    transform: translate3d(35%, -4px, 0);
+    opacity: 0.18;
+  }
+  65% {
+    transform: translate3d(65%, 3px, 0);
+    opacity: 0.22;
+  }
+  92% {
+    opacity: 0.18;
   }
   100% {
-    transform: scale(0.6);
+    transform: translate3d(112%, 0, 0);
     opacity: 0;
   }
 }
@@ -745,10 +772,22 @@ textarea:focus-visible {
   will-change: transform, opacity;
 }
 
-.synaptic-flow > * {
+.synaptic-flow > *:not(.synaptic-network-overlay) {
   position: relative;
-  z-index: 1;
+  z-index: 2;
 }
+
+/* Camada da rede sináptica SVG — posição absoluta cobrindo toda a barra */
+.synaptic-network-overlay {
+  position: absolute !important;
+  inset: 0;
+  z-index: 1 !important;
+  width: 100%;
+  height: 100%;
+  color: var(--signal);
+}
+
+
 
 .synaptic-flow.is-paused::before,
 .synaptic-flow.is-paused::after {
@@ -779,6 +818,11 @@ textarea:focus-visible {
   .synaptic-flow.is-bursting::after {
     animation: none;
     opacity: 0.55;
+  }
+
+  .syn-wisp,
+  .synaptic-impulse-beam {
+    animation: none;
   }
 }
 
