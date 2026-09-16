@@ -87,17 +87,27 @@ export default function AgendaPage() {
             <button
               type="button"
               title={
-                showFullWeek ? "Mostrar só hoje" : "Mostrar semana toda"
+                showFullWeek
+                  ? narrow
+                    ? "Mostrar hoje"
+                    : "Mostrar só hoje"
+                  : "Mostrar semana toda"
               }
               aria-label={
-                showFullWeek ? "Mostrar só hoje" : "Mostrar semana toda"
+                showFullWeek
+                  ? narrow
+                    ? "Mostrar hoje"
+                    : "Mostrar só hoje"
+                  : "Mostrar semana toda"
               }
               className="inline-flex min-h-11 items-center gap-1 rounded-full bg-[color-mix(in_srgb,var(--ink)_8%,transparent)] px-3.5 py-2 text-sm font-medium text-[color-mix(in_srgb,var(--ink)_70%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--ink)_12%,transparent)] hover:text-[var(--ink)] md:min-h-0 md:rounded-[var(--radius-tag)] md:px-2 md:py-1 md:text-xs"
               onClick={() => setWeekOverride(!showFullWeek)}
             >
               {showFullWeek ? (
                 <>
-                  <ChevronUp size={14} strokeWidth={2} /> Só hoje
+                  <ChevronUp size={14} strokeWidth={2} />
+                  <span className="md:hidden">Hoje</span>
+                  <span className="hidden md:inline">Só hoje</span>
                 </>
               ) : (
                 <>
