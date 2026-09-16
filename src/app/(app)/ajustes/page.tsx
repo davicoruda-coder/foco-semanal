@@ -1,8 +1,18 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import Link from "next/link";
-import { Bell, Download, KeyRound, Moon, Sun, SunMoon, Upload, Volume2 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import {
+  ArrowLeft,
+  Bell,
+  Download,
+  KeyRound,
+  Moon,
+  Sun,
+  SunMoon,
+  Upload,
+  Volume2,
+} from "lucide-react";
 import { useApp } from "@/components/AppProvider";
 import { AccessManagement } from "@/components/AccessManagement";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
@@ -38,6 +48,7 @@ const OPTIONS: { value: ThemePref; label: string; icon: typeof Sun }[] = [
 ];
 
 export default function AjustesPage() {
+  const router = useRouter();
   const {
     themePref,
     setTheme,
@@ -177,12 +188,20 @@ export default function AjustesPage() {
         }}
       />
 
-      <Link
-        href="/agenda"
-        className="mb-2 inline-flex text-sm font-medium text-[color-mix(in_srgb,var(--ink)_60%,transparent)] transition hover:text-[var(--signal)] lg:hidden"
+      <button
+        type="button"
+        onClick={() => {
+          if (typeof window !== "undefined" && window.history.length > 1) {
+            router.back();
+          } else {
+            router.push("/agenda");
+          }
+        }}
+        className="mb-2 inline-flex items-center gap-1.5 text-sm font-medium text-[color-mix(in_srgb,var(--ink)_60%,transparent)] transition hover:text-[var(--signal)] lg:hidden"
       >
-        ← Agenda
-      </Link>
+        <ArrowLeft size={16} strokeWidth={2} />
+        Voltar
+      </button>
       <h1 className="font-display pb-0.5 text-2xl font-semibold leading-normal tracking-tight md:text-3xl">
         Ajustes
       </h1>
