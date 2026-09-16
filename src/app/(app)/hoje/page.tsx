@@ -115,18 +115,16 @@ export default function HojePage() {
               </button>
               <button
                 type="button"
-                title={
-                  showFullWeek ? "Mostrar só hoje" : "Mostrar semana toda"
-                }
+                title={showFullWeek ? "Mostrar hoje" : "Mostrar semana toda"}
                 aria-label={
-                  showFullWeek ? "Mostrar só hoje" : "Mostrar semana toda"
+                  showFullWeek ? "Mostrar hoje" : "Mostrar semana toda"
                 }
                 className="inline-flex min-h-10 items-center gap-1 rounded-full bg-[color-mix(in_srgb,var(--ink)_8%,transparent)] px-3.5 py-2 text-sm font-medium text-[color-mix(in_srgb,var(--ink)_70%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--ink)_12%,transparent)] hover:text-[var(--ink)] md:min-h-0 md:rounded-[var(--radius-tag)] md:px-2 md:py-1 md:text-xs"
                 onClick={() => setWeekOverride(showFullWeek ? false : true)}
               >
                 {showFullWeek ? (
                   <>
-                    <ChevronUp size={14} strokeWidth={2} /> Só hoje
+                    <ChevronUp size={14} strokeWidth={2} /> Hoje
                   </>
                 ) : (
                   <>
@@ -235,12 +233,9 @@ export default function HojePage() {
                 href="/materias?from=hoje"
                 title="Gerenciar matérias"
                 aria-label="Gerenciar matérias"
-                className="inline-flex size-11 items-center justify-center gap-1.5 rounded-full text-[color-mix(in_srgb,var(--ink)_45%,transparent)] transition hover:bg-[var(--mist)] hover:text-[var(--signal)] lg:size-auto lg:rounded-[var(--radius-tag)] lg:px-2 lg:py-1.5"
+                className="inline-flex size-9 items-center justify-center rounded-full text-[color-mix(in_srgb,var(--ink)_50%,transparent)] transition hover:bg-[var(--mist)] hover:text-[var(--signal)] md:size-8"
               >
                 <BookMarked size={18} strokeWidth={1.75} />
-                <span className="hidden text-xs font-medium lg:inline">
-                  Matérias
-                </span>
               </Link>
             </div>
 
