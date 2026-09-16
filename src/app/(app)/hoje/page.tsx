@@ -95,50 +95,6 @@ export default function HojePage() {
 
       <div className="grid items-start gap-3 sm:gap-5 lg:grid-cols-[minmax(0,1fr)_300px] xl:grid-cols-[minmax(0,1fr)_320px]">
         <div className="min-w-0 space-y-3 sm:space-y-5">
-          {/* Contexto do dia — mobile/tablet; no desktop a agenda completa cobre isso */}
-          <section className="surface overflow-hidden p-0 lg:hidden">
-            <div className="flex items-center justify-between gap-2 border-b border-[var(--line)] bg-[var(--mist)] px-3.5 py-2">
-              <button
-                type="button"
-                title="Abrir calendário do mês"
-                aria-label="Abrir calendário do mês"
-                className="font-display inline-flex min-h-11 items-center gap-2 text-[15px] font-semibold tracking-tight text-[var(--ink)]"
-                onClick={() => setCalendarOpen(true)}
-              >
-                <CalendarDays size={18} strokeWidth={2} />
-                {`${DAYS[day]} · ${new Date().toLocaleDateString("pt-BR", {
-                  day: "2-digit",
-                  month: "2-digit",
-                })}`}
-              </button>
-              <Link
-                href="/agenda"
-                className="inline-flex min-h-11 items-center rounded-full px-3 text-sm font-medium text-[var(--signal)]"
-              >
-                Agenda
-              </Link>
-            </div>
-            {todayBlocks.length > 0 ? (
-              <div className="flex gap-2 overflow-x-auto overscroll-x-contain px-3.5 py-2.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                {todayBlocks.map((b) => {
-                  const style = blockStyle(b);
-                  return (
-                    <div
-                      key={b.id}
-                      className="shrink-0 rounded-full px-3 py-1.5 text-sm font-medium tabular-nums"
-                      style={style.style}
-                    >
-                      {b.label}
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <p className="px-3.5 py-2.5 text-sm text-[color-mix(in_srgb,var(--ink)_45%,transparent)]">
-                Nenhum bloco hoje.
-              </p>
-            )}
-          </section>
 
           {/* Agenda — só no desktop; no mobile fica na aba Agenda */}
           <section className="surface hidden overflow-hidden p-0 lg:block">
