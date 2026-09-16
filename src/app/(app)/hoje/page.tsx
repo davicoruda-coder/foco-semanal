@@ -6,6 +6,7 @@ import {
   BookMarked,
   CalendarDays,
   ChevronDown,
+  ChevronRight,
   ChevronUp,
 } from "lucide-react";
 import { useApp } from "@/components/AppProvider";
@@ -199,15 +200,24 @@ export default function HojePage() {
                       Nenhum bloco hoje.
                     </p>
                   )}
-                  {todayBlocks.map((b) => {
+                  {todayBlocks.map((b, idx) => {
                     const style = blockStyle(b);
                     return (
-                      <div
-                        key={b.id}
-                        className="rounded-full px-3 py-1.5 text-sm font-medium tabular-nums"
-                        style={style.style}
-                      >
-                        {b.label}
+                      <div key={b.id} className="inline-flex items-center gap-2">
+                        {idx > 0 && (
+                          <ChevronRight
+                            size={14}
+                            strokeWidth={2.5}
+                            className="shrink-0 text-[color-mix(in_srgb,var(--ink)_35%,transparent)]"
+                            aria-hidden="true"
+                          />
+                        )}
+                        <div
+                          className="rounded-full px-3 py-1.5 text-sm font-medium tabular-nums"
+                          style={style.style}
+                        >
+                          {b.label}
+                        </div>
                       </div>
                     );
                   })}
