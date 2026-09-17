@@ -30,13 +30,13 @@ const DESKTOP_NAV = [
 /** Mobile: abas principais. */
 const MOBILE_PRIMARY = [
   { href: "/hoje", label: "Estudo", icon: BookMarked },
+  { href: "/revisao", label: "Revisão", icon: RotateCcw },
   { href: "/agenda", label: "Agenda", icon: CalendarDays },
   { href: "/lembretes", label: "Lembretes", icon: StickyNote },
 ];
 
 /** Mobile: opções dentro do ⋯ */
 const MOBILE_MORE = [
-  { href: "/revisao", label: "Revisão", icon: RotateCcw },
   { href: "/estatisticas", label: "Estatísticas", icon: ChartColumn },
   { href: "/ajustes", label: "Ajustes", icon: Settings },
 ];
@@ -103,10 +103,6 @@ function MobileMoreMenu({
 
   if (!shown) return null;
 
-  const items = MOBILE_MORE.filter(
-    (item) => item.href !== "/revisao" || revisaoActive,
-  );
-
   return (
     <div className="fixed inset-0 z-40 lg:hidden" role="presentation">
       <button
@@ -134,7 +130,7 @@ function MobileMoreMenu({
             Mais
           </p>
           <ul className="py-1">
-            {items.map(({ href, label, icon: Icon }) => {
+            {MOBILE_MORE.map(({ href, label, icon: Icon }) => {
               const active =
                 href === "/ajustes"
                   ? pathname.startsWith("/ajustes") ||
@@ -206,6 +202,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   const moreActive = mobileMoreActive(pathname);
   const desktopNav = DESKTOP_NAV.filter(
+    (item) => item.href !== "/revisao" || revisaoActive,
+  );
+  const mobilePrimary = MOBILE_PRIMARY.filter(
     (item) => item.href !== "/revisao" || revisaoActive,
   );
 
@@ -292,7 +291,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         aria-label="Navegação principal"
       >
         <div className="mx-auto flex h-[4.5rem] w-full max-w-lg">
-          {MOBILE_PRIMARY.map(({ href, label, icon: Icon }) => {
+          {mobilePrimary.map(({ href, label, icon: Icon }) => {
             const active = mobilePrimaryActive(pathname, href);
             return (
               <Link
