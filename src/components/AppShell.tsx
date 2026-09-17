@@ -21,8 +21,8 @@ import { useOpenTransition } from "@/lib/use-open-transition";
 /** Desktop: layout clássico. */
 const DESKTOP_NAV = [
   { href: "/hoje", label: "Hoje", icon: Home },
-  { href: "/semana", label: "Semana", icon: CalendarDays },
   { href: "/revisao", label: "Revisão", icon: RotateCcw },
+  { href: "/semana", label: "Semana", icon: CalendarDays },
   { href: "/estatisticas", label: "Estatísticas", icon: ChartColumn },
   { href: "/ajustes", label: "Ajustes", icon: Settings },
 ];
