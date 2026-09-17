@@ -705,7 +705,7 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
         linkedPausedSubjectsRef.current =
           linkedPausedSubjectsRef.current.filter((id) => id !== item.key);
         playAlarmTone();
-        notify("Foco Semanal", `${item.name} concluída`);
+        notify("FocoHub", `${item.name} concluída`);
         const sid = subjectIdFromKey(item.key);
         setSubjectStatusRef.current(sid, "ok");
         emitSubjectComplete(sid);
@@ -755,7 +755,7 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
         linkedPausedSubjectsRef.current =
           linkedPausedSubjectsRef.current.filter((id) => id !== item.key);
         playAlarmTone();
-        notify("Foco Semanal", `${item.name} concluída`);
+        notify("FocoHub", `${item.name} concluída`);
         const sid = subjectIdFromKey(item.key);
         setSubjectStatusRef.current(sid, "ok");
         emitSubjectComplete(sid);
@@ -821,7 +821,7 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
         return updated;
       });
       playAlarmTone();
-      notify("Foco Semanal", `${t.name} concluído`);
+      notify("FocoHub", `${t.name} concluído`);
 
       if (t.sort_order === 0) {
         const day = todayIndex();
@@ -870,7 +870,7 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
           return updated;
         });
         playAlarmTone();
-        notify("Foco Semanal", `${sidebarTimerName} concluído`);
+        notify("FocoHub", `${sidebarTimerName} concluído`);
       }
     }
 
@@ -909,7 +909,7 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
         return updated;
       });
       playAlarmTone();
-      notify("Foco Semanal", `${s.name} concluída`);
+      notify("FocoHub", `${s.name} concluída`);
       setSubjectStatus(s.id, "ok");
       emitSubjectComplete(s.id);
     }

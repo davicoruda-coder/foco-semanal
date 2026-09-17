@@ -395,7 +395,7 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
         settings.targetMinutes,
       );
       if (packed.length === 0) {
-        notify("Foco Semanal", "Não há mais matérias na fila de hoje");
+        notify("FocoHub", "Não há mais matérias na fila de hoje");
         return;
       }
       advancingRef.current = false;
@@ -468,13 +468,13 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
     const nextIdx = idx + 1;
     if (nextIdx < subjects.length) {
       playAlarmTone();
-      notify("Foco Semanal", `${current.name} concluída — anote se quiser`);
+      notify("FocoHub", `${current.name} concluída — anote se quiser`);
       setPhase("subject_notes");
       advancingRef.current = false;
     } else {
       playAlarmTone();
       notify(
-        "Foco Semanal",
+        "FocoHub",
         `Bloco concluído · ${blockTotalMinutes(subjects)} min`,
       );
       setPhase("block_done");
@@ -525,7 +525,7 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
       setTick((n) => n + 1);
       if (Date.now() >= restEndsAt) {
         playAlarmTone();
-        notify("Foco Semanal", "Descanso encerrado — pode voltar aos estudos");
+        notify("FocoHub", "Descanso encerrado — pode voltar aos estudos");
         setPhase("rest_done");
         setRestEndsAt(null);
       }

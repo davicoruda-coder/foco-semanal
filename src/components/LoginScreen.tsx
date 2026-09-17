@@ -1,13 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { Eye, EyeOff, Target } from "lucide-react";
+import { Eye, EyeOff } from "lucide-react";
+import { BrandIcon } from "@/components/BrandIcon";
 import { useApp } from "@/components/AppProvider";
 import { checkCurrentUserAccess } from "@/lib/supabase/access";
 
 const WHATSAPP_DEMO_URL =
   "https://wa.me/5571996952190?text=" +
-  encodeURIComponent("Olá! Quero conhecer o Foco.");
+  encodeURIComponent("Olá! Quero conhecer o FocoHub.");
 
 const GENERIC_AUTH_ERROR = "E-mail ou senha incorretos.";
 const GENERIC_RESET_MSG =
@@ -106,19 +107,10 @@ export function LoginScreen() {
     <div className="relative z-0 flex min-h-screen items-center justify-center px-4">
       <div className="surface w-full max-w-md p-6 md:p-8">
         <div className="flex items-center gap-3">
-          <div
-            className="grid h-11 w-11 place-items-center rounded-xl text-white"
-            style={{
-              background:
-                "linear-gradient(135deg, var(--signal), var(--accent-2))",
-              boxShadow: "var(--shadow-md)",
-            }}
-          >
-            <Target size={20} strokeWidth={2.25} />
-          </div>
+          <BrandIcon size={44} />
           <div>
             <h1 className="font-display text-2xl font-semibold tracking-tight">
-              Foco
+              FocoHub
             </h1>
             <p className="text-xs opacity-55">Entre para continuar</p>
           </div>

@@ -3,8 +3,8 @@ import type { MetadataRoute } from "next";
 export default function manifest(): MetadataRoute.Manifest {
   return {
     id: "/",
-    name: "Foco Semanal",
-    short_name: "Foco",
+    name: "FocoHub",
+    short_name: "FocoHub",
     description: "Sistema de estudo: grade, matérias, timer e lembretes.",
     start_url: "/hoje",
     scope: "/",

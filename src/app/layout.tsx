@@ -23,13 +23,13 @@ const plexMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Foco Semanal",
+  title: "FocoHub",
   description: "Sistema de estudo: grade, matérias, timer e lembretes.",
-  applicationName: "Foco Semanal",
+  applicationName: "FocoHub",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Foco",
+    title: "FocoHub",
   },
   formatDetection: {
     telephone: false,

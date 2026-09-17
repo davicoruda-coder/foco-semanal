@@ -10,9 +10,9 @@ import {
   Home,
   Settings,
   StickyNote,
-  Target,
   ChartColumn,
 } from "lucide-react";
+import { BrandIcon } from "@/components/BrandIcon";
 import { useApp } from "@/components/AppProvider";
 import { LoginScreen } from "@/components/LoginScreen";
 import { useOpenTransition } from "@/lib/use-open-transition";
@@ -168,16 +168,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   if (!ready) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-2 text-sm text-[color-mix(in_srgb,var(--ink)_55%,transparent)]">
-        <span
-          className="grid size-9 place-items-center rounded-xl text-white"
-          style={{
-            background:
-              "linear-gradient(135deg, var(--signal), var(--accent-2))",
-          }}
-          aria-hidden
-        >
-          <Target size={16} strokeWidth={2.25} />
-        </span>
+        <BrandIcon size={36} />
         Carregando…
       </div>
     );
@@ -208,20 +199,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <Link
             href="/hoje"
             className="flex min-w-0 items-center gap-2"
-            title="Foco Semanal"
+            title="FocoHub"
           >
-            <div
-              className="grid h-7 w-7 shrink-0 place-items-center rounded-[10px] text-white"
-              style={{
-                background:
-                  "linear-gradient(135deg, var(--signal), var(--accent-2))",
-                boxShadow: "var(--shadow-md)",
-              }}
-            >
-              <Target size={14} strokeWidth={2.25} />
-            </div>
+            <BrandIcon size={28} />
             <span className="font-display truncate text-[15px] font-semibold tracking-tight">
-              Foco
+              FocoHub
             </span>
           </Link>
         </div>
@@ -232,20 +214,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <Link
             href="/hoje"
             className="flex min-w-0 shrink-0 items-center gap-2.5"
-            title="Foco Semanal"
+            title="FocoHub"
           >
-            <div
-              className="grid h-8 w-8 shrink-0 place-items-center rounded-xl text-white"
-              style={{
-                background:
-                  "linear-gradient(135deg, var(--signal), var(--accent-2))",
-                boxShadow: "var(--shadow-md)",
-              }}
-            >
-              <Target size={16} strokeWidth={2.25} />
-            </div>
+            <BrandIcon size={32} />
             <span className="font-display truncate text-base font-semibold tracking-tight">
-              Foco
+              FocoHub
             </span>
           </Link>
 

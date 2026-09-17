@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Target } from "lucide-react";
+import { BrandIcon } from "@/components/BrandIcon";
 import {
   MIN_PASSWORD_LENGTH,
   isValidNewPassword,
@@ -50,14 +50,8 @@ export default function RedefinirSenhaPage() {
   return (
     <div className="relative z-10 flex min-h-screen items-center justify-center px-4 py-10">
       <div className="surface w-full max-w-md p-8 md:p-10">
-        <div
-          className="mb-5 grid h-12 w-12 place-items-center rounded-2xl text-white"
-          style={{
-            background: "linear-gradient(135deg, var(--signal), var(--accent-2))",
-            boxShadow: "var(--shadow-md)",
-          }}
-        >
-          <Target size={24} strokeWidth={2.25} />
+        <div className="mb-5">
+          <BrandIcon size={48} />
         </div>
         <p className="font-display text-3xl font-semibold tracking-tight">Nova senha</p>
         <p className="mt-2 text-sm text-[color-mix(in_srgb,var(--ink)_60%,transparent)]">

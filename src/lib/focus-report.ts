@@ -27,8 +27,8 @@ export async function downloadFocusReport({
 
   doc.setProperties({
     title: `Relatório de foco — ${period}`,
-    subject: "Tempo de foco registrado no Foco Semanal",
-    creator: "Foco Semanal",
+    subject: "Tempo de foco registrado no FocoHub",
+    creator: "FocoHub",
   });
 
   doc.setFillColor(109, 94, 248);
@@ -36,7 +36,7 @@ export async function downloadFocusReport({
   doc.setTextColor(255, 255, 255);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(18);
-  doc.text("Foco Semanal", margin, 15);
+  doc.text("FocoHub", margin, 15);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
   doc.text("Relatório de tempo de foco", margin, 23);
