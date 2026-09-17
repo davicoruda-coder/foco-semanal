@@ -952,6 +952,10 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
         });
         playAlarmTone();
         notify("FocoHub", `${sidebarTimerName} concluído`);
+        flushFocusSeconds();
+        commitFocusDisplaySnapshot();
+        window.dispatchEvent(new Event("foco-focus-log"));
+        void syncFocusLogWithCloud();
       }
     }
 
@@ -992,6 +996,10 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
       playAlarmTone();
       notify("FocoHub", `${s.name} concluída`);
       setSubjectStatus(s.id, "ok");
+      flushFocusSeconds();
+      commitFocusDisplaySnapshot();
+      window.dispatchEvent(new Event("foco-focus-log"));
+      void syncFocusLogWithCloud();
       emitSubjectComplete(s.id);
     }
   }, [
@@ -1005,6 +1013,7 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
     setSubjectStatus,
     sidebarTimerMinutes,
     sidebarTimerName,
+    flushFocusSeconds,
   ]);
 
   const showFlash = useCallback((id: string, kind: FlashKind) => {
