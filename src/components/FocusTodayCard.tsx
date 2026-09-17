@@ -107,7 +107,7 @@ export function FocusTodayCard({
 
   return (
     <Link
-      href="/estatisticas?from=hoje"
+      href="/estatisticas"
       className={`group block transition ${
         embedded
           ? "px-3.5 py-3 hover:bg-[color-mix(in_srgb,var(--mist)_70%,transparent)]"

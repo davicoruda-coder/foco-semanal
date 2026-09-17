@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { ChevronDown, ChevronUp, Repeat, Trash2, X } from "lucide-react";
 import { useApp } from "@/components/AppProvider";
-import { BackToHoje } from "@/components/BackToHoje";
 import { SubjectIconPicker } from "@/components/SubjectIconPicker";
 import { newId } from "@/lib/demo-store";
 import {
@@ -508,7 +507,6 @@ export default function MateriasPage() {
 
   return (
     <div className="mx-auto max-w-3xl">
-      <BackToHoje />
       <h1 className="font-display pb-0.5 text-2xl font-semibold leading-normal tracking-tight md:text-3xl">
         Matérias
       </h1>

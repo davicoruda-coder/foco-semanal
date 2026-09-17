@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight, Download, Plus } from "lucide-react";
 import { useApp } from "@/components/AppProvider";
 import { SIDEBAR_TIMER_ID, useTimerRuntime } from "@/components/TimerRuntimeProvider";
-import { BackToHoje } from "@/components/BackToHoje";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { DialogFrame } from "@/components/DialogFrame";
 import { FocusBarChart } from "@/components/FocusBarChart";
@@ -518,7 +517,6 @@ export default function EstatisticasPage() {
         </div>
       </DialogFrame>
 
-      <BackToHoje />
       <h1 className="font-display pb-0.5 text-2xl font-semibold leading-normal tracking-tight md:text-3xl">
         Estatísticas
       </h1>
