@@ -604,38 +604,106 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
       stopwatch.running,
     [runtime, anySubjectStopwatchRunning, stopwatch.running],
   );
-  const focusLastRef = useRef<number | null>(null);
+  const focusCreditedCountdownRef = useRef<Record<string, number>>({});
+  const focusCreditedStopwatchRef = useRef<Record<string, number>>({});
 
-  /** Acumula foco sem descartar ms sobrando entre flushes (evita subcontar ~1 min/hora). */
-  const flushFocusSeconds = useCallback((final = false) => {
-    const now = Date.now();
-    const last = focusLastRef.current;
-    if (last == null) return;
-    const elapsed = now - last;
-    const deltaSec = final
-      ? Math.round(elapsed / 1000)
-      : Math.floor(elapsed / 1000);
-    if (deltaSec > 0) {
-      // Mantém o resto de milissegundos para o próximo flush (exceto no fim).
-      focusLastRef.current = final ? now : last + deltaSec * 1000;
-      addFocusSeconds(deltaSec);
-    } else if (final) {
-      focusLastRef.current = now;
+  /**
+   * Acumula foco com base no relógio real dos timers (duração decorrida = total - restante):
+   * - Countdown: (último secondsLeft creditado - secondsLeft atual).
+   *   Ao completar (00:00) credita todo o saldo restante para fechar a duração total.
+   *   Em pausas ou interrupções, credita os segundos exatos decorridos.
+   * - Cronômetro Livre: sincroniza pelo accumulatedMs real.
+   */
+  const flushFocusSeconds = useCallback(() => {
+    let totalDelta = 0;
+
+    // 1. Countdown timers (matérias com tempo e temporizador da lateral)
+    const currentRuntime = runtimeRef.current;
+    for (const [id, r] of Object.entries(currentRuntime)) {
+      if (!isSubjectTimerKey(id) && id !== SIDEBAR_TIMER_ID) continue;
+
+      let minutes = 25;
+      if (id === SIDEBAR_TIMER_ID) {
+        minutes = sidebarTimerMinutes;
+      } else {
+        const sid = subjectIdFromKey(id);
+        const sub = subjectsRef.current.find((s) => s.id === sid);
+        if (sub && usesStopwatchToday(sub, subjectsRef.current)) continue;
+        minutes = Math.max(1, sub?.study_minutes ?? 25);
+      }
+
+      const left = liveSeconds(r, minutes);
+      const lastLeft = focusCreditedCountdownRef.current[id];
+
+      if (r.running) {
+        if (lastLeft == null || left > lastLeft) {
+          focusCreditedCountdownRef.current[id] = left;
+        } else {
+          const delta = lastLeft - left;
+          if (delta > 0) {
+            totalDelta += delta;
+            focusCreditedCountdownRef.current[id] = left;
+          }
+        }
+      } else {
+        if (lastLeft != null && left < lastLeft) {
+          const delta = lastLeft - left;
+          if (delta > 0) {
+            totalDelta += delta;
+          }
+        }
+        focusCreditedCountdownRef.current[id] = left;
+      }
     }
-  }, []);
+
+    // 2. Cronômetros Livre por matéria
+    for (const [sid, sw] of Object.entries(subjectStopwatchesRef.current)) {
+      const currentMs = liveStopwatchMs(sw);
+      const lastMs = focusCreditedStopwatchRef.current[sid];
+
+      if (lastMs == null || currentMs < lastMs) {
+        focusCreditedStopwatchRef.current[sid] = currentMs;
+      } else {
+        const deltaMs = currentMs - lastMs;
+        const deltaSec = Math.floor(deltaMs / 1000);
+        if (deltaSec > 0) {
+          totalDelta += deltaSec;
+          focusCreditedStopwatchRef.current[sid] = lastMs + deltaSec * 1000;
+        }
+      }
+    }
+
+    // 3. Cronômetro da lateral
+    const sw = stopwatchRef.current;
+    const currentMs = liveStopwatchMs(sw);
+    const lastMs = focusCreditedStopwatchRef.current["__sidebar_sw"];
+    if (lastMs == null || currentMs < lastMs) {
+      focusCreditedStopwatchRef.current["__sidebar_sw"] = currentMs;
+    } else {
+      const deltaMs = currentMs - lastMs;
+      const deltaSec = Math.floor(deltaMs / 1000);
+      if (deltaSec > 0) {
+        totalDelta += deltaSec;
+        focusCreditedStopwatchRef.current["__sidebar_sw"] =
+          lastMs + deltaSec * 1000;
+      }
+    }
+
+    if (totalDelta > 0) {
+      addFocusSeconds(totalDelta);
+    }
+  }, [sidebarTimerMinutes]);
 
   useEffect(() => {
     if (!ready) return;
     if (!trackingFocus) {
-      focusLastRef.current = null;
       return;
     }
     // Congela o card "Foco hoje" no total atual; o log real continua acumulando.
     commitFocusDisplaySnapshot();
-    focusLastRef.current = Date.now();
 
     const persistFocus = () => {
-      flushFocusSeconds(false);
+      flushFocusSeconds();
       window.dispatchEvent(new Event("foco-focus-log"));
     };
 
@@ -649,8 +717,7 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
     return () => {
       document.removeEventListener("visibilitychange", onHide);
       window.removeEventListener("pagehide", persistFocus);
-      flushFocusSeconds(true);
-      focusLastRef.current = null;
+      flushFocusSeconds();
       // Pause / fim / reset: libera o total consolidado e espelha na nuvem.
       commitFocusDisplaySnapshot();
       window.dispatchEvent(new Event("foco-focus-log"));
@@ -701,6 +768,13 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
         setRuntime(next);
       }
 
+      if (completedSubjects.length > 0) {
+        flushFocusSeconds();
+        commitFocusDisplaySnapshot();
+        window.dispatchEvent(new Event("foco-focus-log"));
+        void syncFocusLogWithCloud();
+      }
+
       for (const item of completedSubjects) {
         linkedPausedSubjectsRef.current =
           linkedPausedSubjectsRef.current.filter((id) => id !== item.key);
@@ -713,7 +787,7 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
     }, 1000);
 
     return () => window.clearInterval(id);
-  }, [ready, anyRunning]);
+  }, [ready, anyRunning, flushFocusSeconds]);
 
   // Aba voltou: se o intervalo ficou lento, conclui matérias ainda "running" em 00:00.
   useEffect(() => {
@@ -749,6 +823,13 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
         runtimeRef.current = next;
         writeStored(next);
         setRuntime(next);
+      }
+
+      if (completed.length > 0) {
+        flushFocusSeconds();
+        commitFocusDisplaySnapshot();
+        window.dispatchEvent(new Event("foco-focus-log"));
+        void syncFocusLogWithCloud();
       }
 
       for (const item of completed) {
@@ -1338,6 +1419,7 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
           const next = { ...prev };
           delete next[subjectId];
           subjectStopwatchesRef.current = next;
+          delete focusCreditedStopwatchRef.current[subjectId];
           writeSubjectStopwatches(next);
           return next;
         });
@@ -1348,6 +1430,7 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
       doneRef.current[key] = false;
       linkedPausedSubjectsRef.current =
         linkedPausedSubjectsRef.current.filter((id) => id !== key);
+      focusCreditedCountdownRef.current[key] = minutes * 60;
       setRuntime((prev) => {
         const updated = {
           ...prev,
@@ -1415,6 +1498,7 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
 
   const resetStopwatch = useCallback(() => {
     const next = DEFAULT_STOPWATCH;
+    delete focusCreditedStopwatchRef.current["__sidebar_sw"];
     writeStopwatch(next);
     setStopwatch(next);
   }, []);
@@ -1499,6 +1583,8 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
 
   const resetSidebarTimer = useCallback(() => {
     doneRef.current[SIDEBAR_TIMER_ID] = false;
+    focusCreditedCountdownRef.current[SIDEBAR_TIMER_ID] =
+      sidebarTimerMinutes * 60;
     setRuntime((prev) => {
       const updated = {
         ...prev,
