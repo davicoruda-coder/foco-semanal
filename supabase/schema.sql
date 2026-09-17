@@ -29,6 +29,9 @@ create table if not exists public.subjects (
   rotation jsonb,
   -- Ícone: preset:<id> | data URL | null
   icon text,
+  -- Ciclo ponderado: quantas vezes entra no ciclo e quantas vezes já cumpriu no ciclo atual
+  weight int not null default 1,
+  cycle_done int not null default 0,
   created_at timestamptz not null default now(),
   deleted_at timestamptz,
   constraint subjects_study_days_valid check (
@@ -46,7 +49,9 @@ create table if not exists public.subjects (
     )
   ),
   constraint subjects_exclusive_status_valid check (exclusive_status in ('ok', 'prox')),
-  constraint subjects_study_minutes_range check (study_minutes between 1 and 999)
+  constraint subjects_study_minutes_range check (study_minutes between 1 and 999),
+  constraint subjects_weight_range check (weight between 1 and 10),
+  constraint subjects_cycle_done_range check (cycle_done >= 0)
 );
 
 create table if not exists public.week_blocks (

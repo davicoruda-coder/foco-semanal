@@ -115,6 +115,8 @@ function parseSubject(raw: unknown, index: number): Subject | null {
     rotation: normalizeRotation(raw.rotation),
     icon: parseSubjectIcon(raw.icon),
     recursos: normalizeRecursos(raw.recursos),
+    weight: Math.min(10, Math.max(1, asInt(raw.weight, 1, 1, 10))),
+    cycle_done: Math.max(0, asInt(raw.cycle_done, 0, 0, 999)),
   };
 }
 

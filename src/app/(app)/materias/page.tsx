@@ -440,6 +440,7 @@ export default function MateriasPage() {
   const [name, setName] = useState("");
   const [newMinutes, setNewMinutes] = useState("25");
   const [newIsFree, setNewIsFree] = useState(false);
+  const [newWeight, setNewWeight] = useState(1);
   const [newFreq, setNewFreq] = useState<DraftFreq>({ mode: "all", days: [] });
   /** Rascunho local: permite abrir “Dias da semana” antes de marcar algum dia. */
   const [freqDrafts, setFreqDrafts] = useState<Record<string, DraftFreq>>({});
@@ -523,10 +524,12 @@ export default function MateriasPage() {
             study_days: studyDaysFromFreq(newFreq),
             study_minutes: parseMinutes(newMinutes, 25),
             is_free: newIsFree,
+            weight: newWeight,
           });
           setName("");
           setNewMinutes("25");
           setNewIsFree(false);
+          setNewWeight(1);
           setNewFreq({ mode: "all", days: [] });
         }}
       >
@@ -558,29 +561,51 @@ export default function MateriasPage() {
             Adicionar
           </button>
         </div>
-        <div className="inline-flex items-center gap-0.5 rounded-full border border-[var(--line)] bg-[color-mix(in_srgb,var(--ink)_6%,transparent)] p-0.5">
-          <button
-            type="button"
-            className={`rounded-full px-2.5 py-1 text-xs font-medium transition ${
-              !newIsFree
-                ? "bg-[var(--signal)] text-white"
-                : "text-[color-mix(in_srgb,var(--ink)_55%,transparent)] hover:text-[var(--ink)]"
-            }`}
-            onClick={() => setNewIsFree(false)}
-          >
-            Com tempo
-          </button>
-          <button
-            type="button"
-            className={`rounded-full px-2.5 py-1 text-xs font-medium transition ${
-              newIsFree
-                ? "bg-[var(--signal)] text-white"
-                : "text-[color-mix(in_srgb,var(--ink)_55%,transparent)] hover:text-[var(--ink)]"
-            }`}
-            onClick={() => setNewIsFree(true)}
-          >
-            Livre
-          </button>
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="inline-flex items-center gap-0.5 rounded-full border border-[var(--line)] bg-[color-mix(in_srgb,var(--ink)_6%,transparent)] p-0.5">
+            <button
+              type="button"
+              className={`rounded-full px-2.5 py-1 text-xs font-medium transition ${
+                !newIsFree
+                  ? "bg-[var(--signal)] text-white"
+                  : "text-[color-mix(in_srgb,var(--ink)_55%,transparent)] hover:text-[var(--ink)]"
+              }`}
+              onClick={() => setNewIsFree(false)}
+            >
+              Com tempo
+            </button>
+            <button
+              type="button"
+              className={`rounded-full px-2.5 py-1 text-xs font-medium transition ${
+                newIsFree
+                  ? "bg-[var(--signal)] text-white"
+                  : "text-[color-mix(in_srgb,var(--ink)_55%,transparent)] hover:text-[var(--ink)]"
+              }`}
+              onClick={() => setNewIsFree(true)}
+            >
+              Livre
+            </button>
+          </div>
+
+          <div className="flex items-center gap-1.5 text-xs text-[color-mix(in_srgb,var(--ink)_65%,transparent)]">
+            <span className="font-medium">Peso:</span>
+            <div className="inline-flex items-center gap-0.5 rounded-full border border-[var(--line)] bg-[color-mix(in_srgb,var(--ink)_6%,transparent)] p-0.5">
+              {[1, 2, 3].map((w) => (
+                <button
+                  key={w}
+                  type="button"
+                  className={`rounded-full px-2.5 py-1 text-xs font-medium transition ${
+                    newWeight === w
+                      ? "bg-[var(--signal)] text-white shadow-sm"
+                      : "text-[color-mix(in_srgb,var(--ink)_55%,transparent)] hover:text-[var(--ink)]"
+                  }`}
+                  onClick={() => setNewWeight(w)}
+                >
+                  {w}x
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
         <StudyDaysPicker value={newFreq} onChange={setNewFreq} />
       </form>
@@ -693,6 +718,41 @@ export default function MateriasPage() {
                     </label>
                   </div>
                 )}
+
+                <div>
+                  <div className="mb-1.5 flex items-center justify-between gap-2">
+                    <p className="text-xs font-medium uppercase tracking-wider opacity-50">
+                      Peso no ciclo
+                    </p>
+                    <span className="text-[11px] opacity-55">
+                      {(s.weight ?? 1) > 1
+                        ? `${s.weight}x por ciclo (intercalado)`
+                        : "1x por ciclo (padrão)"}
+                    </span>
+                  </div>
+                  <div className="inline-flex items-center gap-1 rounded-full border border-[var(--line)] bg-[color-mix(in_srgb,var(--ink)_6%,transparent)] p-0.5">
+                    {[1, 2, 3, 4].map((w) => {
+                      const active = (s.weight ?? 1) === w;
+                      return (
+                        <button
+                          key={w}
+                          type="button"
+                          className={`rounded-full px-3 py-1 text-xs font-medium transition ${
+                            active
+                              ? "bg-[var(--signal)] text-white shadow-sm"
+                              : "text-[color-mix(in_srgb,var(--ink)_55%,transparent)] hover:text-[var(--ink)]"
+                          }`}
+                          onClick={() => {
+                            if (active) return;
+                            upsertSubject({ ...s, weight: w });
+                          }}
+                        >
+                          {w === 1 ? "1x (Normal)" : `${w}x`}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
                 {/* Empilha no mobile: side-by-side deixava Foco do dia em coluna estreita por cima da Frequência. */}
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:items-start">
                   <div className="min-w-0">

@@ -272,15 +272,78 @@ function statusOnDay(s: Subject, day: number, all: Subject[]): SubjectStatus {
   return s.status;
 }
 
-/** Id da próxima matéria do ciclo de hoje (1ª não Concluída). */
+/**
+ * Retorna a fila intercalada de matérias para o ciclo do dia considerando os pesos e o que já foi cumprido.
+ * Cada matéria entra 'weight' vezes (padrão 1).
+ * Na rodada r (1..maxWeight), entram as matérias com weight >= r que ainda têm cycle_done < r.
+ * O primeiro item da lista resultante é a próxima matéria exata a ser estudada.
+ */
+export function buildWeightedCycleQueue<T extends Subject>(
+  subjects: T[],
+  day: number,
+): T[] {
+  const base = cycleSubjectsOnDay(subjects, day);
+  if (base.length === 0) return [];
+
+  const exclusive = isExclusiveCycleDay(subjects, day);
+  const maxWeight = Math.max(
+    ...base.map((s) => Math.max(1, s.weight ?? 1)),
+    1,
+  );
+
+  const queue: T[] = [];
+  for (let round = 1; round <= maxWeight; round++) {
+    for (const s of base) {
+      const w = Math.max(1, s.weight ?? 1);
+      const done = Math.max(0, s.cycle_done ?? 0);
+      const isDone = exclusive
+        ? s.exclusive_status === "ok"
+        : s.status === "ok" || done >= w;
+      if (w >= round && (!isDone && done < round)) {
+        queue.push(s);
+      }
+    }
+  }
+
+  return queue;
+}
+
+/**
+ * Retorna o ciclo ponderado completo (todas as rodadas intercaladas).
+ * Útil para looping contínuo no StudyFlowProvider.
+ */
+export function buildFullWeightedCycle<T extends Subject>(
+  subjects: T[],
+  day: number,
+): T[] {
+  const base = cycleSubjectsOnDay(subjects, day);
+  if (base.length === 0) return [];
+
+  const maxWeight = Math.max(
+    ...base.map((s) => Math.max(1, s.weight ?? 1)),
+    1,
+  );
+
+  const queue: T[] = [];
+  for (let round = 1; round <= maxWeight; round++) {
+    for (const s of base) {
+      const w = Math.max(1, s.weight ?? 1);
+      if (w >= round) {
+        queue.push(s);
+      }
+    }
+  }
+
+  return queue;
+}
+
+/** Id da próxima matéria do ciclo de hoje (cabeça da fila intercalada). */
 export function nextCycleSubjectId(
   subjects: Subject[],
   day: number,
 ): string | null {
-  const next = cycleSubjectsOnDay(subjects, day).find(
-    (s) => statusOnDay(s, day, subjects) !== "ok",
-  );
-  return next?.id ?? null;
+  const queue = buildWeightedCycleQueue(subjects, day);
+  return queue[0]?.id ?? null;
 }
 
 /** Lista matérias em pt-BR: "A", "A e B", "A, B e C". */

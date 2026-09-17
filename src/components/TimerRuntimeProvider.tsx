@@ -24,6 +24,7 @@ import { syncFocusLogWithCloud } from "@/lib/supabase/focus-sync";
 import { emitSubjectComplete } from "@/lib/study-flow-events";
 import {
   cycleSubjectsOnDay,
+  nextCycleSubjectId,
   normalizeSidebarTimerMinutes,
   subjectUsesStopwatch,
   todayIndex,
@@ -906,9 +907,10 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
 
       if (t.sort_order === 0) {
         const day = todayIndex();
+        const nextId = nextCycleSubjectId(data.subjects, day);
         const todaySubjects = cycleSubjectsOnDay(data.subjects, day);
         const next =
-          todaySubjects.find((s) => s.status === "prox") ??
+          (nextId ? data.subjects.find((s) => s.id === nextId) : null) ??
           todaySubjects[0] ??
           null;
         if (next) {

@@ -30,7 +30,13 @@ import {
   type StudyFlowPhase,
 } from "@/lib/study-flow-persist";
 import type { Subject } from "@/lib/types";
-import { cycleSubjectsOnDay, isExclusiveCycleDay, todayIndex } from "@/lib/utils";
+import {
+  buildFullWeightedCycle,
+  buildWeightedCycleQueue,
+  cycleSubjectsOnDay,
+  isExclusiveCycleDay,
+  todayIndex,
+} from "@/lib/utils";
 
 export type { StudyFlowPhase };
 type StudyFlowContextValue = {
@@ -70,13 +76,8 @@ const StudyFlowContext = createContext<StudyFlowContextValue | null>(null);
 
 function todayQueue(subjects: Subject[]): Subject[] {
   const day = todayIndex();
-  const exclusiveCycle = isExclusiveCycleDay(subjects, day);
-  const fullCycle = cycleSubjectsOnDay(subjects, day);
-  const remaining = fullCycle.filter((s) =>
-    exclusiveCycle
-      ? (s.exclusive_status ?? "prox") !== "ok"
-      : s.status !== "ok",
-  );
+  const remaining = buildWeightedCycleQueue(subjects, day);
+  const fullCycle = buildFullWeightedCycle(subjects, day);
   // Pad the queue with the full cycle so blocks can wrap around seamlessly
   return [...remaining, ...fullCycle, ...fullCycle];
 }

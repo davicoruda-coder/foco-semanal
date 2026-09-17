@@ -104,6 +104,14 @@ export function loadDemoData(): AppData {
       rotation: normalizeRotation(s.rotation),
       icon: parseSubjectIcon(s.icon),
       recursos: normalizeRecursos(s.recursos),
+      weight:
+        typeof s.weight === "number" && s.weight >= 1
+          ? Math.min(10, Math.floor(s.weight))
+          : 1,
+      cycle_done:
+        typeof s.cycle_done === "number" && s.cycle_done >= 0
+          ? Math.floor(s.cycle_done)
+          : 0,
     }));
     data.subjects = [...subjectsRaw]
       .sort((a, b) => {

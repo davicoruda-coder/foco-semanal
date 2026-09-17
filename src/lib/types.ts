@@ -76,6 +76,10 @@ export interface Subject {
   icon: string | null;
   /** Links e recursos úteis para a matéria. */
   recursos?: SubjectResource[];
+  /** Peso / frequência de repetições por ciclo (padrão 1). */
+  weight?: number;
+  /** Quantidade de vezes concluída no ciclo atual (padrão 0). */
+  cycle_done?: number;
 }
 
 export interface WeekBlock {

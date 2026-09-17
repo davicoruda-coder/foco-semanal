@@ -630,6 +630,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
             if ("recursos" in subject) {
               patch.recursos = normalizeRecursos(subject.recursos);
             }
+            if ("weight" in subject) {
+              const w = Number(subject.weight);
+              patch.weight =
+                Number.isFinite(w) && w >= 1 ? Math.min(10, Math.floor(w)) : 1;
+            }
+            if ("cycle_done" in subject) {
+              const cd = Number(subject.cycle_done);
+              patch.cycle_done =
+                Number.isFinite(cd) && cd >= 0 ? Math.floor(cd) : 0;
+            }
             // exclusive_status só via setSubjectStatus (mini-ciclo).
             delete (patch as { exclusive_status?: SubjectStatus }).exclusive_status;
             return {
@@ -664,6 +674,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
             rotation: normalizeRotation(subject.rotation),
             icon: parseSubjectIcon(subject.icon),
             recursos: normalizeRecursos(subject.recursos),
+            weight:
+              typeof subject.weight === "number" && subject.weight >= 1
+                ? Math.min(10, Math.floor(subject.weight))
+                : 1,
+            cycle_done:
+              typeof subject.cycle_done === "number" && subject.cycle_done >= 0
+                ? Math.floor(subject.cycle_done)
+                : 0,
           };
           return { ...prev, subjects: [...prev.subjects, row] };
         });
@@ -698,13 +716,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
           const restartToday = (subjects: typeof prev.subjects) => {
             const ids = new Set(cycleSubjectsOnDay(subjects, day).map((s) => s.id));
             return subjects.map((s) =>
-              ids.has(s.id) ? writeStatus(s, "prox") : s,
+              ids.has(s.id)
+                ? {
+                    ...writeStatus(s, "prox"),
+                    cycle_done: 0,
+                  }
+                : s,
             );
           };
 
           // Concluiu e usa rodízio → a "da vez" avança (nos dois modos).
           const advanceIfTarget = (s: Subject): Subject => {
-            if (s.id !== id || readStatus(target) === "ok") return s;
+            if (s.id !== id) return s;
             const rot = normalizeRotation(s.rotation);
             if (!rot) return s;
             return { ...s, rotation: rotationAdvanced(rot) };
@@ -714,34 +737,45 @@ export function AppProvider({ children }: { children: ReactNode }) {
             return {
               ...prev,
               subjects: prev.subjects.map((s) =>
-                s.id === id ? writeStatus(s, status) : s,
+                s.id === id
+                  ? { ...writeStatus(s, status), cycle_done: 0 }
+                  : s,
               ),
             };
           }
 
-          if (idx === ordered.length - 1) {
-            return {
-              ...prev,
-              subjects: restartToday(prev.subjects.map(advanceIfTarget)),
-            };
-          }
+          // Conclusão de uma rodada da matéria
+          const currentDone = Math.max(0, target.cycle_done ?? 0);
+          const weight = Math.max(1, target.weight ?? 1);
+          const nextDone = currentDone + 1;
+          const isTargetFullyDone = nextDone >= weight;
 
-          const next = ordered[idx + 1];
-          const subjects = prev.subjects.map((s) => {
-            if (s.id === id) return writeStatus(advanceIfTarget(s), "ok");
-            if (next && s.id === next.id) return writeStatus(s, "prox");
+          const updatedSubjects = prev.subjects.map((s) => {
+            if (s.id === id) {
+              const advanced = advanceIfTarget(s);
+              return {
+                ...writeStatus(advanced, isTargetFullyDone ? "ok" : "prox"),
+                cycle_done: nextDone,
+              };
+            }
             return s;
           });
 
-          const todayAfter = cycleSubjectsOnDay(subjects, day);
-          if (
+          // Verifica se todas as matérias ativas do ciclo de hoje completaram seus pesos
+          const todayAfter = cycleSubjectsOnDay(updatedSubjects, day);
+          const allCycleCompleted =
             todayAfter.length > 0 &&
-            todayAfter.every((s) => readStatus(s) === "ok")
-          ) {
-            return { ...prev, subjects: restartToday(subjects) };
+            todayAfter.every((s) => {
+              const w = Math.max(1, s.weight ?? 1);
+              const d = Math.max(0, s.cycle_done ?? 0);
+              return d >= w;
+            });
+
+          if (allCycleCompleted) {
+            return { ...prev, subjects: restartToday(updatedSubjects) };
           }
 
-          return { ...prev, subjects };
+          return { ...prev, subjects: updatedSubjects };
         });
       },
       deleteSubject: (id) => {

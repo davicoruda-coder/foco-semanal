@@ -286,6 +286,14 @@ export default function HojePage() {
                             {s.name}
                           </p>
                         </span>
+                        {(s.weight ?? 1) > 1 && (
+                          <span
+                            className="rounded-full border border-[color-mix(in_srgb,var(--signal)_35%,transparent)] bg-[color-mix(in_srgb,var(--signal)_12%,transparent)] px-2 py-0.5 text-[11px] font-semibold text-[var(--signal)]"
+                            title={`Ciclo ponderado: ${Math.min(s.cycle_done ?? 0, s.weight ?? 1)} de ${s.weight} concluídos`}
+                          >
+                            {Math.min(s.cycle_done ?? 0, s.weight ?? 1)}/{s.weight}
+                          </span>
+                        )}
                         {libreInCycle && (
                           <span className="rounded-full bg-[var(--signal-soft)] px-2 py-0.5 text-[11px] font-medium text-[var(--signal)]">
                             Livre
@@ -413,6 +421,14 @@ export default function HojePage() {
                               <SubjectIcon name={s.name} icon={s.icon} size={32} />
                               <span className="min-w-0">{s.name}</span>
                             </span>
+                            {(s.weight ?? 1) > 1 && (
+                              <span
+                                className="rounded-full border border-[color-mix(in_srgb,var(--signal)_35%,transparent)] bg-[color-mix(in_srgb,var(--signal)_12%,transparent)] px-2 py-0.5 text-[11px] font-semibold text-[var(--signal)]"
+                                title={`Ciclo ponderado: ${Math.min(s.cycle_done ?? 0, s.weight ?? 1)} de ${s.weight} concluídos`}
+                              >
+                                {Math.min(s.cycle_done ?? 0, s.weight ?? 1)}/{s.weight}
+                              </span>
+                            )}
                             {libreInCycle && (
                               <span className="rounded-full bg-[var(--signal-soft)] px-2 py-0.5 text-[11px] font-medium text-[var(--signal)]">
                                 Livre
