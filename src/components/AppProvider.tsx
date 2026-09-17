@@ -260,6 +260,21 @@ export function AppProvider({ children }: { children: ReactNode }) {
           sessionUser.email ||
           "Usuário",
       });
+      // Se a nuvem ainda não tiver as colunas de peso/ciclo (migration SQL pendente no Supabase),
+      // preserva o peso/ciclo que o usuário já configurou localmente em vez de resetar.
+      if (localSnapshot?.subjects?.length && (!loaded.dbHasWeight || !loaded.dbHasCycleDone)) {
+        const localById = new Map(localSnapshot.subjects.map((s) => [s.id, s]));
+        loaded.data.subjects = loaded.data.subjects.map((s) => {
+          const local = localById.get(s.id);
+          if (!local) return s;
+          return {
+            ...s,
+            weight: !loaded.dbHasWeight && local.weight ? local.weight : s.weight,
+            cycle_done: !loaded.dbHasCycleDone && local.cycle_done !== undefined ? local.cycle_done : s.cycle_done,
+          };
+        });
+      }
+
       setDataState(loaded.data);
       // Espelha a nuvem no aparelho para o próximo boot não gravar vazio.
       saveDemoData(loaded.data);
@@ -441,6 +456,21 @@ export function AppProvider({ children }: { children: ReactNode }) {
           if (dataRevRef.current !== revAtStart) return;
           if (userIdRef.current !== uid) return;
           lastLoadAtRef.current = Date.now();
+          if (!loaded.dbHasWeight || !loaded.dbHasCycleDone) {
+            const currentLocal = loadDemoData();
+            if (currentLocal?.subjects?.length) {
+              const localById = new Map(currentLocal.subjects.map((s) => [s.id, s]));
+              loaded.data.subjects = loaded.data.subjects.map((s) => {
+                const local = localById.get(s.id);
+                if (!local) return s;
+                return {
+                  ...s,
+                  weight: !loaded.dbHasWeight && local.weight ? local.weight : s.weight,
+                  cycle_done: !loaded.dbHasCycleDone && local.cycle_done !== undefined ? local.cycle_done : s.cycle_done,
+                };
+              });
+            }
+          }
           setDataState(loaded.data);
           saveDemoData(loaded.data);
           rememberLastKnownGood(loaded.data);
@@ -454,7 +484,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return () => document.removeEventListener("visibilitychange", onVisibility);
   }, []);
 
-  // Flush pendente ao fechar/esconder a aba.
+  // Flush pendente ao fechar/esconder a aba ou recarregar.
   useEffect(() => {
     function flushNow() {
       if (saveTimer.current) {
@@ -466,9 +496,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
     function onHide() {
       if (document.visibilityState === "hidden") flushNow();
     }
+    window.addEventListener("beforeunload", flushNow);
     window.addEventListener("pagehide", flushNow);
     document.addEventListener("visibilitychange", onHide);
     return () => {
+      window.removeEventListener("beforeunload", flushNow);
       window.removeEventListener("pagehide", flushNow);
       document.removeEventListener("visibilitychange", onHide);
     };

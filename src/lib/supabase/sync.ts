@@ -83,7 +83,13 @@ const LIVE = { deleted_at: null as null };
 export async function loadCloudData(
   supabase: Client,
   userId: string,
-): Promise<{ data: AppData; theme: ThemePref; displayName: string | null }> {
+): Promise<{
+  data: AppData;
+  theme: ThemePref;
+  displayName: string | null;
+  dbHasWeight?: boolean;
+  dbHasCycleDone?: boolean;
+}> {
   const [
     profileRes,
     subjectsRes,
@@ -258,6 +264,12 @@ export async function loadCloudData(
     sort_order: n.sort_order ?? 0,
   }));
 
+  const firstSubject = (subjectsRes.data ?? [])[0] as
+    | Record<string, unknown>
+    | undefined;
+  const dbHasWeight = Boolean(firstSubject && "weight" in firstSubject);
+  const dbHasCycleDone = Boolean(firstSubject && "cycle_done" in firstSubject);
+
   return {
     data: {
       subjects,
@@ -271,6 +283,8 @@ export async function loadCloudData(
     },
     theme: asTheme(profileRes.data?.theme),
     displayName: profileRes.data?.display_name ?? null,
+    dbHasWeight,
+    dbHasCycleDone,
   };
 }
 
@@ -305,6 +319,17 @@ async function softWipeUserTable(
   assertOk(`${table} soft-wipe`, error);
 }
 
+function extractMissingColumn(message?: string | null): string | null {
+  if (!message) return null;
+  const m1 = message.match(/Could not find the '([^']+)' column/i);
+  if (m1) return m1[1];
+  const m2 = message.match(/column ["']?([^"'\s]+)["']? of relation/i);
+  if (m2) return m2[1];
+  const m3 = message.match(/Could not find the (\w+) column/i);
+  if (m3) return m3[1];
+  return null;
+}
+
 /** Só UPSERT — nunca apaga órfãos. Soft-delete é caminho separado. */
 async function upsertCollection(
   supabase: Client,
@@ -313,30 +338,48 @@ async function upsertCollection(
   label: string,
 ): Promise<void> {
   if (rows.length === 0) return;
-  const { error } = await supabase.from(table).upsert(rows, { onConflict: "id" });
-  if (
-    error &&
-    table === "subjects" &&
-    (error.code === "PGRST204" ||
-      error.code === "42703" ||
-      error.message?.includes("recursos") ||
-      error.message?.includes("schema cache"))
-  ) {
-    const fallbackRows = rows.map((r) => {
-      const { recursos: _ignored, ...rest } = r;
-      return rest;
-    });
-    const retry = await supabase
+  let currentRows = rows;
+  const droppedCols = new Set<string>();
+
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const { error } = await supabase
       .from(table)
-      .upsert(fallbackRows, { onConflict: "id" });
-    if (!retry.error) {
-      console.warn(
-        "[foco] Coluna 'recursos' ainda não existe no Supabase. Matérias salvas com sucesso sem esse campo para garantir persistência de anotações e status.",
-      );
-      return;
+      .upsert(currentRows, { onConflict: "id" });
+
+    if (!error) return;
+
+    const isMissingColError =
+      error.code === "PGRST204" ||
+      error.code === "42703" ||
+      error.message?.includes("schema cache") ||
+      error.message?.includes("column");
+
+    if (isMissingColError) {
+      let missingCol = extractMissingColumn(error.message);
+      if (!missingCol && table === "subjects") {
+        const candidate = ["cycle_done", "weight", "recursos"].find(
+          (c) => !droppedCols.has(c) && currentRows.some((r) => c in r),
+        );
+        if (candidate) missingCol = candidate;
+      }
+
+      if (missingCol && !droppedCols.has(missingCol)) {
+        droppedCols.add(missingCol);
+        console.warn(
+          `[foco] Coluna '${missingCol}' ausente na tabela '${table}' do Supabase. Salvando sem esse campo para garantir persistência de anotações e status.`,
+        );
+        currentRows = currentRows.map((r) => {
+          const copy = { ...r };
+          delete copy[missingCol!];
+          return copy;
+        });
+        continue;
+      }
     }
+
+    assertOk(`${label} upsert`, error);
+    return;
   }
-  assertOk(`${label} upsert`, error);
 }
 
 /**
