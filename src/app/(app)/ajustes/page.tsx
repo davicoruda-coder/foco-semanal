@@ -16,6 +16,7 @@ import { useApp } from "@/components/AppProvider";
 import { AccessManagement } from "@/components/AccessManagement";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { InstallPwaCard } from "@/components/InstallPwaCard";
+import { HelpTutorialSection } from "@/components/ajustes/HelpTutorialSection";
 import { useStudyFlow } from "@/components/StudyFlowProvider";
 import {
   ALARM_TONES,
@@ -228,6 +229,8 @@ export default function AjustesPage() {
           </p>
         )}
       </section>
+
+      <HelpTutorialSection />
 
       <ModulosSettings />
 
