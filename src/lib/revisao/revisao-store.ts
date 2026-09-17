@@ -1,0 +1,399 @@
+/* ------------------------------------------------------------------ */
+/*  CRUD Supabase para o módulo Revisão (Caderno + Flashcards + Perfil)*/
+/*  Segue o padrão de focus-sync.ts: lazy import do client.           */
+/* ------------------------------------------------------------------ */
+
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { isSupabaseConfigured } from "@/lib/env";
+import type {
+  QuestaoCaderno,
+  Flashcard,
+  PerfilUsuario,
+  QuickCapturePayload,
+  CadernoFilters,
+  NivelDominio,
+} from "./types";
+import { calcularProximaRevisao, type RespostaRevisao } from "./spaced-repetition";
+
+/* ------------------------------------------------------------------ */
+/*  Helpers                                                            */
+/* ------------------------------------------------------------------ */
+
+async function getAuthedClient(): Promise<{
+  supabase: SupabaseClient;
+  userId: string;
+} | null> {
+  if (!isSupabaseConfigured()) return null;
+  const { createClient } = await import("@/lib/supabase/client");
+  const supabase = createClient();
+  const { data, error } = await supabase.auth.getUser();
+  if (error || !data.user) return null;
+  return { supabase, userId: data.user.id };
+}
+
+function assertOk(label: string, error: { message: string } | null) {
+  if (error) throw new Error(`[revisao] ${label}: ${error.message}`);
+}
+
+/** Valida que URL começa com http(s):// — rejeita base64 e blobs. */
+function sanitizeUrl(url: string | undefined): string {
+  if (!url) return "";
+  const trimmed = url.trim();
+  if (/^https?:\/\//i.test(trimmed)) return trimmed.slice(0, 500);
+  return "";
+}
+
+/** Limita texto a N caracteres. */
+function clampText(text: string | undefined, max: number): string {
+  if (!text) return "";
+  return text.trim().slice(0, max);
+}
+
+/* ------------------------------------------------------------------ */
+/*  Gerar flashcard automaticamente a partir de uma questão            */
+/* ------------------------------------------------------------------ */
+
+function gerarFlashcard(
+  q: QuickCapturePayload,
+  questaoId: string,
+): { frente: string; verso: string } {
+  const bancaTag = q.banca ? `[${q.banca}] ` : "";
+  const assuntoTag = q.assunto ? `${q.disciplina} › ${q.assunto}` : q.disciplina;
+
+  const frente = `${bancaTag}${assuntoTag}\n\n${
+    q.enunciado_texto
+      ? q.enunciado_texto.slice(0, 300) + (q.enunciado_texto.length > 300 ? "…" : "")
+      : q.codigo_questao
+        ? `Questão ${q.codigo_questao}`
+        : "Revise esta questão"
+  }`;
+
+  const partes: string[] = [];
+  if (q.aprendizado_chave) partes.push(`📌 ${q.aprendizado_chave}`);
+  if (q.link_questao) partes.push(`🔗 ${q.link_questao}`);
+  if (q.link_video) partes.push(`🎬 ${q.link_video}`);
+
+  const verso = partes.join("\n\n") || "Sem anotação de aprendizado.";
+
+  return { frente, verso };
+}
+
+/* ------------------------------------------------------------------ */
+/*  CRUD: Questões do Caderno                                          */
+/* ------------------------------------------------------------------ */
+
+export async function addQuestao(
+  payload: QuickCapturePayload,
+): Promise<{ questao: QuestaoCaderno; flashcard: Flashcard } | null> {
+  const auth = await getAuthedClient();
+  if (!auth) return null;
+
+  const row = {
+    user_id: auth.userId,
+    codigo_questao: clampText(payload.codigo_questao, 50),
+    link_questao: sanitizeUrl(payload.link_questao),
+    link_video: sanitizeUrl(payload.link_video),
+    enunciado_texto: clampText(payload.enunciado_texto, 5000),
+    banca: clampText(payload.banca, 100),
+    disciplina: clampText(payload.disciplina, 100),
+    assunto: clampText(payload.assunto, 100),
+    status_resultado: payload.status_resultado,
+    causa_erro: payload.causa_erro,
+    aprendizado_chave: clampText(payload.aprendizado_chave, 1500),
+  };
+
+  const { data: questao, error: qErr } = await auth.supabase
+    .from("questoes_caderno")
+    .insert(row)
+    .select()
+    .single();
+  assertOk("insert questao", qErr);
+
+  // Gerar flashcard automaticamente
+  const { frente, verso } = gerarFlashcard(payload, questao.id);
+  const { data: flashcard, error: fErr } = await auth.supabase
+    .from("flashcards")
+    .insert({
+      questao_id: questao.id,
+      user_id: auth.userId,
+      frente,
+      verso,
+    })
+    .select()
+    .single();
+  assertOk("insert flashcard", fErr);
+
+  return { questao: questao as QuestaoCaderno, flashcard: flashcard as Flashcard };
+}
+
+export async function listQuestoes(
+  filters?: CadernoFilters,
+): Promise<QuestaoCaderno[]> {
+  const auth = await getAuthedClient();
+  if (!auth) return [];
+
+  let query = auth.supabase
+    .from("questoes_caderno")
+    .select("*")
+    .eq("user_id", auth.userId)
+    .order("created_at", { ascending: false });
+
+  if (filters?.banca) query = query.eq("banca", filters.banca);
+  if (filters?.disciplina) query = query.eq("disciplina", filters.disciplina);
+  if (filters?.assunto) query = query.eq("assunto", filters.assunto);
+  if (filters?.status_resultado)
+    query = query.eq("status_resultado", filters.status_resultado);
+  if (filters?.causa_erro) query = query.eq("causa_erro", filters.causa_erro);
+  if (filters?.search)
+    query = query.or(
+      `aprendizado_chave.ilike.%${filters.search}%,enunciado_texto.ilike.%${filters.search}%,codigo_questao.ilike.%${filters.search}%`,
+    );
+
+  const { data, error } = await query;
+  assertOk("list questoes", error);
+  return (data ?? []) as QuestaoCaderno[];
+}
+
+export async function deleteQuestao(id: string): Promise<void> {
+  const auth = await getAuthedClient();
+  if (!auth) return;
+  const { error } = await auth.supabase
+    .from("questoes_caderno")
+    .delete()
+    .eq("id", id)
+    .eq("user_id", auth.userId);
+  assertOk("delete questao", error);
+}
+
+export async function updateQuestao(
+  id: string,
+  updates: Partial<QuickCapturePayload>,
+): Promise<void> {
+  const auth = await getAuthedClient();
+  if (!auth) return;
+
+  const row: Record<string, unknown> = {};
+  if (updates.codigo_questao !== undefined)
+    row.codigo_questao = clampText(updates.codigo_questao, 50);
+  if (updates.link_questao !== undefined)
+    row.link_questao = sanitizeUrl(updates.link_questao);
+  if (updates.link_video !== undefined)
+    row.link_video = sanitizeUrl(updates.link_video);
+  if (updates.enunciado_texto !== undefined)
+    row.enunciado_texto = clampText(updates.enunciado_texto, 5000);
+  if (updates.banca !== undefined)
+    row.banca = clampText(updates.banca, 100);
+  if (updates.disciplina !== undefined)
+    row.disciplina = clampText(updates.disciplina, 100);
+  if (updates.assunto !== undefined)
+    row.assunto = clampText(updates.assunto, 100);
+  if (updates.status_resultado !== undefined)
+    row.status_resultado = updates.status_resultado;
+  if (updates.causa_erro !== undefined)
+    row.causa_erro = updates.causa_erro;
+  if (updates.aprendizado_chave !== undefined)
+    row.aprendizado_chave = clampText(updates.aprendizado_chave, 1500);
+
+  const { error } = await auth.supabase
+    .from("questoes_caderno")
+    .update(row)
+    .eq("id", id)
+    .eq("user_id", auth.userId);
+  assertOk("update questao", error);
+}
+
+/* ------------------------------------------------------------------ */
+/*  CRUD: Flashcards                                                   */
+/* ------------------------------------------------------------------ */
+
+/** Retorna flashcards cuja revisão é hoje ou anterior (deck do dia). */
+export async function getFlashcardsDoDia(): Promise<Flashcard[]> {
+  const auth = await getAuthedClient();
+  if (!auth) return [];
+
+  const hoje = new Date().toISOString().slice(0, 10);
+  const { data, error } = await auth.supabase
+    .from("flashcards")
+    .select("*")
+    .eq("user_id", auth.userId)
+    .lte("proxima_revisao", hoje)
+    .order("proxima_revisao", { ascending: true });
+  assertOk("flashcards do dia", error);
+  return (data ?? []) as Flashcard[];
+}
+
+/** Lista todos os flashcards, opcionalmente filtrados por disciplina/banca. */
+export async function listFlashcards(filters?: {
+  disciplina?: string;
+  banca?: string;
+}): Promise<(Flashcard & { questao?: QuestaoCaderno })[]> {
+  const auth = await getAuthedClient();
+  if (!auth) return [];
+
+  let query = auth.supabase
+    .from("flashcards")
+    .select("*, questoes_caderno(*)")
+    .eq("user_id", auth.userId)
+    .order("created_at", { ascending: false });
+
+  // Filtros via join
+  if (filters?.disciplina)
+    query = query.eq("questoes_caderno.disciplina", filters.disciplina);
+  if (filters?.banca)
+    query = query.eq("questoes_caderno.banca", filters.banca);
+
+  const { data, error } = await query;
+  assertOk("list flashcards", error);
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return (data ?? []).map((row: any) => ({
+    ...row,
+    questao: row.questoes_caderno ?? undefined,
+    questoes_caderno: undefined,
+  }));
+}
+
+/** Atualiza nível de domínio e próxima revisão após resposta. */
+export async function responderFlashcard(
+  id: string,
+  nivelAtual: NivelDominio,
+  resposta: RespostaRevisao,
+): Promise<void> {
+  const auth = await getAuthedClient();
+  if (!auth) return;
+
+  const { novoNivel, proximaRevisao } = calcularProximaRevisao(
+    nivelAtual,
+    resposta,
+  );
+
+  const { error } = await auth.supabase
+    .from("flashcards")
+    .update({
+      nivel_dominio: novoNivel,
+      proxima_revisao: proximaRevisao,
+    })
+    .eq("id", id)
+    .eq("user_id", auth.userId);
+  assertOk("responder flashcard", error);
+}
+
+/* ------------------------------------------------------------------ */
+/*  Perfil / Módulos                                                   */
+/* ------------------------------------------------------------------ */
+
+export async function loadPerfil(): Promise<PerfilUsuario | null> {
+  const auth = await getAuthedClient();
+  if (!auth) return null;
+
+  const { data, error } = await auth.supabase
+    .from("perfis")
+    .select("*")
+    .eq("user_id", auth.userId)
+    .maybeSingle();
+  if (error) {
+    console.warn("[revisao] load perfil:", error.message);
+    return null;
+  }
+  return data as PerfilUsuario | null;
+}
+
+export async function ensurePerfil(): Promise<PerfilUsuario | null> {
+  const auth = await getAuthedClient();
+  if (!auth) return null;
+
+  // Tenta carregar
+  const existing = await loadPerfil();
+  if (existing) return existing;
+
+  // Cria se não existe
+  const { data, error } = await auth.supabase
+    .from("perfis")
+    .insert({ user_id: auth.userId })
+    .select()
+    .single();
+  if (error) {
+    console.warn("[revisao] ensure perfil:", error.message);
+    return null;
+  }
+  return data as PerfilUsuario;
+}
+
+export async function setModuloAtivo(
+  modulo: string,
+  ativo: boolean,
+): Promise<void> {
+  const auth = await getAuthedClient();
+  if (!auth) return;
+
+  const perfil = await ensurePerfil();
+  if (!perfil) return;
+
+  const ativos = { ...perfil.modulos_ativos, [modulo]: ativo };
+
+  const { error } = await auth.supabase
+    .from("perfis")
+    .update({ modulos_ativos: ativos })
+    .eq("user_id", auth.userId);
+  assertOk("set modulo ativo", error);
+}
+
+/* ------------------------------------------------------------------ */
+/*  Estatísticas rápidas                                               */
+/* ------------------------------------------------------------------ */
+
+export interface RevisaoStats {
+  totalQuestoes: number;
+  porDisciplina: Record<string, number>;
+  porBanca: Record<string, number>;
+  porCausa: Record<string, number>;
+  porResultado: Record<string, number>;
+  flashcardsPendentes: number;
+}
+
+export async function getRevisaoStats(): Promise<RevisaoStats> {
+  const auth = await getAuthedClient();
+  const empty: RevisaoStats = {
+    totalQuestoes: 0,
+    porDisciplina: {},
+    porBanca: {},
+    porCausa: {},
+    porResultado: {},
+    flashcardsPendentes: 0,
+  };
+  if (!auth) return empty;
+
+  const [{ data: questoes }, { data: pendentes }] = await Promise.all([
+    auth.supabase
+      .from("questoes_caderno")
+      .select("disciplina, banca, causa_erro, status_resultado")
+      .eq("user_id", auth.userId),
+    auth.supabase
+      .from("flashcards")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", auth.userId)
+      .lte("proxima_revisao", new Date().toISOString().slice(0, 10)),
+  ]);
+
+  const stats = { ...empty };
+  if (questoes) {
+    stats.totalQuestoes = questoes.length;
+    for (const q of questoes) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const row = q as any;
+      if (row.disciplina)
+        stats.porDisciplina[row.disciplina] =
+          (stats.porDisciplina[row.disciplina] || 0) + 1;
+      if (row.banca)
+        stats.porBanca[row.banca] = (stats.porBanca[row.banca] || 0) + 1;
+      if (row.causa_erro)
+        stats.porCausa[row.causa_erro] =
+          (stats.porCausa[row.causa_erro] || 0) + 1;
+      if (row.status_resultado)
+        stats.porResultado[row.status_resultado] =
+          (stats.porResultado[row.status_resultado] || 0) + 1;
+    }
+  }
+  stats.flashcardsPendentes = pendentes?.length ?? 0;
+  return stats;
+}

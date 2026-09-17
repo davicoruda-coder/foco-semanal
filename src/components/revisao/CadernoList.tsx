@@ -1,0 +1,315 @@
+"use client";
+
+import { useState, useMemo } from "react";
+import {
+  ExternalLink,
+  Filter,
+  GraduationCap,
+  Play,
+  Search,
+  Trash2,
+  Video,
+  ChevronDown,
+  ChevronUp,
+} from "lucide-react";
+import {
+  CAUSA_ERRO_LABEL,
+  STATUS_RESULTADO_LABEL,
+  type CausaErro,
+  type QuestaoCaderno,
+  type StatusResultado,
+} from "@/lib/revisao/types";
+import { useRevisao } from "./RevisaoProvider";
+
+export function CadernoList() {
+  const { questoes, questoesLoading, deleteQuestao } = useRevisao();
+  const [search, setSearch] = useState("");
+  const [bancaFiltro, setBancaFiltro] = useState<string>("todas");
+  const [disciplinaFiltro, setDisciplinaFiltro] = useState<string>("todas");
+  const [causaFiltro, setCausaFiltro] = useState<string>("todas");
+  const [resultadoFiltro, setResultadoFiltro] = useState<string>("todas");
+  const [itemExpandidoId, setItemExpandidoId] = useState<string | null>(null);
+  const [deletandoId, setDeletandoId] = useState<string | null>(null);
+
+  // Extrair opções únicas para filtros
+  const bancas = useMemo(() => {
+    const set = new Set<string>();
+    questoes.forEach((q) => {
+      if (q.banca) set.add(q.banca);
+    });
+    return Array.from(set).sort();
+  }, [questoes]);
+
+  const disciplinas = useMemo(() => {
+    const set = new Set<string>();
+    questoes.forEach((q) => {
+      if (q.disciplina) set.add(q.disciplina);
+    });
+    return Array.from(set).sort();
+  }, [questoes]);
+
+  // Filtragem local instantânea
+  const questoesFiltradas = useMemo(() => {
+    return questoes.filter((q) => {
+      if (bancaFiltro !== "todas" && q.banca !== bancaFiltro) return false;
+      if (disciplinaFiltro !== "todas" && q.disciplina !== disciplinaFiltro)
+        return false;
+      if (causaFiltro !== "todas" && q.causa_erro !== causaFiltro) return false;
+      if (resultadoFiltro !== "todas" && q.status_resultado !== resultadoFiltro)
+        return false;
+
+      if (search.trim()) {
+        const term = search.toLowerCase();
+        const matchAprendizado = q.aprendizado_chave?.toLowerCase().includes(term);
+        const matchCodigo = q.codigo_questao?.toLowerCase().includes(term);
+        const matchEnunciado = q.enunciado_texto?.toLowerCase().includes(term);
+        const matchAssunto = q.assunto?.toLowerCase().includes(term);
+        if (!matchAprendizado && !matchCodigo && !matchEnunciado && !matchAssunto) {
+          return false;
+        }
+      }
+      return true;
+    });
+  }, [questoes, bancaFiltro, disciplinaFiltro, causaFiltro, resultadoFiltro, search]);
+
+  const handleDelete = async (id: string) => {
+    if (!confirm("Deseja realmente remover esta questão do caderno?")) return;
+    setDeletandoId(id);
+    try {
+      await deleteQuestao(id);
+    } finally {
+      setDeletandoId(null);
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* Barra de Busca e Filtros Rápidos */}
+      <div className="space-y-2 rounded-[var(--radius)] border border-[var(--line)] bg-[var(--surface)] p-3">
+        <div className="relative">
+          <Search
+            size={16}
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-[color-mix(in_srgb,var(--ink)_45%,transparent)]"
+          />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Buscar por código, regra, assunto..."
+            className="w-full rounded-[var(--radius-btn)] border border-[var(--line)] bg-[var(--mist)] py-2 pl-9 pr-3 text-sm text-[var(--ink)] outline-none transition placeholder:text-[color-mix(in_srgb,var(--ink)_40%,transparent)] focus:border-[var(--signal)] focus:bg-[var(--surface)]"
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+          <select
+            value={disciplinaFiltro}
+            onChange={(e) => setDisciplinaFiltro(e.target.value)}
+            className="rounded-[var(--radius-btn)] border border-[var(--line)] bg-[var(--mist)] px-2.5 py-1.5 text-xs text-[var(--ink)] outline-none"
+          >
+            <option value="todas">Todas Disciplinas</option>
+            {disciplinas.map((d) => (
+              <option key={d} value={d}>
+                {d}
+              </option>
+            ))}
+          </select>
+
+          <select
+            value={bancaFiltro}
+            onChange={(e) => setBancaFiltro(e.target.value)}
+            className="rounded-[var(--radius-btn)] border border-[var(--line)] bg-[var(--mist)] px-2.5 py-1.5 text-xs text-[var(--ink)] outline-none"
+          >
+            <option value="todas">Todas Bancas</option>
+            {bancas.map((b) => (
+              <option key={b} value={b}>
+                {b}
+              </option>
+            ))}
+          </select>
+
+          <select
+            value={causaFiltro}
+            onChange={(e) => setCausaFiltro(e.target.value)}
+            className="rounded-[var(--radius-btn)] border border-[var(--line)] bg-[var(--mist)] px-2.5 py-1.5 text-xs text-[var(--ink)] outline-none"
+          >
+            <option value="todas">Todas Causas</option>
+            {(Object.entries(CAUSA_ERRO_LABEL) as [CausaErro, string][]).map(
+              ([key, label]) => (
+                <option key={key} value={key}>
+                  {label}
+                </option>
+              ),
+            )}
+          </select>
+
+          <select
+            value={resultadoFiltro}
+            onChange={(e) => setResultadoFiltro(e.target.value)}
+            className="rounded-[var(--radius-btn)] border border-[var(--line)] bg-[var(--mist)] px-2.5 py-1.5 text-xs text-[var(--ink)] outline-none"
+          >
+            <option value="todas">Todos Resultados</option>
+            {(
+              Object.entries(STATUS_RESULTADO_LABEL) as [StatusResultado, string][]
+            ).map(([key, label]) => (
+              <option key={key} value={key}>
+                {label}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      {/* Lista de Registros */}
+      {questoesLoading ? (
+        <div className="py-12 text-center text-sm text-[color-mix(in_srgb,var(--ink)_50%,transparent)]">
+          Carregando questões do caderno...
+        </div>
+      ) : questoesFiltradas.length === 0 ? (
+        <div className="rounded-[var(--radius)] border border-dashed border-[var(--line)] p-8 text-center">
+          <GraduationCap
+            size={36}
+            className="mx-auto mb-2 text-[color-mix(in_srgb,var(--ink)_35%,transparent)]"
+          />
+          <p className="text-sm font-medium text-[var(--ink)]">
+            Nenhuma questão encontrada
+          </p>
+          <p className="mt-1 text-xs text-[color-mix(in_srgb,var(--ink)_50%,transparent)]">
+            Use o botão de Captura Rápida acima para registrar seus erros de simulados ou baterias.
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {questoesFiltradas.map((q) => {
+            const isExpanded = itemExpandidoId === q.id;
+
+            return (
+              <div
+                key={q.id}
+                className="overflow-hidden rounded-[var(--radius)] border border-[var(--line)] bg-[var(--surface)] transition hover:border-[color-mix(in_srgb,var(--signal)_40%,var(--line))]"
+              >
+                {/* Header do Card */}
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--line)] bg-[var(--mist)]/40 px-3.5 py-2 text-xs">
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    {q.banca && (
+                      <span className="rounded-md bg-[var(--surface)] px-2 py-0.5 font-semibold text-[var(--ink)] border border-[var(--line)]">
+                        {q.banca}
+                      </span>
+                    )}
+                    <span className="font-semibold text-[var(--signal)]">
+                      {q.disciplina}
+                    </span>
+                    {q.assunto && (
+                      <span className="text-[color-mix(in_srgb,var(--ink)_60%,transparent)]">
+                        › {q.assunto}
+                      </span>
+                    )}
+                    {q.codigo_questao && (
+                      <span className="font-mono text-[11px] font-medium text-[color-mix(in_srgb,var(--ink)_50%,transparent)]">
+                        #{q.codigo_questao}
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-1.5">
+                    <span
+                      className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                        q.status_resultado === "erro"
+                          ? "bg-[color-mix(in_srgb,#ef4444_15%,transparent)] text-[#ef4444]"
+                          : q.status_resultado === "chute"
+                          ? "bg-[color-mix(in_srgb,#f59e0b_15%,transparent)] text-[#f59e0b]"
+                          : "bg-[color-mix(in_srgb,#8b5cf6_15%,transparent)] text-[#8b5cf6]"
+                      }`}
+                    >
+                      {STATUS_RESULTADO_LABEL[q.status_resultado]}
+                    </span>
+
+                    <span
+                      className="rounded-full bg-[var(--mist)] px-2 py-0.5 text-[10px] font-medium text-[color-mix(in_srgb,var(--ink)_65%,transparent)]"
+                    >
+                      {CAUSA_ERRO_LABEL[q.causa_erro]}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Conteúdo Principal: Regra Aprendida */}
+                <div className="p-3.5">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="space-y-1">
+                      <p className="text-xs font-semibold uppercase tracking-wider text-[var(--signal)]">
+                        Regra Aprendida:
+                      </p>
+                      <p className="text-sm font-medium text-[var(--ink)] whitespace-pre-line leading-relaxed">
+                        {q.aprendizado_chave}
+                      </p>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setItemExpandidoId(isExpanded ? null : q.id)}
+                      className="shrink-0 p-1 text-[color-mix(in_srgb,var(--ink)_50%,transparent)] hover:text-[var(--ink)]"
+                      title={isExpanded ? "Recolher detalhes" : "Ver detalhes"}
+                    >
+                      {isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+                    </button>
+                  </div>
+
+                  {/* Seção expandida: Enunciado, Vídeo e Link */}
+                  {isExpanded && (
+                    <div className="mt-3 space-y-3 rounded-lg border border-[var(--line)] bg-[var(--mist)]/50 p-3 text-xs">
+                      {q.enunciado_texto && (
+                        <div>
+                          <p className="font-semibold text-[color-mix(in_srgb,var(--ink)_70%,transparent)] mb-1">
+                            Enunciado / Trecho:
+                          </p>
+                          <p className="whitespace-pre-wrap text-[color-mix(in_srgb,var(--ink)_85%,transparent)] leading-normal bg-[var(--surface)] p-2.5 rounded border border-[var(--line)]">
+                            {q.enunciado_texto}
+                          </p>
+                        </div>
+                      )}
+
+                      <div className="flex flex-wrap items-center gap-2 pt-1">
+                        {q.link_questao && (
+                          <a
+                            href={q.link_questao}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 rounded-md bg-[var(--surface)] border border-[var(--line)] px-2.5 py-1 text-xs font-medium text-[var(--signal)] hover:bg-[var(--signal-soft)] transition"
+                          >
+                            <ExternalLink size={12} />
+                            Ver Questão no QC
+                          </a>
+                        )}
+
+                        {q.link_video && (
+                          <a
+                            href={q.link_video}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 rounded-md bg-[var(--surface)] border border-[var(--line)] px-2.5 py-1 text-xs font-medium text-[#ef4444] hover:bg-red-50 dark:hover:bg-red-950/30 transition"
+                          >
+                            <Video size={12} />
+                            Vídeo Resolução
+                          </a>
+                        )}
+
+                        <button
+                          type="button"
+                          disabled={deletandoId === q.id}
+                          onClick={() => handleDelete(q.id)}
+                          className="ml-auto inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs text-[color-mix(in_srgb,var(--ink)_50%,transparent)] hover:bg-[color-mix(in_srgb,#ef4444_12%,transparent)] hover:text-[#ef4444] transition"
+                        >
+                          <Trash2 size={12} />
+                          Excluir
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}

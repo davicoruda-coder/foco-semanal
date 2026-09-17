@@ -6,6 +6,7 @@ import {
   Download,
   KeyRound,
   Moon,
+  RotateCcw,
   Sun,
   SunMoon,
   Upload,
@@ -227,6 +228,8 @@ export default function AjustesPage() {
           </p>
         )}
       </section>
+
+      <ModulosSettings />
 
       <SessionBlockSettings />
 
@@ -713,6 +716,109 @@ function AlarmSettings() {
       >
         Ouvir
       </button>
+    </section>
+  );
+}
+
+function ModulosSettings() {
+  const [revisaoAtivo, setRevisaoAtivo] = useState(true);
+  const [salvando, setSalvando] = useState(false);
+  const [mensagem, setMensagem] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("foco_modulo_revisao");
+      if (stored !== null) {
+        setRevisaoAtivo(stored !== "false");
+      }
+    }
+    (async () => {
+      try {
+        const store = await import("@/lib/revisao/revisao-store");
+        const p = await store.loadPerfil();
+        if (p?.modulos_ativos?.revisao !== undefined) {
+          setRevisaoAtivo(p.modulos_ativos.revisao);
+          localStorage.setItem(
+            "foco_modulo_revisao",
+            String(p.modulos_ativos.revisao),
+          );
+        }
+      } catch {
+        // offline / guest
+      }
+    })();
+  }, []);
+
+  async function toggleRevisao(ativo: boolean) {
+    setSalvando(true);
+    setRevisaoAtivo(ativo);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("foco_modulo_revisao", String(ativo));
+      window.dispatchEvent(new Event("foco-modulo-changed"));
+    }
+    try {
+      const store = await import("@/lib/revisao/revisao-store");
+      await store.setModuloAtivo("revisao", ativo);
+      setMensagem(
+        ativo ? "Módulo Revisão ativado!" : "Módulo Revisão desativado.",
+      );
+    } catch {
+      setMensagem("Salvo localmente neste aparelho.");
+    } finally {
+      setSalvando(false);
+      setTimeout(() => setMensagem(null), 3000);
+    }
+  }
+
+  return (
+    <section className="surface mt-4 p-4 md:p-5">
+      <h2 className="font-display text-base font-semibold tracking-tight md:text-lg">
+        Módulos Opcionais
+      </h2>
+      <p className="mt-1 text-xs opacity-55">
+        Personalize sua experiência ativando ou ocultando funcionalidades extras.
+      </p>
+
+      <div className="mt-4 rounded-[var(--radius)] border border-[var(--line)] bg-[var(--surface)] p-3.5 sm:p-4">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-start gap-3">
+            <div className="mt-0.5 grid size-9 shrink-0 place-items-center rounded-xl bg-[var(--signal-soft)] text-[var(--signal)]">
+              <RotateCcw size={18} />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-semibold text-[var(--ink)]">
+                  Revisão (Caderno de Erros & Flashcards)
+                </span>
+                <span className="rounded bg-[var(--signal-soft)] px-1.5 py-0.5 text-[10px] font-semibold text-[var(--signal)]">
+                  Novo
+                </span>
+              </div>
+              <p className="mt-0.5 text-xs text-[color-mix(in_srgb,var(--ink)_60%,transparent)]">
+                Estudo reverso com captura de erros de questões, repetição
+                espaçada automática e diagnóstico.
+              </p>
+            </div>
+          </div>
+
+          <label className="relative inline-flex cursor-pointer items-center shrink-0">
+            <input
+              type="checkbox"
+              checked={revisaoAtivo}
+              disabled={salvando}
+              onChange={(e) => toggleRevisao(e.target.checked)}
+              className="peer sr-only"
+            />
+            <div className="peer h-6 w-11 rounded-full bg-[var(--line)] after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-[var(--signal)] peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none" />
+          </label>
+        </div>
+      </div>
+
+      {mensagem && (
+        <p className="mt-2 text-xs font-medium text-[var(--signal)]">
+          {mensagem}
+        </p>
+      )}
     </section>
   );
 }

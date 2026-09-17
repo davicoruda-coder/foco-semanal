@@ -8,6 +8,7 @@ import {
   CalendarDays,
   Ellipsis,
   Home,
+  RotateCcw,
   Settings,
   StickyNote,
   ChartColumn,
@@ -21,6 +22,7 @@ import { useOpenTransition } from "@/lib/use-open-transition";
 const DESKTOP_NAV = [
   { href: "/hoje", label: "Hoje", icon: Home },
   { href: "/semana", label: "Semana", icon: CalendarDays },
+  { href: "/revisao", label: "Revisão", icon: RotateCcw },
   { href: "/estatisticas", label: "Estatísticas", icon: ChartColumn },
   { href: "/ajustes", label: "Ajustes", icon: Settings },
 ];
@@ -34,6 +36,7 @@ const MOBILE_PRIMARY = [
 
 /** Mobile: opções dentro do ⋯ */
 const MOBILE_MORE = [
+  { href: "/revisao", label: "Revisão", icon: RotateCcw },
   { href: "/estatisticas", label: "Estatísticas", icon: ChartColumn },
   { href: "/ajustes", label: "Ajustes", icon: Settings },
 ];
@@ -78,10 +81,12 @@ function MobileMoreMenu({
   open,
   onClose,
   pathname,
+  revisaoActive = true,
 }: {
   open: boolean;
   onClose: () => void;
   pathname: string;
+  revisaoActive?: boolean;
 }) {
   const panelRef = useRef<HTMLDivElement>(null);
   const titleId = useId();
@@ -97,6 +102,10 @@ function MobileMoreMenu({
   }, [open, onClose]);
 
   if (!shown) return null;
+
+  const items = MOBILE_MORE.filter(
+    (item) => item.href !== "/revisao" || revisaoActive,
+  );
 
   return (
     <div className="fixed inset-0 z-40 lg:hidden" role="presentation">
@@ -125,7 +134,7 @@ function MobileMoreMenu({
             Mais
           </p>
           <ul className="py-1">
-            {MOBILE_MORE.map(({ href, label, icon: Icon }) => {
+            {items.map(({ href, label, icon: Icon }) => {
               const active =
                 href === "/ajustes"
                   ? pathname.startsWith("/ajustes") ||
@@ -160,6 +169,23 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { user, ready, cloudSync } = useApp();
   const [moreOpen, setMoreOpen] = useState(false);
+  const [revisaoActive, setRevisaoActive] = useState(true);
+
+  useEffect(() => {
+    const check = () => {
+      if (typeof window !== "undefined") {
+        const val = localStorage.getItem("foco_modulo_revisao");
+        setRevisaoActive(val !== "false");
+      }
+    };
+    check();
+    window.addEventListener("foco-modulo-changed", check);
+    window.addEventListener("storage", check);
+    return () => {
+      window.removeEventListener("foco-modulo-changed", check);
+      window.removeEventListener("storage", check);
+    };
+  }, []);
 
   useEffect(() => {
     setMoreOpen(false);
@@ -179,6 +205,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }
 
   const moreActive = mobileMoreActive(pathname);
+  const desktopNav = DESKTOP_NAV.filter(
+    (item) => item.href !== "/revisao" || revisaoActive,
+  );
 
   return (
     <div className="relative z-0 min-h-screen pb-[calc(4.5rem+env(safe-area-inset-bottom))] lg:pb-0">
@@ -223,7 +252,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </Link>
 
           <nav className="ml-auto flex items-center gap-1">
-            {DESKTOP_NAV.map(({ href, label, icon: Icon }) => {
+            {desktopNav.map(({ href, label, icon: Icon }) => {
               const active = desktopNavActive(pathname, href);
               return (
                 <Link
@@ -255,6 +284,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         open={moreOpen}
         onClose={() => setMoreOpen(false)}
         pathname={pathname}
+        revisaoActive={revisaoActive}
       />
 
       <nav
