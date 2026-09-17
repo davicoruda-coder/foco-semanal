@@ -30,8 +30,8 @@ const DESKTOP_NAV = [
 /** Mobile: abas principais. */
 const MOBILE_PRIMARY = [
   { href: "/hoje", label: "Estudo", icon: BookMarked },
-  { href: "/revisao", label: "Revisão", icon: RotateCcw },
   { href: "/agenda", label: "Agenda", icon: CalendarDays },
+  { href: "/revisao", label: "Revisão", icon: RotateCcw },
   { href: "/lembretes", label: "Lembretes", icon: StickyNote },
 ];
 
