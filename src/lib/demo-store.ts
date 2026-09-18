@@ -1,5 +1,5 @@
 import type { AppData } from "./types";
-import { normalizeRotation, normalizeExclusiveDays, normalizeSidebarTimerName, normalizeSidebarTimerMinutes, normalizeRecursos } from "./utils";
+import { normalizeRotation, normalizeExclusiveDays, normalizeSidebarTimerName, normalizeSidebarTimerMinutes, normalizeRecursos, resetDailyStatusIfNeeded } from "./utils";
 import { parseSubjectIcon } from "./subject-icons";
 
 function id(_prefix: string) {
@@ -113,13 +113,16 @@ export function loadDemoData(): AppData {
           ? Math.floor(s.cycle_done)
           : 0,
     }));
-    data.subjects = [...subjectsRaw]
+    const sorted = [...subjectsRaw]
       .sort((a, b) => {
         const byOrder = (a.cycle_order ?? 0) - (b.cycle_order ?? 0);
         if (byOrder !== 0) return byOrder;
         return String(a.name).localeCompare(String(b.name), "pt-BR");
       })
       .map((s, i) => ({ ...s, cycle_order: i }));
+    // Reset status on day change so subjects don't carry over "ok" from yesterday
+    const { subjects: resetted } = resetDailyStatusIfNeeded(sorted);
+    data.subjects = resetted;
     const colors = ["#FDE68A", "#A7F3D0", "#FBCFE8", "#BFDBFE", "#FECACA"];
     data.reminders = (data.reminders ?? []).map((r, i) => ({
       ...r,

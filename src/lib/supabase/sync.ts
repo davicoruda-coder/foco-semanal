@@ -12,7 +12,7 @@ import type {
   ThemePref,
   WeekBlock,
 } from "@/lib/types";
-import { normalizeStudyDays, normalizeExclusiveDays, normalizeRotation, normalizeSidebarTimerName, normalizeSidebarTimerMinutes, normalizeRecursos } from "@/lib/utils";
+import { normalizeStudyDays, normalizeExclusiveDays, normalizeRotation, normalizeSidebarTimerName, normalizeSidebarTimerMinutes, normalizeRecursos, resetDailyStatusIfNeeded } from "@/lib/utils";
 import { parseSubjectIcon } from "@/lib/subject-icons";
 
 type Client = SupabaseClient;
@@ -89,6 +89,7 @@ export async function loadCloudData(
   displayName: string | null;
   dbHasWeight?: boolean;
   dbHasCycleDone?: boolean;
+  didDailyReset?: boolean;
 }> {
   const [
     profileRes,
@@ -184,13 +185,15 @@ export async function loadCloudData(
         ? Math.floor(s.cycle_done)
         : 0,
   }));
-  const subjects: Subject[] = [...subjectsRaw]
+  const sorted: Subject[] = [...subjectsRaw]
     .sort((a, b) => {
       const byOrder = a.cycle_order - b.cycle_order;
       if (byOrder !== 0) return byOrder;
       return a.name.localeCompare(b.name, "pt-BR");
     })
     .map((s, i) => ({ ...s, cycle_order: i }));
+  // Reset status on day change so subjects don't carry over "ok" from yesterday
+  const { subjects, didReset: didDailyReset } = resetDailyStatusIfNeeded(sorted);
 
   const week_blocks: WeekBlock[] = (blocksRes.data ?? []).map((b) => ({
     id: b.id,
@@ -285,6 +288,7 @@ export async function loadCloudData(
     displayName: profileRes.data?.display_name ?? null,
     dbHasWeight,
     dbHasCycleDone,
+    didDailyReset,
   };
 }
 

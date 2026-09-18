@@ -523,3 +523,47 @@ export function rotationAdvanced(rotation: SubjectRotation): SubjectRotation {
   if (rotation.items.length === 0) return rotation;
   return { ...rotation, index: (rotation.index + 1) % rotation.items.length };
 }
+
+// ── Daily cycle reset ──────────────────────────────────────────────────────
+const CYCLE_DATE_KEY = "foco_semanal_cycle_date";
+
+/** Returns today's date as "YYYY-MM-DD" in local time. */
+export function todayDateStr(): string {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+/**
+ * Resets every subject's status and cycle_done when a new calendar day starts.
+ * Returns the (possibly mutated) subjects array and whether a reset occurred.
+ */
+export function resetDailyStatusIfNeeded<T extends Subject>(
+  subjects: T[],
+): { subjects: T[]; didReset: boolean } {
+  if (typeof window === "undefined") return { subjects, didReset: false };
+
+  const today = todayDateStr();
+  const stored = localStorage.getItem(CYCLE_DATE_KEY);
+
+  if (stored === today) return { subjects, didReset: false };
+
+  // New day → reset all statuses
+  const resetted = subjects.map((s) => ({
+    ...s,
+    status: "prox" as const,
+    exclusive_status: "prox" as const,
+    cycle_done: 0,
+  }));
+
+  localStorage.setItem(CYCLE_DATE_KEY, today);
+  return { subjects: resetted as T[], didReset: true };
+}
+
+/** Stamp today's date so subsequent loads in the same day don't re-reset. */
+export function stampCycleDate(): void {
+  if (typeof window === "undefined") return;
+  localStorage.setItem(CYCLE_DATE_KEY, todayDateStr());
+}

@@ -41,6 +41,7 @@ import {
   normalizeSidebarTimerMinutes,
   rotationAdvanced,
   normalizeRecursos,
+  resetDailyStatusIfNeeded,
 } from "@/lib/utils";
 import { parseSubjectIcon } from "@/lib/subject-icons";
 import type {
@@ -288,8 +289,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setThemeState(resolveTheme(theme));
       applyTheme(resolveTheme(theme));
       localStorage.setItem(THEME_KEY, theme);
-      if (theme === "auto" && loaded.theme !== "auto") {
-        void saveCloudData(supabase, uid, loaded.data, "auto").catch(() => {});
+      // Persist the daily reset or auto theme back to the cloud
+      const needsCloudSave = loaded.didDailyReset || (theme === "auto" && loaded.theme !== "auto");
+      if (needsCloudSave) {
+        void saveCloudData(supabase, uid, loaded.data, theme).catch(() => {});
       }
       setDemoUser(null);
       setGuestMode(false);
