@@ -64,6 +64,12 @@ export interface QuestaoCaderno {
   created_at: string;
 }
 
+export interface MateriaRevisao {
+  id: string;
+  nome: string;
+  created_at: string;
+}
+
 export interface Flashcard {
   id: string;
   questao_id: string;
@@ -73,6 +79,7 @@ export interface Flashcard {
   proxima_revisao: string; // "YYYY-MM-DD"
   nivel_dominio: NivelDominio;
   created_at: string;
+  questao?: QuestaoCaderno;
 }
 
 export interface PerfilUsuario {

@@ -32,7 +32,7 @@ export function QuickCaptureForm({
 }: {
   onSuccess?: () => void;
 }) {
-  const { addQuestao } = useRevisao();
+  const { addQuestao, materias } = useRevisao();
 
   /* State */
   const [codigoOuLink, setCodigoOuLink] = useState("");
@@ -241,10 +241,35 @@ export function QuickCaptureForm({
             type="text"
             value={disciplina}
             onChange={(e) => setDisciplina(e.target.value)}
+            list="materias-revisao-datalist"
             placeholder="Português, RLM…"
             required
             className="w-full rounded-[var(--radius-btn)] border border-[var(--line)] bg-[var(--surface)] px-3 py-2.5 text-sm text-[var(--ink)] outline-none transition placeholder:text-[color-mix(in_srgb,var(--ink)_35%,transparent)] focus:border-[var(--signal)] focus:ring-2 focus:ring-[var(--signal-soft)]"
           />
+          <datalist id="materias-revisao-datalist">
+            {materias.map((m) => (
+              <option key={m.id} value={m.nome} />
+            ))}
+          </datalist>
+
+          {materias.length > 0 && (
+            <div className="mt-1.5 flex flex-wrap gap-1">
+              {materias.slice(0, 5).map((m) => (
+                <button
+                  key={m.id}
+                  type="button"
+                  onClick={() => setDisciplina(m.nome)}
+                  className={`rounded px-2 py-0.5 text-[11px] font-medium transition ${
+                    disciplina.toLowerCase() === m.nome.toLowerCase()
+                      ? "bg-[var(--signal)] text-white"
+                      : "bg-[var(--mist)] text-[color-mix(in_srgb,var(--ink)_75%,transparent)] hover:bg-[var(--signal-soft)] hover:text-[var(--signal)]"
+                  }`}
+                >
+                  {m.nome}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
         <div>
           <label className="mb-1 block text-xs font-medium uppercase tracking-wider text-[color-mix(in_srgb,var(--ink)_55%,transparent)]">

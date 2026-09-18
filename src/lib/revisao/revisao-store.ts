@@ -12,6 +12,7 @@ import type {
   QuickCapturePayload,
   CadernoFilters,
   NivelDominio,
+  MateriaRevisao,
 } from "./types";
 import { calcularProximaRevisao, type RespostaRevisao } from "./spaced-repetition";
 
@@ -206,20 +207,28 @@ export async function updateQuestao(
 /*  CRUD: Flashcards                                                   */
 /* ------------------------------------------------------------------ */
 
-/** Retorna flashcards cuja revisão é hoje ou anterior (deck do dia). */
-export async function getFlashcardsDoDia(): Promise<Flashcard[]> {
+/** Retorna flashcards cuja revisão é hoje ou anterior (deck do dia), com dados da questão. */
+export async function getFlashcardsDoDia(): Promise<
+  (Flashcard & { questao?: QuestaoCaderno })[]
+> {
   const auth = await getAuthedClient();
   if (!auth) return [];
 
   const hoje = new Date().toISOString().slice(0, 10);
   const { data, error } = await auth.supabase
     .from("flashcards")
-    .select("*")
+    .select("*, questoes_caderno(*)")
     .eq("user_id", auth.userId)
     .lte("proxima_revisao", hoje)
     .order("proxima_revisao", { ascending: true });
   assertOk("flashcards do dia", error);
-  return (data ?? []) as Flashcard[];
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return (data ?? []).map((row: any) => ({
+    ...row,
+    questao: row.questoes_caderno ?? undefined,
+    questoes_caderno: undefined,
+  })) as (Flashcard & { questao?: QuestaoCaderno })[];
 }
 
 /** Lista todos os flashcards, opcionalmente filtrados por disciplina/banca. */
@@ -396,4 +405,114 @@ export async function getRevisaoStats(): Promise<RevisaoStats> {
   }
   stats.flashcardsPendentes = pendentes?.length ?? 0;
   return stats;
+}
+
+/* ------------------------------------------------------------------ */
+/*  CRUD: Matérias cadastradas para Revisão                           */
+/* ------------------------------------------------------------------ */
+
+const LOCAL_STORAGE_KEY_MATERIAS = "foco_revisao_materias_v1";
+
+export async function listMateriasRevisao(): Promise<MateriaRevisao[]> {
+  if (typeof window !== "undefined") {
+    try {
+      const raw = localStorage.getItem(LOCAL_STORAGE_KEY_MATERIAS);
+      if (raw) {
+        return JSON.parse(raw) as MateriaRevisao[];
+      }
+    } catch {}
+  }
+
+  const auth = await getAuthedClient();
+  if (auth) {
+    try {
+      const perfil = await ensurePerfil();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const list = (perfil?.modulos_ativos as any)?.materias_revisao;
+      if (Array.isArray(list) && list.length > 0) {
+        if (typeof window !== "undefined") {
+          localStorage.setItem(LOCAL_STORAGE_KEY_MATERIAS, JSON.stringify(list));
+        }
+        return list;
+      }
+    } catch {}
+  }
+
+  return [];
+}
+
+export async function addMateriaRevisao(
+  nome: string,
+): Promise<MateriaRevisao | null> {
+  const trimmed = nome.trim();
+  if (!trimmed) return null;
+
+  const current = await listMateriasRevisao();
+  const exists = current.find(
+    (m) => m.nome.toLowerCase() === trimmed.toLowerCase(),
+  );
+  if (exists) return exists;
+
+  const nova: MateriaRevisao = {
+    id:
+      typeof crypto !== "undefined" && crypto.randomUUID
+        ? crypto.randomUUID()
+        : String(Date.now()),
+    nome: trimmed,
+    created_at: new Date().toISOString(),
+  };
+
+  const updated = [...current, nova];
+  if (typeof window !== "undefined") {
+    localStorage.setItem(LOCAL_STORAGE_KEY_MATERIAS, JSON.stringify(updated));
+  }
+
+  const auth = await getAuthedClient();
+  if (auth) {
+    try {
+      const perfil = await ensurePerfil();
+      const modulos = perfil?.modulos_ativos ?? { revisao: true };
+      await auth.supabase
+        .from("perfis")
+        .update({
+          modulos_ativos: {
+            ...modulos,
+            materias_revisao: updated,
+          },
+        })
+        .eq("user_id", auth.userId);
+    } catch (err) {
+      console.warn("[revisao] sync materia supabase:", err);
+    }
+  }
+
+  return nova;
+}
+
+export async function deleteMateriaRevisao(id: string): Promise<void> {
+  const current = await listMateriasRevisao();
+  const updated = current.filter((m) => m.id !== id);
+
+  if (typeof window !== "undefined") {
+    localStorage.setItem(LOCAL_STORAGE_KEY_MATERIAS, JSON.stringify(updated));
+  }
+
+  const auth = await getAuthedClient();
+  if (auth) {
+    try {
+      const perfil = await ensurePerfil();
+      const modulos = perfil?.modulos_ativos ?? { revisao: true };
+      await auth.supabase
+        .from("perfis")
+        .update({
+          modulos_ativos: {
+            ...modulos,
+            materias_revisao: updated,
+          },
+        })
+        .eq("user_id", auth.userId);
+    } catch (err) {
+      console.warn("[revisao] delete materia supabase:", err);
+    }
+  }
 }

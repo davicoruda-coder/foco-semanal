@@ -14,6 +14,7 @@ import type {
   PerfilUsuario,
   QuickCapturePayload,
   CadernoFilters,
+  MateriaRevisao,
 } from "@/lib/revisao/types";
 import type { RevisaoStats } from "@/lib/revisao/revisao-store";
 
@@ -34,14 +35,22 @@ type RevisaoContextValue = {
   reloadQuestoes: (filters?: CadernoFilters) => Promise<void>;
 
   // Flashcards
-  flashcardsDoDia: Flashcard[];
+  flashcardsDoDia: (Flashcard & { questao?: QuestaoCaderno })[];
   flashcardsLoading: boolean;
+  allFlashcards: (Flashcard & { questao?: QuestaoCaderno })[];
   responderFlashcard: (
     id: string,
     nivelAtual: 0 | 1 | 2 | 3,
     resposta: "errei" | "dificil" | "bom" | "facil",
   ) => Promise<void>;
   reloadFlashcards: () => Promise<void>;
+
+  // Matérias
+  materias: MateriaRevisao[];
+  materiasLoading: boolean;
+  addMateria: (nome: string) => Promise<MateriaRevisao | null>;
+  deleteMateria: (id: string) => Promise<void>;
+  reloadMaterias: () => Promise<void>;
 
   // Stats
   stats: RevisaoStats | null;
@@ -69,8 +78,15 @@ export function RevisaoProvider({ children }: { children: ReactNode }) {
   const [perfil, setPerfil] = useState<PerfilUsuario | null>(null);
   const [questoes, setQuestoes] = useState<QuestaoCaderno[]>([]);
   const [questoesLoading, setQuestoesLoading] = useState(false);
-  const [flashcardsDoDia, setFlashcardsDoDia] = useState<Flashcard[]>([]);
+  const [flashcardsDoDia, setFlashcardsDoDia] = useState<
+    (Flashcard & { questao?: QuestaoCaderno })[]
+  >([]);
+  const [allFlashcards, setAllFlashcards] = useState<
+    (Flashcard & { questao?: QuestaoCaderno })[]
+  >([]);
   const [flashcardsLoading, setFlashcardsLoading] = useState(false);
+  const [materias, setMaterias] = useState<MateriaRevisao[]>([]);
+  const [materiasLoading, setMateriasLoading] = useState(false);
   const [stats, setStats] = useState<RevisaoStats | null>(null);
 
   const moduloAtivo = perfil?.modulos_ativos?.revisao ?? true;
@@ -143,14 +159,62 @@ export function RevisaoProvider({ children }: { children: ReactNode }) {
     setFlashcardsLoading(true);
     try {
       const store = await import("@/lib/revisao/revisao-store");
-      const data = await store.getFlashcardsDoDia();
-      setFlashcardsDoDia(data);
+      const [dia, todos] = await Promise.all([
+        store.getFlashcardsDoDia(),
+        store.listFlashcards(),
+      ]);
+      setFlashcardsDoDia(dia);
+      setAllFlashcards(todos);
     } catch (err) {
       console.warn("[revisao] load flashcards:", err);
     } finally {
       setFlashcardsLoading(false);
     }
   }, []);
+
+  /* ---- Matérias ---- */
+  const reloadMaterias = useCallback(async () => {
+    setMateriasLoading(true);
+    try {
+      const store = await import("@/lib/revisao/revisao-store");
+      const list = await store.listMateriasRevisao();
+      setMaterias(list);
+    } catch (err) {
+      console.warn("[revisao] load materias:", err);
+    } finally {
+      setMateriasLoading(false);
+    }
+  }, []);
+
+  const handleAddMateria = useCallback(async (nome: string) => {
+    try {
+      const store = await import("@/lib/revisao/revisao-store");
+      const nova = await store.addMateriaRevisao(nome);
+      if (nova) {
+        setMaterias((prev) =>
+          prev.some((m) => m.id === nova.id) ? prev : [...prev, nova],
+        );
+      }
+      return nova;
+    } catch (err) {
+      console.warn("[revisao] add materia:", err);
+      return null;
+    }
+  }, []);
+
+  const handleDeleteMateria = useCallback(async (id: string) => {
+    try {
+      const store = await import("@/lib/revisao/revisao-store");
+      await store.deleteMateriaRevisao(id);
+      setMaterias((prev) => prev.filter((m) => m.id !== id));
+    } catch (err) {
+      console.warn("[revisao] delete materia:", err);
+    }
+  }, []);
+
+  useEffect(() => {
+    reloadMaterias();
+  }, [reloadMaterias]);
 
   const handleResponderFlashcard = useCallback(
     async (
@@ -207,8 +271,14 @@ export function RevisaoProvider({ children }: { children: ReactNode }) {
     reloadQuestoes,
     flashcardsDoDia,
     flashcardsLoading,
+    allFlashcards,
     responderFlashcard: handleResponderFlashcard,
     reloadFlashcards,
+    materias,
+    materiasLoading,
+    addMateria: handleAddMateria,
+    deleteMateria: handleDeleteMateria,
+    reloadMaterias,
     stats,
     reloadStats,
     setModuloAtivo: handleSetModuloAtivo,
