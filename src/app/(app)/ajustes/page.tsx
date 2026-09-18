@@ -1,9 +1,13 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import {
   Bell,
+  ChevronRight,
+  CircleHelp,
   Download,
+  GraduationCap,
   KeyRound,
   Moon,
   Sun,
@@ -16,7 +20,6 @@ import { useApp } from "@/components/AppProvider";
 import { AccessManagement } from "@/components/AccessManagement";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { InstallPwaCard } from "@/components/InstallPwaCard";
-import { HelpTutorialSection } from "@/components/ajustes/HelpTutorialSection";
 import { useStudyFlow } from "@/components/StudyFlowProvider";
 import {
   ALARM_TONES,
@@ -187,155 +190,209 @@ export default function AjustesPage() {
         }}
       />
 
-      <h1 className="font-display pb-0.5 text-2xl font-semibold leading-normal tracking-tight md:text-3xl">
-        Ajustes
-      </h1>
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <h1 className="font-display text-2xl font-semibold leading-normal tracking-tight md:text-3xl">
+          Ajustes
+        </h1>
+        <Link
+          href="/ajuda"
+          className="inline-flex items-center gap-1 text-xs font-semibold text-[var(--signal)] hover:underline sm:text-sm"
+        >
+          <CircleHelp size={15} />
+          Guia de Ajuda & Tutoriais
+        </Link>
+      </div>
+      <p className="mt-1 text-xs text-[color-mix(in_srgb,var(--ink)_70%,transparent)] sm:text-sm">
+        Configure métodos de estudo, alarmes sonoros, aparência e segurança da conta.
+      </p>
 
-      <section className="surface mt-5 p-4 md:p-5">
-        <h2 className="font-display text-base font-semibold tracking-tight md:text-lg">
-          Aparência
-        </h2>
-        <div className="mt-3 grid gap-2.5 sm:grid-cols-3">
-          {OPTIONS.map(({ value, label, icon: Icon }) => {
-            const active = themePref === value;
-            return (
-              <button
-                key={value}
-                type="button"
-                onClick={() => setTheme(value)}
-                className={`flex items-center gap-3 rounded-[var(--radius)] border px-3.5 py-3 text-left transition ${
-                  active
-                    ? "border-[var(--signal)] bg-[var(--signal-soft)]"
-                    : "border-[var(--line)] bg-[var(--surface)] hover:border-[color-mix(in_srgb,var(--signal)_30%,var(--line))]"
-                }`}
-              >
-                <span
-                  className={`grid h-8 w-8 shrink-0 place-items-center rounded-full ${
+      {/* Banner destacado de Ajuda & Guia Rápido */}
+      <div className="surface mt-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 md:p-5 border-[color-mix(in_srgb,var(--signal)_30%,var(--line))] bg-[color-mix(in_srgb,var(--signal)_5%,var(--surface))] rounded-[var(--radius)] shadow-[var(--shadow-sm)]">
+        <div className="flex items-start sm:items-center gap-3">
+          <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-[var(--signal-soft)] text-[var(--signal)]">
+            <CircleHelp size={22} />
+          </div>
+          <div>
+            <h2 className="font-display text-sm font-semibold tracking-tight text-[var(--ink)] sm:text-base">
+              Central de Ajuda & Como Funciona
+            </h2>
+            <p className="mt-0.5 text-xs text-[color-mix(in_srgb,var(--ink)_75%,transparent)] sm:text-sm leading-relaxed">
+              Dúvidas sobre ciclo de estudos, pesos, rodízios e repetição espaçada? Acesse o guia completo.
+            </p>
+          </div>
+        </div>
+        <Link
+          href="/ajuda"
+          className="inline-flex shrink-0 items-center gap-1.5 rounded-[var(--radius-btn)] bg-[var(--signal)] px-3.5 py-2 text-xs sm:text-sm font-semibold text-white shadow-sm transition hover:brightness-110 active:scale-95"
+        >
+          Acessar Guia <ChevronRight size={16} />
+        </Link>
+      </div>
+
+      {/* GRUPO 1: ESTUDO & PRODUTIVIDADE */}
+      <div className="mt-8 space-y-4">
+        <div className="flex items-center gap-2 border-b border-[var(--line)] pb-2 text-xs font-semibold uppercase tracking-wider text-[var(--signal)]">
+          <GraduationCap size={16} />
+          Estudo & Produtividade
+        </div>
+
+        <ModulosSettings />
+        <SessionBlockSettings />
+        <SidebarTimerSettings />
+      </div>
+
+      {/* GRUPO 2: APARÊNCIA & ALERTAS */}
+      <div className="mt-8 space-y-4">
+        <div className="flex items-center gap-2 border-b border-[var(--line)] pb-2 text-xs font-semibold uppercase tracking-wider text-[var(--signal)]">
+          <Bell size={16} />
+          Aparência & Alertas
+        </div>
+
+        <section className="surface p-4 md:p-5">
+          <h2 className="font-display text-base font-semibold tracking-tight md:text-lg">
+            Aparência
+          </h2>
+          <div className="mt-3 grid gap-2.5 sm:grid-cols-3">
+            {OPTIONS.map(({ value, label, icon: Icon }) => {
+              const active = themePref === value;
+              return (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => setTheme(value)}
+                  className={`flex items-center gap-3 rounded-[var(--radius)] border px-3.5 py-3 text-left transition ${
                     active
-                      ? "bg-[var(--signal)] text-white"
-                      : "bg-[var(--mist)] text-[var(--ink)]"
+                      ? "border-[var(--signal)] bg-[var(--signal-soft)]"
+                      : "border-[var(--line)] bg-[var(--surface)] hover:border-[color-mix(in_srgb,var(--signal)_30%,var(--line))]"
                   }`}
                 >
-                  <Icon size={16} strokeWidth={1.75} />
-                </span>
-                <span className="text-sm font-medium">{label}</span>
-              </button>
-            );
-          })}
-        </div>
-        {themePref === "auto" && (
-          <p className="mt-2 text-xs opacity-55">
-            Automático: claro das 6h às 18h, escuro à noite.
+                  <span
+                    className={`grid h-8 w-8 shrink-0 place-items-center rounded-full ${
+                      active
+                        ? "bg-[var(--signal)] text-white"
+                        : "bg-[var(--mist)] text-[var(--ink)]"
+                    }`}
+                  >
+                    <Icon size={16} strokeWidth={1.75} />
+                  </span>
+                  <span className="text-sm font-medium">{label}</span>
+                </button>
+              );
+            })}
+          </div>
+          {themePref === "auto" && (
+            <p className="mt-2 text-xs text-[color-mix(in_srgb,var(--ink)_65%,transparent)] sm:text-sm">
+              Automático: claro das 6h às 18h, escuro à noite.
+            </p>
+          )}
+        </section>
+
+        <AlarmSettings />
+
+        <section className="surface p-4 md:p-5">
+          <h2 className="font-display text-base font-semibold tracking-tight md:text-lg">
+            Notificações
+          </h2>
+          <p className="mt-1 text-xs text-[color-mix(in_srgb,var(--ink)_75%,transparent)] sm:text-sm leading-relaxed">
+            Alarme ao terminar um temporizador e avisos de lembretes com sino.
+            Funcionam com o app/aba abertos. No celular, o PWA instalado costuma
+            ser mais estável que o navegador.
           </p>
-        )}
-      </section>
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            {notifPermission === "granted" ? (
+              <div className="inline-flex items-center gap-2 rounded-[var(--radius-btn)] border border-[color-mix(in_srgb,var(--ok)_35%,var(--line))] bg-[color-mix(in_srgb,var(--ok)_12%,var(--surface))] px-3.5 py-2.5 text-sm font-medium text-[var(--ok)]">
+                <Bell size={16} strokeWidth={1.75} />
+                Notificações ativas
+              </div>
+            ) : (
+              <button
+                type="button"
+                className="btn btn-primary"
+                disabled={notifPermission === "unsupported"}
+                onClick={async () => {
+                  const ok = await ensureNotificationPermission();
+                  if (typeof window !== "undefined" && "Notification" in window) {
+                    setNotifPermission(Notification.permission);
+                  }
+                  setNotifMsg(
+                    ok
+                      ? "Notificações permitidas."
+                      : "Não foi possível permitir. Confira o cadeado na barra de endereço.",
+                  );
+                }}
+              >
+                <Bell size={16} strokeWidth={1.75} />
+                Permitir notificações do navegador
+              </button>
+            )}
+          </div>
+          {notifPermission === "granted" && (
+            <p className="mt-2 text-xs text-[color-mix(in_srgb,var(--ink)_65%,transparent)] sm:text-sm">
+              Para desativar, use o cadeado na barra de endereço do navegador →
+              Notificações → Bloquear.
+            </p>
+          )}
+          {notifPermission === "denied" && (
+            <p className="mt-2 text-xs text-[var(--warn)] sm:text-sm font-medium">
+              Bloqueadas neste site. Libere em Configurações do navegador →
+              Notificações.
+            </p>
+          )}
+          {notifPermission === "unsupported" && (
+            <p className="mt-2 text-xs text-[color-mix(in_srgb,var(--ink)_65%,transparent)] sm:text-sm">
+              Este navegador não suporta notificações.
+            </p>
+          )}
+          {notifMsg && <p className="mt-2 text-sm text-[color-mix(in_srgb,var(--ink)_85%,transparent)]">{notifMsg}</p>}
+        </section>
 
-      <HelpTutorialSection />
+        <InstallPwaCard />
+      </div>
 
-      <ModulosSettings />
+      {/* GRUPO 3: CONTA & SEGURANÇA */}
+      <div className="mt-8 space-y-4">
+        <div className="flex items-center gap-2 border-b border-[var(--line)] pb-2 text-xs font-semibold uppercase tracking-wider text-[var(--signal)]">
+          <KeyRound size={16} />
+          Conta & Segurança
+        </div>
 
-      <SessionBlockSettings />
-
-      <SidebarTimerSettings />
-
-      <AlarmSettings />
-
-      <section className="surface mt-4 p-4 md:p-5">
-        <h2 className="font-display text-base font-semibold tracking-tight md:text-lg">
-          Notificações
-        </h2>
-        <p className="mt-1 text-xs opacity-55">
-          Alarme ao terminar um temporizador e avisos de lembretes com sino.
-          Funcionam com o app/aba abertos. No celular, o PWA instalado costuma
-          ser mais estável que o navegador.
-        </p>
-        <div className="mt-3 flex flex-wrap items-center gap-2">
-          {notifPermission === "granted" ? (
-            <div className="inline-flex items-center gap-2 rounded-[var(--radius-btn)] border border-[color-mix(in_srgb,var(--ok)_35%,var(--line))] bg-[color-mix(in_srgb,var(--ok)_12%,var(--surface))] px-3.5 py-2.5 text-sm font-medium text-[var(--ok)]">
-              <Bell size={16} strokeWidth={1.75} />
-              Notificações ativas
-            </div>
-          ) : (
+        <section className="surface p-4 md:p-5">
+          <h2 className="font-display text-base font-semibold tracking-tight md:text-lg">
+            Backup
+          </h2>
+          <p className="mt-1 text-xs text-[color-mix(in_srgb,var(--ink)_75%,transparent)] sm:text-sm leading-relaxed">
+            Exportar/importar um arquivo JSON de segurança. Importar só
+            atualiza o que veio no arquivo — não apaga o resto na nuvem.
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button type="button" className="btn btn-primary" onClick={downloadBackup}>
+              <Download size={16} strokeWidth={1.75} /> Exportar
+            </button>
             <button
               type="button"
-              className="btn btn-primary"
-              disabled={notifPermission === "unsupported"}
-              onClick={async () => {
-                const ok = await ensureNotificationPermission();
-                if (typeof window !== "undefined" && "Notification" in window) {
-                  setNotifPermission(Notification.permission);
-                }
-                setNotifMsg(
-                  ok
-                    ? "Notificações permitidas."
-                    : "Não foi possível permitir. Confira o cadeado na barra de endereço.",
-                );
-              }}
+              className="btn"
+              onClick={() => fileRef.current?.click()}
             >
-              <Bell size={16} strokeWidth={1.75} />
-              Permitir notificações do navegador
+              <Upload size={16} strokeWidth={1.75} /> Importar
             </button>
+          </div>
+          <input
+            ref={fileRef}
+            type="file"
+            accept="application/json,.json"
+            className="hidden"
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) void onImportFile(f);
+              e.target.value = "";
+            }}
+          />
+          {backupMsg && (
+            <p className="mt-3 text-sm opacity-70">{backupMsg}</p>
           )}
-        </div>
-        {notifPermission === "granted" && (
-          <p className="mt-2 text-xs opacity-55">
-            Para desativar, use o cadeado na barra de endereço do navegador →
-            Notificações → Bloquear.
-          </p>
-        )}
-        {notifPermission === "denied" && (
-          <p className="mt-2 text-xs text-[var(--warn)]">
-            Bloqueadas neste site. Libere em Configurações do navegador →
-            Notificações.
-          </p>
-        )}
-        {notifPermission === "unsupported" && (
-          <p className="mt-2 text-xs opacity-55">
-            Este navegador não suporta notificações.
-          </p>
-        )}
-        {notifMsg && <p className="mt-2 text-sm opacity-70">{notifMsg}</p>}
-      </section>
+        </section>
 
-      <InstallPwaCard />
-
-      <section className="surface mt-4 p-4 md:p-5">
-        <h2 className="font-display text-base font-semibold tracking-tight md:text-lg">
-          Backup
-        </h2>
-        <p className="mt-1 text-xs opacity-55">
-          Exportar/importar um arquivo JSON de segurança. Importar só
-          atualiza o que veio no arquivo — não apaga o resto na nuvem.
-        </p>
-        <div className="mt-3 flex flex-wrap gap-2">
-          <button type="button" className="btn btn-primary" onClick={downloadBackup}>
-            <Download size={16} strokeWidth={1.75} /> Exportar
-          </button>
-          <button
-            type="button"
-            className="btn"
-            onClick={() => fileRef.current?.click()}
-          >
-            <Upload size={16} strokeWidth={1.75} /> Importar
-          </button>
-        </div>
-        <input
-          ref={fileRef}
-          type="file"
-          accept="application/json,.json"
-          className="hidden"
-          onChange={(e) => {
-            const f = e.target.files?.[0];
-            if (f) void onImportFile(f);
-            e.target.value = "";
-          }}
-        />
-        {backupMsg && (
-          <p className="mt-3 text-sm opacity-70">{backupMsg}</p>
-        )}
-      </section>
-
-      <AccessManagement />
+        <AccessManagement />
 
       <section className="surface mt-4 p-4 md:p-5">
         <h2 className="font-display text-base font-semibold tracking-tight md:text-lg">
@@ -461,6 +518,7 @@ export default function AjustesPage() {
           )}
         </div>
       </section>
+      </div>
     </div>
   );
 }

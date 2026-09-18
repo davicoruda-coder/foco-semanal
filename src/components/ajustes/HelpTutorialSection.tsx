@@ -163,66 +163,72 @@ export function HelpTutorialSection() {
               >
                 <div className="flex min-w-0 items-center gap-3">
                   <span
-                    className={`grid h-9 w-9 shrink-0 place-items-center rounded-full transition ${
+                    className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl transition ${
                       isOpen
                         ? "bg-[var(--signal)] text-white shadow-sm"
                         : "bg-[var(--mist)] text-[var(--ink)]"
                     }`}
                   >
-                    <Icon size={18} strokeWidth={1.8} />
+                    <Icon size={20} strokeWidth={1.8} />
                   </span>
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="text-sm font-semibold text-[var(--ink)]">
+                      <span className="text-sm font-semibold text-[var(--ink)] sm:text-base">
                         {topic.title}
                       </span>
-                      <span className="rounded-full bg-[var(--signal-soft)] px-2 py-0.5 text-[10px] font-semibold text-[var(--signal)]">
+                      <span className="rounded-full bg-[var(--signal-soft)] px-2 py-0.5 text-[10px] font-semibold text-[var(--signal)] sm:text-xs">
                         {topic.badge}
                       </span>
                     </div>
-                    <p className="mt-0.5 truncate text-xs text-[color-mix(in_srgb,var(--ink)_55%,transparent)]">
+                    <p
+                      className={`mt-1 text-xs sm:text-sm text-[color-mix(in_srgb,var(--ink)_75%,transparent)] leading-relaxed ${
+                        isOpen ? "" : "line-clamp-2"
+                      }`}
+                    >
                       {topic.summary}
                     </p>
                   </div>
                 </div>
 
                 <span
-                  className={`grid h-7 w-7 shrink-0 place-items-center rounded-full text-[color-mix(in_srgb,var(--ink)_50%,transparent)] transition-transform duration-200 ${
+                  className={`grid h-8 w-8 shrink-0 place-items-center rounded-full text-[color-mix(in_srgb,var(--ink)_60%,transparent)] transition-transform duration-200 ${
                     isOpen ? "rotate-180 text-[var(--signal)]" : ""
                   }`}
                 >
-                  <ChevronDown size={18} />
+                  <ChevronDown size={20} />
                 </span>
               </button>
 
               {isOpen && (
-                <div className="border-t border-[color-mix(in_srgb,var(--line)_70%,transparent)] px-4 pb-4 pt-3.5 text-xs text-[color-mix(in_srgb,var(--ink)_85%,transparent)] md:px-5 md:pb-5">
-                  <p className="leading-relaxed text-[color-mix(in_srgb,var(--ink)_75%,transparent)]">
+                <div className="border-t border-[color-mix(in_srgb,var(--line)_70%,transparent)] px-4 pb-4 pt-3.5 text-sm text-[color-mix(in_srgb,var(--ink)_90%,transparent)] md:px-5 md:pb-5">
+                  <p className="leading-relaxed text-[color-mix(in_srgb,var(--ink)_80%,transparent)] text-sm sm:text-base">
                     {topic.concept}
                   </p>
 
-                  <div className="mt-3.5 space-y-2">
-                    <p className="font-semibold uppercase tracking-wider text-[11px] text-[color-mix(in_srgb,var(--ink)_50%,transparent)]">
+                  <div className="mt-4 space-y-2.5">
+                    <p className="font-semibold uppercase tracking-wider text-xs text-[color-mix(in_srgb,var(--ink)_60%,transparent)]">
                       Como usar na prática:
                     </p>
-                    <ol className="space-y-1.5 pl-0.5">
+                    <ol className="space-y-2.5 pl-0.5">
                       {topic.steps.map((step, idx) => (
-                        <li key={idx} className="flex items-start gap-2.5">
-                          <span className="grid h-4 w-4 shrink-0 place-items-center rounded-full bg-[color-mix(in_srgb,var(--signal)_20%,transparent)] text-[10px] font-bold text-[var(--signal)]">
+                        <li key={idx} className="flex items-start gap-3">
+                          <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-[color-mix(in_srgb,var(--signal)_20%,transparent)] text-xs font-bold text-[var(--signal)] mt-0.5">
                             {idx + 1}
                           </span>
-                          <span className="leading-snug">{step}</span>
+                          <span className="leading-relaxed text-sm text-[var(--ink)] sm:text-base">
+                            {step}
+                          </span>
                         </li>
                       ))}
                     </ol>
                   </div>
 
-                  <div className="mt-3.5 flex items-start gap-2 rounded-[var(--radius-tag)] border border-[color-mix(in_srgb,var(--signal)_25%,var(--line))] bg-[color-mix(in_srgb,var(--signal)_8%,var(--surface))] p-2.5 text-[11px] text-[color-mix(in_srgb,var(--ink)_85%,transparent)]">
+                  <div className="mt-4 flex items-start gap-3 rounded-[var(--radius-tag)] border border-[color-mix(in_srgb,var(--signal)_25%,var(--line))] bg-[color-mix(in_srgb,var(--signal)_8%,var(--surface))] p-3.5 text-xs sm:text-sm text-[color-mix(in_srgb,var(--ink)_90%,transparent)]">
                     <Lightbulb
-                      size={15}
+                      size={18}
                       className="mt-0.5 shrink-0 text-[var(--signal)]"
                     />
-                    <p className="leading-snug">
+                    <p className="leading-relaxed">
                       <strong className="font-semibold text-[var(--signal)]">
                         Dica:
                       </strong>{" "}

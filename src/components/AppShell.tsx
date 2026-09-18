@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import {
   BookMarked,
   CalendarDays,
+  CircleHelp,
   Ellipsis,
   Home,
   Settings,
@@ -24,6 +25,7 @@ const DESKTOP_NAV = [
   { href: "/revisao", label: "Revisão", icon: FlashcardsIcon },
   { href: "/semana", label: "Semana", icon: CalendarDays },
   { href: "/estatisticas", label: "Estatísticas", icon: ChartColumn },
+  { href: "/ajuda", label: "Ajuda", icon: CircleHelp },
   { href: "/ajustes", label: "Ajustes", icon: Settings },
 ];
 
@@ -38,6 +40,7 @@ const MOBILE_PRIMARY = [
 /** Mobile: opções dentro do ⋯ */
 const MOBILE_MORE = [
   { href: "/estatisticas", label: "Estatísticas", icon: ChartColumn },
+  { href: "/ajuda", label: "Ajuda & Guia", icon: CircleHelp },
   { href: "/ajustes", label: "Ajustes", icon: Settings },
 ];
 
