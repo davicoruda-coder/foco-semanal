@@ -5,10 +5,10 @@ import { useEffect, useId, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import {
   BookMarked,
+  Brain,
   CalendarDays,
   Ellipsis,
   Home,
-  RotateCcw,
   Settings,
   StickyNote,
   ChartColumn,
@@ -21,7 +21,7 @@ import { useOpenTransition } from "@/lib/use-open-transition";
 /** Desktop: layout clássico. */
 const DESKTOP_NAV = [
   { href: "/hoje", label: "Hoje", icon: Home },
-  { href: "/revisao", label: "Revisão", icon: RotateCcw },
+  { href: "/revisao", label: "Revisão", icon: Brain },
   { href: "/semana", label: "Semana", icon: CalendarDays },
   { href: "/estatisticas", label: "Estatísticas", icon: ChartColumn },
   { href: "/ajustes", label: "Ajustes", icon: Settings },
@@ -31,7 +31,7 @@ const DESKTOP_NAV = [
 const MOBILE_PRIMARY = [
   { href: "/hoje", label: "Estudo", icon: BookMarked },
   { href: "/agenda", label: "Agenda", icon: CalendarDays },
-  { href: "/revisao", label: "Revisão", icon: RotateCcw },
+  { href: "/revisao", label: "Revisão", icon: Brain },
   { href: "/lembretes", label: "Lembretes", icon: StickyNote },
 ];
 

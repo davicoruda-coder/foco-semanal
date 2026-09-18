@@ -6,12 +6,9 @@ import {
   BookMarked,
   Brain,
   ChevronRight,
-  GraduationCap,
   Layers,
   PieChart,
   Plus,
-  RotateCcw,
-  Sparkles,
   X,
 } from "lucide-react";
 import { RevisaoProvider, useRevisao } from "@/components/revisao/RevisaoProvider";
@@ -36,7 +33,7 @@ function RevisaoContent() {
   if (!moduloAtivo) {
     return (
       <div className="mx-auto max-w-lg rounded-[var(--radius)] border border-[var(--line)] bg-[var(--surface)] p-8 text-center space-y-3">
-        <RotateCcw
+        <Brain
           size={36}
           className="mx-auto text-[color-mix(in_srgb,var(--ink)_40%,transparent)]"
         />
@@ -62,7 +59,7 @@ function RevisaoContent() {
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--line)] pb-3">
         <div className="flex items-center gap-2.5">
           <div className="grid size-9 place-items-center rounded-xl bg-[var(--signal-soft)] text-[var(--signal)]">
-            <RotateCcw size={20} />
+            <Brain size={20} />
           </div>
           <div>
             <h1 className="text-lg font-bold tracking-tight text-[var(--ink)]">
@@ -109,7 +106,7 @@ function RevisaoContent() {
               : "text-[color-mix(in_srgb,var(--ink)_60%,transparent)] hover:text-[var(--ink)]"
           }`}
         >
-          <Brain size={14} />
+          <Layers size={14} />
           Flashcards
           {flashcardsDoDia.length > 0 && (
             <span className="grid size-4 place-items-center rounded-full bg-[var(--signal)] text-[9px] font-bold text-white">
