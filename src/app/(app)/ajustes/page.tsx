@@ -11,7 +11,7 @@ import {
   Upload,
   Volume2,
 } from "lucide-react";
-import { BrainSideIcon } from "@/components/BrainSideIcon";
+import { FlashcardsIcon } from "@/components/FlashcardsIcon";
 import { useApp } from "@/components/AppProvider";
 import { AccessManagement } from "@/components/AccessManagement";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
@@ -786,7 +786,7 @@ function ModulosSettings() {
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-start gap-3">
             <div className="mt-0.5 grid size-9 shrink-0 place-items-center rounded-xl bg-[var(--signal-soft)] text-[var(--signal)]">
-              <BrainSideIcon size={18} />
+              <FlashcardsIcon size={18} />
             </div>
             <div>
               <div className="flex items-center gap-2">

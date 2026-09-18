@@ -10,7 +10,7 @@ import {
   Plus,
   X,
 } from "lucide-react";
-import { BrainSideIcon } from "@/components/BrainSideIcon";
+import { FlashcardsIcon } from "@/components/FlashcardsIcon";
 import { RevisaoProvider, useRevisao } from "@/components/revisao/RevisaoProvider";
 import { CadernoList } from "@/components/revisao/CadernoList";
 import { QuickCaptureForm } from "@/components/revisao/QuickCaptureForm";
@@ -33,7 +33,7 @@ function RevisaoContent() {
   if (!moduloAtivo) {
     return (
       <div className="mx-auto max-w-lg rounded-[var(--radius)] border border-[var(--line)] bg-[var(--surface)] p-8 text-center space-y-3">
-        <BrainSideIcon
+        <FlashcardsIcon
           size={36}
           className="mx-auto text-[color-mix(in_srgb,var(--ink)_40%,transparent)]"
         />
@@ -59,7 +59,7 @@ function RevisaoContent() {
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--line)] pb-3">
         <div className="flex items-center gap-2.5">
           <div className="grid size-9 place-items-center rounded-xl bg-[var(--signal-soft)] text-[var(--signal)]">
-            <BrainSideIcon size={20} />
+            <FlashcardsIcon size={20} />
           </div>
           <div>
             <h1 className="text-lg font-bold tracking-tight text-[var(--ink)]">
