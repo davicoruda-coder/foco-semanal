@@ -190,44 +190,21 @@ export default function AjustesPage() {
         }}
       />
 
-      <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h1 className="font-display text-2xl font-semibold leading-normal tracking-tight md:text-3xl">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="font-display text-2xl font-bold tracking-tight md:text-3xl text-[var(--ink)]">
           Ajustes
         </h1>
         <Link
           href="/ajuda"
-          className="inline-flex items-center gap-1 text-xs font-semibold text-[var(--signal)] hover:underline sm:text-sm"
+          className="inline-flex items-center gap-1.5 rounded-[var(--radius-btn)] border border-[var(--line)] bg-[var(--surface)] px-3 py-1.5 text-xs font-semibold text-[var(--ink)] shadow-[var(--shadow-xs)] transition hover:border-[var(--signal)] hover:text-[var(--signal)] sm:text-sm"
         >
           <CircleHelp size={15} />
-          Guia de Ajuda & Tutoriais
+          <span>Guia & Ajuda</span>
         </Link>
       </div>
-      <p className="mt-1 text-xs text-[color-mix(in_srgb,var(--ink)_70%,transparent)] sm:text-sm">
+      <p className="mt-1 text-xs text-[color-mix(in_srgb,var(--ink)_75%,transparent)] sm:text-sm leading-relaxed">
         Configure métodos de estudo, alarmes sonoros, aparência e segurança da conta.
       </p>
-
-      {/* Banner destacado de Ajuda & Guia Rápido */}
-      <div className="surface mt-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 md:p-5 border-[color-mix(in_srgb,var(--signal)_30%,var(--line))] bg-[color-mix(in_srgb,var(--signal)_5%,var(--surface))] rounded-[var(--radius)] shadow-[var(--shadow-sm)]">
-        <div className="flex items-start sm:items-center gap-3">
-          <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-[var(--signal-soft)] text-[var(--signal)]">
-            <CircleHelp size={22} />
-          </div>
-          <div>
-            <h2 className="font-display text-sm font-semibold tracking-tight text-[var(--ink)] sm:text-base">
-              Central de Ajuda & Como Funciona
-            </h2>
-            <p className="mt-0.5 text-xs text-[color-mix(in_srgb,var(--ink)_75%,transparent)] sm:text-sm leading-relaxed">
-              Dúvidas sobre ciclo de estudos, pesos, rodízios e repetição espaçada? Acesse o guia completo.
-            </p>
-          </div>
-        </div>
-        <Link
-          href="/ajuda"
-          className="inline-flex shrink-0 items-center gap-1.5 rounded-[var(--radius-btn)] bg-[var(--signal)] px-3.5 py-2 text-xs sm:text-sm font-semibold text-white shadow-sm transition hover:brightness-110 active:scale-95"
-        >
-          Acessar Guia <ChevronRight size={16} />
-        </Link>
-      </div>
 
       {/* GRUPO 1: ESTUDO & PRODUTIVIDADE */}
       <div className="mt-8 space-y-4">
@@ -436,7 +413,7 @@ export default function AjustesPage() {
                 </button>
               ) : (
                 <form className="space-y-2" onSubmit={(e) => void savePassword(e)}>
-                  <p className="text-xs opacity-55">
+                  <p className="text-xs text-[color-mix(in_srgb,var(--ink)_75%,transparent)] sm:text-sm leading-relaxed">
                     Defina a senha para entrar neste e-mail em outro aparelho.
                   </p>
                   <input
@@ -496,7 +473,7 @@ export default function AjustesPage() {
           </button>
           {cloud && (
             <div className="border-t border-[var(--line)] pt-3">
-              <p className="text-xs opacity-55">
+              <p className="text-xs text-[color-mix(in_srgb,var(--ink)_75%,transparent)] sm:text-sm leading-relaxed">
                 Apaga matérias, semana, lembretes, notas e sessões na nuvem. A
                 conta permanece conectada. Pede a senha de autorização.
               </p>
@@ -518,6 +495,29 @@ export default function AjustesPage() {
           )}
         </div>
       </section>
+
+      {/* Rodapé: Central de Ajuda & Tutoriais */}
+      <div className="surface flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 md:p-5 rounded-[var(--radius)] border-[var(--line)]">
+        <div className="flex items-center gap-3">
+          <div className="grid size-9 shrink-0 place-items-center rounded-xl bg-[var(--signal-soft)] text-[var(--signal)]">
+            <CircleHelp size={18} />
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-[var(--ink)]">
+              Dúvidas sobre ciclo ou metodologia de estudos?
+            </p>
+            <p className="text-xs text-[color-mix(in_srgb,var(--ink)_75%,transparent)] sm:text-sm">
+              Consulte as regras de ouro, conceitos de rodízio e tutoriais passo a passo.
+            </p>
+          </div>
+        </div>
+        <Link
+          href="/ajuda"
+          className="inline-flex shrink-0 items-center gap-1 rounded-[var(--radius-btn)] border border-[var(--line)] bg-[var(--surface)] px-3 py-1.5 text-xs font-semibold text-[var(--signal)] shadow-sm hover:border-[var(--signal)] sm:text-sm self-start sm:self-auto"
+        >
+          Acessar Guia <ChevronRight size={15} />
+        </Link>
+      </div>
       </div>
     </div>
   );
@@ -562,7 +562,7 @@ function SidebarTimerSettings() {
       <h2 className="font-display text-base font-semibold tracking-tight md:text-lg">
         Temporizador
       </h2>
-      <p className="mt-1 text-xs opacity-55">
+      <p className="mt-1 text-xs text-[color-mix(in_srgb,var(--ink)_75%,transparent)] sm:text-sm leading-relaxed">
         Nome e duração do temporizador da tela Hoje. O tempo conta nas
         estatísticas e não altera o ciclo.
       </p>
@@ -645,7 +645,7 @@ function SessionBlockSettings() {
       <h2 className="font-display text-base font-semibold tracking-tight md:text-lg">
         Sessão de estudos
       </h2>
-      <p className="mt-1 text-xs opacity-55">
+      <p className="mt-1 text-xs text-[color-mix(in_srgb,var(--ink)_75%,transparent)] sm:text-sm leading-relaxed">
         Meta e faixa usadas para montar o bloco do botão Iniciar sessão. O
         descanso não entra nas estatísticas.
       </p>
@@ -723,7 +723,7 @@ function AlarmSettings() {
       <h2 className="font-display text-base font-semibold tracking-tight md:text-lg">
         Alarme
       </h2>
-      <p className="mt-1 text-xs opacity-55">
+      <p className="mt-1 text-xs text-[color-mix(in_srgb,var(--ink)_75%,transparent)] sm:text-sm leading-relaxed">
         Vale para o fim das matérias na sessão e lembretes com sino neste
         aparelho.
       </p>
@@ -833,50 +833,40 @@ function ModulosSettings() {
 
   return (
     <section className="surface mt-4 p-4 md:p-5">
-      <h2 className="font-display text-base font-semibold tracking-tight md:text-lg">
-        Módulos Opcionais
-      </h2>
-      <p className="mt-1 text-xs opacity-55">
-        Personalize sua experiência ativando ou ocultando funcionalidades extras.
-      </p>
-
-      <div className="mt-4 rounded-[var(--radius)] border border-[var(--line)] bg-[var(--surface)] p-3.5 sm:p-4">
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex items-start gap-3">
-            <div className="mt-0.5 grid size-9 shrink-0 place-items-center rounded-xl bg-[var(--signal-soft)] text-[var(--signal)]">
-              <FlashcardsIcon size={18} />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-semibold text-[var(--ink)]">
-                  Revisão (Caderno de Erros & Flashcards)
-                </span>
-                <span className="rounded bg-[var(--signal-soft)] px-1.5 py-0.5 text-[10px] font-semibold text-[var(--signal)]">
-                  Novo
-                </span>
-              </div>
-              <p className="mt-0.5 text-xs text-[color-mix(in_srgb,var(--ink)_60%,transparent)]">
-                Estudo reverso com captura de erros de questões, repetição
-                espaçada automática e diagnóstico.
-              </p>
-            </div>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex items-start gap-3.5">
+          <div className="mt-0.5 grid size-10 shrink-0 place-items-center rounded-xl bg-[var(--signal-soft)] text-[var(--signal)]">
+            <FlashcardsIcon size={20} />
           </div>
-
-          <label className="relative inline-flex cursor-pointer items-center shrink-0">
-            <input
-              type="checkbox"
-              checked={revisaoAtivo}
-              disabled={salvando}
-              onChange={(e) => toggleRevisao(e.target.checked)}
-              className="peer sr-only"
-            />
-            <div className="peer h-6 w-11 rounded-full bg-[var(--line)] after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-[var(--signal)] peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none" />
-          </label>
+          <div className="space-y-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <h2 className="font-display text-base font-semibold tracking-tight text-[var(--ink)] md:text-lg">
+                Revisão & Flashcards
+              </h2>
+              <span className="rounded-full bg-[var(--signal-soft)] px-2 py-0.5 text-[10px] font-semibold text-[var(--signal)]">
+                Opcional
+              </span>
+            </div>
+            <p className="text-xs sm:text-sm text-[color-mix(in_srgb,var(--ink)_75%,transparent)] leading-relaxed max-w-xl">
+              Caderno de erros com repetição espaçada, captura de falhas em questões e diagnóstico de retenção.
+            </p>
+          </div>
         </div>
+
+        <label className="relative inline-flex cursor-pointer items-center shrink-0 self-end sm:self-center">
+          <input
+            type="checkbox"
+            checked={revisaoAtivo}
+            disabled={salvando}
+            onChange={(e) => toggleRevisao(e.target.checked)}
+            className="peer sr-only"
+          />
+          <div className="peer h-6 w-11 rounded-full bg-[var(--line)] after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-[var(--signal)] peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none" />
+        </label>
       </div>
 
       {mensagem && (
-        <p className="mt-2 text-xs font-medium text-[var(--signal)]">
+        <p className="mt-3 text-xs font-medium text-[var(--signal)] sm:text-sm">
           {mensagem}
         </p>
       )}
