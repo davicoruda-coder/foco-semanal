@@ -1,11 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import {
-  ArrowLeft,
   CheckCircle2,
-  ChevronRight,
-  Settings,
   Sparkles,
   Zap,
 } from "lucide-react";
@@ -14,25 +10,6 @@ import { HelpTutorialSection } from "@/components/ajustes/HelpTutorialSection";
 export default function AjudaPage() {
   return (
     <div className="mx-auto max-w-4xl space-y-6 pb-16">
-      {/* Top Header / Breadcrumb */}
-      <div className="flex items-center justify-between gap-3 pt-1">
-        <Link
-          href="/hoje"
-          className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs sm:text-sm font-medium text-[color-mix(in_srgb,var(--ink)_65%,transparent)] transition hover:bg-[var(--mist)] hover:text-[var(--ink)]"
-        >
-          <ArrowLeft size={16} />
-          Voltar para Hoje
-        </Link>
-
-        <Link
-          href="/ajustes"
-          className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs sm:text-sm font-medium text-[color-mix(in_srgb,var(--ink)_65%,transparent)] transition hover:bg-[var(--mist)] hover:text-[var(--ink)]"
-        >
-          <Settings size={15} />
-          Ajustes do Sistema
-        </Link>
-      </div>
-
       {/* Hero Banner Editorial */}
       <div className="relative overflow-hidden rounded-[var(--radius)] border border-[color-mix(in_srgb,var(--signal)_25%,var(--line))] bg-[linear-gradient(135deg,color-mix(in_srgb,var(--signal)_8%,var(--surface)),var(--surface))] p-5 sm:p-7 shadow-[var(--shadow-sm)]">
         <div className="relative z-10 max-w-2xl">
@@ -110,24 +87,7 @@ export default function AjudaPage() {
           </div>
         </div>
       </section>
-
-      {/* Link de Retorno aos Ajustes */}
-      <div className="surface p-4 sm:p-5 flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h3 className="text-sm sm:text-base font-semibold text-[var(--ink)]">
-            Precisa configurar notificações, alarmes ou senhas?
-          </h3>
-          <p className="text-xs sm:text-sm text-[color-mix(in_srgb,var(--ink)_70%,transparent)] mt-0.5">
-            Acesse as preferências técnicas e opções de sincronização da sua conta.
-          </p>
-        </div>
-        <Link
-          href="/ajustes"
-          className="inline-flex items-center gap-1.5 rounded-[var(--radius-btn)] bg-[var(--signal)] px-4 py-2 text-xs sm:text-sm font-semibold text-white shadow-sm transition hover:brightness-110 active:scale-95"
-        >
-          Ir para Ajustes <ChevronRight size={16} />
-        </Link>
-      </div>
     </div>
   );
 }
+

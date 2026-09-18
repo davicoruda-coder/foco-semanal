@@ -57,25 +57,20 @@ function RevisaoContent() {
     <div className="space-y-4">
       {/* Header com Abas e Ação Principal */}
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--line)] pb-3">
-        <div className="flex items-center gap-2.5">
-          <div className="grid size-9 place-items-center rounded-xl bg-[var(--signal-soft)] text-[var(--signal)]">
-            <FlashcardsIcon size={20} />
-          </div>
-          <div>
-            <h1 className="text-lg font-bold tracking-tight text-[var(--ink)]">
-              Revisão
-            </h1>
-            <p className="text-xs text-[color-mix(in_srgb,var(--ink)_55%,transparent)]">
-              Caderno de Erros & Flashcards de Repetição Espaçada
-            </p>
-          </div>
+        <div>
+          <h1 className="font-display text-2xl font-bold tracking-tight md:text-3xl text-[var(--ink)]">
+            Revisão
+          </h1>
+          <p className="mt-1 text-xs sm:text-sm text-[color-mix(in_srgb,var(--ink)_75%,transparent)] leading-relaxed">
+            Caderno de Erros & Flashcards de Repetição Espaçada
+          </p>
         </div>
 
         {/* Botão de Captura Rápida */}
         <button
           type="button"
           onClick={() => setShowCaptureModal(true)}
-          className="inline-flex items-center gap-1.5 rounded-[var(--radius-btn)] bg-[var(--signal)] px-3.5 py-2 text-xs font-semibold text-white shadow-sm transition hover:brightness-110 active:scale-95"
+          className="inline-flex items-center gap-1.5 rounded-[var(--radius-btn)] bg-[var(--signal)] px-3.5 py-2 text-xs sm:text-sm font-semibold text-white shadow-sm transition hover:brightness-110 active:scale-95"
         >
           <Plus size={16} />
           Capturar Erro (20s)

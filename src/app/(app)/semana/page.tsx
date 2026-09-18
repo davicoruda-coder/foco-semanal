@@ -729,7 +729,7 @@ export default function SemanaPage() {
       <h1 className="font-display pb-0.5 text-2xl font-semibold leading-normal tracking-tight md:text-3xl">
         Semana
       </h1>
-      <p className="mt-2 opacity-65">
+      <p className="mt-1 text-xs sm:text-sm text-[color-mix(in_srgb,var(--ink)_75%,transparent)] leading-relaxed">
         Clique para editar · arraste o bloco para reordenar ou mudar de dia.
       </p>
 

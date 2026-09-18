@@ -32,10 +32,10 @@ export function FlashcardsIcon({
       aria-hidden="true"
       {...props}
     >
-      {/* Cartão frontal com cantos arredondados */}
-      <rect x="4.5" y="4.5" width="12" height="11" rx="2.5" />
-      {/* Cartão de trás sobreposto */}
-      <path d="M16.5 7.5H17a2.5 2.5 0 0 1 2.5 2.5v7a2.5 2.5 0 0 1-2.5 2.5h-7a2.5 2.5 0 0 1-2.5-2.5v-.5" />
+      {/* Cartão frontal com proporção equilibrada ao Lucide */}
+      <rect x="3" y="6" width="14" height="14" rx="2" />
+      {/* Cartão de trás com respiro e cantos arredondados */}
+      <path d="M7 6V4a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-2" />
     </svg>
   );
 }
