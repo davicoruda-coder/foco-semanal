@@ -92,6 +92,10 @@ export function clearInterrupts() {
   saveInterrupts([]);
 }
 
+export function dismissInterrupt(id: string) {
+  saveInterrupts(loadInterrupts().filter((item) => item.id !== id));
+}
+
 export function appendInterrupts(events: ClockInterrupt[]) {
   if (!events.length) return;
   saveInterrupts([...events, ...loadInterrupts()].slice(0, MAX_INTERRUPTS));

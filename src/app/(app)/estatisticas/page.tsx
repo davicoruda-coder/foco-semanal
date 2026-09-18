@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight, Download, Plus } from "lucide-react";
+import { ChevronLeft, ChevronRight, Download, Plus, X } from "lucide-react";
 import { useApp } from "@/components/AppProvider";
 import { SIDEBAR_TIMER_ID, useTimerRuntime } from "@/components/TimerRuntimeProvider";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
@@ -9,6 +9,7 @@ import { DialogFrame } from "@/components/DialogFrame";
 import { FocusBarChart } from "@/components/FocusBarChart";
 import {
   clearInterrupts,
+  dismissInterrupt,
   formatInterruptWhen,
   interruptSummary,
   INTERRUPT_EVENT,
@@ -666,23 +667,51 @@ export default function EstatisticasPage() {
 
       {interrupts.length > 0 ? (
         <section className="surface mt-4 p-5 md:p-6">
-          <p className="text-xs font-semibold uppercase tracking-wider opacity-50">
-            Sessão interrompida
-          </p>
-          <p className="mt-1 text-sm opacity-65">
-            O computador desligou ou o navegador parou. O tempo do apagão não
-            entrou no foco; o relógio voltou pausado no último ponto salvo.
-          </p>
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wider opacity-50">
+                Sessão interrompida (histórico)
+              </p>
+              <p className="mt-1 text-sm opacity-65">
+                O computador desligou ou o navegador parou. O tempo do apagão não
+                entrou no foco; o relógio voltou pausado no último ponto salvo.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                clearInterrupts();
+                setInterrupts([]);
+              }}
+              className="shrink-0 rounded-lg px-2.5 py-1 text-xs font-medium text-[var(--ink)] opacity-60 hover:bg-[var(--mist)] hover:opacity-100 transition-opacity"
+            >
+              Dispensar todos
+            </button>
+          </div>
           <ul className="mt-4 grid gap-3">
             {interrupts.map((item) => (
               <li
                 key={item.id}
-                className="rounded-[var(--radius-btn)] border border-[var(--line)] bg-[var(--mist)]/50 px-3.5 py-3"
+                className="flex items-center justify-between gap-3 rounded-[var(--radius-btn)] border border-[var(--line)] bg-[var(--mist)]/50 px-3.5 py-3"
               >
-                <p className="text-sm font-medium">{interruptSummary(item)}</p>
-                <p className="mt-0.5 text-xs opacity-50">
-                  Último registro às {formatInterruptWhen(item)}
-                </p>
+                <div>
+                  <p className="text-sm font-medium">{interruptSummary(item)}</p>
+                  <p className="mt-0.5 text-xs opacity-50">
+                    Último registro às {formatInterruptWhen(item)}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  title="Dispensar aviso"
+                  aria-label="Dispensar aviso"
+                  onClick={() => {
+                    dismissInterrupt(item.id);
+                    setInterrupts(loadInterrupts());
+                  }}
+                  className="rounded p-1 text-xs opacity-50 hover:bg-[var(--surface)] hover:opacity-100 transition-opacity"
+                >
+                  <X size={16} strokeWidth={2} />
+                </button>
               </li>
             ))}
           </ul>
