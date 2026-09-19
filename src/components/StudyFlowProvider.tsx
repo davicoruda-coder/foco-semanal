@@ -419,13 +419,13 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
     advancingRef.current = false;
   }, [isClockRunning, toggleSubjectTimer]);
 
-  /** Livre: marca Concluída à mão e avança a sessão. */
-  const completeCurrentLibre = useCallback(() => {
+  /** Marca a matéria atual como Concluída à mão e avança a sessão. */
+  const completeCurrentSubjectEarly = useCallback(() => {
     if (phaseRef.current !== "running" && phaseRef.current !== "paused") return;
     if (advancingRef.current) return;
     const current = blockRef.current[indexRef.current];
-    if (!current?.is_free) return;
-    if (isClockRunning(current.id, true)) toggleSubjectTimer(current.id);
+    if (!current) return;
+    if (isClockRunning(current.id, current.is_free)) toggleSubjectTimer(current.id);
     setSubjectStatus(current.id, "ok");
     // O efeito de status Ok dispara o avanço (igual ao fim do timer).
   }, [isClockRunning, toggleSubjectTimer, setSubjectStatus]);
