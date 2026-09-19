@@ -154,16 +154,16 @@ export function statusClass(status: SubjectStatus): string {
 export function statusRowClass(status: SubjectStatus): string {
   switch (status) {
     case "ok":
-      return "bg-[color-mix(in_srgb,var(--ok)_var(--row-tint-ok),var(--surface))]";
+      return "bg-transparent opacity-75 hover:opacity-100 transition-opacity";
     case "prox":
-      // Claro: mist um pouco mais carregado; escuro: igual à barra (--row-prox)
-      return "bg-[var(--row-prox)]";
+      // Destaque moderno para a matéria ativa: fundo sutil, borda leve e acento lateral
+      return "bg-[var(--surface)] border border-[var(--line)] shadow-[0_2px_8px_-2px_color-mix(in_srgb,var(--ink)_8%,transparent)] ring-1 ring-[color-mix(in_srgb,var(--ink)_2%,transparent)] border-l-[4px] border-l-[var(--signal)]";
   }
 }
 
 /** Fundo da linha/card de matéria Livre (no ciclo; cronômetro sem meta). */
 export function freeRowClass(): string {
-  return "bg-[var(--row-free)]";
+  return "bg-transparent border border-[color-mix(in_srgb,var(--signal)_15%,transparent)]";
 }
 
 /** Chip muted para matérias ainda na fila (não são a "Próxima" de verdade). */
@@ -172,7 +172,7 @@ export function queuePendingClass(): string {
 }
 
 export function queuePendingRowClass(): string {
-  return "bg-[var(--surface)]";
+  return "bg-transparent hover:bg-[color-mix(in_srgb,var(--ink)_2%,transparent)] transition-colors";
 }
 
 /** Monday=0 ... Sunday=6 (planilha style) */
