@@ -19,14 +19,11 @@ import { useApp } from "@/components/AppProvider";
 import { LoginScreen } from "@/components/LoginScreen";
 import { useOpenTransition } from "@/lib/use-open-transition";
 
-/** Desktop: layout clássico. */
-const DESKTOP_NAV = [
+/** Desktop: navegação central de trabalho (workflow diário). */
+const DESKTOP_PRIMARY_TABS = [
   { href: "/hoje", label: "Hoje", icon: Home },
-  { href: "/revisao", label: "Revisão", icon: FlashcardsIcon },
   { href: "/semana", label: "Semana", icon: CalendarDays },
-  { href: "/estatisticas", label: "Estatísticas", icon: ChartColumn },
-  { href: "/ajuda", label: "Ajuda", icon: CircleHelp },
-  { href: "/ajustes", label: "Ajustes", icon: Settings },
+  { href: "/revisao", label: "Revisão", icon: FlashcardsIcon },
 ];
 
 /** Mobile: abas principais. */
@@ -225,20 +222,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }
 
   const moreActive = mobileMoreActive(pathname);
-  const desktopNav = DESKTOP_NAV.filter(
-    (item) => {
-      if (item.href === "/revisao") return revisaoActive;
-      if (item.href === "/semana") return semanaActive;
-      return true;
-    }
-  );
-  const mobilePrimary = MOBILE_PRIMARY.filter(
-    (item) => {
-      if (item.href === "/revisao") return revisaoActive;
-      if (item.href === "/semana") return semanaActive;
-      return true;
-    }
-  );
+  const desktopPrimary = DESKTOP_PRIMARY_TABS.filter((item) => {
+    if (item.href === "/revisao") return revisaoActive;
+    if (item.href === "/semana") return semanaActive;
+    return true;
+  });
+  const mobilePrimary = MOBILE_PRIMARY.filter((item) => {
+    if (item.href === "/revisao") return revisaoActive;
+    if (item.href === "/semana") return semanaActive;
+    return true;
+  });
 
   return (
     <div className="relative z-0 min-h-screen pb-[calc(4.5rem+env(safe-area-inset-bottom))] lg:pb-0">
@@ -270,20 +263,25 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </header>
 
       <header className="sticky top-0 z-20 hidden border-b border-[var(--line)] bg-[var(--surface)]/90 backdrop-blur-md lg:block">
-        <div className="mx-auto flex h-14 max-w-7xl items-center gap-3 px-5 md:px-8">
+        <div className="mx-auto flex h-14 max-w-7xl items-center justify-between gap-4 px-5 md:px-8">
+          {/* Logo / Marca */}
           <Link
             href="/hoje"
-            className="flex min-w-0 shrink-0 items-center gap-2.5"
+            className="flex min-w-0 shrink-0 items-center gap-2.5 transition hover:opacity-90"
             title="FocoHub"
           >
-            <BrandIcon size={32} />
-            <span className="font-display truncate text-base font-semibold tracking-tight">
+            <BrandIcon size={30} />
+            <span className="font-display truncate text-base font-semibold tracking-tight text-[var(--ink)]">
               FocoHub
             </span>
           </Link>
 
-          <nav className="ml-auto flex items-center gap-1">
-            {desktopNav.map(({ href, label, icon: Icon }) => {
+          {/* Controle Central Segmentado (Hoje | Semana | Revisão) */}
+          <nav
+            aria-label="Modos de trabalho"
+            className="flex items-center rounded-xl bg-[color-mix(in_srgb,var(--ink)_5%,var(--surface))] p-1 border border-[var(--line)]/60 shadow-[inset_0_1px_1px_rgba(0,0,0,0.03)]"
+          >
+            {desktopPrimary.map(({ href, label, icon: Icon }) => {
               const active = desktopNavActive(pathname, href);
               return (
                 <Link
@@ -292,18 +290,70 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   title={label}
                   aria-label={label}
                   aria-current={active ? "page" : undefined}
-                  className={`inline-flex h-10 items-center gap-1.5 rounded-[var(--radius-btn)] px-2.5 text-sm font-medium transition ${
+                  className={`relative inline-flex h-8 items-center gap-1.5 rounded-lg px-3.5 text-xs font-semibold transition-all duration-150 ${
                     active
-                      ? "bg-[var(--signal-soft)] text-[var(--signal)]"
-                      : "text-[color-mix(in_srgb,var(--ink)_55%,transparent)] hover:bg-[var(--mist)] hover:text-[var(--ink)]"
+                      ? "bg-[var(--surface)] text-[var(--ink)] shadow-[0_1px_3px_rgba(0,0,0,0.08),0_1px_1px_rgba(0,0,0,0.04)] ring-1 ring-black/5"
+                      : "text-[color-mix(in_srgb,var(--ink)_60%,transparent)] hover:text-[var(--ink)] hover:bg-black/[0.03]"
                   }`}
                 >
-                  <Icon size={18} strokeWidth={active ? 2.25 : 1.75} />
-                  <span className="hidden lg:inline">{label}</span>
+                  <Icon
+                    size={15}
+                    strokeWidth={active ? 2.25 : 1.75}
+                    className={active ? "text-[var(--signal)]" : "opacity-70"}
+                  />
+                  <span>{label}</span>
                 </Link>
               );
             })}
           </nav>
+
+          {/* Utilidades e Ações Secundárias à Direita */}
+          <div className="flex items-center gap-1.5">
+            <Link
+              href="/estatisticas"
+              title="Estatísticas de Foco"
+              aria-label="Estatísticas"
+              aria-current={desktopNavActive(pathname, "/estatisticas") ? "page" : undefined}
+              className={`inline-flex h-8.5 items-center gap-1.5 rounded-lg px-2.5 text-xs font-medium transition ${
+                desktopNavActive(pathname, "/estatisticas")
+                  ? "bg-[var(--signal-soft)] text-[var(--signal)] font-semibold"
+                  : "text-[color-mix(in_srgb,var(--ink)_60%,transparent)] hover:bg-[var(--mist)] hover:text-[var(--ink)]"
+              }`}
+            >
+              <ChartColumn size={16} strokeWidth={1.8} />
+              <span className="hidden xl:inline">Estatísticas</span>
+            </Link>
+
+            <div className="h-4 w-[1px] bg-[var(--line)] mx-1" aria-hidden="true" />
+
+            <Link
+              href="/ajuda"
+              title="Ajuda & Guia"
+              aria-label="Ajuda"
+              aria-current={desktopNavActive(pathname, "/ajuda") ? "page" : undefined}
+              className={`inline-flex h-8.5 w-8.5 items-center justify-center rounded-lg text-[color-mix(in_srgb,var(--ink)_60%,transparent)] transition hover:bg-[var(--mist)] hover:text-[var(--ink)] ${
+                desktopNavActive(pathname, "/ajuda")
+                  ? "bg-[var(--signal-soft)] text-[var(--signal)]"
+                  : ""
+              }`}
+            >
+              <CircleHelp size={18} strokeWidth={1.8} />
+            </Link>
+
+            <Link
+              href="/ajustes"
+              title="Ajustes e Configurações"
+              aria-label="Ajustes"
+              aria-current={desktopNavActive(pathname, "/ajustes") ? "page" : undefined}
+              className={`inline-flex h-8.5 w-8.5 items-center justify-center rounded-lg text-[color-mix(in_srgb,var(--ink)_60%,transparent)] transition hover:bg-[var(--mist)] hover:text-[var(--ink)] ${
+                desktopNavActive(pathname, "/ajustes")
+                  ? "bg-[var(--signal-soft)] text-[var(--signal)]"
+                  : ""
+              }`}
+            >
+              <Settings size={18} strokeWidth={1.8} />
+            </Link>
+          </div>
         </div>
       </header>
 

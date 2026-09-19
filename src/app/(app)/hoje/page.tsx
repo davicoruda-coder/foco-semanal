@@ -176,7 +176,7 @@ export default function HojePage() {
                               <div
                                 key={b.id}
                                 title={b.label}
-                                className="rounded-[var(--radius-tag)] px-2 py-2 text-sm font-medium leading-snug break-words hyphens-auto tabular-nums md:px-2 md:py-1.5 md:text-xs lg:text-sm"
+                                className="rounded-[var(--radius-tag)] px-2.5 py-1.5 text-sm font-medium leading-snug break-words hyphens-auto tabular-nums md:text-xs lg:text-sm border border-black/[0.05] shadow-xs"
                                 style={style.style}
                                 lang="pt-BR"
                               >
@@ -199,7 +199,7 @@ export default function HojePage() {
                     </p>
                   )}
                   {todayBlocks.map((b, idx) => {
-                    const style = blockStyle(b);
+                    const style = blockStyle(b, { pill: true });
                     return (
                       <div key={b.id} className="inline-flex items-center gap-2">
                         {idx > 0 && (
@@ -211,7 +211,7 @@ export default function HojePage() {
                           />
                         )}
                         <div
-                          className="rounded-full px-3 py-1.5 text-sm font-medium tabular-nums"
+                          className="rounded-full px-3 py-1 text-sm font-medium tabular-nums shadow-xs"
                           style={style.style}
                         >
                           {b.label}

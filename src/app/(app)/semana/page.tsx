@@ -18,6 +18,7 @@ import {
   BLOCK_COLORS,
   blockStyle,
   defaultBlockColor,
+  getBlockAccent,
   todayIndex,
 } from "@/lib/utils";
 
@@ -43,7 +44,8 @@ function ColorSwatches({
   return (
     <div className="flex flex-wrap gap-2 px-0.5 sm:gap-1.5">
       {BLOCK_COLORS.map((c) => {
-        const selected = value === c;
+        const selected = (value || "").toUpperCase() === c.toUpperCase();
+        const accent = getBlockAccent(c);
         return (
           <button
             key={c}
@@ -51,10 +53,12 @@ function ColorSwatches({
             title="Escolher cor"
             aria-label={`Cor ${c}`}
             aria-pressed={selected}
-            className={`h-10 w-10 shrink-0 rounded-full border-2 sm:h-8 sm:w-8 ${
-              selected ? "border-[var(--ink)]" : "border-black/10"
+            className={`h-9 w-9 shrink-0 rounded-full border-2 transition-all duration-150 hover:scale-110 sm:h-7 sm:w-7 ${
+              selected
+                ? "ring-2 ring-[var(--ink)] ring-offset-2 border-white shadow-sm"
+                : "border-black/10 hover:border-black/30"
             }`}
-            style={{ background: c }}
+            style={{ background: accent }}
             onClick={() => onPick(c)}
           />
         );
@@ -346,7 +350,7 @@ function DayCard({
                 </div>
               ) : (
                 <div
-                  className={`group relative cursor-grab touch-none rounded-[var(--radius-tag)] px-2.5 py-2 text-sm select-none active:cursor-grabbing ${
+                  className={`group relative cursor-grab touch-none rounded-[var(--radius-tag)] px-2.5 py-2 text-sm select-none active:cursor-grabbing border border-black/[0.06] shadow-[0_1px_2px_rgba(0,0,0,0.03)] hover:shadow-[0_2px_6px_rgba(0,0,0,0.07)] hover:-translate-y-[0.5px] transition-all duration-150 ${
                     isDragging ? "opacity-35" : ""
                   }`}
                   style={style.style}
@@ -392,9 +396,9 @@ function DayCard({
                         }}
                       >
                         <span
-                          className="block h-3.5 w-3.5 rounded-full border border-black/20"
+                          className="block h-3.5 w-3.5 rounded-full border border-black/20 shadow-xs"
                           style={{
-                            background: b.color || defaultBlockColor(b.type),
+                            background: getBlockAccent(b.color || defaultBlockColor(b.type)),
                           }}
                         />
                       </button>

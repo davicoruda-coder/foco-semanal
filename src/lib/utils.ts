@@ -19,6 +19,26 @@ export const BLOCK_COLORS = [
   "#EDE9FE", // violeta
 ];
 
+export const BLOCK_COLOR_PALETTE: Record<
+  string,
+  { bg: string; accent: string; text: string; border: string }
+> = {
+  "#E2E8F0": { bg: "#F1F5F9", accent: "#64748B", text: "#0F172A", border: "#CBD5E1" },
+  "#CCFBF1": { bg: "#F0FDFA", accent: "#0D9488", text: "#134E4A", border: "#99F6E4" },
+  "#FEF3C7": { bg: "#FFFBEB", accent: "#D97706", text: "#78350F", border: "#FDE68A" },
+  "#E7E5E4": { bg: "#F5F5F4", accent: "#78716C", text: "#1C1917", border: "#D6D3D1" },
+  "#FBCFE8": { bg: "#FDF2F8", accent: "#DB2777", text: "#831843", border: "#FBCFE8" },
+  "#DBEAFE": { bg: "#EFF6FF", accent: "#2563EB", text: "#1E3A8A", border: "#BFDBFE" },
+  "#FEE2E2": { bg: "#FEF2F2", accent: "#E11D48", text: "#881337", border: "#FECDD3" },
+  "#EDE9FE": { bg: "#F5F3FF", accent: "#7C3AED", text: "#4C1D95", border: "#DDD6FE" },
+};
+
+export function getBlockAccent(rawColor: string): string {
+  const upper = (rawColor || "").toUpperCase();
+  if (BLOCK_COLOR_PALETTE[upper]) return BLOCK_COLOR_PALETTE[upper].accent;
+  return `color-mix(in srgb, ${rawColor || "#64748B"} 65%, black 35%)`;
+}
+
 export function defaultBlockColor(type: BlockType): string {
   switch (type) {
     case "trabalho":
@@ -50,28 +70,58 @@ export function sanitizeCssColor(
 
 export function blockStyle(
   block: Pick<WeekBlock, "type" | "color">,
-  opts?: { muted?: boolean },
+  opts?: { muted?: boolean; pill?: boolean },
 ): {
   className: string;
-  style?: { background: string; color: string };
+  style?: {
+    background: string;
+    color: string;
+    borderLeft?: string;
+    border?: string;
+  };
 } {
-  const bg = sanitizeCssColor(
+  const raw = sanitizeCssColor(
     block.color,
     defaultBlockColor(block.type),
   );
+  const upper = raw.toUpperCase();
+  const palette = BLOCK_COLOR_PALETTE[upper];
+
+  const bg = palette ? palette.bg : raw;
+  const accent = palette ? palette.accent : `color-mix(in srgb, ${raw} 65%, black 35%)`;
+  const text = palette ? palette.text : "#14201a";
+
   if (opts?.muted) {
-    // Sem opacity < 1: opacity força composição e deixa a fonte “embaçada”.
     return {
       className: "",
       style: {
         background: `color-mix(in srgb, ${bg} 72%, var(--surface))`,
-        color: "#3d453f",
+        color: "#525e57",
+        ...(opts?.pill
+          ? { border: `1px solid color-mix(in srgb, ${accent} 25%, transparent)` }
+          : { borderLeft: `3px solid color-mix(in srgb, ${accent} 40%, transparent)` }),
       },
     };
   }
+
+  if (opts?.pill) {
+    return {
+      className: "",
+      style: {
+        background: bg,
+        color: text,
+        border: `1px solid color-mix(in srgb, ${accent} 30%, transparent)`,
+      },
+    };
+  }
+
   return {
     className: "",
-    style: { background: bg, color: "#14201a" },
+    style: {
+      background: bg,
+      color: text,
+      borderLeft: `3.5px solid ${accent}`,
+    },
   };
 }
 
