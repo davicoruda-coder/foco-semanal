@@ -279,7 +279,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           {/* Controle Central Segmentado (Hoje | Semana | Revisão) */}
           <nav
             aria-label="Modos de trabalho"
-            className="flex items-center rounded-xl bg-[color-mix(in_srgb,var(--ink)_5%,var(--surface))] p-1 border border-[var(--line)]/60 shadow-[inset_0_1px_1px_rgba(0,0,0,0.03)]"
+            className="flex items-center rounded-xl bg-[color-mix(in_srgb,var(--ink)_4%,transparent)] p-1 shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)]"
           >
             {desktopPrimary.map(({ href, label, icon: Icon }) => {
               const active = desktopNavActive(pathname, href);
@@ -290,16 +290,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   title={label}
                   aria-label={label}
                   aria-current={active ? "page" : undefined}
-                  className={`relative inline-flex h-8 items-center gap-1.5 rounded-lg px-3.5 text-xs font-semibold transition-all duration-150 ${
+                  className={`relative inline-flex h-8 items-center gap-1.5 rounded-lg px-3.5 text-xs font-semibold transition-all duration-200 ${
                     active
-                      ? "bg-[var(--surface)] text-[var(--ink)] shadow-[0_1px_3px_rgba(0,0,0,0.08),0_1px_1px_rgba(0,0,0,0.04)] ring-1 ring-black/5"
-                      : "text-[color-mix(in_srgb,var(--ink)_60%,transparent)] hover:text-[var(--ink)] hover:bg-black/[0.03]"
+                      ? "bg-[var(--surface)] text-[var(--ink)] shadow-[0_1px_4px_rgba(0,0,0,0.08)]"
+                      : "text-[color-mix(in_srgb,var(--ink)_50%,transparent)] hover:text-[color-mix(in_srgb,var(--ink)_80%,transparent)] hover:bg-black/[0.02]"
                   }`}
                 >
                   <Icon
                     size={15}
                     strokeWidth={active ? 2.25 : 1.75}
-                    className={active ? "text-[var(--signal)]" : "opacity-70"}
+                    className={active ? "text-[var(--signal)]" : "opacity-60"}
                   />
                   <span>{label}</span>
                 </Link>
