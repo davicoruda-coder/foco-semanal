@@ -620,7 +620,9 @@ export default function MateriasPage() {
             <li
               key={s.id}
               className={`surface px-4 py-3 transition-all ${
-                !isActive ? "opacity-65 grayscale-[20%]" : ""
+                !isActive
+                  ? "border-[color-mix(in_srgb,var(--line)_80%,transparent)] bg-[color-mix(in_srgb,var(--mist)_35%,var(--surface))]"
+                  : ""
               } ${free ? freeRowClass() : statusRowClass(s.status)}`}
             >
               <div className="flex flex-wrap items-start justify-between gap-3">
@@ -631,7 +633,7 @@ export default function MateriasPage() {
                     onChange={(e) => upsertSubject({ ...s, name: e.target.value })}
                   />
                   {!isActive && (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-black/10 dark:bg-white/10 px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wider text-[color-mix(in_srgb,var(--ink)_75%,transparent)]">
+                    <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 border border-amber-500/30 px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wider text-amber-700 dark:text-amber-400">
                       <Pause size={12} strokeWidth={2.5} /> Pausada
                     </span>
                   )}
@@ -688,7 +690,7 @@ export default function MateriasPage() {
                     </div>
                 </div>
               </div>
-              <div className="mt-3 space-y-4">
+              <div className={`mt-3 space-y-4 transition-opacity ${!isActive ? "opacity-60" : ""}`}>
                 {!free && (
                   <div>
                     <p className="mb-1.5 text-xs font-medium uppercase tracking-wider opacity-50">
@@ -888,7 +890,7 @@ export default function MateriasPage() {
                     className={`btn inline-flex items-center gap-1.5 transition ${
                       isActive
                         ? "text-[color-mix(in_srgb,var(--ink)_75%,transparent)] hover:text-[var(--ink)]"
-                        : "border-[color-mix(in_srgb,var(--signal)_35%,transparent)] bg-[color-mix(in_srgb,var(--signal)_12%,var(--surface))] font-semibold text-[var(--signal)] hover:bg-[color-mix(in_srgb,var(--signal)_20%,var(--surface))]"
+                        : "btn-primary shadow-sm"
                     }`}
                     onClick={() => upsertSubject({ ...s, active: !isActive })}
                     title={
@@ -903,7 +905,7 @@ export default function MateriasPage() {
                       </>
                     ) : (
                       <>
-                        <Play size={14} strokeWidth={2} /> Ativar matéria
+                        <Play size={14} strokeWidth={2.5} fill="currentColor" /> Ativar matéria
                       </>
                     )}
                   </button>
