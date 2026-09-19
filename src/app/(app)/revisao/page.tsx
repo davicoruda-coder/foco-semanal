@@ -73,7 +73,7 @@ function RevisaoContent() {
           className="inline-flex items-center gap-1.5 rounded-[var(--radius-btn)] bg-[var(--signal)] px-3.5 py-2 text-xs sm:text-sm font-semibold text-white shadow-sm transition hover:brightness-110 active:scale-95"
         >
           <Plus size={16} />
-          Capturar Erro (20s)
+          Capturar Erro
         </button>
       </div>
 
