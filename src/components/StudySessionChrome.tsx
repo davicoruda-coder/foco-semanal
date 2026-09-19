@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Pause, Play, RotateCcw, X } from "lucide-react";
+import { Pause, Play, RotateCcw, SkipForward, X } from "lucide-react";
 import { DialogFrame } from "@/components/DialogFrame";
 import { AutoGrowTextarea } from "@/components/AutoGrowTextarea";
 import { useApp } from "@/components/AppProvider";
@@ -186,8 +186,17 @@ export function StudySessionBar() {
         </div>
         <button
           type="button"
+          onClick={flow.completeCurrentSubjectEarly}
+          className="rounded-full p-1.5 text-[color-mix(in_srgb,var(--ink)_45%,transparent)] transition hover:bg-[var(--surface)] hover:text-[var(--ink)] active:scale-95 cursor-pointer"
+          title="Concluir matéria atual e avançar"
+          aria-label="Concluir matéria atual e avançar"
+        >
+          <SkipForward size={16} strokeWidth={2} />
+        </button>
+        <button
+          type="button"
           onClick={flow.resetSession}
-          className="rounded-full p-1.5 text-[color-mix(in_srgb,var(--ink)_45%,transparent)] transition hover:bg-[var(--surface)] hover:text-[var(--ink)]"
+          className="rounded-full p-1.5 text-[color-mix(in_srgb,var(--ink)_45%,transparent)] transition hover:bg-[var(--surface)] hover:text-[var(--ink)] active:scale-95 cursor-pointer"
           title="Resetar sessão (recomeça o bloco)"
           aria-label="Resetar sessão e recomeçar o bloco"
         >
