@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import {
   BookMarked,
   CalendarDays,
+  Check,
   ChevronDown,
   ChevronRight,
   ChevronUp,
@@ -330,6 +331,9 @@ export default function HojePage() {
                 const statusUi = free
                   ? null
                   : cycleStatusPresentation(displayStatus, s.id === queueHeadId);
+                const isCurrentInSession =
+                  (flow.phase === "running" || flow.phase === "paused") &&
+                  flow.currentSubjectId === s.id;
                 return (
                   <div
                     key={s.id}
@@ -367,13 +371,26 @@ export default function HojePage() {
                         )}
                         <SessionSubjectClock subjectId={s.id} compact />
                       </div>
-                      {!free && statusUi && (
-                        <span
-                          className={`inline-flex min-h-8 shrink-0 items-center rounded-full px-2.5 py-1 text-xs font-semibold ${statusUi.chipClass}`}
-                        >
-                          {statusUi.label}
-                        </span>
-                      )}
+                      <div className="flex shrink-0 items-center gap-1.5">
+                        {!free && statusUi && (
+                          <span
+                            className={`inline-flex min-h-8 shrink-0 items-center rounded-full px-2.5 py-1 text-xs font-semibold ${statusUi.chipClass}`}
+                          >
+                            {statusUi.label}
+                          </span>
+                        )}
+                        {isCurrentInSession && (
+                          <button
+                            type="button"
+                            onClick={flow.completeCurrentSubjectEarly}
+                            className="inline-flex min-h-8 shrink-0 items-center gap-1 rounded-full bg-[color-mix(in_srgb,var(--ok)_16%,var(--surface))] px-2.5 py-1 text-xs font-semibold text-[var(--ok)] ring-1 ring-[color-mix(in_srgb,var(--ok)_35%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--ok)_26%,var(--surface))] active:scale-95 cursor-pointer shadow-xs"
+                            title="Marcar matéria como concluída e avançar"
+                          >
+                            <Check size={13} strokeWidth={2.5} />
+                            Concluir
+                          </button>
+                        )}
+                      </div>
                     </div>
                     <AutoGrowTextarea
                       className="mt-2.5 w-full rounded-[10px] border border-[color-mix(in_srgb,var(--ink)_8%,transparent)] bg-[color-mix(in_srgb,var(--surface)_55%,transparent)] px-3 py-2.5 text-base leading-snug text-[color-mix(in_srgb,var(--ink)_84%,transparent)] placeholder:text-[color-mix(in_srgb,var(--ink)_38%,transparent)] focus:border-[var(--signal)] focus:bg-[var(--surface)] focus:text-[var(--ink)] focus:shadow-[0_0_0_3px_color-mix(in_srgb,var(--signal)_16%,transparent)]"
@@ -483,6 +500,9 @@ export default function HojePage() {
                       i < subjects.length - 1
                         ? "border-b-2 border-[var(--surface)]"
                         : "";
+                    const isCurrentInSession =
+                      (flow.phase === "running" || flow.phase === "paused") &&
+                      flow.currentSubjectId === s.id;
                     return (
                       <tr
                         key={s.id}
@@ -524,17 +544,30 @@ export default function HojePage() {
                         <td
                           className={`py-3.5 px-2 align-middle ${rowBorder}`}
                         >
-                          {free ? (
-                            <span className="text-xs text-[color-mix(in_srgb,var(--ink)_35%,transparent)]">
-                              —
-                            </span>
-                          ) : statusUi ? (
-                            <span
-                              className={`inline-flex rounded-full px-2.5 py-1.5 text-xs font-semibold ${statusUi.chipClass}`}
-                            >
-                              {statusUi.label}
-                            </span>
-                          ) : null}
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            {free ? (
+                              <span className="text-xs text-[color-mix(in_srgb,var(--ink)_35%,transparent)]">
+                                —
+                              </span>
+                            ) : statusUi ? (
+                              <span
+                                className={`inline-flex rounded-full px-2.5 py-1.5 text-xs font-semibold ${statusUi.chipClass}`}
+                              >
+                                {statusUi.label}
+                              </span>
+                            ) : null}
+                            {isCurrentInSession && (
+                              <button
+                                type="button"
+                                onClick={flow.completeCurrentSubjectEarly}
+                                className="inline-flex items-center gap-1 rounded-full bg-[color-mix(in_srgb,var(--ok)_16%,var(--surface))] px-2.5 py-1 text-xs font-semibold text-[var(--ok)] ring-1 ring-[color-mix(in_srgb,var(--ok)_35%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--ok)_26%,var(--surface))] active:scale-95 cursor-pointer shadow-xs"
+                                title="Marcar matéria como concluída e avançar"
+                              >
+                                <Check size={12} strokeWidth={2.5} />
+                                Concluir
+                              </button>
+                            )}
+                          </div>
                         </td>
                         <td className={`px-4 py-3.5 align-middle ${rowBorder}`}>
                           <div className="flex items-start">

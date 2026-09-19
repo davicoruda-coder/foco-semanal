@@ -186,14 +186,6 @@ export function StudySessionBar() {
         </div>
         <button
           type="button"
-          onClick={flow.completeCurrentSubjectEarly}
-          className="shrink-0 rounded-full bg-[color-mix(in_srgb,var(--ok)_18%,var(--surface))] px-2.5 py-1 text-[11px] font-semibold text-[var(--ok)] ring-1 ring-[color-mix(in_srgb,var(--ok)_35%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--ok)_28%,var(--surface))]"
-          title="Marcar matéria como concluída e avançar"
-        >
-          Concluída
-        </button>
-        <button
-          type="button"
           onClick={flow.resetSession}
           className="rounded-full p-1.5 text-[color-mix(in_srgb,var(--ink)_45%,transparent)] transition hover:bg-[var(--surface)] hover:text-[var(--ink)]"
           title="Resetar sessão (recomeça o bloco)"
