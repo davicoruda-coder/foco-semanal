@@ -410,7 +410,7 @@ export default function HojePage() {
               {hasHidden && (
                 <button
                   onClick={() => setShowFullCycle(!showFullCycle)}
-                  className="mt-1 flex w-full items-center justify-center gap-1.5 rounded-lg py-2.5 text-xs font-semibold text-[color-mix(in_srgb,var(--ink)_50%,transparent)] transition-colors hover:bg-[var(--mist)] hover:text-[var(--ink)]"
+                  className="mt-1 flex items-center justify-start gap-1.5 rounded-lg px-2.5 py-2 text-xs font-semibold text-[color-mix(in_srgb,var(--ink)_55%,transparent)] transition-colors hover:bg-[var(--mist)] hover:text-[var(--ink)]"
                 >
                   {showFullCycle ? (
                     <>
@@ -578,10 +578,10 @@ export default function HojePage() {
                 </tbody>
               </table>
               {hasHidden && (
-                <div className="px-2 pb-2 pt-1">
+                <div className="px-5 pb-3 pt-1">
                   <button
                     onClick={() => setShowFullCycle(!showFullCycle)}
-                    className="flex w-full items-center justify-center gap-1.5 rounded-lg py-2.5 text-xs font-semibold text-[color-mix(in_srgb,var(--ink)_50%,transparent)] transition-colors hover:bg-[var(--mist)] hover:text-[var(--ink)]"
+                    className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1.5 -ml-2 text-xs font-semibold text-[color-mix(in_srgb,var(--ink)_55%,transparent)] transition-colors hover:bg-[var(--mist)] hover:text-[var(--ink)]"
                   >
                     {showFullCycle ? (
                       <>
