@@ -147,6 +147,7 @@ create table if not exists public.focus_days (
 create table if not exists public.access_allowlist (
   email text primary key check (email = lower(trim(email))),
   role text not null default 'member' check (role in ('owner', 'member')),
+  modulos_liberados jsonb not null default '{"revisao": true, "semana": true}'::jsonb,
   added_at timestamptz not null default now(),
   added_by uuid references auth.users(id) on delete set null
 );
@@ -184,6 +185,14 @@ as $$
   );
 $$;
 
+create or replace function public.get_my_modules()
+returns jsonb language sql stable security definer set search_path = ''
+as $$
+  select modulos_liberados from public.access_allowlist
+  where email = lower(coalesce(auth.jwt() ->> 'email', ''))
+  limit 1;
+$$;
+
 create or replace function public.request_demo_access(p_email text)
 returns boolean language plpgsql security definer set search_path = ''
 as $$
@@ -203,6 +212,7 @@ $$;
 
 grant execute on function public.current_user_has_access() to authenticated;
 grant execute on function public.current_user_is_access_admin() to authenticated;
+grant execute on function public.get_my_modules() to authenticated;
 -- is_email_allowed / request_demo_access: sem grant público (só uso interno ou SQL)
 
 -- Proprietário inicial: inserir manualmente após o deploy (não versionar e-mail real):

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import {
   Bell,
+  Calendar,
   ChevronRight,
   CircleHelp,
   Download,
@@ -782,15 +783,34 @@ function AlarmSettings() {
 }
 
 function ModulosSettings() {
+  const [adminModules, setAdminModules] = useState<{revisao: boolean, semana: boolean} | null>(null);
   const [revisaoAtivo, setRevisaoAtivo] = useState(true);
+  const [semanaAtivo, setSemanaAtivo] = useState(true);
   const [salvando, setSalvando] = useState(false);
   const [mensagem, setMensagem] = useState<string | null>(null);
 
   useEffect(() => {
+    (async () => {
+      const { createClient } = await import("@/lib/supabase/client");
+      const supabase = createClient();
+      const { data, error } = await supabase.rpc("get_my_modules");
+      let adminAllowed = { revisao: true, semana: true };
+      if (!error && data) {
+        adminAllowed = typeof data === "string" ? JSON.parse(data) : data;
+      }
+      setAdminModules(adminAllowed);
+    })();
+  }, []);
+
+  useEffect(() => {
     if (typeof window !== "undefined") {
-      const stored = localStorage.getItem("foco_modulo_revisao");
-      if (stored !== null) {
-        setRevisaoAtivo(stored !== "false");
+      const storedRev = localStorage.getItem("foco_modulo_revisao");
+      if (storedRev !== null) {
+        setRevisaoAtivo(storedRev !== "false");
+      }
+      const storedSem = localStorage.getItem("foco_modulo_semana");
+      if (storedSem !== null) {
+        setSemanaAtivo(storedSem !== "false");
       }
     }
     (async () => {
@@ -831,45 +851,101 @@ function ModulosSettings() {
     }
   }
 
-  return (
-    <section className="surface mt-4 p-4 md:p-5">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div className="flex items-start gap-3.5">
-          <div className="mt-0.5 grid size-10 shrink-0 place-items-center rounded-xl bg-[var(--signal-soft)] text-[var(--signal)]">
-            <FlashcardsIcon size={20} />
-          </div>
-          <div className="space-y-1">
-            <div className="flex flex-wrap items-center gap-2">
-              <h2 className="font-display text-base font-semibold tracking-tight text-[var(--ink)] md:text-lg">
-                Revisão & Flashcards
-              </h2>
-              <span className="rounded-full bg-[var(--signal-soft)] px-2 py-0.5 text-[10px] font-semibold text-[var(--signal)]">
-                Opcional
-              </span>
-            </div>
-            <p className="text-xs sm:text-sm text-[color-mix(in_srgb,var(--ink)_75%,transparent)] leading-relaxed max-w-xl">
-              Caderno de erros com repetição espaçada, captura de falhas em questões e diagnóstico de retenção.
-            </p>
-          </div>
-        </div>
+  function toggleSemana(ativo: boolean) {
+    setSalvando(true);
+    setSemanaAtivo(ativo);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("foco_modulo_semana", String(ativo));
+      window.dispatchEvent(new Event("foco-modulo-changed"));
+    }
+    setMensagem(ativo ? "Módulo Semana ativado!" : "Módulo Semana desativado.");
+    setSalvando(false);
+    setTimeout(() => setMensagem(null), 3000);
+  }
 
-        <label className="relative inline-flex cursor-pointer items-center shrink-0 self-end sm:self-center">
-          <input
-            type="checkbox"
-            checked={revisaoAtivo}
-            disabled={salvando}
-            onChange={(e) => toggleRevisao(e.target.checked)}
-            className="peer sr-only"
-          />
-          <div className="peer h-6 w-11 rounded-full bg-[var(--line)] after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-[var(--signal)] peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none" />
-        </label>
-      </div>
+  if (adminModules && !adminModules.revisao && !adminModules.semana) {
+    return null; // Nada a exibir se ambos estiverem bloqueados pelo admin
+  }
+
+  return (
+    <div className="space-y-4">
+      {adminModules?.revisao !== false && (
+        <section className="surface mt-4 p-4 md:p-5">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex items-start gap-3.5">
+              <div className="mt-0.5 grid size-10 shrink-0 place-items-center rounded-xl bg-[var(--signal-soft)] text-[var(--signal)]">
+                <FlashcardsIcon size={20} />
+              </div>
+              <div className="space-y-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h2 className="font-display text-base font-semibold tracking-tight text-[var(--ink)] md:text-lg">
+                    Revisão & Flashcards
+                  </h2>
+                  <span className="rounded-full bg-[var(--signal-soft)] px-2 py-0.5 text-[10px] font-semibold text-[var(--signal)]">
+                    Opcional
+                  </span>
+                </div>
+                <p className="text-xs sm:text-sm text-[color-mix(in_srgb,var(--ink)_75%,transparent)] leading-relaxed max-w-xl">
+                  Caderno de erros com repetição espaçada, captura de falhas em questões e diagnóstico de retenção.
+                </p>
+              </div>
+            </div>
+
+            <label className="relative inline-flex cursor-pointer items-center shrink-0 self-end sm:self-center">
+              <input
+                type="checkbox"
+                checked={revisaoAtivo}
+                disabled={salvando}
+                onChange={(e) => toggleRevisao(e.target.checked)}
+                className="peer sr-only"
+              />
+              <div className="peer h-6 w-11 rounded-full bg-[var(--line)] after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-[var(--signal)] peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none" />
+            </label>
+          </div>
+        </section>
+      )}
+
+      {adminModules?.semana !== false && (
+        <section className="surface mt-4 p-4 md:p-5">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex items-start gap-3.5">
+              <div className="mt-0.5 grid size-10 shrink-0 place-items-center rounded-xl bg-[var(--signal-soft)] text-[var(--signal)]">
+                <Calendar size={20} />
+              </div>
+              <div className="space-y-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h2 className="font-display text-base font-semibold tracking-tight text-[var(--ink)] md:text-lg">
+                    Planejamento Semanal
+                  </h2>
+                  <span className="rounded-full bg-[var(--signal-soft)] px-2 py-0.5 text-[10px] font-semibold text-[var(--signal)]">
+                    Opcional
+                  </span>
+                </div>
+                <p className="text-xs sm:text-sm text-[color-mix(in_srgb,var(--ink)_75%,transparent)] leading-relaxed max-w-xl">
+                  Grade de horários da semana e metas de horas. Desative se preferir um visual minimalista focado apenas no Hoje.
+                </p>
+              </div>
+            </div>
+
+            <label className="relative inline-flex cursor-pointer items-center shrink-0 self-end sm:self-center">
+              <input
+                type="checkbox"
+                checked={semanaAtivo}
+                disabled={salvando}
+                onChange={(e) => toggleSemana(e.target.checked)}
+                className="peer sr-only"
+              />
+              <div className="peer h-6 w-11 rounded-full bg-[var(--line)] after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-[var(--signal)] peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none" />
+            </label>
+          </div>
+        </section>
+      )}
 
       {mensagem && (
         <p className="mt-3 text-xs font-medium text-[var(--signal)] sm:text-sm">
           {mensagem}
         </p>
       )}
-    </section>
+    </div>
   );
 }

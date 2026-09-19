@@ -169,21 +169,42 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const { user, ready, cloudSync } = useApp();
   const [moreOpen, setMoreOpen] = useState(false);
   const [revisaoActive, setRevisaoActive] = useState(true);
+  const [semanaActive, setSemanaActive] = useState(true);
 
   useEffect(() => {
-    const check = () => {
-      if (typeof window !== "undefined") {
-        const val = localStorage.getItem("foco_modulo_revisao");
-        setRevisaoActive(val !== "false");
+    const fetchAdminModules = async () => {
+      const { createClient } = await import("@/lib/supabase/client");
+      const supabase = createClient();
+      const { data, error } = await supabase.rpc("get_my_modules");
+      let adminAllowed = { revisao: true, semana: true };
+      if (!error && data) {
+        adminAllowed = typeof data === "string" ? JSON.parse(data) : data;
       }
+      
+      const checkLocal = () => {
+        if (typeof window !== "undefined") {
+          const valRev = localStorage.getItem("foco_modulo_revisao");
+          const localRev = valRev !== "false";
+          setRevisaoActive(adminAllowed.revisao !== false && localRev);
+          
+          const valSem = localStorage.getItem("foco_modulo_semana");
+          const localSem = valSem !== "false";
+          setSemanaActive(adminAllowed.semana !== false && localSem);
+        }
+      };
+      
+      checkLocal();
+      window.addEventListener("foco-modulo-changed", checkLocal);
+      window.addEventListener("storage", checkLocal);
+      return () => {
+        window.removeEventListener("foco-modulo-changed", checkLocal);
+        window.removeEventListener("storage", checkLocal);
+      };
     };
-    check();
-    window.addEventListener("foco-modulo-changed", check);
-    window.addEventListener("storage", check);
-    return () => {
-      window.removeEventListener("foco-modulo-changed", check);
-      window.removeEventListener("storage", check);
-    };
+    
+    let cleanup: (() => void) | undefined;
+    fetchAdminModules().then((fn) => { cleanup = fn; });
+    return () => { if (cleanup) cleanup(); };
   }, []);
 
   useEffect(() => {
@@ -205,10 +226,18 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   const moreActive = mobileMoreActive(pathname);
   const desktopNav = DESKTOP_NAV.filter(
-    (item) => item.href !== "/revisao" || revisaoActive,
+    (item) => {
+      if (item.href === "/revisao") return revisaoActive;
+      if (item.href === "/semana") return semanaActive;
+      return true;
+    }
   );
   const mobilePrimary = MOBILE_PRIMARY.filter(
-    (item) => item.href !== "/revisao" || revisaoActive,
+    (item) => {
+      if (item.href === "/revisao") return revisaoActive;
+      if (item.href === "/semana") return semanaActive;
+      return true;
+    }
   );
 
   return (

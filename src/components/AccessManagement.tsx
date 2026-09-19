@@ -9,6 +9,7 @@ type AllowedEmail = {
   email: string;
   role: "owner" | "member";
   added_at: string;
+  modulos_liberados?: { revisao?: boolean; semana?: boolean };
 };
 
 type AccessRequest = {
@@ -50,7 +51,7 @@ export function AccessManagement() {
     const [allowRes, requestsRes] = await Promise.all([
       supabase
         .from("access_allowlist")
-        .select("email, role, added_at")
+        .select("email, role, added_at, modulos_liberados")
         .order("added_at"),
       supabase
         .from("access_requests")
@@ -116,6 +117,25 @@ export function AccessManagement() {
       error ? "Não foi possível remover o acesso." : "Acesso removido.",
     );
     if (!error) await load();
+  }
+
+  async function toggleModule(item: AllowedEmail, modulo: "revisao" | "semana", ativo: boolean) {
+    if (!isAdmin) return;
+    const current = item.modulos_liberados ?? { revisao: true, semana: true };
+    const updated = { ...current, [modulo]: ativo };
+    
+    // Optimistic update
+    setAllowed((prev) =>
+      prev.map((a) =>
+        a.email === item.email ? { ...a, modulos_liberados: updated } : a
+      )
+    );
+    
+    const supabase = createClient();
+    await supabase
+      .from("access_allowlist")
+      .update({ modulos_liberados: updated })
+      .eq("email", item.email);
   }
 
   if (loading || !isAdmin) return null;
@@ -234,19 +254,39 @@ export function AccessManagement() {
             key={item.email}
             className="flex items-center justify-between gap-3 py-3"
           >
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-medium">{item.email}</p>
               <p className="text-xs opacity-50">
                 {item.role === "owner" ? "Proprietário" : "Acesso desde"}{" "}
                 {shortDate(item.added_at)}
               </p>
+              <div className="mt-2 flex items-center gap-4">
+                <label className="flex items-center gap-1.5 text-xs">
+                  <input
+                    type="checkbox"
+                    className="accent-[var(--signal)]"
+                    checked={item.modulos_liberados?.revisao ?? true}
+                    onChange={(e) => void toggleModule(item, "revisao", e.target.checked)}
+                  />
+                  <span>Revisão</span>
+                </label>
+                <label className="flex items-center gap-1.5 text-xs">
+                  <input
+                    type="checkbox"
+                    className="accent-[var(--signal)]"
+                    checked={item.modulos_liberados?.semana ?? true}
+                    onChange={(e) => void toggleModule(item, "semana", e.target.checked)}
+                  />
+                  <span>Semana</span>
+                </label>
+              </div>
             </div>
             {item.role !== "owner" && (
               <button
                 type="button"
                 title="Remover acesso"
                 aria-label={`Remover acesso de ${item.email}`}
-                className="rounded-full p-2 text-[var(--warn)] transition hover:bg-[var(--warn-soft)]"
+                className="rounded-full p-2 text-[var(--warn)] transition hover:bg-[var(--warn-soft)] shrink-0"
                 disabled={busyEmail === item.email}
                 onClick={() => void revoke(item)}
               >
