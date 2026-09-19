@@ -68,8 +68,8 @@ type StudyFlowContextValue = {
   continueToNextSubject: () => void;
   endRestEarly: () => void;
   dismissRestDone: () => void;
-  /** Matéria Livre na sessão: marca Concluída (manual) e avança. */
-  completeCurrentLibre: () => void;
+  /** Matéria na sessão: marca Concluída (manual) e avança. */
+  completeCurrentSubjectEarly: () => void;
 };
 
 const StudyFlowContext = createContext<StudyFlowContextValue | null>(null);
@@ -592,7 +592,7 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
       continueToNextSubject,
       endRestEarly,
       dismissRestDone,
-      completeCurrentLibre,
+      completeCurrentSubjectEarly,
     ],
   );
 
