@@ -424,7 +424,7 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
       }
 
       const timedSubjects = subjects.filter(
-        (s) => !usesStopwatchToday(s, subjects),
+        (s) => s.active !== false && !usesStopwatchToday(s, subjects),
       );
       const activeIds = new Set(timedSubjects.map((s) => s.id));
       for (const s of timedSubjects) {
@@ -558,7 +558,9 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
 
     setSubjectStopwatches((prev) => {
       const freeIds = new Set(
-        subjects.filter((s) => usesStopwatchToday(s, subjects)).map((s) => s.id),
+        subjects
+          .filter((s) => s.active !== false && usesStopwatchToday(s, subjects))
+          .map((s) => s.id),
       );
       let changed = false;
       const next: Record<string, StopwatchState> = {};

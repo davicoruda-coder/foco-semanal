@@ -640,6 +640,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
             // Status só via setSubjectStatus — evita anotações com spread velho
             // sobrescreverem o Ok do timer.
             delete (patch as { status?: SubjectStatus }).status;
+            if ("active" in subject) {
+              patch.active = Boolean(subject.active);
+            }
             if ("study_days" in subject) {
               patch.study_days = normalizeStudyDays(subject.study_days);
             }

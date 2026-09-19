@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ChevronDown, ChevronUp, Repeat, Trash2, X } from "lucide-react";
+import { ChevronDown, ChevronUp, Pause, Play, Repeat, Trash2, X } from "lucide-react";
 import { useApp } from "@/components/AppProvider";
 import { SubjectIconPicker } from "@/components/SubjectIconPicker";
 import { newId } from "@/lib/demo-store";
@@ -521,6 +521,7 @@ export default function MateriasPage() {
           upsertSubject({
             name: name.trim(),
             status: "prox",
+            active: true,
             study_days: studyDaysFromFreq(newFreq),
             study_minutes: parseMinutes(newMinutes, 25),
             is_free: newIsFree,
@@ -614,17 +615,27 @@ export default function MateriasPage() {
         {subjects.map((s) => {
           const freq = freqForSubject(s);
           const free = Boolean(s.is_free);
+          const isActive = s.active !== false;
           return (
             <li
               key={s.id}
-              className={`surface px-4 py-3 ${free ? freeRowClass() : statusRowClass(s.status)}`}
+              className={`surface px-4 py-3 transition-all ${
+                !isActive ? "opacity-65 grayscale-[20%]" : ""
+              } ${free ? freeRowClass() : statusRowClass(s.status)}`}
             >
               <div className="flex flex-wrap items-start justify-between gap-3">
-                <input
-                  className="input max-w-xs font-medium"
-                  value={s.name}
-                  onChange={(e) => upsertSubject({ ...s, name: e.target.value })}
-                />
+                <div className="flex flex-wrap items-center gap-2">
+                  <input
+                    className="input max-w-xs font-medium"
+                    value={s.name}
+                    onChange={(e) => upsertSubject({ ...s, name: e.target.value })}
+                  />
+                  {!isActive && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-black/10 dark:bg-white/10 px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wider text-[color-mix(in_srgb,var(--ink)_75%,transparent)]">
+                      <Pause size={12} strokeWidth={2.5} /> Pausada
+                    </span>
+                  )}
+                </div>
                 <div className="flex flex-wrap items-center gap-2">
                   <div className="inline-flex items-center gap-0.5 rounded-full border border-[var(--line)] bg-[color-mix(in_srgb,var(--ink)_6%,transparent)] p-0.5">
                     <button
@@ -853,11 +864,13 @@ export default function MateriasPage() {
                   </div>
                 </div>
               ) : (
-                <div className="mt-3 flex flex-wrap gap-2">
+                <div className="mt-3 flex flex-wrap items-center gap-2">
                   <button
                     type="button"
                     className="btn"
                     onClick={() => move(s.id, -1)}
+                    disabled={!isActive}
+                    title={!isActive ? "Ative a matéria para reordenar" : undefined}
                   >
                     Subir no ciclo
                   </button>
@@ -865,8 +878,34 @@ export default function MateriasPage() {
                     type="button"
                     className="btn"
                     onClick={() => move(s.id, 1)}
+                    disabled={!isActive}
+                    title={!isActive ? "Ative a matéria para reordenar" : undefined}
                   >
                     Descer
+                  </button>
+                  <button
+                    type="button"
+                    className={`btn inline-flex items-center gap-1.5 transition ${
+                      isActive
+                        ? "text-[color-mix(in_srgb,var(--ink)_75%,transparent)] hover:text-[var(--ink)]"
+                        : "border-[color-mix(in_srgb,var(--signal)_35%,transparent)] bg-[color-mix(in_srgb,var(--signal)_12%,var(--surface))] font-semibold text-[var(--signal)] hover:bg-[color-mix(in_srgb,var(--signal)_20%,var(--surface))]"
+                    }`}
+                    onClick={() => upsertSubject({ ...s, active: !isActive })}
+                    title={
+                      isActive
+                        ? "Pausar matéria (não aparecerá no ciclo até ser reativada)"
+                        : "Reativar matéria no ciclo"
+                    }
+                  >
+                    {isActive ? (
+                      <>
+                        <Pause size={14} strokeWidth={2} /> Pausar matéria
+                      </>
+                    ) : (
+                      <>
+                        <Play size={14} strokeWidth={2} /> Ativar matéria
+                      </>
+                    )}
                   </button>
                   <button
                     type="button"
