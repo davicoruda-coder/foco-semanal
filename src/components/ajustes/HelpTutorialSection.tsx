@@ -28,17 +28,18 @@ const TOPICS: TutorialTopic[] = [
   {
     id: "ciclo",
     icon: RotateCw,
-    title: "Ciclo de Estudos & Pesos",
+    title: "Ciclo de Estudos & Pesos (1x, 2x, 3x, 4x)",
     badge: "O Coração do App",
-    summary: "Fluxo contínuo que elimina a dúvida de 'o que estudar agora'.",
+    summary: "Fluxo contínuo inteligente com matérias intercaladas por peso e meta.",
     concept:
-      "Em vez de uma grade rígida com horários fixos que geram frustração ao atrasar, o ciclo é uma fila contínua. Você estuda no seu próprio ritmo e o sistema mantém a ordem exata.",
+      "Em vez de uma grade rígida com horários fixos que geram frustração quando você atrasa, o ciclo é uma fila dinâmica. Matérias com maior peso (dificuldade ou importância) aparecem mais vezes no ciclo de forma intercalada — nunca repetidas em sequência!",
     steps: [
       "Configure em Matérias o tempo e o peso de cada matéria (1x, 2x, 3x ou 4x).",
-      "Matérias mais importantes têm peso maior e aparecem mais vezes no ciclo de forma intercalada (nunca repetidas em sequência).",
-      "Na tela Hoje, acompanhe a 'Próxima'. Ao concluir a matéria (via cronômetro ou botão), a fila avança. Quando todas cumprirem suas metas, o ciclo reinicia!",
+      "Como funcionam os pesos: se Português tem peso 2x e História tem 1x, você estuda Português ➔ História ➔ Português. Você cumpre 2 blocos de Português no ciclo, mas com outra matéria no meio para não cansar a mente.",
+      "Acompanhe o indicador (ex.: 0/2, 1/2): ao concluir cada passagem, o contador sobe. Quando atingir a meta (2/2), a matéria fica verde e aguarda as demais terminarem para reiniciar o ciclo completo.",
+      "Concluir antecipadamente: se terminar antes do timer acabar, basta clicar em '✓ Concluir' diretamente na linha da matéria em play.",
     ],
-    tip: "Use peso 2x ou 3x para matérias com maior peso na sua prova ou que você tenha mais dificuldade.",
+    tip: "Dê peso 2x ou 3x para matérias que você mais erra em simulados ou que têm maior peso no seu edital.",
   },
   {
     id: "sessao",
@@ -47,13 +48,14 @@ const TOPICS: TutorialTopic[] = [
     badge: "Produtividade",
     summary: "Ciclo guiado com alternância automática entre foco e descanso.",
     concept:
-      "Transforme sua fila de matérias em uma sessão contínua estilo Pomodoro sem precisar configurar timers manuais a cada troca de disciplina.",
+      "Transforme sua fila de matérias em uma sessão contínua sem precisar configurar cronômetros manuais a cada troca de disciplina.",
     steps: [
-      "No topo da tela Hoje (ou pelo botão de ação rápida), inicie a 'Sessão contínua'.",
-      "O cronômetro roda o bloco de foco da matéria atual (ex.: 40 min) e toca um alarme suave ao terminar.",
-      "O sistema entra automaticamente na pausa (ex.: 5 min) para você beber água e já prepara a próxima matéria da fila.",
+      "No topo da tela Hoje, clique em 'Iniciar sessão' para agrupar as próximas matérias da fila em um bloco de estudos (~40 min).",
+      "Controles da sessão: use a barra do topo para pausar/retomar a sessão, recomeçar o bloco do início (↻) ou encerrar os estudos (✕).",
+      "Finalizar matéria em play: clique em '✓ Concluir' na linha da matéria atual para salvar o foco, registrar anotações e passar imediatamente para a próxima.",
+      "Descanso pós-bloco: ao terminar todas as matérias do bloco, o sistema oferece a pausa (ex.: 20 min) com alarme suave antes do próximo bloco.",
     ],
-    tip: "Você pode ajustar a duração dos blocos e das pausas nas configurações de sessão logo abaixo nesta página.",
+    tip: "O tempo que você passa escrevendo anotações na transição não entra no cronômetro de foco, garantindo contagem 100% fiel.",
   },
   {
     id: "rodizio",
