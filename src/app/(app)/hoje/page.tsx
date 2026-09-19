@@ -187,7 +187,9 @@ export default function HojePage() {
                     return (
                       <div
                         key={name}
-                        className="min-h-36 min-w-0 bg-[var(--mist)] md:min-h-40"
+                        className={`min-h-36 min-w-0 md:min-h-40 ${
+                          isToday ? "bg-[var(--surface)]" : "bg-[var(--mist)]"
+                        }`}
                       >
                         <div
                           className={`border-b px-2 py-2.5 text-center text-xs font-semibold uppercase tracking-wider md:px-2 md:py-2 ${
