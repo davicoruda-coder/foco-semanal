@@ -419,42 +419,6 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
     advancingRef.current = false;
   }, [isClockRunning, toggleSubjectTimer]);
 
-  /** Marca a matéria atual como Concluída à mão e avança a sessão. */
-  const completeCurrentSubjectEarly = useCallback(() => {
-    if (phaseRef.current !== "running" && phaseRef.current !== "paused") return;
-    if (advancingRef.current) return;
-    const current = blockRef.current[indexRef.current];
-    if (!current) return;
-    if (isClockRunning(current.id, current.is_free)) toggleSubjectTimer(current.id);
-    setSubjectStatus(current.id, "ok");
-    // O efeito de status Ok dispara o avanço (igual ao fim do timer).
-  }, [isClockRunning, toggleSubjectTimer, setSubjectStatus]);
-
-  const continueToNextSubject = useCallback(() => {
-    if (phaseRef.current !== "subject_notes") return;
-    const subjects = blockRef.current;
-    const nextIdx = indexRef.current + 1;
-    if (nextIdx >= subjects.length) {
-      setPhase("block_done");
-      advancingRef.current = false;
-      return;
-    }
-    advancingRef.current = false;
-    setCurrentIndex(nextIdx);
-    setPhase("running");
-    startSubjectAt(nextIdx, subjects);
-  }, [startSubjectAt]);
-
-  const endRestEarly = useCallback(() => {
-    setRestEndsAt(null);
-    setPhase("idle");
-  }, []);
-
-  const dismissRestDone = useCallback(() => {
-    setRestEndsAt(null);
-    setPhase("idle");
-  }, []);
-
   // Conclusão de matéria → avança o bloco ou abre o diálogo.
   const advanceAfterComplete = useCallback((subjectId: string) => {
     if (phaseRef.current !== "running" && phaseRef.current !== "paused") return;
@@ -483,6 +447,42 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  /** Marca a matéria atual como Concluída à mão e avança a sessão. */
+  const completeCurrentSubjectEarly = useCallback(() => {
+    if (phaseRef.current !== "running" && phaseRef.current !== "paused") return;
+    if (advancingRef.current) return;
+    const current = blockRef.current[indexRef.current];
+    if (!current) return;
+    if (isClockRunning(current.id, current.is_free)) toggleSubjectTimer(current.id);
+    setSubjectStatus(current.id, "ok");
+    advanceAfterComplete(current.id);
+  }, [isClockRunning, toggleSubjectTimer, setSubjectStatus, advanceAfterComplete]);
+
+  const continueToNextSubject = useCallback(() => {
+    if (phaseRef.current !== "subject_notes") return;
+    const subjects = blockRef.current;
+    const nextIdx = indexRef.current + 1;
+    if (nextIdx >= subjects.length) {
+      setPhase("block_done");
+      advancingRef.current = false;
+      return;
+    }
+    advancingRef.current = false;
+    setCurrentIndex(nextIdx);
+    setPhase("running");
+    startSubjectAt(nextIdx, subjects);
+  }, [startSubjectAt]);
+
+  const endRestEarly = useCallback(() => {
+    setRestEndsAt(null);
+    setPhase("idle");
+  }, []);
+
+  const dismissRestDone = useCallback(() => {
+    setRestEndsAt(null);
+    setPhase("idle");
+  }, []);
+
   useEffect(() => {
     function onComplete(ev: Event) {
       const detail = (ev as CustomEvent<{ subjectId: string }>).detail;
@@ -495,11 +495,11 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
     return () => window.removeEventListener(SUBJECT_COMPLETE_EVENT, onComplete);
   }, [advanceAfterComplete]);
 
-  // Livre: Concluída manual (status) → avança como o fim do timer.
+  // Matéria na sessão marcada como Concluída (manual / badge na lista) → avança como o fim do timer.
   useEffect(() => {
     if (phase !== "running" && phase !== "paused") return;
     const current = block[currentIndex];
-    if (!current?.is_free) return;
+    if (!current) return;
     const live = (data.subjects ?? []).find((s) => s.id === current.id);
     if (!live) return;
     const day = todayIndex();
@@ -507,7 +507,7 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
     const done =
       (exclusiveCycle ? live.exclusive_status ?? "prox" : live.status) === "ok";
     if (!done) return;
-    if (isClockRunning(current.id, true)) toggleSubjectTimer(current.id);
+    if (isClockRunning(current.id, current.is_free)) toggleSubjectTimer(current.id);
     advanceAfterComplete(current.id);
   }, [
     phase,
@@ -565,7 +565,7 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
       continueToNextSubject,
       endRestEarly,
       dismissRestDone,
-      completeCurrentLibre,
+      completeCurrentSubjectEarly,
     }),
     [
       phase,
