@@ -5,7 +5,6 @@ import { useMemo, useState } from "react";
 import {
   BookMarked,
   CalendarDays,
-  Check,
   ChevronDown,
   ChevronRight,
   ChevronUp,
@@ -374,7 +373,7 @@ export default function HojePage() {
                       <div className="flex shrink-0 items-center gap-1.5">
                         {!free && statusUi && (
                           <span
-                            className={`inline-flex min-h-8 shrink-0 items-center rounded-full px-2.5 py-1 text-xs font-semibold ${statusUi.chipClass}`}
+                            className={`inline-flex min-h-8 shrink-0 items-center justify-center rounded-full px-2.5 py-1 text-xs font-semibold text-center ${statusUi.chipClass}`}
                           >
                             {statusUi.label}
                           </span>
@@ -383,10 +382,9 @@ export default function HojePage() {
                           <button
                             type="button"
                             onClick={flow.completeCurrentSubjectEarly}
-                            className="inline-flex min-h-8 shrink-0 items-center gap-1 rounded-full bg-[color-mix(in_srgb,var(--ok)_16%,var(--surface))] px-2.5 py-1 text-xs font-semibold text-[var(--ok)] ring-1 ring-[color-mix(in_srgb,var(--ok)_35%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--ok)_26%,var(--surface))] active:scale-95 cursor-pointer shadow-xs"
+                            className="inline-flex min-h-8 shrink-0 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--ok)_16%,var(--surface))] px-2.5 py-1 text-xs font-semibold text-[var(--ok)] ring-1 ring-[color-mix(in_srgb,var(--ok)_35%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--ok)_26%,var(--surface))] active:scale-95 cursor-pointer shadow-xs text-center"
                             title="Marcar matéria como concluída e avançar"
                           >
-                            <Check size={13} strokeWidth={2.5} />
                             Concluir
                           </button>
                         )}
@@ -544,14 +542,14 @@ export default function HojePage() {
                         <td
                           className={`py-3.5 px-2 align-middle ${rowBorder}`}
                         >
-                          <div className="flex items-center gap-1.5 flex-wrap">
+                          <div className="inline-flex flex-col items-stretch gap-1">
                             {free ? (
                               <span className="text-xs text-[color-mix(in_srgb,var(--ink)_35%,transparent)]">
                                 —
                               </span>
                             ) : statusUi ? (
                               <span
-                                className={`inline-flex rounded-full px-2.5 py-1.5 text-xs font-semibold ${statusUi.chipClass}`}
+                                className={`inline-flex items-center justify-center rounded-full px-2.5 py-1 text-xs font-semibold text-center ${statusUi.chipClass}`}
                               >
                                 {statusUi.label}
                               </span>
@@ -560,10 +558,9 @@ export default function HojePage() {
                               <button
                                 type="button"
                                 onClick={flow.completeCurrentSubjectEarly}
-                                className="inline-flex items-center gap-1 rounded-full bg-[color-mix(in_srgb,var(--ok)_16%,var(--surface))] px-2.5 py-1 text-xs font-semibold text-[var(--ok)] ring-1 ring-[color-mix(in_srgb,var(--ok)_35%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--ok)_26%,var(--surface))] active:scale-95 cursor-pointer shadow-xs"
+                                className="inline-flex items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--ok)_16%,var(--surface))] px-2.5 py-1 text-xs font-semibold text-[var(--ok)] ring-1 ring-[color-mix(in_srgb,var(--ok)_35%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--ok)_26%,var(--surface))] active:scale-95 cursor-pointer shadow-xs text-center"
                                 title="Marcar matéria como concluída e avançar"
                               >
-                                <Check size={12} strokeWidth={2.5} />
                                 Concluir
                               </button>
                             )}
