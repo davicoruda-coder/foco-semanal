@@ -151,6 +151,34 @@ function readStored(): Record<string, TimerRuntime> {
   }
 }
 
+function readCreditedCountdowns(): Record<string, number> {
+  try {
+    const raw = readJson("foco_credited_countdowns_v1");
+    if (!raw) return {};
+    return JSON.parse(raw) as Record<string, number>;
+  } catch {
+    return {};
+  }
+}
+
+function readCreditedStopwatches(): Record<string, number> {
+  try {
+    const raw = readJson("foco_credited_stopwatches_v1");
+    if (!raw) return {};
+    return JSON.parse(raw) as Record<string, number>;
+  } catch {
+    return {};
+  }
+}
+
+function writeCreditedRefs(
+  countdowns: Record<string, number>,
+  stopwatches: Record<string, number>,
+) {
+  writeJson("foco_credited_countdowns_v1", JSON.stringify(countdowns));
+  writeJson("foco_credited_stopwatches_v1", JSON.stringify(stopwatches));
+}
+
 function writeStored(runtime: Record<string, TimerRuntime>) {
   writeJson(STORAGE_KEY, JSON.stringify(runtime));
 }
@@ -607,8 +635,12 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
       stopwatch.running,
     [runtime, anySubjectStopwatchRunning, stopwatch.running],
   );
-  const focusCreditedCountdownRef = useRef<Record<string, number>>({});
-  const focusCreditedStopwatchRef = useRef<Record<string, number>>({});
+  const focusCreditedCountdownRef = useRef<Record<string, number>>(
+    typeof window !== "undefined" ? readCreditedCountdowns() : {}
+  );
+  const focusCreditedStopwatchRef = useRef<Record<string, number>>(
+    typeof window !== "undefined" ? readCreditedStopwatches() : {}
+  );
 
   /**
    * Acumula foco com base no relógio real dos timers (duração decorrida = total - restante):
@@ -695,6 +727,12 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
     if (totalDelta > 0) {
       addFocusSeconds(totalDelta);
     }
+    
+    // Backup references so we don't lose them if tab is suspended
+    writeCreditedRefs(
+      focusCreditedCountdownRef.current,
+      focusCreditedStopwatchRef.current
+    );
   }, [sidebarTimerMinutes]);
 
   useEffect(() => {
@@ -710,6 +748,7 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
       window.dispatchEvent(new Event("foco-focus-log"));
     };
 
+    persistFocus();
     const id = window.setInterval(persistFocus, PERSIST_MS);
     const onHide = () => {
       if (document.visibilityState === "hidden") persistFocus();
