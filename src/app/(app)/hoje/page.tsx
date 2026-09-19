@@ -410,16 +410,16 @@ export default function HojePage() {
               {hasHidden && (
                 <button
                   onClick={() => setShowFullCycle(!showFullCycle)}
-                  className="mt-1 flex items-center justify-start gap-1.5 rounded-lg px-2.5 py-2 text-xs font-semibold text-[color-mix(in_srgb,var(--ink)_55%,transparent)] transition-colors hover:bg-[var(--mist)] hover:text-[var(--ink)]"
+                  className="mt-1 inline-flex items-center gap-1 rounded-full bg-[color-mix(in_srgb,var(--ink)_8%,transparent)] px-3 py-1.5 text-xs font-medium text-[color-mix(in_srgb,var(--ink)_70%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--ink)_12%,transparent)] hover:text-[var(--ink)]"
                 >
                   {showFullCycle ? (
                     <>
-                      <ChevronUp size={14} />
+                      <ChevronUp size={13} strokeWidth={2} />
                       Ver menos
                     </>
                   ) : (
                     <>
-                      <ChevronDown size={14} />
+                      <ChevronDown size={13} strokeWidth={2} />
                       Ver todas ({subjects.length})
                     </>
                   )}
@@ -581,16 +581,16 @@ export default function HojePage() {
                 <div className="px-5 pb-3 pt-1">
                   <button
                     onClick={() => setShowFullCycle(!showFullCycle)}
-                    className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1.5 -ml-2 text-xs font-semibold text-[color-mix(in_srgb,var(--ink)_55%,transparent)] transition-colors hover:bg-[var(--mist)] hover:text-[var(--ink)]"
+                    className="inline-flex items-center gap-1 rounded-full bg-[color-mix(in_srgb,var(--ink)_8%,transparent)] px-2.5 py-1 text-xs font-medium text-[color-mix(in_srgb,var(--ink)_70%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--ink)_12%,transparent)] hover:text-[var(--ink)]"
                   >
                     {showFullCycle ? (
                       <>
-                        <ChevronUp size={14} />
+                        <ChevronUp size={13} strokeWidth={2} />
                         Ver menos
                       </>
                     ) : (
                       <>
-                        <ChevronDown size={14} />
+                        <ChevronDown size={13} strokeWidth={2} />
                         Ver todas ({subjects.length})
                       </>
                     )}

@@ -591,7 +591,7 @@ export default function MateriasPage() {
           <div className="flex items-center gap-1.5 text-xs text-[color-mix(in_srgb,var(--ink)_65%,transparent)]">
             <span className="font-medium">Peso:</span>
             <div className="inline-flex items-center gap-0.5 rounded-full border border-[var(--line)] bg-[color-mix(in_srgb,var(--ink)_6%,transparent)] p-0.5">
-              {[1, 2, 3].map((w) => (
+              {[1, 2, 3, 4].map((w) => (
                 <button
                   key={w}
                   type="button"
