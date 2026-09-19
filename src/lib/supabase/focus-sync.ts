@@ -85,15 +85,17 @@ async function upsertLog(
  * Usar ao abrir Estatísticas ou ao pausar/finalizar Sessão/Cronômetro.
  */
 export async function syncFocusLogWithCloud(): Promise<FocusLog> {
-  const local = loadFocusLog();
   const auth = await getAuthedClient();
   if (!auth) {
+    const local = loadFocusLog();
     return commitFocusDisplaySnapshot(local);
   }
 
   try {
     const remote = await fetchRemoteLog(auth.supabase, auth.userId);
-    const merged = mergeFocusLogs(local, remote);
+    // Sempre relê o log local após o await da rede para não sobrescrever segundos flushados enquanto a rede respondia
+    const freshLocal = loadFocusLog();
+    const merged = mergeFocusLogs(freshLocal, remote);
     saveFocusLog(merged);
     commitFocusDisplaySnapshot(merged);
     await upsertLog(auth.supabase, auth.userId, merged);
@@ -103,7 +105,7 @@ export async function syncFocusLogWithCloud(): Promise<FocusLog> {
     return merged;
   } catch (err) {
     console.warn("[foco] sync focus_days falhou", err);
-    return commitFocusDisplaySnapshot(local);
+    return commitFocusDisplaySnapshot(loadFocusLog());
   }
 }
 

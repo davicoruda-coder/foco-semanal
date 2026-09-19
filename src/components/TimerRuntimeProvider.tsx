@@ -1452,15 +1452,24 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
         const stored = willRun ? pauseSidebarTimer(next) : next;
         runtimeRef.current = stored;
         writeStored(stored);
-        if (willRun) writeHeartbeat();
+        if (willRun) {
+          writeHeartbeat();
+        } else {
+          flushFocusSeconds();
+          commitFocusDisplaySnapshot();
+          window.dispatchEvent(new Event("foco-focus-log"));
+          void syncFocusLogWithCloud();
+        }
         return stored;
       });
     },
-    [subjects, showFlash, pauseSidebarTimer],
+    [subjects, showFlash, pauseSidebarTimer, flushFocusSeconds],
   );
 
   const resetSubjectTimer = useCallback(
     (subjectId: string) => {
+      flushFocusSeconds();
+
       const key = subjectTimerKey(subjectId);
       const sub = subjects.find((s) => s.id === subjectId);
       if (!sub) return;
@@ -1473,6 +1482,10 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
           subjectStopwatchesRef.current = next;
           delete focusCreditedStopwatchRef.current[subjectId];
           writeSubjectStopwatches(next);
+          writeCreditedRefs(
+            focusCreditedCountdownRef.current,
+            focusCreditedStopwatchRef.current,
+          );
           return next;
         });
         return;
@@ -1483,6 +1496,10 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
       linkedPausedSubjectsRef.current =
         linkedPausedSubjectsRef.current.filter((id) => id !== key);
       focusCreditedCountdownRef.current[key] = minutes * 60;
+      writeCreditedRefs(
+        focusCreditedCountdownRef.current,
+        focusCreditedStopwatchRef.current,
+      );
       setRuntime((prev) => {
         const updated = {
           ...prev,
@@ -1498,7 +1515,7 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
         return updated;
       });
     },
-    [subjects],
+    [subjects, flushFocusSeconds],
   );
 
   const secondsForSubject = useCallback(

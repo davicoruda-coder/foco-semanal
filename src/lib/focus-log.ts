@@ -92,9 +92,10 @@ export function mergeFocusLogs(a: FocusLog, b: FocusLog): FocusLog {
     for (let h = 0; h < 24; h++) {
       byHour[h] = Math.max(da.byHour[h] ?? 0, db.byHour[h] ?? 0);
     }
+    const hourSum = byHour.reduce((sum, n) => sum + n, 0);
     days[key] = {
       byHour,
-      seconds: byHour.reduce((sum, n) => sum + n, 0),
+      seconds: Math.max(hourSum, da.seconds ?? 0, db.seconds ?? 0),
     };
   }
   return { version: 1, days };
