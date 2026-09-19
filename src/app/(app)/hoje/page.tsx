@@ -21,6 +21,7 @@ import {
   freeRowClass,
   formatSubjectFocusList,
   normalizeRotation,
+  buildWeightedCycleQueue,
   nextCycleSubjectId,
   rotationWithItemNotes,
   rotationWithItemRecursos,
@@ -49,13 +50,29 @@ export default function HojePage() {
   const day = todayIndex();
 
   const subjects = useMemo(
-    () =>
-      [...subjectsOnDay(data.subjects, day)].sort((a, b) => {
-        const freeA = Number(subjectTreatAsFree(a, day, data.subjects));
-        const freeB = Number(subjectTreatAsFree(b, day, data.subjects));
-        if (freeA !== freeB) return freeB - freeA;
+    () => {
+      const base = [...subjectsOnDay(data.subjects, day)];
+      const queue = buildWeightedCycleQueue(data.subjects, day);
+      
+      return base.sort((a, b) => {
+        const freeA = subjectTreatAsFree(a, day, data.subjects);
+        const freeB = subjectTreatAsFree(b, day, data.subjects);
+        
+        const idxA = queue.findIndex(q => q.id === a.id);
+        const idxB = queue.findIndex(q => q.id === b.id);
+        
+        const groupA = idxA !== -1 ? 0 : (freeA ? 1 : 2);
+        const groupB = idxB !== -1 ? 0 : (freeB ? 1 : 2);
+        
+        if (groupA !== groupB) return groupA - groupB;
+        
+        if (groupA === 0) {
+          return idxA - idxB;
+        }
+        
         return a.cycle_order - b.cycle_order;
-      }),
+      });
+    },
     [data.subjects, day],
   );
 
