@@ -41,6 +41,7 @@ import { SubjectIcon } from "@/components/SubjectIcon";
 export default function HojePage() {
   const { data, upsertSubject } = useApp();
   const [calendarOpen, setCalendarOpen] = useState(false);
+  const [showFullCycle, setShowFullCycle] = useState(false);
   /** null = padrão (só hoje); true = semana; false = só hoje forçado */
   const [weekOverride, setWeekOverride] = useState<boolean | null>(null);
   const day = todayIndex();
@@ -85,6 +86,32 @@ export default function HojePage() {
   // Padrão: só o dia — libera espaço pro ciclo. Botão Semana expande.
   const showFullWeek = weekOverride === true;
   const weekDays = DAYS.map((name, i) => ({ name, i }));
+
+  const { visibleSubjects, hiddenDone, hiddenPending } = useMemo(() => {
+    const active = subjects.filter((s) => {
+      const free = subjectTreatAsFree(s, day, data.subjects);
+      if (free) return true;
+      const displayStatus = exclusiveCycleToday ? (s.exclusive_status ?? "prox") : s.status;
+      return s.id === queueHeadId || (exclusiveCycleToday && displayStatus === "prox");
+    });
+    
+    const hidden = subjects.filter((s) => !active.includes(s));
+    let hd = 0;
+    let hp = 0;
+    hidden.forEach((s) => {
+      const displayStatus = exclusiveCycleToday ? (s.exclusive_status ?? "prox") : s.status;
+      if (displayStatus === "ok") hd++;
+      else hp++;
+    });
+
+    return {
+      visibleSubjects: showFullCycle ? subjects : active,
+      hiddenDone: hd,
+      hiddenPending: hp,
+    };
+  }, [showFullCycle, subjects, day, data.subjects, exclusiveCycleToday, queueHeadId]);
+
+  const hasHidden = hiddenDone > 0 || hiddenPending > 0;
 
   return (
     <div>
@@ -258,7 +285,7 @@ export default function HojePage() {
             </div>
 
             <div className="space-y-2.5 p-2.5 lg:hidden">
-              {subjects.map((s) => {
+              {visibleSubjects.map((s) => {
                 const free = subjectTreatAsFree(s, day, data.subjects);
                 const libreInCycle = Boolean(s.is_free) && !free;
                 const rot = normalizeRotation(s.rotation);
@@ -363,6 +390,24 @@ export default function HojePage() {
                   </Link>
                 </p>
               )}
+              {hasHidden && (
+                <button
+                  onClick={() => setShowFullCycle(!showFullCycle)}
+                  className="mt-1 flex w-full items-center justify-center gap-1.5 rounded-lg py-2.5 text-xs font-semibold text-[color-mix(in_srgb,var(--ink)_50%,transparent)] transition-colors hover:bg-[var(--mist)] hover:text-[var(--ink)]"
+                >
+                  {showFullCycle ? (
+                    <>
+                      <ChevronUp size={14} />
+                      Ocultar ciclo
+                    </>
+                  ) : (
+                    <>
+                      <ChevronDown size={14} />
+                      Mostrar ciclo completo ({hiddenDone} concluídas, {hiddenPending} na fila)
+                    </>
+                  )}
+                </button>
+              )}
             </div>
 
             <div className="hidden lg:block">
@@ -386,7 +431,7 @@ export default function HojePage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {subjects.map((s, i) => {
+                  {visibleSubjects.map((s, i) => {
                     const free = subjectTreatAsFree(s, day, data.subjects);
                     const libreInCycle = Boolean(s.is_free) && !free;
                     const rot = normalizeRotation(s.rotation);
@@ -515,6 +560,26 @@ export default function HojePage() {
                   )}
                 </tbody>
               </table>
+              {hasHidden && (
+                <div className="px-2 pb-2 pt-1">
+                  <button
+                    onClick={() => setShowFullCycle(!showFullCycle)}
+                    className="flex w-full items-center justify-center gap-1.5 rounded-lg py-2.5 text-xs font-semibold text-[color-mix(in_srgb,var(--ink)_50%,transparent)] transition-colors hover:bg-[var(--mist)] hover:text-[var(--ink)]"
+                  >
+                    {showFullCycle ? (
+                      <>
+                        <ChevronUp size={14} />
+                        Ocultar ciclo
+                      </>
+                    ) : (
+                      <>
+                        <ChevronDown size={14} />
+                        Mostrar ciclo completo ({hiddenDone} concluídas, {hiddenPending} na fila)
+                      </>
+                    )}
+                  </button>
+                </div>
+              )}
             </div>
           </section>
 
