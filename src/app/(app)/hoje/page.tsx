@@ -415,12 +415,12 @@ export default function HojePage() {
                   {showFullCycle ? (
                     <>
                       <ChevronUp size={14} />
-                      Ocultar ciclo
+                      Ver menos
                     </>
                   ) : (
                     <>
                       <ChevronDown size={14} />
-                      Mostrar ciclo completo ({hiddenDone} concluídas, {hiddenPending} na fila)
+                      Ver todas ({subjects.length})
                     </>
                   )}
                 </button>
@@ -586,12 +586,12 @@ export default function HojePage() {
                     {showFullCycle ? (
                       <>
                         <ChevronUp size={14} />
-                        Ocultar ciclo
+                        Ver menos
                       </>
                     ) : (
                       <>
                         <ChevronDown size={14} />
-                        Mostrar ciclo completo ({hiddenDone} concluídas, {hiddenPending} na fila)
+                        Ver todas ({subjects.length})
                       </>
                     )}
                   </button>
