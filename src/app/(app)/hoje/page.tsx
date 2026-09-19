@@ -10,6 +10,7 @@ import {
   ChevronUp,
 } from "lucide-react";
 import { useApp } from "@/components/AppProvider";
+import { useStudyFlow } from "@/components/StudyFlowProvider";
 import { DAYS } from "@/lib/types";
 import {
   blockStyle,
@@ -40,6 +41,7 @@ import { SubjectIcon } from "@/components/SubjectIcon";
 
 export default function HojePage() {
   const { data, upsertSubject } = useApp();
+  const flow = useStudyFlow();
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [showFullCycle, setShowFullCycle] = useState(false);
   /** null = padrão (só hoje); true = semana; false = só hoje forçado */
@@ -88,11 +90,15 @@ export default function HojePage() {
   const weekDays = DAYS.map((name, i) => ({ name, i }));
 
   const { visibleSubjects, hiddenDone, hiddenPending } = useMemo(() => {
+    // Subjects currently in the session block (running or about to start)
+    const sessionIds = new Set(
+      (flow.sessionActive ? flow.block : flow.previewBlock).map((s) => s.id)
+    );
+
     const active = subjects.filter((s) => {
       const free = subjectTreatAsFree(s, day, data.subjects);
-      if (free) return true;
-      const displayStatus = exclusiveCycleToday ? (s.exclusive_status ?? "prox") : s.status;
-      return s.id === queueHeadId || (exclusiveCycleToday && displayStatus === "prox");
+      if (free) return true; // keep standalone chronometers visible
+      return sessionIds.has(s.id);
     });
     
     const hidden = subjects.filter((s) => !active.includes(s));
@@ -109,7 +115,16 @@ export default function HojePage() {
       hiddenDone: hd,
       hiddenPending: hp,
     };
-  }, [showFullCycle, subjects, day, data.subjects, exclusiveCycleToday, queueHeadId]);
+  }, [
+    showFullCycle,
+    subjects,
+    day,
+    data.subjects,
+    exclusiveCycleToday,
+    flow.sessionActive,
+    flow.block,
+    flow.previewBlock,
+  ]);
 
   const hasHidden = hiddenDone > 0 || hiddenPending > 0;
 
