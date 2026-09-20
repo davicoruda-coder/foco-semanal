@@ -452,9 +452,9 @@ export function ReminderBoard({ compact }: { compact?: boolean }) {
         <div
           className={
             compact
-              ? `grid grid-cols-1 gap-2 overflow-y-auto pe-1 scrollbar-subtle ${
-                  list.length <= 2 ? "max-h-[18rem]" : "max-h-[14.5rem]"
-                }`
+              ? list.length >= 3
+                ? "grid max-h-[14.5rem] grid-cols-1 gap-2 overflow-y-auto pe-1 scrollbar-subtle"
+                : "grid grid-cols-1 gap-2"
               : "mt-4 grid gap-2 sm:grid-cols-3 md:grid-cols-4"
           }
         >
