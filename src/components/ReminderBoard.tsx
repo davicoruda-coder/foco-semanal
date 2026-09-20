@@ -114,9 +114,9 @@ function NoteCard({
   }
 
   const touchBtn =
-    "inline-flex h-11 min-h-11 w-11 min-w-11 items-center justify-center rounded-lg opacity-70 transition hover:bg-white/50 hover:opacity-100";
+    "inline-flex h-11 min-h-11 w-11 min-w-11 items-center justify-center rounded-lg opacity-70 transition hover:bg-[var(--ink)]/15 hover:opacity-100";
   const desktopBtn =
-    "inline-flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded p-0 opacity-55 transition hover:bg-white/50 hover:opacity-100";
+    "inline-flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded p-0 opacity-55 transition hover:bg-[var(--ink)]/15 hover:opacity-100";
 
   function ActionButtons({ touch }: { touch?: boolean }) {
     const btn = touch ? touchBtn : desktopBtn;
@@ -233,7 +233,7 @@ function NoteCard({
       )}
 
       {alarmOpen && (
-        <div className="mt-1 space-y-2 rounded-[var(--radius-tag)] bg-white/70 p-2">
+        <div className="mt-1 space-y-2 rounded-[var(--radius-tag)] border border-[var(--line)] bg-[var(--surface)] p-2 shadow-[var(--shadow-sm)]">
           <input
             type="datetime-local"
             className="input px-2 py-2 text-sm sm:px-1.5 sm:py-1 sm:text-xs"
@@ -261,7 +261,7 @@ function NoteCard({
             {reminder.has_alarm && (
               <button
                 type="button"
-                className="rounded-md bg-white/80 px-3 py-2 text-sm sm:px-2 sm:py-1 sm:text-xs"
+                className="rounded-md border border-[var(--line)] bg-[var(--mist)] px-3 py-2 text-sm text-[var(--ink)] hover:bg-[var(--line)]/50 sm:px-2 sm:py-1 sm:text-xs"
                 onClick={() => {
                   upsertReminder({ ...reminder, has_alarm: false });
                   setWhen("");
@@ -273,7 +273,7 @@ function NoteCard({
             )}
             <button
               type="button"
-              className="rounded-md bg-white/80 px-3 py-2 text-sm sm:px-2 sm:py-1 sm:text-xs"
+              className="rounded-md border border-[var(--line)] bg-[var(--mist)] px-3 py-2 text-sm text-[var(--ink)] hover:bg-[var(--line)]/50 sm:px-2 sm:py-1 sm:text-xs"
               onClick={() => setAlarmOpen(false)}
             >
               Fechar
@@ -283,7 +283,7 @@ function NoteCard({
       )}
 
       {colorOpen && (
-        <div className="mt-1 flex flex-wrap items-center gap-2 rounded-[var(--radius-tag)] bg-white/70 p-2">
+        <div className="mt-1 flex flex-wrap items-center gap-2 rounded-[var(--radius-tag)] border border-[var(--line)] bg-[var(--surface)] p-2 shadow-[var(--shadow-sm)]">
           {NOTE_COLORS.map((c) => (
             <button
               key={c}
@@ -320,7 +320,7 @@ function NoteCard({
         <button
           type="button"
           className={`${touchBtn} lg:h-[22px] lg:min-h-0 lg:w-[22px] lg:min-w-0 lg:rounded lg:p-0 ${
-            menuOpen ? "bg-white/50 opacity-100" : ""
+            menuOpen ? "bg-[var(--ink)]/15 opacity-100" : ""
           }`}
           title={menuOpen ? "Fechar opções" : "Opções do lembrete"}
           aria-label={menuOpen ? "Fechar opções" : "Opções do lembrete"}
@@ -452,7 +452,9 @@ export function ReminderBoard({ compact }: { compact?: boolean }) {
         <div
           className={
             compact
-              ? "grid max-h-[14.5rem] grid-cols-1 gap-2 overflow-y-auto pe-0.5"
+              ? `grid grid-cols-1 gap-2 overflow-y-auto pe-1 scrollbar-subtle ${
+                  list.length <= 2 ? "max-h-[18rem]" : "max-h-[14.5rem]"
+                }`
               : "mt-4 grid gap-2 sm:grid-cols-3 md:grid-cols-4"
           }
         >
