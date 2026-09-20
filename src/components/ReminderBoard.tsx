@@ -17,7 +17,7 @@ import type { Reminder } from "@/lib/types";
 import { sanitizeCssColor } from "@/lib/utils";
 
 /** Altura mínima do campo; a nota cresce com o texto (sem barra de rolagem). */
-const NOTE_TEXT_MIN_PX = { compact: 48, full: 60 } as const;
+const NOTE_TEXT_MIN_PX = { compact: 40, full: 60 } as const;
 
 /** 0 = tamanho atual (máximo); 1–2 = um pouco menores. Valores em px p/ transição suave. */
 const NOTE_FONT_PX = {
@@ -197,7 +197,7 @@ function NoteCard({
   return (
     <article
       className={`note-enter relative flex flex-col rounded-[var(--radius-tag)] shadow-sm ${
-        compact ? "min-h-0 p-2.5" : "min-h-[128px] p-3"
+        compact ? "min-h-0 p-2.5 pb-2" : "min-h-[128px] p-3"
       }`}
       style={{
         background: cardBg,
@@ -206,7 +206,9 @@ function NoteCard({
     >
       <textarea
         ref={textRef}
-        className="w-full resize-none overflow-hidden bg-transparent font-normal leading-relaxed outline-none placeholder:opacity-40"
+        className={`w-full resize-none overflow-hidden bg-transparent font-normal outline-none placeholder:opacity-40 ${
+          compact ? "leading-normal pe-6" : "leading-relaxed"
+        }`}
         style={{
           minHeight: textMin,
           fontSize: fontPx,
@@ -214,7 +216,7 @@ function NoteCard({
         }}
         placeholder="Escreva…"
         value={noteText(reminder.title)}
-        rows={3}
+        rows={compact ? 1 : 2}
         onChange={(e) =>
           upsertReminder({ ...reminder, title: e.target.value })
         }
@@ -306,34 +308,51 @@ function NoteCard({
       )}
 
       {/* Um “⋯” abre fonte / cor / alarme / excluir (celular e PC) */}
-      <div className="mt-auto flex items-center justify-end gap-1 pt-1">
-        {menuOpen ? (
-          <>
-            <div className="flex items-center gap-1 lg:hidden">
-              <ActionButtons touch />
-            </div>
-            <div className="hidden items-center gap-1 lg:flex">
-              <ActionButtons />
-            </div>
-          </>
-        ) : null}
+      {compact && !menuOpen ? (
         <button
           type="button"
-          className={`${touchBtn} lg:h-[22px] lg:min-h-0 lg:w-[22px] lg:min-w-0 lg:rounded lg:p-0 ${
-            menuOpen ? "bg-[var(--ink)]/15 opacity-100" : ""
-          }`}
-          title={menuOpen ? "Fechar opções" : "Opções do lembrete"}
-          aria-label={menuOpen ? "Fechar opções" : "Opções do lembrete"}
-          aria-expanded={menuOpen}
+          className={`${touchBtn} absolute bottom-1 right-1 lg:h-[20px] lg:min-h-0 lg:w-[20px] lg:min-w-0 lg:rounded lg:p-0`}
+          title="Opções do lembrete"
+          aria-label="Opções do lembrete"
+          aria-expanded={false}
           onClick={toggleMenu}
         >
           <MoreHorizontal
-            size={22}
+            size={20}
             strokeWidth={1.75}
             className="lg:h-[13px] lg:w-[13px]"
           />
         </button>
-      </div>
+      ) : (
+        <div className="mt-auto flex items-center justify-end gap-1 pt-1">
+          {menuOpen ? (
+            <>
+              <div className="flex items-center gap-1 lg:hidden">
+                <ActionButtons touch />
+              </div>
+              <div className="hidden items-center gap-1 lg:flex">
+                <ActionButtons />
+              </div>
+            </>
+          ) : null}
+          <button
+            type="button"
+            className={`${touchBtn} lg:h-[22px] lg:min-h-0 lg:w-[22px] lg:min-w-0 lg:rounded lg:p-0 ${
+              menuOpen ? "bg-[var(--ink)]/15 opacity-100" : ""
+            }`}
+            title={menuOpen ? "Fechar opções" : "Opções do lembrete"}
+            aria-label={menuOpen ? "Fechar opções" : "Opções do lembrete"}
+            aria-expanded={menuOpen}
+            onClick={toggleMenu}
+          >
+            <MoreHorizontal
+              size={22}
+              strokeWidth={1.75}
+              className="lg:h-[13px] lg:w-[13px]"
+            />
+          </button>
+        </div>
+      )}
     </article>
   );
 }
