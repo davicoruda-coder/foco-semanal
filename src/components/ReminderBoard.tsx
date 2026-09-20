@@ -1,6 +1,6 @@
 "use client";
 
-import { useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import {
   Bell,
   BellOff,
@@ -8,6 +8,7 @@ import {
   MoreHorizontal,
   Plus,
   Trash2,
+  X,
 } from "lucide-react";
 import { useApp } from "@/components/AppProvider";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
@@ -31,12 +32,12 @@ function clampFontSize(value: number | undefined): 0 | 1 | 2 {
 }
 
 const NOTE_COLORS = [
-  "#FDE68A",
-  "#A7F3D0",
-  "#FBCFE8",
-  "#BFDBFE",
-  "#FECACA",
-  "#DDD6FE",
+  "#FBBF24", // Âmbar dourado
+  "#34D399", // Esmeralda fresco
+  "#38BDF8", // Azul celeste
+  "#FB7185", // Rosa coral
+  "#FB923C", // Laranja tangerina
+  "#A78BFA", // Violeta signal
 ];
 
 function toLocalInput(iso: string) {
@@ -61,16 +62,30 @@ function NoteCard({
 }) {
   const { upsertReminder } = useApp();
   const textRef = useRef<HTMLTextAreaElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
   const [alarmOpen, setAlarmOpen] = useState(false);
   const [colorOpen, setColorOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [when, setWhen] = useState(
     reminder.has_alarm ? toLocalInput(reminder.notify_at) : "",
   );
-  const currentColor = sanitizeCssColor(reminder.color, "#FDE68A");
+  const currentColor = sanitizeCssColor(reminder.color, "#FBBF24");
   const textMin = compact ? NOTE_TEXT_MIN_PX.compact : NOTE_TEXT_MIN_PX.full;
   const fontSize = clampFontSize(reminder.font_size);
   const fontPx = (compact ? NOTE_FONT_PX.compact : NOTE_FONT_PX.full)[fontSize];
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    function handleDocClick(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+        setColorOpen(false);
+        setAlarmOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleDocClick);
+    return () => document.removeEventListener("mousedown", handleDocClick);
+  }, [menuOpen]);
 
   useLayoutEffect(() => {
     const el = textRef.current;
@@ -82,7 +97,7 @@ function NoteCard({
     const next = Math.max(el.scrollHeight, textMin);
     el.style.height = `${from}px`;
     void el.offsetHeight;
-    el.style.transition = "height 220ms ease, font-size 220ms ease";
+    el.style.transition = "font-size 220ms ease";
     el.style.height = `${next}px`;
   }, [reminder.title, textMin, fontSize]);
 
@@ -190,9 +205,12 @@ function NoteCard({
 
   // Aside Hoje: cor misturada no mist — menos “post-it gritante”, ainda identificável.
   const cardBg = compact
-    ? `color-mix(in srgb, ${currentColor} 38%, var(--mist))`
+    ? `color-mix(in srgb, ${currentColor} 36%, var(--mist))`
     : currentColor;
   const cardInk = compact ? "var(--ink)" : "#292524";
+  const cardBorder = compact
+    ? `1px solid color-mix(in srgb, ${currentColor} 28%, transparent)`
+    : "1px solid color-mix(in srgb, var(--line) 40%, transparent)";
 
   return (
     <article
@@ -202,6 +220,7 @@ function NoteCard({
       style={{
         background: cardBg,
         color: cardInk,
+        border: cardBorder,
       }}
     >
       <textarea
@@ -212,7 +231,7 @@ function NoteCard({
         style={{
           minHeight: textMin,
           fontSize: fontPx,
-          transition: "height 220ms ease, font-size 220ms ease",
+          transition: "font-size 220ms ease",
         }}
         placeholder="Escreva…"
         value={noteText(reminder.title)}
@@ -234,110 +253,12 @@ function NoteCard({
         </p>
       )}
 
-      {alarmOpen && (
-        <div className="mt-1 space-y-2 rounded-[var(--radius-tag)] border border-[var(--line)] bg-[var(--surface)] p-2 shadow-[var(--shadow-sm)]">
-          <input
-            type="datetime-local"
-            className="input px-2 py-2 text-sm sm:px-1.5 sm:py-1 sm:text-xs"
-            value={when}
-            onChange={(e) => setWhen(e.target.value)}
-          />
-          <div className="flex flex-wrap gap-1.5">
-            <button
-              type="button"
-              className="rounded-md px-3 py-2 text-sm font-medium bg-[var(--signal)] text-white sm:px-2 sm:py-1 sm:text-xs"
-              onClick={() => {
-                if (!when) return;
-                void ensureNotificationPermission();
-                upsertReminder({
-                  ...reminder,
-                  has_alarm: true,
-                  notify_at: new Date(when).toISOString(),
-                  remind_minutes_before: 0,
-                });
-                setAlarmOpen(false);
-              }}
-            >
-              Salvar
-            </button>
-            {reminder.has_alarm && (
-              <button
-                type="button"
-                className="rounded-md border border-[var(--line)] bg-[var(--mist)] px-3 py-2 text-sm text-[var(--ink)] hover:bg-[var(--line)]/50 sm:px-2 sm:py-1 sm:text-xs"
-                onClick={() => {
-                  upsertReminder({ ...reminder, has_alarm: false });
-                  setWhen("");
-                  setAlarmOpen(false);
-                }}
-              >
-                Sem alarme
-              </button>
-            )}
-            <button
-              type="button"
-              className="rounded-md border border-[var(--line)] bg-[var(--mist)] px-3 py-2 text-sm text-[var(--ink)] hover:bg-[var(--line)]/50 sm:px-2 sm:py-1 sm:text-xs"
-              onClick={() => setAlarmOpen(false)}
-            >
-              Fechar
-            </button>
-          </div>
-        </div>
-      )}
-
-      {colorOpen && (
-        <div className="mt-1 flex flex-wrap items-center gap-2 rounded-[var(--radius-tag)] border border-[var(--line)] bg-[var(--surface)] p-2 shadow-[var(--shadow-sm)]">
-          {NOTE_COLORS.map((c) => (
-            <button
-              key={c}
-              type="button"
-              className={`h-9 w-9 rounded-full border-2 transition sm:h-7 sm:w-7 ${
-                currentColor.toLowerCase() === c.toLowerCase()
-                  ? "border-[var(--ink)] scale-110"
-                  : "border-transparent"
-              }`}
-              style={{ background: c }}
-              title="Trocar cor"
-              aria-label={`Cor ${c}`}
-              onClick={() => {
-                upsertReminder({ ...reminder, color: c });
-                setColorOpen(false);
-              }}
-            />
-          ))}
-        </div>
-      )}
-
-      {/* Um “⋯” abre fonte / cor / alarme / excluir (celular e PC) */}
-      {compact && !menuOpen ? (
-        <button
-          type="button"
-          className={`${touchBtn} absolute bottom-1 right-1 lg:h-[20px] lg:min-h-0 lg:w-[20px] lg:min-w-0 lg:rounded lg:p-0`}
-          title="Opções do lembrete"
-          aria-label="Opções do lembrete"
-          aria-expanded={false}
-          onClick={toggleMenu}
-        >
-          <MoreHorizontal
-            size={20}
-            strokeWidth={1.75}
-            className="lg:h-[13px] lg:w-[13px]"
-          />
-        </button>
-      ) : (
-        <div className="mt-auto flex items-center justify-end gap-1 pt-1">
-          {menuOpen ? (
-            <>
-              <div className="flex items-center gap-1 lg:hidden">
-                <ActionButtons touch />
-              </div>
-              <div className="hidden items-center gap-1 lg:flex">
-                <ActionButtons />
-              </div>
-            </>
-          ) : null}
+      {/* Modo compacto: botão discreto e menus flutuantes (sem layout shift) */}
+      {compact ? (
+        <>
           <button
             type="button"
-            className={`${touchBtn} lg:h-[22px] lg:min-h-0 lg:w-[22px] lg:min-w-0 lg:rounded lg:p-0 ${
+            className={`${touchBtn} absolute bottom-1 right-1 lg:h-[20px] lg:min-h-0 lg:w-[20px] lg:min-w-0 lg:rounded lg:p-0 ${
               menuOpen ? "bg-[var(--ink)]/15 opacity-100" : ""
             }`}
             title={menuOpen ? "Fechar opções" : "Opções do lembrete"}
@@ -346,12 +267,225 @@ function NoteCard({
             onClick={toggleMenu}
           >
             <MoreHorizontal
-              size={22}
+              size={18}
               strokeWidth={1.75}
               className="lg:h-[13px] lg:w-[13px]"
             />
           </button>
-        </div>
+
+          {menuOpen && (
+            <div
+              ref={menuRef}
+              className="absolute bottom-1 right-1 z-20 flex items-center gap-0.5 rounded-lg border border-[var(--line)] bg-[var(--surface)] p-0.5 shadow-[var(--shadow-md)] backdrop-blur-md"
+              style={{ color: "var(--ink)" }}
+            >
+              <div className="flex items-center gap-0.5 lg:hidden">
+                <ActionButtons touch />
+              </div>
+              <div className="hidden items-center gap-0.5 lg:flex">
+                <ActionButtons />
+              </div>
+              <button
+                type="button"
+                className="inline-flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded p-0 opacity-50 transition hover:bg-[var(--mist)] hover:opacity-100"
+                title="Fechar opções"
+                aria-label="Fechar opções"
+                onClick={() => {
+                  setMenuOpen(false);
+                  setColorOpen(false);
+                  setAlarmOpen(false);
+                }}
+              >
+                <X size={12} strokeWidth={2} />
+              </button>
+            </div>
+          )}
+
+          {colorOpen && (
+            <div
+              ref={menuRef}
+              className="absolute bottom-8 right-1 z-30 flex flex-wrap items-center gap-1.5 rounded-[var(--radius-tag)] border border-[var(--line)] bg-[var(--surface)] p-2 shadow-[var(--shadow-lg)]"
+            >
+              {NOTE_COLORS.map((c) => (
+                <button
+                  key={c}
+                  type="button"
+                  className={`h-7 w-7 rounded-full border-2 transition hover:scale-110 sm:h-6 sm:w-6 ${
+                    currentColor.toLowerCase() === c.toLowerCase()
+                      ? "border-[var(--ink)] scale-110"
+                      : "border-transparent"
+                  }`}
+                  style={{ background: c }}
+                  title="Trocar cor"
+                  aria-label={`Cor ${c}`}
+                  onClick={() => {
+                    upsertReminder({ ...reminder, color: c });
+                    setColorOpen(false);
+                  }}
+                />
+              ))}
+            </div>
+          )}
+
+          {alarmOpen && (
+            <div
+              ref={menuRef}
+              className="absolute bottom-8 right-1 z-30 w-64 space-y-2 rounded-[var(--radius-tag)] border border-[var(--line)] bg-[var(--surface)] p-2.5 shadow-[var(--shadow-lg)]"
+              style={{ color: "var(--ink)" }}
+            >
+              <input
+                type="datetime-local"
+                className="input px-2 py-1.5 text-xs w-full"
+                value={when}
+                onChange={(e) => setWhen(e.target.value)}
+              />
+              <div className="flex flex-wrap gap-1.5">
+                <button
+                  type="button"
+                  className="rounded-md px-2.5 py-1 text-xs font-medium bg-[var(--signal)] text-white"
+                  onClick={() => {
+                    if (!when) return;
+                    void ensureNotificationPermission();
+                    upsertReminder({
+                      ...reminder,
+                      has_alarm: true,
+                      notify_at: new Date(when).toISOString(),
+                      remind_minutes_before: 0,
+                    });
+                    setAlarmOpen(false);
+                  }}
+                >
+                  Salvar
+                </button>
+                {reminder.has_alarm && (
+                  <button
+                    type="button"
+                    className="rounded-md border border-[var(--line)] bg-[var(--mist)] px-2 py-1 text-xs text-[var(--ink)] hover:bg-[var(--line)]/50"
+                    onClick={() => {
+                      upsertReminder({ ...reminder, has_alarm: false });
+                      setWhen("");
+                      setAlarmOpen(false);
+                    }}
+                  >
+                    Sem alarme
+                  </button>
+                )}
+                <button
+                  type="button"
+                  className="rounded-md border border-[var(--line)] bg-[var(--mist)] px-2 py-1 text-xs text-[var(--ink)] hover:bg-[var(--line)]/50"
+                  onClick={() => setAlarmOpen(false)}
+                >
+                  Fechar
+                </button>
+              </div>
+            </div>
+          )}
+        </>
+      ) : (
+        /* Modo normal (página /lembretes) */
+        <>
+          {alarmOpen && (
+            <div className="mt-1 space-y-2 rounded-[var(--radius-tag)] border border-[var(--line)] bg-[var(--surface)] p-2 shadow-[var(--shadow-sm)]">
+              <input
+                type="datetime-local"
+                className="input px-2 py-2 text-sm sm:px-1.5 sm:py-1 sm:text-xs"
+                value={when}
+                onChange={(e) => setWhen(e.target.value)}
+              />
+              <div className="flex flex-wrap gap-1.5">
+                <button
+                  type="button"
+                  className="rounded-md px-3 py-2 text-sm font-medium bg-[var(--signal)] text-white sm:px-2 sm:py-1 sm:text-xs"
+                  onClick={() => {
+                    if (!when) return;
+                    void ensureNotificationPermission();
+                    upsertReminder({
+                      ...reminder,
+                      has_alarm: true,
+                      notify_at: new Date(when).toISOString(),
+                      remind_minutes_before: 0,
+                    });
+                    setAlarmOpen(false);
+                  }}
+                >
+                  Salvar
+                </button>
+                {reminder.has_alarm && (
+                  <button
+                    type="button"
+                    className="rounded-md border border-[var(--line)] bg-[var(--mist)] px-3 py-2 text-sm text-[var(--ink)] hover:bg-[var(--line)]/50 sm:px-2 sm:py-1 sm:text-xs"
+                    onClick={() => {
+                      upsertReminder({ ...reminder, has_alarm: false });
+                      setWhen("");
+                      setAlarmOpen(false);
+                    }}
+                  >
+                    Sem alarme
+                  </button>
+                )}
+                <button
+                  type="button"
+                  className="rounded-md border border-[var(--line)] bg-[var(--mist)] px-3 py-2 text-sm text-[var(--ink)] hover:bg-[var(--line)]/50 sm:px-2 sm:py-1 sm:text-xs"
+                  onClick={() => setAlarmOpen(false)}
+                >
+                  Fechar
+                </button>
+              </div>
+            </div>
+          )}
+
+          {colorOpen && (
+            <div className="mt-1 flex flex-wrap items-center gap-2 rounded-[var(--radius-tag)] border border-[var(--line)] bg-[var(--surface)] p-2 shadow-[var(--shadow-sm)]">
+              {NOTE_COLORS.map((c) => (
+                <button
+                  key={c}
+                  type="button"
+                  className={`h-9 w-9 rounded-full border-2 transition sm:h-7 sm:w-7 ${
+                    currentColor.toLowerCase() === c.toLowerCase()
+                      ? "border-[var(--ink)] scale-110"
+                      : "border-transparent"
+                  }`}
+                  style={{ background: c }}
+                  title="Trocar cor"
+                  aria-label={`Cor ${c}`}
+                  onClick={() => {
+                    upsertReminder({ ...reminder, color: c });
+                    setColorOpen(false);
+                  }}
+                />
+              ))}
+            </div>
+          )}
+
+          <div className="mt-auto flex items-center justify-end gap-1 pt-1">
+            {menuOpen ? (
+              <>
+                <div className="flex items-center gap-1 lg:hidden">
+                  <ActionButtons touch />
+                </div>
+                <div className="hidden items-center gap-1 lg:flex">
+                  <ActionButtons />
+                </div>
+              </>
+            ) : null}
+            <button
+              type="button"
+              className={`${touchBtn} lg:h-[22px] lg:min-h-0 lg:w-[22px] lg:min-w-0 lg:rounded lg:p-0 ${
+                menuOpen ? "bg-[var(--ink)]/15 opacity-100" : ""
+              }`}
+              title={menuOpen ? "Fechar opções" : "Opções do lembrete"}
+              aria-label={menuOpen ? "Fechar opções" : "Opções do lembrete"}
+              aria-expanded={menuOpen}
+              onClick={toggleMenu}
+            >
+              <MoreHorizontal
+                size={22}
+                strokeWidth={1.75}
+                className="lg:h-[13px] lg:w-[13px]"
+              />
+            </button>
+          </div>
+        </>
       )}
     </article>
   );
