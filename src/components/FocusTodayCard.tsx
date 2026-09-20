@@ -111,7 +111,7 @@ export function FocusTodayCard({
       className={`group block transition ${
         embedded
           ? "px-3.5 py-3 hover:bg-[color-mix(in_srgb,var(--mist)_70%,transparent)]"
-          : "surface px-3.5 py-3 hover:border-[color-mix(in_srgb,var(--signal)_45%,var(--line))]"
+          : "surface px-3.5 py-2.5 hover:border-[color-mix(in_srgb,var(--signal)_45%,var(--line))]"
       }`}
     >
       <div className="flex items-center justify-between gap-2">

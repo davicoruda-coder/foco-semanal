@@ -632,7 +632,7 @@ export function SessionClock({
     <div className="surface overflow-hidden p-0">
       <div
         className={`flex flex-wrap items-center justify-between gap-2 border-b border-[var(--line)] ${
-          stack ? "px-3 py-2" : "px-3 py-2.5 md:px-5"
+          stack ? "px-3 py-1.5" : "px-3 py-2.5 md:px-5"
         }`}
       >
         {livreOnly ? (
@@ -696,7 +696,7 @@ export function SessionClock({
         <>
           {showStopwatch ? (
             <div
-              className={`flex justify-center ${stack ? "px-3 py-3" : "px-3 py-4"}`}
+              className={`flex justify-center ${stack ? "px-3 py-2.5" : "px-3 py-4"}`}
             >
               {renderStopwatchRing(
                 stack ? 120 : 116,
@@ -707,7 +707,7 @@ export function SessionClock({
             </div>
           ) : (
             <div
-              className={`flex flex-col items-center ${stack ? "px-3 py-3" : "px-3 py-4"}`}
+              className={`flex flex-col items-center ${stack ? "px-3 py-2.5" : "px-3 py-4"}`}
             >
               {sidebarTimerName !== "Temporizador" && (
                 <p className="mb-2 max-w-full truncate text-xs font-medium text-[color-mix(in_srgb,var(--ink)_55%,transparent)]">

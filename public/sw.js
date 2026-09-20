@@ -1,5 +1,5 @@
 /* Foco Semanal — service worker (demo / PWA) */
-const CACHE = "foco-semanal-v5";
+const CACHE = "foco-semanal-v6";
 const PRECACHE = [
   "/icons/icon-192.png",
   "/icons/icon-512.png",

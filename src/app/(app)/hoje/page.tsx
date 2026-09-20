@@ -626,7 +626,7 @@ export default function HojePage() {
           </div>
         </div>
 
-        <aside className="hidden space-y-4 lg:sticky lg:top-[4.5rem] lg:block lg:max-h-[calc(100vh-5.5rem)] lg:overflow-y-auto lg:self-start scrollbar-subtle">
+        <aside className="hidden space-y-3 lg:sticky lg:top-[4.5rem] lg:block lg:max-h-[calc(100vh-5.5rem)] lg:overflow-y-auto lg:self-start scrollbar-subtle">
           <div className="surface p-3">
             <ReminderBoard compact />
           </div>
