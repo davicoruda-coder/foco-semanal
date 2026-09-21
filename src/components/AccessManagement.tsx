@@ -141,7 +141,7 @@ export function AccessManagement() {
   if (loading || !isAdmin) return null;
 
   return (
-    <section className="surface mt-4 p-4 md:p-5">
+    <section id="acessos" className="surface mt-4 scroll-mt-20 p-4 md:p-5">
       <div className="flex items-start justify-between gap-3">
         <div>
           <h2 className="font-display text-base font-semibold tracking-tight md:text-lg">

@@ -11,6 +11,8 @@ import {
   LogOut,
   Settings,
   Shield,
+  ShieldCheck,
+  Sparkles,
   Trash2,
   X,
   CircleHelp,
@@ -74,10 +76,17 @@ function compressAvatar(file: File): Promise<string> {
 }
 
 export function UserAccountMenu() {
-  const { user, logout, updateUserAvatar } = useApp();
+  const { user, cloud, logout, updateUserAvatar } = useApp();
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const [open, setOpen] = useState(false);
+  const [role, setRole] = useState<"owner" | "member" | "guest">(() => {
+    if (typeof window !== "undefined") {
+      const cached = localStorage.getItem("foco_is_access_admin");
+      if (cached === "true") return "owner";
+    }
+    return "member";
+  });
   const [confirmLogout, setConfirmLogout] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deletePassword, setDeletePassword] = useState("");
@@ -94,6 +103,42 @@ export function UserAccountMenu() {
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // Detecta se o usuário é Administrador Master (owner), Membro ou Convidado
+  useEffect(() => {
+    if (!cloud || !user) {
+      if (!cloud) setRole("guest");
+      return;
+    }
+    let active = true;
+    async function checkRole() {
+      try {
+        const { createClient } = await import("@/lib/supabase/client");
+        const supabase = createClient();
+        const { data: isOwner, error } = await supabase.rpc(
+          "current_user_is_access_admin",
+        );
+        if (active) {
+          const nextRole = !error && isOwner === true ? "owner" : "member";
+          setRole(nextRole);
+          try {
+            localStorage.setItem(
+              "foco_is_access_admin",
+              nextRole === "owner" ? "true" : "false",
+            );
+          } catch {
+            // ignore
+          }
+        }
+      } catch {
+        if (active) setRole("member");
+      }
+    }
+    checkRole();
+    return () => {
+      active = false;
+    };
+  }, [cloud, user?.id, user?.email]);
 
   // Se o avatar mudar, reseta o estado de erro
   useEffect(() => {
@@ -279,10 +324,21 @@ export function UserAccountMenu() {
             <p className="truncate text-xs text-[color-mix(in_srgb,var(--ink)_65%,transparent)]">
               {user.email}
             </p>
-            <div className="mt-1 flex flex-wrap items-center gap-2">
-              <span className="inline-flex items-center rounded-full bg-[color-mix(in_srgb,var(--signal)_12%,var(--surface))] px-2 py-0.5 text-[10px] font-semibold text-[var(--signal)] ring-1 ring-[color-mix(in_srgb,var(--signal)_30%,transparent)]">
-                Plano Gratuito
-              </span>
+            <div className="mt-1.5 flex flex-wrap items-center gap-2">
+              {role === "owner" ? (
+                <span className="inline-flex items-center gap-1 rounded-full bg-[color-mix(in_srgb,var(--signal)_16%,var(--surface))] px-2.5 py-0.5 text-[10px] font-bold text-[var(--signal)] ring-1 ring-[color-mix(in_srgb,var(--signal)_35%,transparent)] shadow-2xs">
+                  <Sparkles size={11} className="shrink-0 text-[var(--signal)]" />
+                  Acesso Master
+                </span>
+              ) : role === "guest" ? (
+                <span className="inline-flex items-center gap-1 rounded-full bg-[var(--mist)] px-2 py-0.5 text-[10px] font-medium text-[color-mix(in_srgb,var(--ink)_65%,transparent)] ring-1 ring-[var(--line)]">
+                  Modo Demonstração
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 rounded-full bg-[color-mix(in_srgb,var(--signal)_10%,var(--surface))] px-2 py-0.5 text-[10px] font-semibold text-[var(--signal)] ring-1 ring-[color-mix(in_srgb,var(--signal)_25%,transparent)]">
+                  Membro
+                </span>
+              )}
               {user.avatarUrl && (
                 <button
                   type="button"
@@ -316,6 +372,16 @@ export function UserAccountMenu() {
 
       {/* Seção de Navegação e Configurações */}
       <div className="py-2 space-y-0.5 text-xs text-[var(--ink)]">
+        {role === "owner" && (
+          <Link
+            href="/ajustes#acessos"
+            onClick={() => setOpen(false)}
+            className="flex items-center gap-2.5 rounded-lg px-2.5 py-2 font-semibold text-[var(--signal)] bg-[color-mix(in_srgb,var(--signal)_8%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--signal)_15%,transparent)] mb-1"
+          >
+            <ShieldCheck size={15} strokeWidth={2} className="shrink-0 text-[var(--signal)]" />
+            <span>Gestão de Acessos (Master)</span>
+          </Link>
+        )}
         <Link
           href="/estatisticas"
           onClick={() => setOpen(false)}
