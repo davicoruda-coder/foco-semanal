@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -74,6 +74,7 @@ function compressAvatar(file: File): Promise<string> {
 export function UserAccountMenu() {
   const { user, logout, updateUserAvatar } = useApp();
   const router = useRouter();
+  const inputId = useId();
   const [mounted, setMounted] = useState(false);
   const [open, setOpen] = useState(false);
   const [confirmLogout, setConfirmLogout] = useState(false);
@@ -87,7 +88,6 @@ export function UserAccountMenu() {
   const [imgError, setImgError] = useState(false);
 
   const containerRef = useRef<HTMLDivElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -147,7 +147,7 @@ export function UserAccountMenu() {
       );
     } finally {
       setUploadingAvatar(false);
-      if (fileInputRef.current) fileInputRef.current.value = "";
+      e.target.value = "";
     }
   }
 
@@ -203,41 +203,52 @@ export function UserAccountMenu() {
   }
 
   // Conteúdo do Menu compartilhado entre Desktop (popover) e Mobile (bottom sheet)
-  const MenuContent = () => (
+  const MenuContent = ({ formId }: { formId: string }) => (
     <>
+      {/* Input nativo com id vinculado ao label para disparo nativo garantido no mobile */}
+      <input
+        id={formId}
+        type="file"
+        accept="image/png,image/jpeg,image/webp,image/heic,image/*"
+        className="sr-only"
+        onChange={handleFileChange}
+        disabled={uploadingAvatar}
+      />
+
       {/* Cabeçalho com Dados do Usuário e Foto */}
       <div className="flex items-start justify-between gap-3 pb-3 border-b border-[var(--line)]">
         <div className="flex items-center gap-3 min-w-0">
-          {/* Avatar com ação de foto */}
-          <div className="relative shrink-0">
+          {/* Avatar clicável via label nativo — toque na foto OU no ícone abre o seletor */}
+          <label
+            htmlFor={formId}
+            className="group/avatar relative block size-12 shrink-0 cursor-pointer rounded-full transition focus-within:ring-2 focus-within:ring-[var(--signal)]"
+            title="Tocar para escolher foto de perfil"
+          >
             {showCustomPhoto ? (
               <img
                 src={user.avatarUrl}
                 alt="Foto de perfil"
                 onError={() => setImgError(true)}
-                className="size-11 rounded-full object-cover ring-1 ring-[color-mix(in_srgb,var(--signal)_30%,transparent)]"
+                className="size-12 rounded-full object-cover ring-2 ring-[color-mix(in_srgb,var(--signal)_30%,transparent)] transition group-hover/avatar:ring-[var(--signal)]"
               />
             ) : (
-              <div className="flex size-11 items-center justify-center rounded-full bg-[var(--signal-soft)] text-sm font-bold text-[var(--signal)] ring-1 ring-[color-mix(in_srgb,var(--signal)_30%,transparent)]">
+              <div className="flex size-12 items-center justify-center rounded-full bg-[var(--signal-soft)] text-sm font-bold text-[var(--signal)] ring-2 ring-[color-mix(in_srgb,var(--signal)_30%,transparent)] transition group-hover/avatar:ring-[var(--signal)]">
                 {initials}
               </div>
             )}
-            {/* Botão de Câmera sobreposto */}
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              disabled={uploadingAvatar}
-              className="absolute -bottom-1 -right-1 flex size-5.5 items-center justify-center rounded-full bg-[var(--surface)] text-[var(--signal)] shadow-sm ring-1 ring-[var(--line)] transition hover:bg-[var(--signal-soft)] hover:ring-[var(--signal)] disabled:opacity-50"
-              title="Trocar foto de perfil"
-              aria-label="Trocar foto de perfil"
+
+            {/* Ícone de Câmera sobreposto */}
+            <span
+              className="absolute -bottom-1 -right-1 flex size-5.5 items-center justify-center rounded-full bg-[var(--surface)] text-[var(--signal)] shadow-md ring-1 ring-[var(--line)] transition group-hover/avatar:bg-[var(--signal-soft)] group-hover/avatar:ring-[var(--signal)]"
+              title="Trocar foto"
             >
               {uploadingAvatar ? (
                 <Loader2 size={11} className="animate-spin" />
               ) : (
                 <Camera size={11} strokeWidth={2.2} />
               )}
-            </button>
-          </div>
+            </span>
+          </label>
 
           <div className="min-w-0">
             <p className="truncate text-sm font-semibold text-[var(--ink)]">
@@ -246,18 +257,24 @@ export function UserAccountMenu() {
             <p className="truncate text-xs text-[color-mix(in_srgb,var(--ink)_65%,transparent)]">
               {user.email}
             </p>
-            <div className="mt-1 flex items-center gap-2">
+            <div className="mt-1 flex flex-wrap items-center gap-2">
               <span className="inline-flex items-center rounded-full bg-[color-mix(in_srgb,var(--signal)_12%,var(--surface))] px-2 py-0.5 text-[10px] font-semibold text-[var(--signal)] ring-1 ring-[color-mix(in_srgb,var(--signal)_30%,transparent)]">
                 Plano Gratuito
               </span>
+              <label
+                htmlFor={formId}
+                className="cursor-pointer text-[11px] font-medium text-[var(--signal)] transition hover:underline"
+              >
+                {user.avatarUrl ? "Trocar foto" : "Adicionar foto"}
+              </label>
               {user.avatarUrl && (
                 <button
                   type="button"
                   onClick={handleRemoveAvatar}
                   disabled={uploadingAvatar}
-                  className="text-[10px] text-[color-mix(in_srgb,var(--ink)_55%,transparent)] transition hover:text-[var(--warn)] underline underline-offset-2"
+                  className="text-[11px] text-[color-mix(in_srgb,var(--ink)_55%,transparent)] transition hover:text-[var(--warn)] underline underline-offset-2"
                 >
-                  Remover foto
+                  Remover
                 </button>
               )}
             </div>
@@ -355,15 +372,6 @@ export function UserAccountMenu() {
 
   return (
     <div ref={containerRef} className="relative inline-flex items-center">
-      {/* Input oculto para seleção de foto */}
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="image/*"
-        className="hidden"
-        onChange={handleFileChange}
-      />
-
       {/* Botão do Avatar — área de clique acessível (mínimo 44x44px) */}
       <button
         type="button"
@@ -395,7 +403,7 @@ export function UserAccountMenu() {
           aria-label="Gerenciamento de Conta"
           className="hidden lg:block absolute right-0 top-full mt-2 w-80 z-50 rounded-[var(--radius)] border border-[var(--line)] bg-[var(--surface)] p-4 shadow-[var(--shadow-lg)]"
         >
-          <MenuContent />
+          <MenuContent formId={`${inputId}-desktop`} />
         </div>
       )}
 
@@ -415,7 +423,7 @@ export function UserAccountMenu() {
               className="fixed inset-x-0 bottom-0 z-50 rounded-t-[24px] border-t border-[var(--line)] bg-[var(--surface)] p-5 pb-[calc(1.5rem+env(safe-area-inset-bottom))] shadow-2xl max-h-[90vh] overflow-y-auto animate-in slide-in-from-bottom duration-200"
             >
               <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-[var(--line)]" />
-              <MenuContent />
+              <MenuContent formId={`${inputId}-mobile`} />
             </div>
           </div>,
           document.body,
