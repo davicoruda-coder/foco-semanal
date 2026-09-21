@@ -203,14 +203,10 @@ function NoteCard({
     );
   }
 
-  // Aside Hoje: cor misturada no mist — menos “post-it gritante”, ainda identificável.
-  const cardBg = compact
-    ? `color-mix(in srgb, ${currentColor} 36%, var(--mist))`
-    : currentColor;
-  const cardInk = compact ? "var(--ink)" : "#292524";
-  const cardBorder = compact
-    ? `1px solid color-mix(in srgb, ${currentColor} 28%, transparent)`
-    : "1px solid color-mix(in srgb, var(--line) 40%, transparent)";
+  // Notas de estudo: cor misturada no mist — suave ("Mesa do Ciclo"), sem post-it gritante, legível em claro/escuro.
+  const cardBg = `color-mix(in srgb, ${currentColor} 36%, var(--mist))`;
+  const cardInk = "var(--ink)";
+  const cardBorder = `1px solid color-mix(in srgb, ${currentColor} 28%, var(--line))`;
 
   return (
     <article
