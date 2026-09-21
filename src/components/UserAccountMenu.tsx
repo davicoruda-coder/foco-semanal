@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -74,7 +74,6 @@ function compressAvatar(file: File): Promise<string> {
 export function UserAccountMenu() {
   const { user, logout, updateUserAvatar } = useApp();
   const router = useRouter();
-  const inputId = useId();
   const [mounted, setMounted] = useState(false);
   const [open, setOpen] = useState(false);
   const [confirmLogout, setConfirmLogout] = useState(false);
@@ -203,25 +202,14 @@ export function UserAccountMenu() {
   }
 
   // Conteúdo do Menu compartilhado entre Desktop (popover) e Mobile (bottom sheet)
-  const MenuContent = ({ formId }: { formId: string }) => (
+  const MenuContent = () => (
     <>
-      {/* Input nativo com id vinculado ao label para disparo nativo garantido no mobile */}
-      <input
-        id={formId}
-        type="file"
-        accept="image/png,image/jpeg,image/webp,image/heic,image/*"
-        className="sr-only"
-        onChange={handleFileChange}
-        disabled={uploadingAvatar}
-      />
-
       {/* Cabeçalho com Dados do Usuário e Foto */}
       <div className="flex items-start justify-between gap-3 pb-3 border-b border-[var(--line)]">
         <div className="flex items-center gap-3 min-w-0">
-          {/* Avatar clicável via label nativo — toque na foto OU no ícone abre o seletor */}
-          <label
-            htmlFor={formId}
-            className="group/avatar relative block size-12 shrink-0 cursor-pointer rounded-full transition focus-within:ring-2 focus-within:ring-[var(--signal)]"
+          {/* Avatar com input nativo transparente sobreposto para toque direto garantido no PWA */}
+          <div
+            className="group/avatar relative block size-12 shrink-0 rounded-full cursor-pointer"
             title="Tocar para escolher foto de perfil"
           >
             {showCustomPhoto ? (
@@ -248,7 +236,18 @@ export function UserAccountMenu() {
                 <Camera size={11} strokeWidth={2.2} />
               )}
             </span>
-          </label>
+
+            {/* Input nativo transparente posicionado sobre toda a área do avatar */}
+            <input
+              type="file"
+              accept="image/*"
+              className="absolute inset-0 z-20 size-full cursor-pointer opacity-0 rounded-full"
+              onChange={handleFileChange}
+              disabled={uploadingAvatar}
+              title="Escolher foto de perfil"
+              aria-label="Escolher foto de perfil"
+            />
+          </div>
 
           <div className="min-w-0">
             <p className="truncate text-sm font-semibold text-[var(--ink)]">
@@ -261,12 +260,20 @@ export function UserAccountMenu() {
               <span className="inline-flex items-center rounded-full bg-[color-mix(in_srgb,var(--signal)_12%,var(--surface))] px-2 py-0.5 text-[10px] font-semibold text-[var(--signal)] ring-1 ring-[color-mix(in_srgb,var(--signal)_30%,transparent)]">
                 Plano Gratuito
               </span>
-              <label
-                htmlFor={formId}
-                className="cursor-pointer text-[11px] font-medium text-[var(--signal)] transition hover:underline"
-              >
-                {user.avatarUrl ? "Trocar foto" : "Adicionar foto"}
-              </label>
+              <span className="relative inline-flex items-center">
+                <span className="cursor-pointer text-[11px] font-medium text-[var(--signal)] transition hover:underline">
+                  {user.avatarUrl ? "Trocar foto" : "Adicionar foto"}
+                </span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="absolute inset-0 z-10 size-full cursor-pointer opacity-0"
+                  onChange={handleFileChange}
+                  disabled={uploadingAvatar}
+                  title="Escolher foto de perfil"
+                  aria-label="Escolher foto de perfil"
+                />
+              </span>
               {user.avatarUrl && (
                 <button
                   type="button"
@@ -403,7 +410,7 @@ export function UserAccountMenu() {
           aria-label="Gerenciamento de Conta"
           className="hidden lg:block absolute right-0 top-full mt-2 w-80 z-50 rounded-[var(--radius)] border border-[var(--line)] bg-[var(--surface)] p-4 shadow-[var(--shadow-lg)]"
         >
-          <MenuContent formId={`${inputId}-desktop`} />
+          <MenuContent />
         </div>
       )}
 
@@ -423,7 +430,7 @@ export function UserAccountMenu() {
               className="fixed inset-x-0 bottom-0 z-50 rounded-t-[24px] border-t border-[var(--line)] bg-[var(--surface)] p-5 pb-[calc(1.5rem+env(safe-area-inset-bottom))] shadow-2xl max-h-[90vh] overflow-y-auto animate-in slide-in-from-bottom duration-200"
             >
               <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-[var(--line)]" />
-              <MenuContent formId={`${inputId}-mobile`} />
+              <MenuContent />
             </div>
           </div>,
           document.body,
