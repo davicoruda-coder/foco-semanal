@@ -87,6 +87,7 @@ export function UserAccountMenu() {
   const [imgError, setImgError] = useState(false);
 
   const containerRef = useRef<HTMLDivElement>(null);
+  const sheetRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -97,16 +98,28 @@ export function UserAccountMenu() {
     setImgError(false);
   }, [user?.avatarUrl]);
 
-  // Fecha o dropdown ao clicar fora no desktop
+  // Trava o scroll do body no mobile enquanto o bottom sheet estiver aberto
+  useEffect(() => {
+    if (!open) return;
+    const isMobile = typeof window !== "undefined" && window.innerWidth < 1024;
+    if (!isMobile) return;
+
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [open]);
+
+  // Fecha o dropdown ao clicar fora no desktop ou fora do bottom sheet no mobile
   useEffect(() => {
     if (!open) return;
     function handleDocClick(e: MouseEvent) {
-      if (
-        containerRef.current &&
-        !containerRef.current.contains(e.target as Node)
-      ) {
-        setOpen(false);
-      }
+      const target = e.target as Node | null;
+      if (!target) return;
+      if (containerRef.current?.contains(target)) return;
+      if (sheetRef.current?.contains(target)) return;
+      setOpen(false);
     }
     document.addEventListener("mousedown", handleDocClick);
     return () => document.removeEventListener("mousedown", handleDocClick);
@@ -207,9 +220,9 @@ export function UserAccountMenu() {
       {/* Cabeçalho com Dados do Usuário e Foto */}
       <div className="flex items-start justify-between gap-3 pb-3 border-b border-[var(--line)]">
         <div className="flex items-center gap-3 min-w-0">
-          {/* Avatar com input nativo transparente sobreposto para toque direto garantido no PWA */}
-          <div
-            className="group/avatar relative block size-12 shrink-0 rounded-full cursor-pointer"
+          {/* Avatar com label nativo e input transparente sobreposto para toque garantido no mobile */}
+          <label
+            className="group/avatar relative block size-12 shrink-0 rounded-full cursor-pointer select-none"
             title="Tocar para escolher foto de perfil"
           >
             {showCustomPhoto ? (
@@ -217,17 +230,17 @@ export function UserAccountMenu() {
                 src={user.avatarUrl}
                 alt="Foto de perfil"
                 onError={() => setImgError(true)}
-                className="size-12 rounded-full object-cover ring-2 ring-[color-mix(in_srgb,var(--signal)_30%,transparent)] transition group-hover/avatar:ring-[var(--signal)]"
+                className="size-12 rounded-full object-cover ring-2 ring-[color-mix(in_srgb,var(--signal)_30%,transparent)] transition group-hover/avatar:ring-[var(--signal)] pointer-events-none"
               />
             ) : (
-              <div className="flex size-12 items-center justify-center rounded-full bg-[var(--signal-soft)] text-sm font-bold text-[var(--signal)] ring-2 ring-[color-mix(in_srgb,var(--signal)_30%,transparent)] transition group-hover/avatar:ring-[var(--signal)]">
+              <div className="flex size-12 items-center justify-center rounded-full bg-[var(--signal-soft)] text-sm font-bold text-[var(--signal)] ring-2 ring-[color-mix(in_srgb,var(--signal)_30%,transparent)] transition group-hover/avatar:ring-[var(--signal)] pointer-events-none">
                 {initials}
               </div>
             )}
 
             {/* Ícone de Câmera sobreposto */}
             <span
-              className="absolute -bottom-1 -right-1 flex size-5.5 items-center justify-center rounded-full bg-[var(--surface)] text-[var(--signal)] shadow-md ring-1 ring-[var(--line)] transition group-hover/avatar:bg-[var(--signal-soft)] group-hover/avatar:ring-[var(--signal)]"
+              className="absolute -bottom-1 -right-1 flex size-5.5 items-center justify-center rounded-full bg-[var(--surface)] text-[var(--signal)] shadow-md ring-1 ring-[var(--line)] transition group-hover/avatar:bg-[var(--signal-soft)] group-hover/avatar:ring-[var(--signal)] pointer-events-none"
               title="Trocar foto"
             >
               {uploadingAvatar ? (
@@ -247,7 +260,7 @@ export function UserAccountMenu() {
               title="Escolher foto de perfil"
               aria-label="Escolher foto de perfil"
             />
-          </div>
+          </label>
 
           <div className="min-w-0">
             <p className="truncate text-sm font-semibold text-[var(--ink)]">
@@ -260,8 +273,8 @@ export function UserAccountMenu() {
               <span className="inline-flex items-center rounded-full bg-[color-mix(in_srgb,var(--signal)_12%,var(--surface))] px-2 py-0.5 text-[10px] font-semibold text-[var(--signal)] ring-1 ring-[color-mix(in_srgb,var(--signal)_30%,transparent)]">
                 Plano Gratuito
               </span>
-              <span className="relative inline-flex items-center">
-                <span className="cursor-pointer text-[11px] font-medium text-[var(--signal)] transition hover:underline">
+              <label className="relative inline-flex items-center cursor-pointer">
+                <span className="text-[11px] font-medium text-[var(--signal)] transition hover:underline">
                   {user.avatarUrl ? "Trocar foto" : "Adicionar foto"}
                 </span>
                 <input
@@ -273,7 +286,7 @@ export function UserAccountMenu() {
                   title="Escolher foto de perfil"
                   aria-label="Escolher foto de perfil"
                 />
-              </span>
+              </label>
               {user.avatarUrl && (
                 <button
                   type="button"
@@ -364,6 +377,7 @@ export function UserAccountMenu() {
         <button
           type="button"
           onClick={() => {
+            setOpen(false);
             setDeletePassword("");
             setDeleteError(null);
             setConfirmDelete(true);
@@ -420,14 +434,17 @@ export function UserAccountMenu() {
         createPortal(
           <div className="lg:hidden">
             <div
-              className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs transition-opacity"
+              className="fixed inset-0 z-40 bg-black/50 backdrop-blur-xs transition-opacity"
               onClick={() => setOpen(false)}
               aria-hidden="true"
             />
             <div
+              ref={sheetRef}
               role="dialog"
+              aria-modal="true"
               aria-label="Gerenciamento de Conta"
               className="fixed inset-x-0 bottom-0 z-50 rounded-t-[24px] border-t border-[var(--line)] bg-[var(--surface)] p-5 pb-[calc(1.5rem+env(safe-area-inset-bottom))] shadow-2xl max-h-[90vh] overflow-y-auto animate-in slide-in-from-bottom duration-200"
+              onClick={(e) => e.stopPropagation()}
             >
               <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-[var(--line)]" />
               <MenuContent />
