@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -60,7 +61,6 @@ function compressAvatar(file: File): Promise<string> {
           const dataUrl = canvas.toDataURL("image/webp", 0.85);
           resolve(dataUrl);
         } catch {
-          // Fallback para JPEG caso WebP não seja gerado pelo browser
           const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
           resolve(dataUrl);
         }
@@ -74,6 +74,7 @@ function compressAvatar(file: File): Promise<string> {
 export function UserAccountMenu() {
   const { user, logout, updateUserAvatar } = useApp();
   const router = useRouter();
+  const [mounted, setMounted] = useState(false);
   const [open, setOpen] = useState(false);
   const [confirmLogout, setConfirmLogout] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -83,9 +84,19 @@ export function UserAccountMenu() {
 
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [avatarError, setAvatarError] = useState<string | null>(null);
+  const [imgError, setImgError] = useState(false);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Se o avatar mudar, reseta o estado de erro
+  useEffect(() => {
+    setImgError(false);
+  }, [user?.avatarUrl]);
 
   // Fecha o dropdown ao clicar fora no desktop
   useEffect(() => {
@@ -115,6 +126,7 @@ export function UserAccountMenu() {
   if (!user) return null;
 
   const initials = getInitials(user.name, user.email);
+  const showCustomPhoto = Boolean(user.avatarUrl && !imgError);
 
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -128,6 +140,7 @@ export function UserAccountMenu() {
       const dataUrl = await compressAvatar(file);
       const ok = await updateUserAvatar(dataUrl);
       if (!ok) throw new Error("Não foi possível salvar a foto no perfil.");
+      setImgError(false);
     } catch (err) {
       setAvatarError(
         err instanceof Error ? err.message : "Erro ao carregar foto.",
@@ -143,6 +156,7 @@ export function UserAccountMenu() {
     setAvatarError(null);
     try {
       await updateUserAvatar(null);
+      setImgError(false);
     } catch {
       setAvatarError("Não foi possível remover a foto.");
     } finally {
@@ -170,7 +184,6 @@ export function UserAccountMenu() {
       setConfirmDelete(false);
       setDeletePassword("");
       setOpen(false);
-      // Limpeza completa do cache local
       if (typeof window !== "undefined") {
         try {
           localStorage.clear();
@@ -188,6 +201,157 @@ export function UserAccountMenu() {
       setDeleteBusy(false);
     }
   }
+
+  // Conteúdo do Menu compartilhado entre Desktop (popover) e Mobile (bottom sheet)
+  const MenuContent = () => (
+    <>
+      {/* Cabeçalho com Dados do Usuário e Foto */}
+      <div className="flex items-start justify-between gap-3 pb-3 border-b border-[var(--line)]">
+        <div className="flex items-center gap-3 min-w-0">
+          {/* Avatar com ação de foto */}
+          <div className="relative shrink-0">
+            {showCustomPhoto ? (
+              <img
+                src={user.avatarUrl}
+                alt="Foto de perfil"
+                onError={() => setImgError(true)}
+                className="size-11 rounded-full object-cover ring-1 ring-[color-mix(in_srgb,var(--signal)_30%,transparent)]"
+              />
+            ) : (
+              <div className="flex size-11 items-center justify-center rounded-full bg-[var(--signal-soft)] text-sm font-bold text-[var(--signal)] ring-1 ring-[color-mix(in_srgb,var(--signal)_30%,transparent)]">
+                {initials}
+              </div>
+            )}
+            {/* Botão de Câmera sobreposto */}
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploadingAvatar}
+              className="absolute -bottom-1 -right-1 flex size-5.5 items-center justify-center rounded-full bg-[var(--surface)] text-[var(--signal)] shadow-sm ring-1 ring-[var(--line)] transition hover:bg-[var(--signal-soft)] hover:ring-[var(--signal)] disabled:opacity-50"
+              title="Trocar foto de perfil"
+              aria-label="Trocar foto de perfil"
+            >
+              {uploadingAvatar ? (
+                <Loader2 size={11} className="animate-spin" />
+              ) : (
+                <Camera size={11} strokeWidth={2.2} />
+              )}
+            </button>
+          </div>
+
+          <div className="min-w-0">
+            <p className="truncate text-sm font-semibold text-[var(--ink)]">
+              {user.name || "Estudante"}
+            </p>
+            <p className="truncate text-xs text-[color-mix(in_srgb,var(--ink)_65%,transparent)]">
+              {user.email}
+            </p>
+            <div className="mt-1 flex items-center gap-2">
+              <span className="inline-flex items-center rounded-full bg-[color-mix(in_srgb,var(--signal)_12%,var(--surface))] px-2 py-0.5 text-[10px] font-semibold text-[var(--signal)] ring-1 ring-[color-mix(in_srgb,var(--signal)_30%,transparent)]">
+                Plano Gratuito
+              </span>
+              {user.avatarUrl && (
+                <button
+                  type="button"
+                  onClick={handleRemoveAvatar}
+                  disabled={uploadingAvatar}
+                  className="text-[10px] text-[color-mix(in_srgb,var(--ink)_55%,transparent)] transition hover:text-[var(--warn)] underline underline-offset-2"
+                >
+                  Remover foto
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => setOpen(false)}
+          className="inline-flex size-7 items-center justify-center rounded-md text-[color-mix(in_srgb,var(--ink)_55%,transparent)] transition hover:bg-[var(--mist)] hover:text-[var(--ink)]"
+          title="Fechar menu"
+          aria-label="Fechar menu"
+        >
+          <X size={16} strokeWidth={2} />
+        </button>
+      </div>
+
+      {avatarError && (
+        <p className="mt-2 text-[11px] font-medium text-[var(--warn)] bg-[color-mix(in_srgb,var(--warn)_8%,transparent)] p-1.5 rounded">
+          {avatarError}
+        </p>
+      )}
+
+      {/* Seção de Navegação e Configurações */}
+      <div className="py-2 space-y-0.5 text-xs text-[var(--ink)]">
+        <Link
+          href="/ajustes"
+          onClick={() => setOpen(false)}
+          className="flex items-center gap-2.5 rounded-lg px-2.5 py-2 font-medium transition hover:bg-[var(--mist)]"
+        >
+          <Settings size={15} strokeWidth={1.8} className="opacity-70" />
+          <span>Ajustes & Notificações</span>
+        </Link>
+
+        <Link
+          href="/ajuda"
+          onClick={() => setOpen(false)}
+          className="flex items-center gap-2.5 rounded-lg px-2.5 py-2 font-medium transition hover:bg-[var(--mist)]"
+        >
+          <CircleHelp size={15} strokeWidth={1.8} className="opacity-70" />
+          <span>Ajuda & Guia de Estudos</span>
+        </Link>
+      </div>
+
+      {/* Links Legais (Obrigatórios Google Play Store) */}
+      <div className="border-t border-[var(--line)] py-2 space-y-0.5 text-xs text-[color-mix(in_srgb,var(--ink)_75%,transparent)]">
+        <Link
+          href="/privacidade"
+          onClick={() => setOpen(false)}
+          className="flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 transition hover:bg-[var(--mist)] hover:text-[var(--ink)]"
+        >
+          <Shield size={14} strokeWidth={1.8} className="opacity-60" />
+          <span>Política de Privacidade</span>
+        </Link>
+
+        <Link
+          href="/termos"
+          onClick={() => setOpen(false)}
+          className="flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 transition hover:bg-[var(--mist)] hover:text-[var(--ink)]"
+        >
+          <FileText size={14} strokeWidth={1.8} className="opacity-60" />
+          <span>Termos de Uso</span>
+        </Link>
+      </div>
+
+      {/* Ações de Segurança e Conta */}
+      <div className="border-t border-[var(--line)] pt-2 space-y-1">
+        <button
+          type="button"
+          onClick={() => {
+            setOpen(false);
+            setConfirmLogout(true);
+          }}
+          className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-xs font-medium text-[var(--ink)] transition hover:bg-[var(--mist)]"
+        >
+          <LogOut size={15} strokeWidth={1.8} className="opacity-70" />
+          <span>Sair da conta</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            setDeletePassword("");
+            setDeleteError(null);
+            setConfirmDelete(true);
+          }}
+          className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-xs font-medium text-[var(--warn)] transition hover:bg-[color-mix(in_srgb,var(--warn)_10%,transparent)]"
+        >
+          <Trash2 size={15} strokeWidth={1.8} />
+          <span>Excluir conta definitivamente</span>
+        </button>
+      </div>
+    </>
+  );
 
   return (
     <div ref={containerRef} className="relative inline-flex items-center">
@@ -210,10 +374,11 @@ export function UserAccountMenu() {
         aria-expanded={open}
         aria-haspopup="dialog"
       >
-        {user.avatarUrl ? (
+        {showCustomPhoto ? (
           <img
             src={user.avatarUrl}
-            alt={user.name || "Foto de perfil"}
+            alt="Foto de perfil"
+            onError={() => setImgError(true)}
             className="size-8.5 rounded-full object-cover ring-1 ring-[color-mix(in_srgb,var(--signal)_30%,transparent)] transition group-hover:ring-[var(--signal)]"
           />
         ) : (
@@ -223,168 +388,38 @@ export function UserAccountMenu() {
         )}
       </button>
 
-      {/* Backdrop no mobile */}
-      {open && (
-        <div
-          className="fixed inset-0 z-40 bg-black/30 backdrop-blur-xs lg:hidden"
-          onClick={() => setOpen(false)}
-          aria-hidden="true"
-        />
-      )}
-
-      {/* Popover / Dropdown (Desktop) ou Bottom Sheet (Mobile) */}
+      {/* Desktop Popover (ancorado logo abaixo do avatar) */}
       {open && (
         <div
           role="dialog"
           aria-label="Gerenciamento de Conta"
-          className="fixed inset-x-3 bottom-4 z-50 rounded-[var(--radius)] border border-[var(--line)] bg-[var(--surface)] p-4 shadow-[var(--shadow-lg)] transition-all sm:inset-x-auto sm:right-0 sm:top-12 sm:bottom-auto sm:w-80 lg:absolute lg:right-0 lg:top-full lg:mt-2"
+          className="hidden lg:block absolute right-0 top-full mt-2 w-80 z-50 rounded-[var(--radius)] border border-[var(--line)] bg-[var(--surface)] p-4 shadow-[var(--shadow-lg)]"
         >
-          {/* Cabeçalho do Menu com Dados do Usuário e Foto */}
-          <div className="flex items-start justify-between gap-3 pb-3 border-b border-[var(--line)]">
-            <div className="flex items-center gap-3 min-w-0">
-              {/* Avatar com ação de foto */}
-              <div className="relative shrink-0">
-                {user.avatarUrl ? (
-                  <img
-                    src={user.avatarUrl}
-                    alt={user.name || "Foto de perfil"}
-                    className="size-11 rounded-full object-cover ring-1 ring-[color-mix(in_srgb,var(--signal)_30%,transparent)]"
-                  />
-                ) : (
-                  <div className="flex size-11 items-center justify-center rounded-full bg-[var(--signal-soft)] text-sm font-bold text-[var(--signal)] ring-1 ring-[color-mix(in_srgb,var(--signal)_30%,transparent)]">
-                    {initials}
-                  </div>
-                )}
-                {/* Botão de Câmera sobreposto */}
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={uploadingAvatar}
-                  className="absolute -bottom-1 -right-1 flex size-5.5 items-center justify-center rounded-full bg-[var(--surface)] text-[var(--signal)] shadow-sm ring-1 ring-[var(--line)] transition hover:bg-[var(--signal-soft)] hover:ring-[var(--signal)] disabled:opacity-50"
-                  title="Trocar foto de perfil"
-                  aria-label="Trocar foto de perfil"
-                >
-                  {uploadingAvatar ? (
-                    <Loader2 size={11} className="animate-spin" />
-                  ) : (
-                    <Camera size={11} strokeWidth={2.2} />
-                  )}
-                </button>
-              </div>
-
-              <div className="min-w-0">
-                <p className="truncate text-sm font-semibold text-[var(--ink)]">
-                  {user.name || "Estudante"}
-                </p>
-                <p className="truncate text-xs text-[color-mix(in_srgb,var(--ink)_65%,transparent)]">
-                  {user.email}
-                </p>
-                <div className="mt-1 flex items-center gap-2">
-                  <span className="inline-flex items-center rounded-full bg-[color-mix(in_srgb,var(--signal)_12%,var(--surface))] px-2 py-0.5 text-[10px] font-semibold text-[var(--signal)] ring-1 ring-[color-mix(in_srgb,var(--signal)_30%,transparent)]">
-                    Plano Gratuito
-                  </span>
-                  {user.avatarUrl && (
-                    <button
-                      type="button"
-                      onClick={handleRemoveAvatar}
-                      disabled={uploadingAvatar}
-                      className="text-[10px] text-[color-mix(in_srgb,var(--ink)_55%,transparent)] transition hover:text-[var(--warn)] underline underline-offset-2"
-                    >
-                      Remover foto
-                    </button>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => setOpen(false)}
-              className="inline-flex size-7 items-center justify-center rounded-md text-[color-mix(in_srgb,var(--ink)_55%,transparent)] transition hover:bg-[var(--mist)] hover:text-[var(--ink)]"
-              title="Fechar menu"
-              aria-label="Fechar menu"
-            >
-              <X size={16} strokeWidth={2} />
-            </button>
-          </div>
-
-          {avatarError && (
-            <p className="mt-2 text-[11px] font-medium text-[var(--warn)] bg-[color-mix(in_srgb,var(--warn)_8%,transparent)] p-1.5 rounded">
-              {avatarError}
-            </p>
-          )}
-
-          {/* Seção de Navegação e Configurações */}
-          <div className="py-2 space-y-0.5 text-xs text-[var(--ink)]">
-            <Link
-              href="/ajustes"
-              onClick={() => setOpen(false)}
-              className="flex items-center gap-2.5 rounded-lg px-2.5 py-2 font-medium transition hover:bg-[var(--mist)]"
-            >
-              <Settings size={15} strokeWidth={1.8} className="opacity-70" />
-              <span>Ajustes & Notificações</span>
-            </Link>
-
-            <Link
-              href="/ajuda"
-              onClick={() => setOpen(false)}
-              className="flex items-center gap-2.5 rounded-lg px-2.5 py-2 font-medium transition hover:bg-[var(--mist)]"
-            >
-              <CircleHelp size={15} strokeWidth={1.8} className="opacity-70" />
-              <span>Ajuda & Guia de Estudos</span>
-            </Link>
-          </div>
-
-          {/* Links Legais (Obrigatórios Google Play Store) */}
-          <div className="border-t border-[var(--line)] py-2 space-y-0.5 text-xs text-[color-mix(in_srgb,var(--ink)_75%,transparent)]">
-            <Link
-              href="/privacidade"
-              onClick={() => setOpen(false)}
-              className="flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 transition hover:bg-[var(--mist)] hover:text-[var(--ink)]"
-            >
-              <Shield size={14} strokeWidth={1.8} className="opacity-60" />
-              <span>Política de Privacidade</span>
-            </Link>
-
-            <Link
-              href="/termos"
-              onClick={() => setOpen(false)}
-              className="flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 transition hover:bg-[var(--mist)] hover:text-[var(--ink)]"
-            >
-              <FileText size={14} strokeWidth={1.8} className="opacity-60" />
-              <span>Termos de Uso</span>
-            </Link>
-          </div>
-
-          {/* Ações de Segurança e Conta */}
-          <div className="border-t border-[var(--line)] pt-2 space-y-1">
-            <button
-              type="button"
-              onClick={() => {
-                setOpen(false);
-                setConfirmLogout(true);
-              }}
-              className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-xs font-medium text-[var(--ink)] transition hover:bg-[var(--mist)]"
-            >
-              <LogOut size={15} strokeWidth={1.8} className="opacity-70" />
-              <span>Sair da conta</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                setDeletePassword("");
-                setDeleteError(null);
-                setConfirmDelete(true);
-              }}
-              className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-xs font-medium text-[var(--warn)] transition hover:bg-[color-mix(in_srgb,var(--warn)_10%,transparent)]"
-            >
-              <Trash2 size={15} strokeWidth={1.8} />
-              <span>Excluir conta definitivamente</span>
-            </button>
-          </div>
+          <MenuContent />
         </div>
       )}
+
+      {/* Mobile Bottom Sheet (renderizado no body via Portal para não ser preso pelo header) */}
+      {mounted &&
+        open &&
+        createPortal(
+          <div className="lg:hidden">
+            <div
+              className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs transition-opacity"
+              onClick={() => setOpen(false)}
+              aria-hidden="true"
+            />
+            <div
+              role="dialog"
+              aria-label="Gerenciamento de Conta"
+              className="fixed inset-x-0 bottom-0 z-50 rounded-t-[24px] border-t border-[var(--line)] bg-[var(--surface)] p-5 pb-[calc(1.5rem+env(safe-area-inset-bottom))] shadow-2xl max-h-[90vh] overflow-y-auto animate-in slide-in-from-bottom duration-200"
+            >
+              <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-[var(--line)]" />
+              <MenuContent />
+            </div>
+          </div>,
+          document.body,
+        )}
 
       {/* Diálogo de confirmação de Logout */}
       <ConfirmDialog

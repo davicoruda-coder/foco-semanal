@@ -181,7 +181,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       uid: string,
       sessionUser: {
         email?: string | null;
-        user_metadata?: { full_name?: string; avatar_url?: string; picture?: string };
+        user_metadata?: { full_name?: string; custom_avatar?: string; avatar_url?: string; picture?: string };
       },
     ) {
       const { createClient } = await import("@/lib/supabase/client");
@@ -218,8 +218,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
             sessionUser.email ||
             "Usuário",
           avatarUrl:
-            sessionUser.user_metadata?.avatar_url ||
-            sessionUser.user_metadata?.picture ||
+            sessionUser.user_metadata?.custom_avatar ||
             undefined,
         });
         setDataState(fallback);
@@ -266,8 +265,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           sessionUser.email ||
           "Usuário",
         avatarUrl:
-          sessionUser.user_metadata?.avatar_url ||
-          sessionUser.user_metadata?.picture ||
+          sessionUser.user_metadata?.custom_avatar ||
           undefined,
       });
       // Se a nuvem ainda não tiver as colunas de peso/ciclo (migration SQL pendente no Supabase),
@@ -579,7 +577,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         const { createClient } = await import("@/lib/supabase/client");
         const supabase = createClient();
         const { error } = await supabase.auth.updateUser({
-          data: { avatar_url: url },
+          data: { custom_avatar: url },
         });
         if (error) throw error;
       }
