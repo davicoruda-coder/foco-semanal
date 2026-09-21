@@ -17,6 +17,7 @@ import { BrandIcon } from "@/components/BrandIcon";
 import { FlashcardsIcon } from "@/components/FlashcardsIcon";
 import { useApp } from "@/components/AppProvider";
 import { LoginScreen } from "@/components/LoginScreen";
+import { UserAccountMenu } from "@/components/UserAccountMenu";
 import { useOpenTransition } from "@/lib/use-open-transition";
 
 /** Desktop: navegação central de trabalho (workflow diário). */
@@ -248,7 +249,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       ) : null}
       <header className="sticky top-0 z-20 border-b border-[var(--line)] bg-[var(--surface)]/95 pt-[env(safe-area-inset-top)] backdrop-blur-md lg:hidden">
-        <div className="mx-auto flex h-12 max-w-lg items-center px-3">
+        <div className="mx-auto flex h-12 max-w-lg items-center justify-between px-3">
           <Link
             href="/hoje"
             className="flex min-w-0 items-center gap-2"
@@ -259,6 +260,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               FocoHub
             </span>
           </Link>
+          <UserAccountMenu />
         </div>
       </header>
 
@@ -353,6 +355,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             >
               <Settings size={18} strokeWidth={1.8} />
             </Link>
+
+            <div className="h-4 w-[1px] bg-[var(--line)] mx-1" aria-hidden="true" />
+
+            <UserAccountMenu />
           </div>
         </div>
       </header>
