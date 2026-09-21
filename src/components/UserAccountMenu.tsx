@@ -15,6 +15,7 @@ import {
   X,
   CircleHelp,
   ChartColumn,
+  ChevronDown,
 } from "lucide-react";
 import { useApp } from "@/components/AppProvider";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
@@ -140,6 +141,14 @@ export function UserAccountMenu() {
 
   const initials = getInitials(user.name, user.email);
   const showCustomPhoto = Boolean(user.avatarUrl && !imgError);
+  const firstName = (() => {
+    const clean = (user.name || "").trim();
+    if (clean && !clean.includes("@")) {
+      return clean.split(/\s+/)[0];
+    }
+    const em = (user.email || "").trim();
+    return em.split("@")[0] || "Conta";
+  })();
 
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -389,11 +398,15 @@ export function UserAccountMenu() {
 
   return (
     <div ref={containerRef} className="relative inline-flex items-center">
-      {/* Botão do Avatar — área de clique acessível (mínimo 44x44px) */}
+      {/* Botão de Perfil — Cápsula Elegante (Foto + Nome + Chevron) */}
       <button
         type="button"
         onClick={() => setOpen((prev) => !prev)}
-        className="group relative flex h-9 w-9 items-center justify-center rounded-full transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--signal)] focus-visible:ring-offset-2"
+        className={`group relative inline-flex h-8.5 items-center gap-2 rounded-full border px-1.5 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--signal)] focus-visible:ring-offset-2 ${
+          open
+            ? "border-[color-mix(in_srgb,var(--signal)_50%,var(--line))] bg-[var(--surface)] shadow-xs"
+            : "border-[var(--line)] bg-[var(--surface)]/80 hover:border-[color-mix(in_srgb,var(--signal)_35%,var(--line))] hover:bg-[var(--mist)] hover:shadow-xs"
+        } max-sm:border-transparent max-sm:bg-transparent max-sm:px-0`}
         title={`Conta: ${user.name || user.email}`}
         aria-label="Menu de conta do usuário"
         aria-expanded={open}
@@ -404,13 +417,26 @@ export function UserAccountMenu() {
             src={user.avatarUrl}
             alt="Foto de perfil"
             onError={() => setImgError(true)}
-            className="size-8.5 rounded-full object-cover ring-2 ring-[color-mix(in_srgb,var(--ink)_14%,transparent)] transition-all duration-200 group-hover:scale-105 group-hover:ring-[var(--signal)] shadow-xs"
+            className="size-7 rounded-full object-cover ring-1 ring-[color-mix(in_srgb,var(--ink)_14%,transparent)] transition-all duration-200 group-hover:scale-105 group-hover:ring-[var(--signal)] shadow-xs"
           />
         ) : (
-          <span className="flex size-8.5 items-center justify-center rounded-full bg-[var(--signal-soft)] text-xs font-semibold tracking-tight text-[var(--signal)] ring-2 ring-[color-mix(in_srgb,var(--ink)_14%,transparent)] transition-all duration-200 group-hover:scale-105 group-hover:ring-[var(--signal)] shadow-xs">
+          <span className="flex size-7 items-center justify-center rounded-full bg-[var(--signal-soft)] text-[11px] font-bold tracking-tight text-[var(--signal)] ring-1 ring-[color-mix(in_srgb,var(--ink)_14%,transparent)] transition-all duration-200 group-hover:scale-105 group-hover:ring-[var(--signal)] shadow-xs">
             {initials}
           </span>
         )}
+
+        <span className="hidden sm:inline-block max-w-[120px] truncate text-xs font-semibold tracking-tight text-[var(--ink)] transition-colors group-hover:text-[var(--signal)]">
+          {firstName}
+        </span>
+
+        <ChevronDown
+          size={13}
+          strokeWidth={2.2}
+          className={`hidden sm:inline-block text-[color-mix(in_srgb,var(--ink)_45%,transparent)] transition-transform duration-200 ${
+            open ? "rotate-180 text-[var(--signal)]" : "group-hover:text-[var(--ink)]"
+          }`}
+          aria-hidden="true"
+        />
       </button>
 
       {/* Desktop Popover (ancorado logo abaixo do avatar) */}
