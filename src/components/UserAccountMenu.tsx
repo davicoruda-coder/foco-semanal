@@ -223,7 +223,7 @@ export function UserAccountMenu() {
           {/* Avatar com label nativo e input transparente sobreposto para toque garantido no mobile */}
           <label
             className="group/avatar relative block size-12 shrink-0 rounded-full cursor-pointer select-none"
-            title="Tocar para escolher foto de perfil"
+            title={user.avatarUrl ? "Trocar foto de perfil" : "Adicionar foto de perfil"}
           >
             {showCustomPhoto ? (
               <img
@@ -241,7 +241,7 @@ export function UserAccountMenu() {
             {/* Ícone de Câmera sobreposto */}
             <span
               className="absolute -bottom-1 -right-1 flex size-5.5 items-center justify-center rounded-full bg-[var(--surface)] text-[var(--signal)] shadow-md ring-1 ring-[var(--line)] transition group-hover/avatar:bg-[var(--signal-soft)] group-hover/avatar:ring-[var(--signal)] pointer-events-none"
-              title="Trocar foto"
+              title={user.avatarUrl ? "Trocar foto" : "Adicionar foto"}
             >
               {uploadingAvatar ? (
                 <Loader2 size={11} className="animate-spin" />
@@ -257,8 +257,8 @@ export function UserAccountMenu() {
               className="absolute inset-0 z-20 size-full cursor-pointer opacity-0 rounded-full"
               onChange={handleFileChange}
               disabled={uploadingAvatar}
-              title="Escolher foto de perfil"
-              aria-label="Escolher foto de perfil"
+              title={user.avatarUrl ? "Trocar foto de perfil" : "Adicionar foto de perfil"}
+              aria-label={user.avatarUrl ? "Trocar foto de perfil" : "Adicionar foto de perfil"}
             />
           </label>
 
@@ -273,20 +273,6 @@ export function UserAccountMenu() {
               <span className="inline-flex items-center rounded-full bg-[color-mix(in_srgb,var(--signal)_12%,var(--surface))] px-2 py-0.5 text-[10px] font-semibold text-[var(--signal)] ring-1 ring-[color-mix(in_srgb,var(--signal)_30%,transparent)]">
                 Plano Gratuito
               </span>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <span className="text-[11px] font-medium text-[var(--signal)] transition hover:underline">
-                  {user.avatarUrl ? "Trocar foto" : "Adicionar foto"}
-                </span>
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="absolute inset-0 z-10 size-full cursor-pointer opacity-0"
-                  onChange={handleFileChange}
-                  disabled={uploadingAvatar}
-                  title="Escolher foto de perfil"
-                  aria-label="Escolher foto de perfil"
-                />
-              </label>
               {user.avatarUrl && (
                 <button
                   type="button"
@@ -294,7 +280,7 @@ export function UserAccountMenu() {
                   disabled={uploadingAvatar}
                   className="text-[11px] text-[color-mix(in_srgb,var(--ink)_55%,transparent)] transition hover:text-[var(--warn)] underline underline-offset-2"
                 >
-                  Remover
+                  Remover foto
                 </button>
               )}
             </div>
