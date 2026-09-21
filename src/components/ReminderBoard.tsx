@@ -204,9 +204,10 @@ function NoteCard({
   }
 
   // Notas de estudo: cor misturada no mist — suave ("Mesa do Ciclo"), sem post-it gritante, legível em claro/escuro.
-  const cardBg = `color-mix(in srgb, ${currentColor} 36%, var(--mist))`;
+  const colorWeight = compact ? "18%" : "34%";
+  const cardBg = `color-mix(in srgb, ${currentColor} ${colorWeight}, var(--mist))`;
   const cardInk = "var(--ink)";
-  const cardBorder = `1px solid color-mix(in srgb, ${currentColor} 28%, var(--line))`;
+  const cardBorder = `1px solid color-mix(in srgb, ${currentColor} ${compact ? "20%" : "28%"}, var(--line))`;
 
   return (
     <article

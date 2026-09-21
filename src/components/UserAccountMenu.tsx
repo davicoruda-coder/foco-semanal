@@ -14,6 +14,7 @@ import {
   Trash2,
   X,
   CircleHelp,
+  ChartColumn,
 } from "lucide-react";
 import { useApp } from "@/components/AppProvider";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
@@ -307,6 +308,15 @@ export function UserAccountMenu() {
       {/* Seção de Navegação e Configurações */}
       <div className="py-2 space-y-0.5 text-xs text-[var(--ink)]">
         <Link
+          href="/estatisticas"
+          onClick={() => setOpen(false)}
+          className="flex items-center gap-2.5 rounded-lg px-2.5 py-2 font-medium transition hover:bg-[var(--mist)]"
+        >
+          <ChartColumn size={15} strokeWidth={1.8} className="opacity-70" />
+          <span>Estatísticas de Foco</span>
+        </Link>
+
+        <Link
           href="/ajustes"
           onClick={() => setOpen(false)}
           className="flex items-center gap-2.5 rounded-lg px-2.5 py-2 font-medium transition hover:bg-[var(--mist)]"
@@ -383,7 +393,7 @@ export function UserAccountMenu() {
       <button
         type="button"
         onClick={() => setOpen((prev) => !prev)}
-        className="group relative flex h-10 w-10 items-center justify-center rounded-full transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--signal)] focus-visible:ring-offset-2"
+        className="group relative flex h-9 w-9 items-center justify-center rounded-full transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--signal)] focus-visible:ring-offset-2"
         title={`Conta: ${user.name || user.email}`}
         aria-label="Menu de conta do usuário"
         aria-expanded={open}
@@ -394,10 +404,10 @@ export function UserAccountMenu() {
             src={user.avatarUrl}
             alt="Foto de perfil"
             onError={() => setImgError(true)}
-            className="size-8.5 rounded-full object-cover ring-1 ring-[color-mix(in_srgb,var(--signal)_30%,transparent)] transition group-hover:ring-[var(--signal)]"
+            className="size-8.5 rounded-full object-cover ring-2 ring-[color-mix(in_srgb,var(--ink)_14%,transparent)] transition-all duration-200 group-hover:scale-105 group-hover:ring-[var(--signal)] shadow-xs"
           />
         ) : (
-          <span className="flex size-8.5 items-center justify-center rounded-full bg-[var(--signal-soft)] text-xs font-semibold tracking-tight text-[var(--signal)] ring-1 ring-[color-mix(in_srgb,var(--signal)_30%,transparent)] transition group-hover:ring-[var(--signal)]">
+          <span className="flex size-8.5 items-center justify-center rounded-full bg-[var(--signal-soft)] text-xs font-semibold tracking-tight text-[var(--signal)] ring-2 ring-[color-mix(in_srgb,var(--ink)_14%,transparent)] transition-all duration-200 group-hover:scale-105 group-hover:ring-[var(--signal)] shadow-xs">
             {initials}
           </span>
         )}

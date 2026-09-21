@@ -174,20 +174,20 @@ export default function HojePage() {
               </button>
               <button
                 type="button"
-                title={showFullWeek ? "Mostrar hoje" : "Mostrar semana toda"}
+                title={showFullWeek ? "Mostrar apenas hoje" : "Mostrar grade da semana toda"}
                 aria-label={
-                  showFullWeek ? "Mostrar hoje" : "Mostrar semana toda"
+                  showFullWeek ? "Mostrar apenas hoje" : "Mostrar grade da semana toda"
                 }
-                className="inline-flex min-h-10 items-center gap-1 rounded-full bg-[color-mix(in_srgb,var(--ink)_8%,transparent)] px-3.5 py-2 text-sm font-medium text-[color-mix(in_srgb,var(--ink)_70%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--ink)_12%,transparent)] hover:text-[var(--ink)] md:min-h-0 md:rounded-[var(--radius-tag)] md:px-2 md:py-1 md:text-xs"
+                className="inline-flex min-h-10 items-center gap-1 rounded-full bg-[color-mix(in_srgb,var(--ink)_8%,transparent)] px-3.5 py-2 text-sm font-medium text-[color-mix(in_srgb,var(--ink)_70%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--ink)_12%,transparent)] hover:text-[var(--ink)] md:min-h-0 md:rounded-[var(--radius-tag)] md:px-2.5 md:py-1 md:text-xs"
                 onClick={() => setWeekOverride(showFullWeek ? false : true)}
               >
                 {showFullWeek ? (
                   <>
-                    <ChevronUp size={14} strokeWidth={2} /> Hoje
+                    <ChevronUp size={14} strokeWidth={2} /> Ocultar grade
                   </>
                 ) : (
                   <>
-                    <ChevronDown size={14} strokeWidth={2} /> Semana
+                    <ChevronDown size={14} strokeWidth={2} /> Grade semanal
                   </>
                 )}
               </button>

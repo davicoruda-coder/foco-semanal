@@ -310,53 +310,21 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </nav>
 
           {/* Utilidades e Ações Secundárias à Direita */}
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-2">
             <Link
               href="/estatisticas"
               title="Estatísticas de Foco"
               aria-label="Estatísticas"
               aria-current={desktopNavActive(pathname, "/estatisticas") ? "page" : undefined}
-              className={`inline-flex h-8.5 items-center gap-1.5 rounded-lg px-2.5 text-xs font-medium transition ${
+              className={`inline-flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-xs font-medium transition ${
                 desktopNavActive(pathname, "/estatisticas")
                   ? "bg-[var(--signal-soft)] text-[var(--signal)] font-semibold"
-                  : "text-[color-mix(in_srgb,var(--ink)_60%,transparent)] hover:bg-[var(--mist)] hover:text-[var(--ink)]"
+                  : "text-[color-mix(in_srgb,var(--ink)_65%,transparent)] hover:bg-[var(--mist)] hover:text-[var(--ink)]"
               }`}
             >
-              <ChartColumn size={16} strokeWidth={1.8} />
-              <span className="hidden xl:inline">Estatísticas</span>
+              <ChartColumn size={15} strokeWidth={1.8} />
+              <span className="hidden sm:inline">Estatísticas</span>
             </Link>
-
-            <div className="h-4 w-[1px] bg-[var(--line)] mx-1" aria-hidden="true" />
-
-            <Link
-              href="/ajuda"
-              title="Ajuda & Guia"
-              aria-label="Ajuda"
-              aria-current={desktopNavActive(pathname, "/ajuda") ? "page" : undefined}
-              className={`inline-flex h-8.5 w-8.5 items-center justify-center rounded-lg text-[color-mix(in_srgb,var(--ink)_60%,transparent)] transition hover:bg-[var(--mist)] hover:text-[var(--ink)] ${
-                desktopNavActive(pathname, "/ajuda")
-                  ? "bg-[var(--signal-soft)] text-[var(--signal)]"
-                  : ""
-              }`}
-            >
-              <CircleHelp size={18} strokeWidth={1.8} />
-            </Link>
-
-            <Link
-              href="/ajustes"
-              title="Ajustes e Configurações"
-              aria-label="Ajustes"
-              aria-current={desktopNavActive(pathname, "/ajustes") ? "page" : undefined}
-              className={`inline-flex h-8.5 w-8.5 items-center justify-center rounded-lg text-[color-mix(in_srgb,var(--ink)_60%,transparent)] transition hover:bg-[var(--mist)] hover:text-[var(--ink)] ${
-                desktopNavActive(pathname, "/ajustes")
-                  ? "bg-[var(--signal-soft)] text-[var(--signal)]"
-                  : ""
-              }`}
-            >
-              <Settings size={18} strokeWidth={1.8} />
-            </Link>
-
-            <div className="h-4 w-[1px] bg-[var(--line)] mx-1" aria-hidden="true" />
 
             <UserAccountMenu />
           </div>
