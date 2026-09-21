@@ -309,23 +309,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             })}
           </nav>
 
-          {/* Utilidades e Ações Secundárias à Direita */}
-          <div className="flex items-center gap-2">
-            <Link
-              href="/estatisticas"
-              title="Estatísticas de Foco"
-              aria-label="Estatísticas"
-              aria-current={desktopNavActive(pathname, "/estatisticas") ? "page" : undefined}
-              className={`inline-flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-xs font-medium transition ${
-                desktopNavActive(pathname, "/estatisticas")
-                  ? "bg-[var(--signal-soft)] text-[var(--signal)] font-semibold"
-                  : "text-[color-mix(in_srgb,var(--ink)_65%,transparent)] hover:bg-[var(--mist)] hover:text-[var(--ink)]"
-              }`}
-            >
-              <ChartColumn size={15} strokeWidth={1.8} />
-              <span className="hidden sm:inline">Estatísticas</span>
-            </Link>
-
+          {/* Perfil e Conta do Usuário */}
+          <div className="flex items-center">
             <UserAccountMenu />
           </div>
         </div>
