@@ -4,7 +4,9 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
+  Camera,
   FileText,
+  Loader2,
   LogOut,
   Settings,
   Shield,
@@ -29,8 +31,48 @@ function getInitials(name: string, email: string) {
   return (em[0] || "U").toUpperCase();
 }
 
+/**
+ * Comprime e recorta a imagem para um avatar circular de 160x160px.
+ * Mantém alta nitidez em telas retina mas gera um arquivo de ~10 a 15 KB (WebP).
+ */
+function compressAvatar(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error("Falha ao ler o arquivo de imagem."));
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onerror = () => reject(new Error("Arquivo de imagem corrompido ou inválido."));
+      img.onload = () => {
+        const size = 160;
+        const canvas = document.createElement("canvas");
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return reject(new Error("Canvas não suportado."));
+
+        // Recorte centralizado quadrado proporcional (cover)
+        const minSide = Math.min(img.width, img.height);
+        const sx = (img.width - minSide) / 2;
+        const sy = (img.height - minSide) / 2;
+
+        ctx.drawImage(img, sx, sy, minSide, minSide, 0, 0, size, size);
+        try {
+          const dataUrl = canvas.toDataURL("image/webp", 0.85);
+          resolve(dataUrl);
+        } catch {
+          // Fallback para JPEG caso WebP não seja gerado pelo browser
+          const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
+          resolve(dataUrl);
+        }
+      };
+      img.src = e.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
 export function UserAccountMenu() {
-  const { user, logout } = useApp();
+  const { user, logout, updateUserAvatar } = useApp();
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [confirmLogout, setConfirmLogout] = useState(false);
@@ -39,7 +81,11 @@ export function UserAccountMenu() {
   const [deleteBusy, setDeleteBusy] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [avatarError, setAvatarError] = useState<string | null>(null);
+
   const containerRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Fecha o dropdown ao clicar fora no desktop
   useEffect(() => {
@@ -69,6 +115,40 @@ export function UserAccountMenu() {
   if (!user) return null;
 
   const initials = getInitials(user.name, user.email);
+
+  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingAvatar(true);
+    setAvatarError(null);
+    try {
+      if (!file.type.startsWith("image/")) {
+        throw new Error("Selecione um arquivo de imagem válido (JPG, PNG ou WebP).");
+      }
+      const dataUrl = await compressAvatar(file);
+      const ok = await updateUserAvatar(dataUrl);
+      if (!ok) throw new Error("Não foi possível salvar a foto no perfil.");
+    } catch (err) {
+      setAvatarError(
+        err instanceof Error ? err.message : "Erro ao carregar foto.",
+      );
+    } finally {
+      setUploadingAvatar(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  }
+
+  async function handleRemoveAvatar() {
+    setUploadingAvatar(true);
+    setAvatarError(null);
+    try {
+      await updateUserAvatar(null);
+    } catch {
+      setAvatarError("Não foi possível remover a foto.");
+    } finally {
+      setUploadingAvatar(false);
+    }
+  }
 
   async function handleDeleteAccount() {
     if (!deletePassword.trim()) {
@@ -111,6 +191,15 @@ export function UserAccountMenu() {
 
   return (
     <div ref={containerRef} className="relative inline-flex items-center">
+      {/* Input oculto para seleção de foto */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={handleFileChange}
+      />
+
       {/* Botão do Avatar — área de clique acessível (mínimo 44x44px) */}
       <button
         type="button"
@@ -121,9 +210,17 @@ export function UserAccountMenu() {
         aria-expanded={open}
         aria-haspopup="dialog"
       >
-        <span className="flex size-8.5 items-center justify-center rounded-full bg-[var(--signal-soft)] text-xs font-semibold tracking-tight text-[var(--signal)] ring-1 ring-[color-mix(in_srgb,var(--signal)_30%,transparent)] transition group-hover:ring-[var(--signal)]">
-          {initials}
-        </span>
+        {user.avatarUrl ? (
+          <img
+            src={user.avatarUrl}
+            alt={user.name || "Foto de perfil"}
+            className="size-8.5 rounded-full object-cover ring-1 ring-[color-mix(in_srgb,var(--signal)_30%,transparent)] transition group-hover:ring-[var(--signal)]"
+          />
+        ) : (
+          <span className="flex size-8.5 items-center justify-center rounded-full bg-[var(--signal-soft)] text-xs font-semibold tracking-tight text-[var(--signal)] ring-1 ring-[color-mix(in_srgb,var(--signal)_30%,transparent)] transition group-hover:ring-[var(--signal)]">
+            {initials}
+          </span>
+        )}
       </button>
 
       {/* Backdrop no mobile */}
@@ -142,12 +239,39 @@ export function UserAccountMenu() {
           aria-label="Gerenciamento de Conta"
           className="fixed inset-x-3 bottom-4 z-50 rounded-[var(--radius)] border border-[var(--line)] bg-[var(--surface)] p-4 shadow-[var(--shadow-lg)] transition-all sm:inset-x-auto sm:right-0 sm:top-12 sm:bottom-auto sm:w-80 lg:absolute lg:right-0 lg:top-full lg:mt-2"
         >
-          {/* Cabeçalho do Menu com Dados do Usuário */}
+          {/* Cabeçalho do Menu com Dados do Usuário e Foto */}
           <div className="flex items-start justify-between gap-3 pb-3 border-b border-[var(--line)]">
             <div className="flex items-center gap-3 min-w-0">
-              <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[var(--signal-soft)] text-sm font-bold text-[var(--signal)] ring-1 ring-[color-mix(in_srgb,var(--signal)_30%,transparent)]">
-                {initials}
+              {/* Avatar com ação de foto */}
+              <div className="relative shrink-0">
+                {user.avatarUrl ? (
+                  <img
+                    src={user.avatarUrl}
+                    alt={user.name || "Foto de perfil"}
+                    className="size-11 rounded-full object-cover ring-1 ring-[color-mix(in_srgb,var(--signal)_30%,transparent)]"
+                  />
+                ) : (
+                  <div className="flex size-11 items-center justify-center rounded-full bg-[var(--signal-soft)] text-sm font-bold text-[var(--signal)] ring-1 ring-[color-mix(in_srgb,var(--signal)_30%,transparent)]">
+                    {initials}
+                  </div>
+                )}
+                {/* Botão de Câmera sobreposto */}
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploadingAvatar}
+                  className="absolute -bottom-1 -right-1 flex size-5.5 items-center justify-center rounded-full bg-[var(--surface)] text-[var(--signal)] shadow-sm ring-1 ring-[var(--line)] transition hover:bg-[var(--signal-soft)] hover:ring-[var(--signal)] disabled:opacity-50"
+                  title="Trocar foto de perfil"
+                  aria-label="Trocar foto de perfil"
+                >
+                  {uploadingAvatar ? (
+                    <Loader2 size={11} className="animate-spin" />
+                  ) : (
+                    <Camera size={11} strokeWidth={2.2} />
+                  )}
+                </button>
               </div>
+
               <div className="min-w-0">
                 <p className="truncate text-sm font-semibold text-[var(--ink)]">
                   {user.name || "Estudante"}
@@ -155,10 +279,20 @@ export function UserAccountMenu() {
                 <p className="truncate text-xs text-[color-mix(in_srgb,var(--ink)_65%,transparent)]">
                   {user.email}
                 </p>
-                <div className="mt-1">
+                <div className="mt-1 flex items-center gap-2">
                   <span className="inline-flex items-center rounded-full bg-[color-mix(in_srgb,var(--signal)_12%,var(--surface))] px-2 py-0.5 text-[10px] font-semibold text-[var(--signal)] ring-1 ring-[color-mix(in_srgb,var(--signal)_30%,transparent)]">
                     Plano Gratuito
                   </span>
+                  {user.avatarUrl && (
+                    <button
+                      type="button"
+                      onClick={handleRemoveAvatar}
+                      disabled={uploadingAvatar}
+                      className="text-[10px] text-[color-mix(in_srgb,var(--ink)_55%,transparent)] transition hover:text-[var(--warn)] underline underline-offset-2"
+                    >
+                      Remover foto
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
@@ -173,6 +307,12 @@ export function UserAccountMenu() {
               <X size={16} strokeWidth={2} />
             </button>
           </div>
+
+          {avatarError && (
+            <p className="mt-2 text-[11px] font-medium text-[var(--warn)] bg-[color-mix(in_srgb,var(--warn)_8%,transparent)] p-1.5 rounded">
+              {avatarError}
+            </p>
+          )}
 
           {/* Seção de Navegação e Configurações */}
           <div className="py-2 space-y-0.5 text-xs text-[var(--ink)]">

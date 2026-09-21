@@ -59,7 +59,7 @@ import type {
   WeekBlock,
 } from "@/lib/types";
 
-type User = { id: string; email: string; name: string };
+type User = { id: string; email: string; name: string; avatarUrl?: string };
 
 const THEME_KEY = "foco_semanal_theme";
 
@@ -97,6 +97,7 @@ type AppContextValue = {
   themePref: ThemePref;
   setTheme: (pref: ThemePref) => void;
   logout: () => void;
+  updateUserAvatar: (url: string | null) => Promise<boolean>;
   setData: (updater: (prev: AppData) => AppData) => void;
   upsertSubject: (subject: Partial<Subject> & { name: string }) => void;
   /** Marca status; Ok no último do ciclo de hoje → todos (incluindo o último) voltam pra Próx. */
@@ -180,7 +181,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       uid: string,
       sessionUser: {
         email?: string | null;
-        user_metadata?: { full_name?: string };
+        user_metadata?: { full_name?: string; avatar_url?: string; picture?: string };
       },
     ) {
       const { createClient } = await import("@/lib/supabase/client");
@@ -216,6 +217,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
             sessionUser.user_metadata?.full_name ||
             sessionUser.email ||
             "Usuário",
+          avatarUrl:
+            sessionUser.user_metadata?.avatar_url ||
+            sessionUser.user_metadata?.picture ||
+            undefined,
         });
         setDataState(fallback);
         setCloudSync({
@@ -260,6 +265,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
           sessionUser.user_metadata?.full_name ||
           sessionUser.email ||
           "Usuário",
+        avatarUrl:
+          sessionUser.user_metadata?.avatar_url ||
+          sessionUser.user_metadata?.picture ||
+          undefined,
       });
       // Se a nuvem ainda não tiver as colunas de peso/ciclo (migration SQL pendente no Supabase),
       // preserva o peso/ciclo que o usuário já configurou localmente em vez de resetar.
@@ -562,6 +571,24 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setDataState(createDefaultData());
       setGuestMode(false);
     })();
+  }, []);
+
+  const updateUserAvatar = useCallback(async (url: string | null) => {
+    try {
+      if (isSupabaseConfigured()) {
+        const { createClient } = await import("@/lib/supabase/client");
+        const supabase = createClient();
+        const { error } = await supabase.auth.updateUser({
+          data: { avatar_url: url },
+        });
+        if (error) throw error;
+      }
+      setUser((prev) => (prev ? { ...prev, avatarUrl: url ?? undefined } : null));
+      return true;
+    } catch (err) {
+      console.error("[foco] falha ao atualizar avatar:", err);
+      return false;
+    }
   }, []);
 
   const exportBackup = useCallback(() => {
@@ -1010,6 +1037,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       importBackup,
       resetCloudData,
       cloudSync,
+      updateUserAvatar,
     }),
     [
       ready,
@@ -1020,6 +1048,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       themePref,
       setTheme,
       logout,
+      updateUserAvatar,
       setData,
       softDelete,
       exportBackup,
