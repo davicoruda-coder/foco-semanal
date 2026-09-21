@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { useApp } from "@/components/AppProvider";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { DialogFrame } from "@/components/DialogFrame";
 
 function getInitials(name: string, email: string) {
   const clean = (name || "").trim();
@@ -34,6 +35,7 @@ export function UserAccountMenu() {
   const [open, setOpen] = useState(false);
   const [confirmLogout, setConfirmLogout] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deletePassword, setDeletePassword] = useState("");
   const [deleteBusy, setDeleteBusy] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
@@ -69,15 +71,24 @@ export function UserAccountMenu() {
   const initials = getInitials(user.name, user.email);
 
   async function handleDeleteAccount() {
+    if (!deletePassword.trim()) {
+      setDeleteError("Digite sua senha para autorizar a exclusão.");
+      return;
+    }
     setDeleteBusy(true);
     setDeleteError(null);
     try {
-      const res = await fetch("/api/account/delete", { method: "POST" });
+      const res = await fetch("/api/account/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password: deletePassword }),
+      });
       const data = await res.json();
       if (!res.ok || !data.ok) {
         throw new Error(data.error || "Não foi possível excluir a conta.");
       }
       setConfirmDelete(false);
+      setDeletePassword("");
       setOpen(false);
       // Limpeza completa do cache local
       if (typeof window !== "undefined") {
@@ -222,6 +233,7 @@ export function UserAccountMenu() {
             <button
               type="button"
               onClick={() => {
+                setDeletePassword("");
                 setDeleteError(null);
                 setConfirmDelete(true);
               }}
@@ -248,25 +260,98 @@ export function UserAccountMenu() {
         }}
       />
 
-      {/* Diálogo de confirmação de Exclusão Definitiva (Google Play Account Deletion) */}
-      <ConfirmDialog
+      {/* Modal de Exclusão Definitiva com confirmação de senha */}
+      <DialogFrame
         open={confirmDelete}
-        title="Excluir conta permanentemente?"
-        message={
-          deleteError
-            ? `Erro: ${deleteError}`
-            : "Esta ação é irreversível. Todas as suas matérias, ciclos, sessões registradas e notas serão apagadas permanentemente do servidor e o seu login será desativado."
-        }
-        confirmLabel={deleteBusy ? "Excluindo…" : "Excluir permanentemente"}
-        cancelLabel="Cancelar"
-        onCancel={() => {
+        onClose={() => {
           if (!deleteBusy) {
             setConfirmDelete(false);
+            setDeletePassword("");
             setDeleteError(null);
           }
         }}
-        onConfirm={handleDeleteAccount}
-      />
+        labelledBy="delete-account-title"
+        cardClassName="surface w-full max-w-md p-6 shadow-[var(--shadow-lg)] border border-[var(--line)]"
+      >
+        <div className="flex items-center gap-3 text-[var(--warn)]">
+          <div className="flex size-10 items-center justify-center rounded-xl bg-[color-mix(in_srgb,var(--warn)_15%,transparent)]">
+            <Trash2 size={20} />
+          </div>
+          <div>
+            <h2
+              id="delete-account-title"
+              className="font-display text-lg font-bold text-[var(--ink)]"
+            >
+              Excluir conta permanentemente?
+            </h2>
+            <p className="text-xs text-[var(--warn)] font-medium">
+              Ação irreversível
+            </p>
+          </div>
+        </div>
+
+        <p className="mt-3 text-xs leading-relaxed text-[color-mix(in_srgb,var(--ink)_75%,transparent)]">
+          Todas as suas matérias, blocos de ciclo, registros de tempo, anotações
+          e lembretes serão <strong>apagados para sempre</strong> e sua conta
+          no FocoHub será encerrada.
+        </p>
+
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleDeleteAccount();
+          }}
+          className="mt-4 space-y-3"
+        >
+          <div>
+            <label
+              htmlFor="delete-account-password"
+              className="block text-xs font-semibold text-[var(--ink)] mb-1"
+            >
+              Confirme sua senha para autorizar:
+            </label>
+            <input
+              id="delete-account-password"
+              type="password"
+              autoComplete="current-password"
+              placeholder="Digite sua senha de acesso…"
+              value={deletePassword}
+              onChange={(e) => setDeletePassword(e.target.value)}
+              className="input w-full px-3 py-2 text-sm"
+              disabled={deleteBusy}
+              autoFocus
+            />
+          </div>
+
+          {deleteError && (
+            <p className="text-xs font-medium text-[var(--warn)]" role="alert">
+              {deleteError}
+            </p>
+          )}
+
+          <div className="mt-6 flex flex-wrap items-center justify-end gap-2 pt-2 border-t border-[var(--line)]">
+            <button
+              type="button"
+              className="btn"
+              disabled={deleteBusy}
+              onClick={() => {
+                setConfirmDelete(false);
+                setDeletePassword("");
+                setDeleteError(null);
+              }}
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              disabled={deleteBusy || deletePassword.trim().length === 0}
+              className="btn border-[var(--warn)] bg-[color-mix(in_srgb,var(--warn)_14%,var(--surface))] text-[var(--warn)] font-semibold hover:bg-[var(--warn)] hover:text-white disabled:opacity-40"
+            >
+              {deleteBusy ? "Excluindo…" : "Excluir permanentemente"}
+            </button>
+          </div>
+        </form>
+      </DialogFrame>
     </div>
   );
 }

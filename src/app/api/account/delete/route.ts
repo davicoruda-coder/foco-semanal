@@ -3,19 +3,41 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
 /**
- * Endpoint de exclusão definitiva de conta.
- * Requisito obrigatório da Google Play Store (Account Deletion Policy).
- * Remove o usuário do Supabase Auth e cascateia a remoção de todos os dados do banco.
+ * Endpoint de exclusão definitiva de conta com confirmação obrigatória de senha.
+ * Requisito de alta segurança e conformidade com Google Play Store.
  */
-export async function POST() {
+export async function POST(request: Request) {
   try {
     const supabase = await createClient();
     const { data: authData, error: authError } = await supabase.auth.getUser();
 
-    if (authError || !authData.user) {
+    if (authError || !authData.user || !authData.user.email) {
       return NextResponse.json(
         { error: "Não autorizado ou sessão expirada." },
         { status: 401 },
+      );
+    }
+
+    const body = await request.json().catch(() => ({}));
+    const password = typeof body.password === "string" ? body.password.trim() : "";
+
+    if (!password) {
+      return NextResponse.json(
+        { error: "A senha é obrigatória para autorizar a exclusão da conta." },
+        { status: 400 },
+      );
+    }
+
+    // Valida criptograficamente se a senha confere com a conta no Supabase
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email: authData.user.email,
+      password,
+    });
+
+    if (signInError) {
+      return NextResponse.json(
+        { error: "Senha incorreta. A conta não foi excluída por segurança." },
+        { status: 403 },
       );
     }
 
