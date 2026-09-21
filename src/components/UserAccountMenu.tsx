@@ -398,15 +398,15 @@ export function UserAccountMenu() {
 
   return (
     <div ref={containerRef} className="relative inline-flex items-center">
-      {/* Botão de Perfil — Cápsula Elegante (Foto + Nome + Chevron) */}
+      {/* Botão de Perfil — Cápsula Elegante no Desktop e Bolinha com Tap Target Ergonômico no Mobile */}
       <button
         type="button"
         onClick={() => setOpen((prev) => !prev)}
-        className={`group relative inline-flex h-8.5 items-center gap-2 rounded-full border px-1.5 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--signal)] focus-visible:ring-offset-2 ${
+        className={`group relative inline-flex items-center gap-2 rounded-full border transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--signal)] focus-visible:ring-offset-2 active:scale-95 ${
           open
             ? "border-[color-mix(in_srgb,var(--signal)_50%,var(--line))] bg-[var(--surface)] shadow-xs"
             : "border-[var(--line)] bg-[var(--surface)]/80 hover:border-[color-mix(in_srgb,var(--signal)_35%,var(--line))] hover:bg-[var(--mist)] hover:shadow-xs"
-        } max-sm:border-transparent max-sm:bg-transparent max-sm:px-0`}
+        } max-sm:size-9 max-sm:justify-center max-sm:border-transparent max-sm:bg-transparent max-sm:p-0 sm:h-8.5 sm:px-1.5`}
         title={`Conta: ${user.name || user.email}`}
         aria-label="Menu de conta do usuário"
         aria-expanded={open}
