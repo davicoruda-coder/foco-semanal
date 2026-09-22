@@ -32,10 +32,10 @@ export function ConfirmDialog({
 
   const confirmBtnClass =
     snap.confirmVariant === "signal"
-      ? "btn border-transparent bg-[var(--signal)] text-white hover:opacity-95 shadow-[var(--shadow-sm)]"
+      ? "btn btn-primary"
       : snap.confirmVariant === "danger"
         ? "btn border-rose-500 bg-rose-500/10 text-rose-600 dark:text-rose-400 hover:bg-rose-500/20"
-        : "btn border-[var(--warn)] bg-[color-mix(in_srgb,var(--warn)_12%,var(--surface))] text-[var(--warn)]";
+        : "btn border-[var(--warn)] bg-[color-mix(in_srgb,var(--warn)_12%,var(--surface))] text-[var(--warn)] hover:bg-[color-mix(in_srgb,var(--warn)_20%,var(--surface))]";
 
   return (
     <DialogFrame
@@ -47,10 +47,10 @@ export function ConfirmDialog({
       <h2 id="confirm-title" className="font-display text-xl font-semibold">
         {snap.title}
       </h2>
-      <p className="mt-2 text-sm text-[color-mix(in_srgb,var(--ink)_70%,transparent)]">
+      <p className="mt-2 text-sm text-[color-mix(in_srgb,var(--ink)_70%,transparent)] leading-relaxed">
         {snap.message}
       </p>
-      <div className="mt-6 flex flex-wrap justify-end gap-2">
+      <div className="mt-6 flex items-center justify-end gap-2.5">
         <button type="button" className="btn" onClick={onCancel}>
           {snap.cancelLabel}
         </button>

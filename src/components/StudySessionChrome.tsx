@@ -145,14 +145,15 @@ export function StudySessionBar() {
   }
 
   const confirmProps = useMemo(() => {
+    const currentName = currentLive?.name?.trim();
     if (confirmAction === "skip") {
       return {
         title: "Concluir matéria e avançar?",
-        message: currentLive?.name
-          ? `Deseja concluir "${currentLive.name}" e avançar no ciclo de estudos?`
+        message: currentName
+          ? `Deseja concluir "${currentName}" e avançar no ciclo de estudos?`
           : "Deseja concluir a matéria atual e avançar no ciclo de estudos?",
-        confirmLabel: "Concluir e avançar",
-        cancelLabel: "Continuar estudando",
+        confirmLabel: "Avançar",
+        cancelLabel: "Cancelar",
         confirmVariant: "signal" as const,
       };
     }
@@ -161,7 +162,7 @@ export function StudySessionBar() {
         title: "Reiniciar bloco de estudos?",
         message:
           "Os cronômetros e o progresso das matérias deste bloco voltarão ao início. Deseja recomeçar?",
-        confirmLabel: "Sim, reiniciar",
+        confirmLabel: "Reiniciar bloco",
         cancelLabel: "Cancelar",
         confirmVariant: "warn" as const,
       };
@@ -171,8 +172,8 @@ export function StudySessionBar() {
         title: "Encerrar sessão de estudos?",
         message:
           "A sessão de estudos em andamento será interrompida e o bloco atual será encerrado. Deseja realmente finalizar?",
-        confirmLabel: "Sim, encerrar",
-        cancelLabel: "Continuar estudando",
+        confirmLabel: "Encerrar sessão",
+        cancelLabel: "Cancelar",
         confirmVariant: "danger" as const,
       };
     }
