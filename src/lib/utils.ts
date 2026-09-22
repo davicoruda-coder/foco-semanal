@@ -1,5 +1,6 @@
 import type {
   BlockType,
+  ProgressTracker,
   RotationItem,
   Subject,
   SubjectRotation,
@@ -649,4 +650,71 @@ export function incrementCycleRoundsToday(): number {
 export function stampCycleDate(): void {
   if (typeof window === "undefined") return;
   localStorage.setItem(CYCLE_DATE_KEY, todayDateStr());
+}
+
+// ---------------------------------------------------------------------------
+// Progress tracking
+// ---------------------------------------------------------------------------
+
+/** Labels pré-definidos para unidades de progresso. */
+export const PROGRESS_UNIT_LABELS = [
+  "Vídeo",
+  "Módulo",
+  "Aula",
+  "PDF",
+  "Página",
+  "Capítulo",
+  "Exercício",
+] as const;
+
+/** Valida/normaliza um ProgressTracker vindo de storage/nuvem/backup. */
+export function normalizeProgress(raw: unknown): ProgressTracker | undefined {
+  if (!raw || typeof raw !== "object") return undefined;
+  const obj = raw as Record<string, unknown>;
+  const unit_label =
+    typeof obj.unit_label === "string" && obj.unit_label.trim()
+      ? obj.unit_label.trim().slice(0, 30)
+      : "Vídeo";
+  const total = Number(obj.total);
+  const current = Number(obj.current);
+  if (!Number.isFinite(total) || total < 1) return undefined;
+  return {
+    unit_label,
+    total: Math.floor(Math.min(total, 99999)),
+    current: Number.isFinite(current)
+      ? Math.max(0, Math.min(Math.floor(current), Math.floor(total)))
+      : 0,
+    auto_detect: Boolean(obj.auto_detect),
+    auto_prefix:
+      typeof obj.auto_prefix === "string"
+        ? obj.auto_prefix.trim().slice(0, 20).toLowerCase()
+        : "",
+  };
+}
+
+/**
+ * Extrai o maior número com o prefixo dado de uma string de anotações.
+ * Ex.: parseProgressFromNotes("v15 exercícios v12", "v") → 15
+ */
+export function parseProgressFromNotes(
+  notes: string,
+  prefix: string,
+): number | null {
+  if (!prefix || !notes) return null;
+  // Escape regex special chars no prefixo
+  const escaped = prefix.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const re = new RegExp(`(?:^|[^a-záàâãéêíóôõúüç])${escaped}[\\s.:-]?(\\d+)`, "gi");
+  let max: number | null = null;
+  let match: RegExpExecArray | null;
+  while ((match = re.exec(notes)) !== null) {
+    const n = Number.parseInt(match[1], 10);
+    if (max === null || n > max) max = n;
+  }
+  return max;
+}
+
+/** Percentual de progresso (0–100). */
+export function progressPercent(p: ProgressTracker): number {
+  if (p.total <= 0) return 0;
+  return Math.min(100, Math.round((p.current / p.total) * 100));
 }

@@ -1,13 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ChevronDown, ChevronUp, FileText, Pause, Pencil, Play, Repeat, Trash2, X } from "lucide-react";
+import { BarChart3, ChevronDown, ChevronUp, FileText, Minus, Pause, Pencil, Play, Plus, Repeat, Trash2, X } from "lucide-react";
 import { useApp } from "@/components/AppProvider";
 import { SubjectIconPicker } from "@/components/SubjectIconPicker";
 import { newId } from "@/lib/demo-store";
 import {
   DAYS,
   STATUS_LABEL,
+  type ProgressTracker,
   type Subject,
   type SubjectRotation,
   type SubjectStatus,
@@ -21,6 +22,9 @@ import {
   statusRowClass,
   rotationWithItemNotes,
   rotationWithItemRecursos,
+  PROGRESS_UNIT_LABELS,
+  normalizeProgress,
+  progressPercent,
 } from "@/lib/utils";
 import { SubjectResources } from "@/components/SubjectResources";
 
@@ -161,6 +165,231 @@ function parseMinutes(raw: string, fallback = 25) {
   const n = Number.parseInt(raw, 10);
   if (!Number.isFinite(n) || n < 1) return fallback;
   return Math.min(n, 999);
+}
+
+/**
+ * Editor de progresso de módulo/curso.
+ * Pode ser usado tanto para uma matéria quanto para um item de rodízio.
+ */
+function ProgressEditor({
+  progress,
+  onSave,
+  compact,
+}: {
+  progress?: ProgressTracker;
+  onSave: (p: ProgressTracker | undefined) => void;
+  compact?: boolean;
+}) {
+  const [open, setOpen] = useState(Boolean(progress));
+  const [customLabel, setCustomLabel] = useState("");
+
+  if (!open) {
+    return (
+      <button
+        type="button"
+        className={`btn text-sm ${compact ? "text-xs py-1" : ""}`}
+        onClick={() => setOpen(true)}
+      >
+        <BarChart3 size={compact ? 13 : 15} strokeWidth={1.75} /> Ativar progresso do módulo
+      </button>
+    );
+  }
+
+  const p: ProgressTracker = progress ?? {
+    unit_label: "Vídeo",
+    total: 1,
+    current: 0,
+    auto_detect: false,
+    auto_prefix: "",
+  };
+  const pct = progressPercent(p);
+  const isCustomLabel = !PROGRESS_UNIT_LABELS.includes(p.unit_label as typeof PROGRESS_UNIT_LABELS[number]);
+
+  function update(patch: Partial<ProgressTracker>) {
+    const next = normalizeProgress({ ...p, ...patch });
+    onSave(next);
+  }
+
+  return (
+    <div className={`w-full rounded-[var(--radius-tag)] border border-[var(--line)] bg-[var(--mist)]/50 p-3 transition-all ${
+      compact ? "p-2.5" : ""
+    }`}>
+      <div className="flex items-center justify-between gap-2">
+        <span className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-[var(--ink)] opacity-75">
+          <BarChart3 size={13} strokeWidth={2} className="text-[var(--signal)]" />
+          <span>Progresso do módulo</span>
+        </span>
+        <button
+          type="button"
+          className="rounded-full p-1.5 text-[color-mix(in_srgb,var(--ink)_45%,transparent)] transition hover:bg-[var(--surface)] hover:text-[var(--warn)] shrink-0"
+          title="Desativar progresso"
+          aria-label="Desativar progresso"
+          onClick={() => {
+            onSave(undefined);
+            setOpen(false);
+          }}
+        >
+          <X size={15} strokeWidth={2} />
+        </button>
+      </div>
+
+      {/* Tipo de unidade */}
+      <div className="mt-2.5 space-y-2">
+        <p className="text-[11px] font-medium uppercase tracking-wider opacity-50">Tipo de unidade</p>
+        <div className="flex flex-wrap gap-1">
+          {PROGRESS_UNIT_LABELS.map((label) => (
+            <button
+              key={label}
+              type="button"
+              className={`rounded-full px-2.5 py-1 text-xs font-medium transition ring-1 ${
+                p.unit_label === label && !isCustomLabel
+                  ? "bg-[var(--signal)] text-white ring-[var(--signal)] shadow-sm"
+                  : "text-[color-mix(in_srgb,var(--ink)_55%,transparent)] ring-[var(--line)] hover:text-[var(--ink)]"
+              }`}
+              onClick={() => update({ unit_label: label })}
+            >
+              {label}
+            </button>
+          ))}
+          <button
+            type="button"
+            className={`rounded-full px-2.5 py-1 text-xs font-medium transition ring-1 ${
+              isCustomLabel
+                ? "bg-[var(--signal)] text-white ring-[var(--signal)] shadow-sm"
+                : "text-[color-mix(in_srgb,var(--ink)_55%,transparent)] ring-[var(--line)] hover:text-[var(--ink)]"
+            }`}
+            onClick={() => {
+              if (!isCustomLabel) update({ unit_label: customLabel || "Item" });
+            }}
+          >
+            Outro
+          </button>
+        </div>
+        {isCustomLabel && (
+          <input
+            className="input text-sm py-1.5 max-w-[180px]"
+            placeholder="Nome da unidade"
+            value={p.unit_label}
+            onChange={(e) => update({ unit_label: e.target.value || "Item" })}
+          />
+        )}
+      </div>
+
+      {/* Total e Atual */}
+      <div className="mt-3 flex flex-wrap items-end gap-3">
+        <label className="flex flex-col gap-1 text-sm">
+          <span className="text-[11px] font-medium uppercase tracking-wider opacity-50">Total</span>
+          <input
+            className="input w-20 py-1.5 text-center font-mono-num"
+            type="number"
+            min={1}
+            max={99999}
+            inputMode="numeric"
+            value={p.total}
+            onChange={(e) => {
+              const v = Number.parseInt(e.target.value, 10);
+              if (Number.isFinite(v) && v >= 1) update({ total: Math.min(v, 99999) });
+            }}
+          />
+        </label>
+        <div className="flex flex-col gap-1">
+          <span className="text-[11px] font-medium uppercase tracking-wider opacity-50">Atual</span>
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              className="btn p-1.5"
+              disabled={p.current <= 0}
+              onClick={() => update({ current: p.current - 1 })}
+              aria-label="Diminuir progresso"
+            >
+              <Minus size={14} strokeWidth={2} />
+            </button>
+            <input
+              className="input w-20 py-1.5 text-center font-mono-num"
+              type="number"
+              min={0}
+              max={p.total}
+              inputMode="numeric"
+              value={p.current}
+              onChange={(e) => {
+                const v = Number.parseInt(e.target.value, 10);
+                if (Number.isFinite(v)) update({ current: Math.max(0, Math.min(v, p.total)) });
+              }}
+            />
+            <button
+              type="button"
+              className="btn p-1.5"
+              disabled={p.current >= p.total}
+              onClick={() => update({ current: p.current + 1 })}
+              aria-label="Aumentar progresso"
+            >
+              <Plus size={14} strokeWidth={2} />
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Barra de progresso */}
+      <div className="mt-3">
+        <div className="flex items-center justify-between gap-2 mb-1">
+          <span className="text-xs text-[color-mix(in_srgb,var(--ink)_65%,transparent)]">
+            {p.current}/{p.total} {p.unit_label.toLowerCase()}{p.total !== 1 ? "s" : ""}
+          </span>
+          <span className={`text-xs font-semibold ${
+            pct >= 100
+              ? "text-emerald-600 dark:text-emerald-400"
+              : "text-[var(--signal)]"
+          }`}>
+            {pct}%
+          </span>
+        </div>
+        <div className="h-2.5 w-full overflow-hidden rounded-full bg-[color-mix(in_srgb,var(--ink)_10%,transparent)]">
+          <div
+            className={`h-full rounded-full transition-all duration-500 ease-out ${
+              pct >= 100
+                ? "bg-gradient-to-r from-emerald-500 to-emerald-400"
+                : "bg-gradient-to-r from-[var(--signal)] to-[color-mix(in_srgb,var(--signal)_70%,#6dd5ed)]"
+            }`}
+            style={{ width: `${pct}%` }}
+          />
+        </div>
+        {pct >= 100 && (
+          <p className="mt-1.5 text-xs font-medium text-emerald-600 dark:text-emerald-400">
+            🎉 Módulo concluído!
+          </p>
+        )}
+      </div>
+
+      {/* Auto-detect toggle */}
+      <div className="mt-3 space-y-2">
+        <label className="flex items-center gap-2 cursor-pointer">
+          <input
+            type="checkbox"
+            className="accent-[var(--signal)] w-4 h-4"
+            checked={p.auto_detect}
+            onChange={(e) => update({ auto_detect: e.target.checked })}
+          />
+          <span className="text-xs font-medium text-[color-mix(in_srgb,var(--ink)_75%,transparent)]">
+            Detectar pelas anotações
+          </span>
+        </label>
+        {p.auto_detect && (
+          <div className="flex items-center gap-2">
+            <span className="text-xs opacity-55">Prefixo:</span>
+            <input
+              className="input w-24 py-1 text-sm text-center font-mono-num"
+              placeholder="ex: v"
+              value={p.auto_prefix}
+              onChange={(e) => update({ auto_prefix: e.target.value })}
+            />
+            <span className="text-[11px] opacity-45 leading-snug">
+              Ex: “{p.auto_prefix || "v"}15” → {p.unit_label.toLowerCase()} 15
+            </span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }
 
 /**
@@ -518,6 +747,21 @@ function RotationEditor({
                         ...rot,
                         items: rot.items.map((item) =>
                           item.id === it.id ? { ...item, recursos } : item
+                        ),
+                      });
+                    }}
+                  />
+                </div>
+                <div className="mt-1.5">
+                  <ProgressEditor
+                    compact
+                    progress={it.progress}
+                    onSave={(progress) => {
+                      if (!rot) return;
+                      onSave({
+                        ...rot,
+                        items: rot.items.map((item) =>
+                          item.id === it.id ? { ...item, progress } : item
                         ),
                       });
                     }}
@@ -967,6 +1211,12 @@ export default function MateriasPage() {
                   />
                 </div>
               )}
+              <div className="mt-3">
+                <ProgressEditor
+                  progress={s.progress}
+                  onSave={(progress) => upsertSubject({ ...s, progress })}
+                />
+              </div>
               <div className="mt-3">
                 <SubjectIconPicker
                   name={s.name}

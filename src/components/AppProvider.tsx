@@ -41,6 +41,7 @@ import {
   normalizeSidebarTimerMinutes,
   rotationAdvanced,
   normalizeRecursos,
+  normalizeProgress,
   resetDailyStatusIfNeeded,
   incrementCycleRoundsToday,
 } from "@/lib/utils";
@@ -709,6 +710,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
               patch.cycle_done =
                 Number.isFinite(cd) && cd >= 0 ? Math.floor(cd) : 0;
             }
+            if ("progress" in subject) {
+              patch.progress = normalizeProgress(subject.progress);
+            }
             // exclusive_status só via setSubjectStatus (mini-ciclo).
             delete (patch as { exclusive_status?: SubjectStatus }).exclusive_status;
             return {
@@ -751,6 +755,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
               typeof subject.cycle_done === "number" && subject.cycle_done >= 0
                 ? Math.floor(subject.cycle_done)
                 : 0,
+            progress: normalizeProgress(subject.progress),
           };
           return { ...prev, subjects: [...prev.subjects, row] };
         });

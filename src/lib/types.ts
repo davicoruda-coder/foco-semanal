@@ -11,6 +11,20 @@ export type SessionMode = "ciclo" | "unica";
 
 export type TimerPhase = "focus" | "break_short" | "break_long";
 
+/** Rastreamento de progresso de um módulo/curso. */
+export interface ProgressTracker {
+  /** Label da unidade: "Vídeo", "Módulo", "PDF", "Aula", "Página" ou custom. */
+  unit_label: string;
+  /** Quantidade total de unidades. */
+  total: number;
+  /** Unidade atual (em qual o usuário está). */
+  current: number;
+  /** Se true, detecta automaticamente o progresso a partir das anotações. */
+  auto_detect: boolean;
+  /** Prefixo para detecção automática (ex: "v" para "v15"). */
+  auto_prefix: string;
+}
+
 export interface SubjectResource {
   id: string;
   title?: string;
@@ -25,6 +39,8 @@ export interface RotationItem {
   notes: string;
   /** Links e recursos úteis para esta disciplina. */
   recursos?: SubjectResource[];
+  /** Progresso de módulo/curso deste item; `undefined` = sem rastreamento. */
+  progress?: ProgressTracker;
 }
 
 /**
@@ -80,6 +96,8 @@ export interface Subject {
   weight?: number;
   /** Quantidade de vezes concluída no ciclo atual (padrão 0). */
   cycle_done?: number;
+  /** Progresso de módulo/curso desta matéria; `undefined` = sem rastreamento. */
+  progress?: ProgressTracker;
 }
 
 export interface WeekBlock {

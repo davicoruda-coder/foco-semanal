@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { useApp } from "@/components/AppProvider";
 import { useStudyFlow } from "@/components/StudyFlowProvider";
-import { DAYS } from "@/lib/types";
+import { DAYS, ProgressTracker, RotationItem, Subject, SubjectRotation } from "@/lib/types";
 import {
   blockStyle,
   cycleStatusPresentation,
@@ -24,6 +24,7 @@ import {
   normalizeRotation,
   buildWeightedCycleQueue,
   nextCycleSubjectId,
+  parseProgressFromNotes,
   rotationWithItemNotes,
   rotationWithItemRecursos,
   subjectsOnDay,
@@ -31,6 +32,7 @@ import {
   todayIndex,
 } from "@/lib/utils";
 import { SubjectResources } from "@/components/SubjectResources";
+import { SubjectProgressBar } from "@/components/SubjectProgressBar";
 import { ReminderWatcher } from "@/components/ReminderWatcher";
 import { ReminderBoard } from "@/components/ReminderBoard";
 import { SessionClock } from "@/components/SessionClock";
@@ -40,6 +42,67 @@ import { AutoGrowTextarea } from "@/components/AutoGrowTextarea";
 import { StudySessionBar } from "@/components/StudySessionChrome";
 import { SessionSubjectClock } from "@/components/SessionSubjectClock";
 import { SubjectIcon } from "@/components/SubjectIcon";
+
+function applyNotesAndAutoProgress(
+  s: Subject,
+  rot: SubjectRotation | null,
+  rotItem: RotationItem | null,
+  notes: string,
+): Subject {
+  const activeProgress = rotItem ? rotItem.progress : s.progress;
+  let nextProgress = activeProgress;
+  if (activeProgress?.auto_detect && activeProgress.auto_prefix) {
+    const detected = parseProgressFromNotes(notes, activeProgress.auto_prefix);
+    if (detected !== null && detected !== activeProgress.current) {
+      nextProgress = {
+        ...activeProgress,
+        current: Math.max(0, Math.min(detected, activeProgress.total)),
+      };
+    }
+  }
+  if (rot && rotItem) {
+    return {
+      ...s,
+      rotation: {
+        ...rot,
+        items: rot.items.map((it) =>
+          it.id === rotItem.id
+            ? {
+                ...it,
+                notes,
+                ...(nextProgress !== activeProgress ? { progress: nextProgress } : {}),
+              }
+            : it,
+        ),
+      },
+    };
+  }
+  return {
+    ...s,
+    notes,
+    ...(nextProgress !== activeProgress ? { progress: nextProgress } : {}),
+  };
+}
+
+function applyProgressUpdate(
+  s: Subject,
+  rot: SubjectRotation | null,
+  rotItem: RotationItem | null,
+  progress: ProgressTracker,
+): Subject {
+  if (rot && rotItem) {
+    return {
+      ...s,
+      rotation: {
+        ...rot,
+        items: rot.items.map((it) =>
+          it.id === rotItem.id ? { ...it, progress } : it,
+        ),
+      },
+    };
+  }
+  return { ...s, progress };
+}
 
 export default function HojePage() {
   const { data, upsertSubject, resetCycleToday } = useApp();
@@ -399,6 +462,7 @@ export default function HojePage() {
                 const libreInCycle = Boolean(s.is_free) && !free;
                 const rot = normalizeRotation(s.rotation);
                 const rotItem = rot ? rot.items[rot.index] : null;
+                const activeProgress = rotItem ? rotItem.progress : s.progress;
                 const displayStatus = exclusiveCycleToday
                   ? (s.exclusive_status ?? "prox")
                   : s.status;
@@ -472,16 +536,9 @@ export default function HojePage() {
                       maxPx={120}
                       rows={1}
                       onChange={(notes) =>
-                        rot && rotItem
-                          ? upsertSubject({
-                              ...s,
-                              rotation: rotationWithItemNotes(
-                                rot,
-                                rotItem.id,
-                                notes,
-                              ),
-                            })
-                          : upsertSubject({ ...s, notes })
+                        upsertSubject(
+                          applyNotesAndAutoProgress(s, rot, rotItem, notes),
+                        )
                       }
                     />
                     <SubjectResources
@@ -499,6 +556,16 @@ export default function HojePage() {
                           : upsertSubject({ ...s, recursos })
                       }
                     />
+                    {activeProgress && (
+                      <SubjectProgressBar
+                        progress={activeProgress}
+                        onChange={(p) =>
+                          upsertSubject(
+                            applyProgressUpdate(s, rot, rotItem, p),
+                          )
+                        }
+                      />
+                    )}
                   </div>
                 );
               })}
@@ -559,6 +626,7 @@ export default function HojePage() {
                     const libreInCycle = Boolean(s.is_free) && !free;
                     const rot = normalizeRotation(s.rotation);
                     const rotItem = rot ? rot.items[rot.index] : null;
+                    const activeProgress = rotItem ? rotItem.progress : s.progress;
                     const displayStatus = exclusiveCycleToday
                       ? (s.exclusive_status ?? "prox")
                       : s.status;
@@ -646,16 +714,14 @@ export default function HojePage() {
                               maxPx={44}
                               rows={1}
                               onChange={(notes) =>
-                                rot && rotItem
-                                  ? upsertSubject({
-                                      ...s,
-                                      rotation: rotationWithItemNotes(
-                                        rot,
-                                        rotItem.id,
-                                        notes,
-                                      ),
-                                    })
-                                  : upsertSubject({ ...s, notes })
+                                upsertSubject(
+                                  applyNotesAndAutoProgress(
+                                    s,
+                                    rot,
+                                    rotItem,
+                                    notes,
+                                  ),
+                                )
                               }
                             />
                           </div>
@@ -675,6 +741,17 @@ export default function HojePage() {
                                 : upsertSubject({ ...s, recursos })
                             }
                           />
+                          {activeProgress && (
+                            <SubjectProgressBar
+                              compact
+                              progress={activeProgress}
+                              onChange={(p) =>
+                                upsertSubject(
+                                  applyProgressUpdate(s, rot, rotItem, p),
+                                )
+                              }
+                            />
+                          )}
                         </td>
                       </tr>
                     );
