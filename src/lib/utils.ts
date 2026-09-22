@@ -393,7 +393,9 @@ export function nextCycleSubjectId(
   day: number,
 ): string | null {
   const queue = buildWeightedCycleQueue(subjects, day);
-  return queue[0]?.id ?? null;
+  if (queue[0]) return queue[0].id;
+  const full = buildFullWeightedCycle(subjects, day);
+  return full[0]?.id ?? null;
 }
 
 /** Lista matérias em pt-BR: "A", "A e B", "A, B e C". */
