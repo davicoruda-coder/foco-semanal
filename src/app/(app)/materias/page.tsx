@@ -182,6 +182,8 @@ function RotationEditor({
   const [confirmOff, setConfirmOff] = useState(false);
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
   const [noteDraft, setNoteDraft] = useState("");
+  const [isExpanded, setIsExpanded] = useState(() => !rot || rot.items.length === 0);
+  const currentItem = rot ? (rot.items[rot.index] ?? rot.items[0]) : null;
 
   function addItem() {
     const name = newName.trim();
@@ -278,7 +280,10 @@ function RotationEditor({
       <button
         type="button"
         className="btn text-sm"
-        onClick={() => setOpen(true)}
+        onClick={() => {
+          setOpen(true);
+          setIsExpanded(true);
+        }}
       >
         <Repeat size={15} strokeWidth={1.75} /> Ativar rodízio de disciplinas
       </button>
@@ -286,15 +291,51 @@ function RotationEditor({
   }
 
   return (
-    <div className="mt-1 w-full rounded-[var(--radius-tag)] border border-[var(--line)] bg-[var(--mist)]/50 p-3">
+    <div className="mt-1 w-full rounded-[var(--radius-tag)] border border-[var(--line)] bg-[var(--mist)]/50 p-3 transition-all">
       <div className="flex items-center justify-between gap-2">
-        <p className="inline-flex items-center gap-1.5 text-xs font-medium uppercase tracking-wider opacity-60">
-          <Repeat size={13} strokeWidth={2} /> Rodízio de disciplinas
-        </p>
+        <button
+          type="button"
+          onClick={() => setIsExpanded((prev) => !prev)}
+          className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1 text-left group py-0.5"
+          aria-expanded={isExpanded}
+          aria-controls={`rotation-content-${subject.id}`}
+        >
+          <span className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-[var(--ink)] opacity-75 group-hover:opacity-100 transition">
+            <Repeat size={13} strokeWidth={2} className="text-[var(--signal)]" />
+            <span>Rodízio de disciplinas</span>
+          </span>
+
+          {rot && rot.items.length > 0 && (
+            <span className="rounded-full bg-[color-mix(in_srgb,var(--signal)_15%,transparent)] px-2 py-0.5 text-[11px] font-medium text-[var(--signal)] shrink-0">
+              {rot.items.length} {rot.items.length === 1 ? "disciplina" : "disciplinas"}
+            </span>
+          )}
+
+          {!isExpanded && currentItem && (
+            <span className="inline-flex items-center gap-1.5 text-xs text-[color-mix(in_srgb,var(--ink)_65%,transparent)] truncate max-w-[200px] sm:max-w-xs">
+              <span className="size-1.5 rounded-full bg-[var(--signal)] shrink-0" />
+              <span className="truncate">
+                Da vez: <strong className="font-medium text-[var(--ink)]">{currentItem.name}</strong>
+              </span>
+            </span>
+          )}
+
+          <span className="ml-auto inline-flex items-center gap-1 text-xs text-[color-mix(in_srgb,var(--ink)_50%,transparent)] group-hover:text-[var(--ink)] transition shrink-0">
+            <span className="hidden sm:inline text-[11px]">
+              {isExpanded ? "Recolher" : "Expandir"}
+            </span>
+            {isExpanded ? (
+              <ChevronUp size={15} strokeWidth={2} />
+            ) : (
+              <ChevronDown size={15} strokeWidth={2} />
+            )}
+          </span>
+        </button>
+
         {confirmOff ? null : (
           <button
             type="button"
-            className="rounded-full p-1.5 text-[color-mix(in_srgb,var(--ink)_45%,transparent)] transition hover:bg-[var(--surface)] hover:text-[var(--warn)]"
+            className="rounded-full p-1.5 text-[color-mix(in_srgb,var(--ink)_45%,transparent)] transition hover:bg-[var(--surface)] hover:text-[var(--warn)] shrink-0"
             title="Desativar rodízio"
             aria-label="Desativar rodízio"
             onClick={() => {
@@ -306,6 +347,7 @@ function RotationEditor({
           </button>
         )}
       </div>
+
       {confirmOff ? (
         <div
           className="mt-2 rounded-[var(--radius-tag)] border border-[color-mix(in_srgb,var(--warn)_35%,var(--line))] bg-[color-mix(in_srgb,var(--warn)_8%,var(--surface))] p-3"
@@ -340,13 +382,16 @@ function RotationEditor({
           </div>
         </div>
       ) : null}
-      <p className="mt-1 text-xs leading-snug opacity-55">
-        A cada conclusão desta matéria, a disciplina “da vez” passa para a
-        próxima da lista. Cada uma guarda a própria anotação. Toque na bolinha
-        para escolher a da vez.
-      </p>
 
-      <ul className="mt-2.5 space-y-1.5">
+      {isExpanded && (
+        <div id={`rotation-content-${subject.id}`} className="mt-2.5 pt-2 border-t border-[color-mix(in_srgb,var(--line)_60%,transparent)]">
+          <p className="text-xs leading-snug opacity-55">
+            A cada conclusão desta matéria, a disciplina “da vez” passa para a
+            próxima da lista. Cada uma guarda a própria anotação. Toque na bolinha
+            para escolher a da vez.
+          </p>
+
+          <ul className="mt-2.5 space-y-1.5">
         {(rot?.items ?? []).map((it, i) => {
           const current = rot != null && i === rot.index;
           return (
@@ -534,6 +579,8 @@ function RotationEditor({
           Adicionar
         </button>
       </div>
+        </div>
+      )}
     </div>
   );
 }
