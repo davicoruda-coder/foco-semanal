@@ -5,6 +5,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useMemo,
   useState,
   type ReactNode,
 } from "react";
@@ -17,6 +18,50 @@ import type {
   MateriaRevisao,
 } from "@/lib/revisao/types";
 import type { RevisaoStats } from "@/lib/revisao/revisao-store";
+import { useApp } from "@/components/AppProvider";
+import { normalizeRotation } from "@/lib/utils";
+
+const LOCAL_STORAGE_KEY_HIDDEN_MATERIAS = "foco_revisao_materias_hidden_v1";
+
+function getHiddenMateriaNames(): Set<string> {
+  if (typeof window === "undefined") return new Set();
+  try {
+    const raw = localStorage.getItem(LOCAL_STORAGE_KEY_HIDDEN_MATERIAS);
+    if (!raw) return new Set();
+    const parsed = JSON.parse(raw);
+    return new Set(
+      Array.isArray(parsed)
+        ? parsed.map((s: string) => String(s).toLowerCase())
+        : [],
+    );
+  } catch {
+    return new Set();
+  }
+}
+
+function addHiddenMateriaName(nome: string) {
+  if (typeof window === "undefined") return;
+  try {
+    const hidden = getHiddenMateriaNames();
+    hidden.add(nome.toLowerCase());
+    localStorage.setItem(
+      LOCAL_STORAGE_KEY_HIDDEN_MATERIAS,
+      JSON.stringify(Array.from(hidden)),
+    );
+  } catch {}
+}
+
+function removeHiddenMateriaName(nome: string) {
+  if (typeof window === "undefined") return;
+  try {
+    const hidden = getHiddenMateriaNames();
+    hidden.delete(nome.toLowerCase());
+    localStorage.setItem(
+      LOCAL_STORAGE_KEY_HIDDEN_MATERIAS,
+      JSON.stringify(Array.from(hidden)),
+    );
+  } catch {}
+}
 
 /* ------------------------------------------------------------------ */
 /*  Context shape                                                      */
@@ -88,8 +133,92 @@ export function RevisaoProvider({ children }: { children: ReactNode }) {
   const [materias, setMaterias] = useState<MateriaRevisao[]>([]);
   const [materiasLoading, setMateriasLoading] = useState(false);
   const [stats, setStats] = useState<RevisaoStats | null>(null);
+  const { data: appData } = useApp();
+  const [hiddenNames, setHiddenNames] = useState<Set<string>>(() =>
+    getHiddenMateriaNames(),
+  );
 
   const moduloAtivo = perfil?.modulos_ativos?.revisao ?? true;
+
+  // Combina as matérias salvas da revisão com as matérias e rodízios cadastrados no sistema
+  const combinedMaterias = useMemo(() => {
+    const map = new Map<string, MateriaRevisao>();
+
+    // 1. Matérias manuais salvas em Revisão
+    for (const m of materias) {
+      const nome = m.nome.trim();
+      const key = nome.toLowerCase();
+      if (nome && !hiddenNames.has(key) && !map.has(key)) {
+        map.set(key, m);
+      }
+    }
+
+    // 2. Matérias e disciplinas do sistema (FocoHub)
+    for (const s of appData.subjects) {
+      const rot = normalizeRotation(s.rotation);
+      if (rot && rot.items.length > 0) {
+        for (const it of rot.items) {
+          const nome = it.name.trim();
+          const key = nome.toLowerCase();
+          if (nome && !hiddenNames.has(key) && !map.has(key)) {
+            map.set(key, {
+              id: `sys-rot-${it.id}`,
+              nome,
+              created_at: new Date().toISOString(),
+            });
+          }
+        }
+        // Se a matéria pai com rodízio não tiver nome genérico ("revisão", "ciclo", "rodízio")
+        const parentNome = s.name.trim();
+        const parentKey = parentNome.toLowerCase();
+        if (
+          parentNome &&
+          parentKey !== "revisão" &&
+          parentKey !== "revisao" &&
+          parentKey !== "ciclo" &&
+          parentKey !== "rodízio" &&
+          parentKey !== "rodizio" &&
+          !hiddenNames.has(parentKey) &&
+          !map.has(parentKey)
+        ) {
+          map.set(parentKey, {
+            id: `sys-sub-${s.id}`,
+            nome: parentNome,
+            created_at: new Date().toISOString(),
+          });
+        }
+      } else {
+        const nome = s.name.trim();
+        const key = nome.toLowerCase();
+        if (nome && !hiddenNames.has(key) && !map.has(key)) {
+          map.set(key, {
+            id: `sys-sub-${s.id}`,
+            nome,
+            created_at: new Date().toISOString(),
+          });
+        }
+      }
+    }
+
+    // 3. Disciplinas de questões já registradas no caderno
+    for (const q of questoes) {
+      const nome = q.disciplina?.trim();
+      if (nome) {
+        const key = nome.toLowerCase();
+        if (!hiddenNames.has(key) && !map.has(key)) {
+          map.set(key, {
+            id: `q-${key}`,
+            nome,
+            created_at: q.created_at || new Date().toISOString(),
+          });
+        }
+      }
+    }
+
+    return Array.from(map.values()).sort((a, b) =>
+      a.nome.localeCompare(b.nome, "pt-BR"),
+    );
+  }, [materias, appData.subjects, questoes, hiddenNames]);
 
   /* ---- Boot: carregar perfil ---- */
   useEffect(() => {
@@ -187,9 +316,17 @@ export function RevisaoProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const handleAddMateria = useCallback(async (nome: string) => {
+    const trimmed = nome.trim();
+    if (!trimmed) return null;
+    removeHiddenMateriaName(trimmed);
+    setHiddenNames((prev) => {
+      const next = new Set(prev);
+      next.delete(trimmed.toLowerCase());
+      return next;
+    });
     try {
       const store = await import("@/lib/revisao/revisao-store");
-      const nova = await store.addMateriaRevisao(nome);
+      const nova = await store.addMateriaRevisao(trimmed);
       if (nova) {
         setMaterias((prev) =>
           prev.some((m) => m.id === nova.id) ? prev : [...prev, nova],
@@ -202,15 +339,27 @@ export function RevisaoProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const handleDeleteMateria = useCallback(async (id: string) => {
-    try {
-      const store = await import("@/lib/revisao/revisao-store");
-      await store.deleteMateriaRevisao(id);
-      setMaterias((prev) => prev.filter((m) => m.id !== id));
-    } catch (err) {
-      console.warn("[revisao] delete materia:", err);
-    }
-  }, []);
+  const handleDeleteMateria = useCallback(
+    async (id: string) => {
+      const target = combinedMaterias.find((m) => m.id === id);
+      if (target) {
+        addHiddenMateriaName(target.nome);
+        setHiddenNames((prev) => {
+          const next = new Set(prev);
+          next.add(target.nome.toLowerCase());
+          return next;
+        });
+      }
+      try {
+        const store = await import("@/lib/revisao/revisao-store");
+        await store.deleteMateriaRevisao(id);
+        setMaterias((prev) => prev.filter((m) => m.id !== id));
+      } catch (err) {
+        console.warn("[revisao] delete materia:", err);
+      }
+    },
+    [combinedMaterias],
+  );
 
   useEffect(() => {
     reloadMaterias();
@@ -274,7 +423,7 @@ export function RevisaoProvider({ children }: { children: ReactNode }) {
     allFlashcards,
     responderFlashcard: handleResponderFlashcard,
     reloadFlashcards,
-    materias,
+    materias: combinedMaterias,
     materiasLoading,
     addMateria: handleAddMateria,
     deleteMateria: handleDeleteMateria,

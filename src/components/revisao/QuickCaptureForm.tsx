@@ -32,7 +32,7 @@ export function QuickCaptureForm({
 }: {
   onSuccess?: () => void;
 }) {
-  const { addQuestao, materias } = useRevisao();
+  const { addQuestao, materias, addMateria } = useRevisao();
 
   /* State */
   const [codigoOuLink, setCodigoOuLink] = useState("");
@@ -132,6 +132,9 @@ export function QuickCaptureForm({
       setSaving(false);
 
       if (ok) {
+        if (payload.disciplina) {
+          void addMateria(payload.disciplina);
+        }
         setFeedback({ ok: true, msg: "Questão registrada + flashcard criado!" });
         // Reset form
         setCodigoOuLink("");
@@ -254,7 +257,7 @@ export function QuickCaptureForm({
 
           {materias.length > 0 && (
             <div className="mt-1.5 flex flex-wrap gap-1">
-              {materias.slice(0, 5).map((m) => (
+              {materias.slice(0, 8).map((m) => (
                 <button
                   key={m.id}
                   type="button"
