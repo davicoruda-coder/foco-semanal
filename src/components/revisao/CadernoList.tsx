@@ -5,13 +5,17 @@ import {
   ExternalLink,
   Filter,
   GraduationCap,
+  Pencil,
   Play,
   Search,
   Trash2,
   Video,
   ChevronDown,
   ChevronUp,
+  X,
 } from "lucide-react";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { QuickCaptureForm } from "./QuickCaptureForm";
 import {
   CAUSA_ERRO_LABEL,
   STATUS_RESULTADO_LABEL,
@@ -30,6 +34,8 @@ export function CadernoList() {
   const [resultadoFiltro, setResultadoFiltro] = useState<string>("todas");
   const [itemExpandidoId, setItemExpandidoId] = useState<string | null>(null);
   const [deletandoId, setDeletandoId] = useState<string | null>(null);
+  const [editingQuestao, setEditingQuestao] = useState<QuestaoCaderno | null>(null);
+  const [pendingDeleteQuestao, setPendingDeleteQuestao] = useState<QuestaoCaderno | null>(null);
 
   // Extrair opções únicas para filtros
   const bancas = useMemo(() => {
@@ -72,11 +78,12 @@ export function CadernoList() {
     });
   }, [questoes, bancaFiltro, disciplinaFiltro, causaFiltro, resultadoFiltro, search]);
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Deseja realmente remover esta questão do caderno?")) return;
-    setDeletandoId(id);
+  const handleDeleteConfirm = async () => {
+    if (!pendingDeleteQuestao) return;
+    setDeletandoId(pendingDeleteQuestao.id);
     try {
-      await deleteQuestao(id);
+      await deleteQuestao(pendingDeleteQuestao.id);
+      setPendingDeleteQuestao(null);
     } finally {
       setDeletandoId(null);
     }
@@ -292,15 +299,27 @@ export function CadernoList() {
                           </a>
                         )}
 
-                        <button
-                          type="button"
-                          disabled={deletandoId === q.id}
-                          onClick={() => handleDelete(q.id)}
-                          className="ml-auto inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs text-[color-mix(in_srgb,var(--ink)_50%,transparent)] hover:bg-[color-mix(in_srgb,#ef4444_12%,transparent)] hover:text-[#ef4444] transition"
-                        >
-                          <Trash2 size={12} />
-                          Excluir
-                        </button>
+                        <div className="ml-auto flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => setEditingQuestao(q)}
+                            className="inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-medium text-[color-mix(in_srgb,var(--ink)_65%,transparent)] hover:bg-[var(--surface)] hover:text-[var(--signal)] transition"
+                            title="Editar questão"
+                          >
+                            <Pencil size={12} />
+                            Editar
+                          </button>
+                          <button
+                            type="button"
+                            disabled={deletandoId === q.id}
+                            onClick={() => setPendingDeleteQuestao(q)}
+                            className="inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-medium text-[color-mix(in_srgb,var(--ink)_50%,transparent)] hover:bg-[color-mix(in_srgb,#ef4444_12%,transparent)] hover:text-[#ef4444] transition"
+                            title="Excluir questão"
+                          >
+                            <Trash2 size={12} />
+                            Excluir
+                          </button>
+                        </div>
                       </div>
                     </div>
                   )}
@@ -310,6 +329,49 @@ export function CadernoList() {
           })}
         </div>
       )}
+
+      {/* Modal de Edição */}
+      {editingQuestao && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-fade-in overflow-y-auto">
+          <div className="relative w-full max-w-lg rounded-[var(--radius)] border border-[var(--line)] bg-[var(--surface)] p-5 shadow-2xl my-8">
+            <div className="flex items-center justify-between border-b border-[var(--line)] pb-3 mb-4">
+              <div>
+                <h2 className="text-base font-semibold text-[var(--ink)]">
+                  Editar Questão
+                </h2>
+                <p className="text-xs text-[color-mix(in_srgb,var(--ink)_60%,transparent)]">
+                  Atualize os dados e a regra aprendida
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEditingQuestao(null)}
+                className="rounded-full p-1.5 text-[color-mix(in_srgb,var(--ink)_50%,transparent)] hover:bg-[var(--mist)] hover:text-[var(--ink)] transition"
+                aria-label="Fechar"
+              >
+                <X size={18} />
+              </button>
+            </div>
+            <QuickCaptureForm
+              initialData={editingQuestao}
+              onCancel={() => setEditingQuestao(null)}
+              onSuccess={() => setEditingQuestao(null)}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Confirmação de Exclusão */}
+      <ConfirmDialog
+        open={pendingDeleteQuestao !== null}
+        title="Excluir questão do caderno"
+        message={`Tem certeza que deseja remover esta anotação do caderno (${pendingDeleteQuestao?.codigo_questao || pendingDeleteQuestao?.disciplina || "Item"})? O aprendizado registrado e o flashcard serão excluídos.`}
+        confirmLabel={deletandoId ? "Excluindo…" : "Excluir"}
+        cancelLabel="Cancelar"
+        confirmVariant="danger"
+        onConfirm={handleDeleteConfirm}
+        onCancel={() => setPendingDeleteQuestao(null)}
+      />
     </div>
   );
 }

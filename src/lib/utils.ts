@@ -333,8 +333,9 @@ export function buildWeightedCycleQueue<T extends Subject>(
   subjects: T[],
   day: number,
 ): T[] {
-  const base = cycleSubjectsOnDay(subjects, day);
-  if (base.length === 0) return [];
+  const rawBase = cycleSubjectsOnDay(subjects, day);
+  if (rawBase.length === 0) return [];
+  const base = rotateCycleBase(rawBase);
 
   const exclusive = isExclusiveCycleDay(subjects, day);
   const maxWeight = Math.max(
@@ -367,8 +368,9 @@ export function buildFullWeightedCycle<T extends Subject>(
   subjects: T[],
   day: number,
 ): T[] {
-  const base = cycleSubjectsOnDay(subjects, day);
-  if (base.length === 0) return [];
+  const rawBase = cycleSubjectsOnDay(subjects, day);
+  if (rawBase.length === 0) return [];
+  const base = rotateCycleBase(rawBase);
 
   const maxWeight = Math.max(
     ...base.map((s) => Math.max(1, s.weight ?? 1)),
@@ -618,12 +620,18 @@ export function resetDailyStatusIfNeeded<T extends Subject>(
 
 const CYCLE_ROUNDS_KEY = "foco_semanal_cycle_rounds_v1";
 
+interface CycleRoundsStored {
+  date: string;
+  rounds: number;
+  lastCompletedId?: string | null;
+}
+
 export function readCycleRoundsToday(): number {
   if (typeof window === "undefined") return 0;
   try {
     const raw = localStorage.getItem(CYCLE_ROUNDS_KEY);
     if (!raw) return 0;
-    const parsed = JSON.parse(raw);
+    const parsed: CycleRoundsStored = JSON.parse(raw);
     if (parsed.date !== todayDateStr()) return 0;
     return Number(parsed.rounds) || 0;
   } catch {
@@ -631,14 +639,63 @@ export function readCycleRoundsToday(): number {
   }
 }
 
-export function incrementCycleRoundsToday(): number {
+export function readLastCycleCompletedSubjectId(): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = localStorage.getItem(CYCLE_ROUNDS_KEY);
+    if (!raw) return null;
+    const parsed: CycleRoundsStored = JSON.parse(raw);
+    if (parsed.date !== todayDateStr()) return null;
+    return typeof parsed.lastCompletedId === "string" ? parsed.lastCompletedId : null;
+  } catch {
+    return null;
+  }
+}
+
+export function clearLastCycleCompletedSubjectId(): void {
+  if (typeof window === "undefined") return;
+  try {
+    const raw = localStorage.getItem(CYCLE_ROUNDS_KEY);
+    if (!raw) return;
+    const parsed: CycleRoundsStored = JSON.parse(raw);
+    if (parsed.date !== todayDateStr()) return;
+    localStorage.setItem(
+      CYCLE_ROUNDS_KEY,
+      JSON.stringify({ ...parsed, lastCompletedId: null }),
+    );
+  } catch {
+    // no-op
+  }
+}
+
+/**
+ * Se uma rodada do ciclo foi concluída e há registro da matéria que a finalizou,
+ * rotaciona a lista base para começar na matéria seguinte da roda,
+ * garantindo que a mesma matéria nunca seja repetida no início da nova rodada.
+ */
+export function rotateCycleBase<T extends Subject>(base: T[]): T[] {
+  if (base.length <= 1) return base;
+  const lastId = readLastCycleCompletedSubjectId();
+  if (!lastId) return base;
+  const idx = base.findIndex((s) => s.id === lastId);
+  if (idx < 0) return base;
+  const nextStart = (idx + 1) % base.length;
+  if (nextStart === 0) return base;
+  return [...base.slice(nextStart), ...base.slice(0, nextStart)];
+}
+
+export function incrementCycleRoundsToday(lastCompletedSubjectId?: string): number {
   if (typeof window === "undefined") return 1;
   try {
     const current = readCycleRoundsToday();
     const next = current + 1;
     localStorage.setItem(
       CYCLE_ROUNDS_KEY,
-      JSON.stringify({ date: todayDateStr(), rounds: next }),
+      JSON.stringify({
+        date: todayDateStr(),
+        rounds: next,
+        lastCompletedId: lastCompletedSubjectId ?? null,
+      }),
     );
     return next;
   } catch {

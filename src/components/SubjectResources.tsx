@@ -3,6 +3,7 @@ import { Link2, X } from "lucide-react";
 import { SubjectResource } from "@/lib/types";
 import { ensureProtocolUrl, getResourceDisplayTitle } from "@/lib/utils";
 import { newId } from "@/lib/demo-store";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 
 interface Props {
   recursos?: SubjectResource[];
@@ -41,12 +42,13 @@ export function SubjectResources({ recursos = [], onChange, compact }: Props) {
     setTitle("");
   }
 
+  const [pendingRemove, setPendingRemove] = useState<{
+    id: string;
+    name?: string;
+  } | null>(null);
+
   function handleRemove(id: string, name?: string) {
-    const label = name ? `"${name}"` : "este link";
-    if (typeof window !== "undefined" && !window.confirm(`Deseja realmente remover ${label}?`)) {
-      return;
-    }
-    onChange(recursos.filter((r) => r.id !== id));
+    setPendingRemove({ id, name });
   }
 
   const hasItems = recursos.length > 0;
@@ -139,6 +141,23 @@ export function SubjectResources({ recursos = [], onChange, compact }: Props) {
           </div>
         </div>
       )}
+      {/* Confirmação de exclusão do link */}
+      <ConfirmDialog
+        open={pendingRemove !== null}
+        title="Remover recurso"
+        message={`Deseja realmente remover o link ${
+          pendingRemove?.name ? `"${pendingRemove.name}"` : ""
+        }?`}
+        confirmLabel="Remover"
+        cancelLabel="Cancelar"
+        confirmVariant="danger"
+        onConfirm={() => {
+          if (!pendingRemove) return;
+          onChange(recursos.filter((r) => r.id !== pendingRemove.id));
+          setPendingRemove(null);
+        }}
+        onCancel={() => setPendingRemove(null)}
+      />
     </div>
   );
 }

@@ -13,6 +13,7 @@ import {
   X,
 } from "lucide-react";
 import type { Flashcard, MateriaRevisao } from "@/lib/revisao/types";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { useRevisao } from "./RevisaoProvider";
 import { FlashcardPlayer } from "./FlashcardPlayer";
 
@@ -51,14 +52,12 @@ export function FlashcardDeckList() {
     setShowNewMateria(false);
   }
 
+  const [pendingDeleteMateria, setPendingDeleteMateria] =
+    useState<MateriaRevisao | null>(null);
+
   /* Excluir matéria */
-  async function handleDelete(materia: MateriaRevisao) {
-    if (
-      typeof window !== "undefined" &&
-      window.confirm(`Deseja remover a matéria "${materia.nome}" da revisão?`)
-    ) {
-      await deleteMateria(materia.id);
-    }
+  function handleDelete(materia: MateriaRevisao) {
+    setPendingDeleteMateria(materia);
   }
 
   /* Se um deck estiver ativo, renderiza o Player focado */
@@ -381,6 +380,21 @@ export function FlashcardDeckList() {
           </p>
         </div>
       </div>
+      {/* Diálogo de confirmação de exclusão */}
+      <ConfirmDialog
+        open={pendingDeleteMateria !== null}
+        title="Remover matéria da revisão"
+        message={`Deseja remover a matéria "${pendingDeleteMateria?.nome}" da revisão? Seus flashcards serão preservados.`}
+        confirmLabel="Remover"
+        cancelLabel="Cancelar"
+        confirmVariant="danger"
+        onConfirm={async () => {
+          if (!pendingDeleteMateria) return;
+          await deleteMateria(pendingDeleteMateria.id);
+          setPendingDeleteMateria(null);
+        }}
+        onCancel={() => setPendingDeleteMateria(null)}
+      />
     </div>
   );
 }

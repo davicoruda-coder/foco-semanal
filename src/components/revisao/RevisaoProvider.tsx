@@ -76,6 +76,10 @@ type RevisaoContextValue = {
   questoes: QuestaoCaderno[];
   questoesLoading: boolean;
   addQuestao: (p: QuickCapturePayload) => Promise<boolean>;
+  updateQuestao: (
+    id: string,
+    updates: Partial<QuickCapturePayload>,
+  ) => Promise<boolean>;
   deleteQuestao: (id: string) => Promise<void>;
   reloadQuestoes: (filters?: CadernoFilters) => Promise<void>;
 
@@ -272,6 +276,26 @@ export function RevisaoProvider({ children }: { children: ReactNode }) {
     [],
   );
 
+  const handleUpdateQuestao = useCallback(
+    async (
+      id: string,
+      updates: Partial<QuickCapturePayload>,
+    ): Promise<boolean> => {
+      try {
+        const store = await import("@/lib/revisao/revisao-store");
+        await store.updateQuestao(id, updates);
+        setQuestoes((prev) =>
+          prev.map((q) => (q.id === id ? { ...q, ...updates } : q)),
+        );
+        return true;
+      } catch (err) {
+        console.warn("[revisao] update questao:", err);
+        return false;
+      }
+    },
+    [],
+  );
+
   const handleDeleteQuestao = useCallback(async (id: string) => {
     try {
       const store = await import("@/lib/revisao/revisao-store");
@@ -416,6 +440,7 @@ export function RevisaoProvider({ children }: { children: ReactNode }) {
     questoes,
     questoesLoading,
     addQuestao: handleAddQuestao,
+    updateQuestao: handleUpdateQuestao,
     deleteQuestao: handleDeleteQuestao,
     reloadQuestoes,
     flashcardsDoDia,

@@ -44,6 +44,7 @@ import {
   normalizeProgress,
   resetDailyStatusIfNeeded,
   incrementCycleRoundsToday,
+  clearLastCycleCompletedSubjectId,
 } from "@/lib/utils";
 import { emitCycleComplete } from "@/lib/study-flow-events";
 import { parseSubjectIcon } from "@/lib/subject-icons";
@@ -848,7 +849,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
             });
 
           if (allCycleCompleted) {
-            const nextRound = incrementCycleRoundsToday();
+            const nextRound = incrementCycleRoundsToday(id);
             emitCycleComplete(nextRound);
             return { ...prev, subjects: restartToday(updatedSubjects) };
           }
@@ -899,6 +900,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         });
       },
       resetCycleToday: () => {
+        clearLastCycleCompletedSubjectId();
         setData((prev) => {
           const day = todayIndex();
           const exclusiveCycle = isExclusiveCycleDay(prev.subjects, day);

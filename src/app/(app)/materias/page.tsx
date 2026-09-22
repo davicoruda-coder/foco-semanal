@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { BarChart3, ChevronDown, ChevronUp, FileText, Minus, Pause, Pencil, Play, Plus, Repeat, Trash2, X } from "lucide-react";
 import { useApp } from "@/components/AppProvider";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { SubjectIconPicker } from "@/components/SubjectIconPicker";
 import { newId } from "@/lib/demo-store";
 import {
@@ -412,6 +413,11 @@ function RotationEditor({
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
   const [noteDraft, setNoteDraft] = useState("");
   const [isExpanded, setIsExpanded] = useState(() => !rot || rot.items.length === 0);
+  const [pendingRemoveItem, setPendingRemoveItem] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
+
   const currentItem = rot ? (rot.items[rot.index] ?? rot.items[0]) : null;
 
   function addItem() {
@@ -793,7 +799,7 @@ function RotationEditor({
                 className="rounded-full p-1 text-[color-mix(in_srgb,var(--ink)_45%,transparent)] transition hover:bg-[var(--surface)] hover:text-[var(--warn)]"
                 title="Remover disciplina"
                 aria-label={`Remover ${it.name}`}
-                onClick={() => removeItem(it.id)}
+                onClick={() => setPendingRemoveItem({ id: it.id, name: it.name })}
               >
                 <Trash2 size={14} strokeWidth={1.75} />
               </button>
@@ -825,6 +831,21 @@ function RotationEditor({
       </div>
         </div>
       )}
+      {/* Confirmação de remoção de disciplina do rodízio */}
+      <ConfirmDialog
+        open={pendingRemoveItem !== null}
+        title="Remover disciplina do rodízio"
+        message={`Deseja remover "${pendingRemoveItem?.name}" do rodízio? As anotações e progresso desta disciplina serão perdidos.`}
+        confirmLabel="Remover"
+        cancelLabel="Cancelar"
+        confirmVariant="danger"
+        onConfirm={() => {
+          if (!pendingRemoveItem) return;
+          removeItem(pendingRemoveItem.id);
+          setPendingRemoveItem(null);
+        }}
+        onCancel={() => setPendingRemoveItem(null)}
+      />
     </div>
   );
 }

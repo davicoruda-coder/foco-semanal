@@ -16,6 +16,7 @@ import {
   CAUSA_ERRO_LABEL,
   STATUS_RESULTADO_LABEL,
   type CausaErro,
+  type QuestaoCaderno,
   type QuickCapturePayload,
   type StatusResultado,
 } from "@/lib/revisao/types";
@@ -159,22 +160,39 @@ function ComboboxSelect({
 
 export function QuickCaptureForm({
   onSuccess,
+  initialData,
+  onCancel,
 }: {
   onSuccess?: () => void;
+  initialData?: QuestaoCaderno;
+  onCancel?: () => void;
 }) {
-  const { addQuestao, materias, addMateria } = useRevisao();
+  const { addQuestao, updateQuestao, materias, addMateria } = useRevisao();
+  const isEditing = Boolean(initialData);
 
   /* State */
-  const [codigoOuLink, setCodigoOuLink] = useState("");
-  const [banca, setBanca] = useState("");
-  const [disciplina, setDisciplina] = useState("");
-  const [assunto, setAssunto] = useState("");
-  const [resultado, setResultado] = useState<StatusResultado>("erro");
-  const [causa, setCausa] = useState<CausaErro>("teoria");
-  const [aprendizado, setAprendizado] = useState("");
-  const [linkVideo, setLinkVideo] = useState("");
-  const [enunciado, setEnunciado] = useState("");
-  const [expandido, setExpandido] = useState(false);
+  const [codigoOuLink, setCodigoOuLink] = useState(
+    initialData?.codigo_questao || initialData?.link_questao || "",
+  );
+  const [banca, setBanca] = useState(initialData?.banca || "");
+  const [disciplina, setDisciplina] = useState(initialData?.disciplina || "");
+  const [assunto, setAssunto] = useState(initialData?.assunto || "");
+  const [resultado, setResultado] = useState<StatusResultado>(
+    initialData?.status_resultado || "erro",
+  );
+  const [causa, setCausa] = useState<CausaErro>(
+    initialData?.causa_erro || "teoria",
+  );
+  const [aprendizado, setAprendizado] = useState(
+    initialData?.aprendizado_chave || "",
+  );
+  const [linkVideo, setLinkVideo] = useState(initialData?.link_video || "");
+  const [enunciado, setEnunciado] = useState(
+    initialData?.enunciado_texto || "",
+  );
+  const [expandido, setExpandido] = useState(
+    Boolean(initialData?.enunciado_texto || initialData?.link_video),
+  );
 
   const [saving, setSaving] = useState(false);
   const [feedback, setFeedback] = useState<{
@@ -258,32 +276,50 @@ export function QuickCaptureForm({
         aprendizado_chave: aprendizado.trim(),
       };
 
-      const ok = await addQuestao(payload);
-      setSaving(false);
-
-      if (ok) {
-        if (payload.disciplina) {
-          void addMateria(payload.disciplina);
+      if (isEditing && initialData) {
+        const ok = await updateQuestao(initialData.id, payload);
+        setSaving(false);
+        if (ok) {
+          if (payload.disciplina) void addMateria(payload.disciplina);
+          setFeedback({ ok: true, msg: "Questão atualizada com sucesso!" });
+          feedbackTimer.current = setTimeout(() => {
+            setFeedback(null);
+            onSuccess?.();
+          }, 800);
+        } else {
+          setFeedback({
+            ok: false,
+            msg: "Erro ao atualizar. Verifique sua conexão.",
+          });
         }
-        setFeedback({ ok: true, msg: "Questão registrada + flashcard criado!" });
-        // Reset form
-        setCodigoOuLink("");
-        setBanca("");
-        setDisciplina("");
-        setAssunto("");
-        setAprendizado("");
-        setLinkVideo("");
-        setEnunciado("");
-        setExpandido(false);
-        setResultado("erro");
-        setCausa("teoria");
-        feedbackTimer.current = setTimeout(() => setFeedback(null), 4000);
-        onSuccess?.();
       } else {
-        setFeedback({
-          ok: false,
-          msg: "Erro ao salvar. Verifique sua conexão.",
-        });
+        const ok = await addQuestao(payload);
+        setSaving(false);
+
+        if (ok) {
+          if (payload.disciplina) {
+            void addMateria(payload.disciplina);
+          }
+          setFeedback({ ok: true, msg: "Questão registrada + flashcard criado!" });
+          // Reset form
+          setCodigoOuLink("");
+          setBanca("");
+          setDisciplina("");
+          setAssunto("");
+          setAprendizado("");
+          setLinkVideo("");
+          setEnunciado("");
+          setExpandido(false);
+          setResultado("erro");
+          setCausa("teoria");
+          feedbackTimer.current = setTimeout(() => setFeedback(null), 4000);
+          onSuccess?.();
+        } else {
+          setFeedback({
+            ok: false,
+            msg: "Erro ao salvar. Verifique sua conexão.",
+          });
+        }
       }
     },
     [
@@ -490,19 +526,36 @@ export function QuickCaptureForm({
         </div>
       )}
 
-      {/* Submit */}
-      <button
-        type="submit"
-        disabled={saving}
-        className="flex w-full items-center justify-center gap-2 rounded-[var(--radius-btn)] bg-[var(--signal)] px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:brightness-110 active:scale-[0.98] disabled:opacity-60"
-      >
-        {saving ? (
-          <Loader2 size={16} className="animate-spin" />
-        ) : (
-          <Plus size={16} />
+      {/* Submit / Cancel */}
+      <div className="flex items-center gap-2">
+        {onCancel && (
+          <button
+            type="button"
+            onClick={onCancel}
+            className="flex-1 rounded-[var(--radius-btn)] border border-[var(--line)] bg-[var(--surface)] px-4 py-3 text-sm font-semibold text-[var(--ink)] transition hover:bg-[var(--mist)] active:scale-[0.98]"
+          >
+            Cancelar
+          </button>
         )}
-        {saving ? "Salvando…" : "Registrar Questão"}
-      </button>
+        <button
+          type="submit"
+          disabled={saving}
+          className="flex-1 flex items-center justify-center gap-2 rounded-[var(--radius-btn)] bg-[var(--signal)] px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:brightness-110 active:scale-[0.98] disabled:opacity-60"
+        >
+          {saving ? (
+            <Loader2 size={16} className="animate-spin" />
+          ) : isEditing ? (
+            <CheckCircle size={16} />
+          ) : (
+            <Plus size={16} />
+          )}
+          {saving
+            ? "Salvando…"
+            : isEditing
+              ? "Salvar Alterações"
+              : "Registrar Questão"}
+        </button>
+      </div>
     </form>
   );
 }
