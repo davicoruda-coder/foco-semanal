@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Pause, Play, RotateCcw, SkipForward, X } from "lucide-react";
 import { DialogFrame } from "@/components/DialogFrame";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { AutoGrowTextarea } from "@/components/AutoGrowTextarea";
 import { useApp } from "@/components/AppProvider";
 import { useStudyFlow } from "@/components/StudyFlowProvider";
@@ -102,6 +103,88 @@ export function StudySessionBar() {
     };
   }, [flow.phase]);
 
+  type ConfirmAction = "skip" | "reset" | "finish";
+  const [confirmAction, setConfirmAction] = useState<ConfirmAction | null>(null);
+  const wasRunningRef = useRef(false);
+
+  // Fecha qualquer confirmação se a sessão sair de running/paused
+  useEffect(() => {
+    if (flow.phase !== "running" && flow.phase !== "paused") {
+      setConfirmAction(null);
+    }
+  }, [flow.phase]);
+
+  function requestAction(action: ConfirmAction) {
+    if (flow.phase === "running") {
+      wasRunningRef.current = true;
+      flow.pauseSession();
+    } else {
+      wasRunningRef.current = false;
+    }
+    setConfirmAction(action);
+  }
+
+  function handleCancelConfirm() {
+    const shouldResume = wasRunningRef.current;
+    setConfirmAction(null);
+    if (shouldResume && flow.phase === "paused") {
+      flow.resumeSession();
+    }
+  }
+
+  function handleExecuteConfirm() {
+    const action = confirmAction;
+    setConfirmAction(null);
+    if (action === "skip") {
+      flow.completeCurrentSubjectEarly();
+    } else if (action === "reset") {
+      flow.resetSession();
+    } else if (action === "finish") {
+      flow.chooseFinish();
+    }
+  }
+
+  const confirmProps = useMemo(() => {
+    if (confirmAction === "skip") {
+      return {
+        title: "Concluir matéria e avançar?",
+        message: currentLive?.name
+          ? `Deseja concluir "${currentLive.name}" e avançar no ciclo de estudos?`
+          : "Deseja concluir a matéria atual e avançar no ciclo de estudos?",
+        confirmLabel: "Concluir e avançar",
+        cancelLabel: "Continuar estudando",
+        confirmVariant: "signal" as const,
+      };
+    }
+    if (confirmAction === "reset") {
+      return {
+        title: "Reiniciar bloco de estudos?",
+        message:
+          "Os cronômetros e o progresso das matérias deste bloco voltarão ao início. Deseja recomeçar?",
+        confirmLabel: "Sim, reiniciar",
+        cancelLabel: "Cancelar",
+        confirmVariant: "warn" as const,
+      };
+    }
+    if (confirmAction === "finish") {
+      return {
+        title: "Encerrar sessão de estudos?",
+        message:
+          "A sessão de estudos em andamento será interrompida e o bloco atual será encerrado. Deseja realmente finalizar?",
+        confirmLabel: "Sim, encerrar",
+        cancelLabel: "Continuar estudando",
+        confirmVariant: "danger" as const,
+      };
+    }
+    return {
+      title: "",
+      message: "",
+      confirmLabel: "Confirmar",
+      cancelLabel: "Cancelar",
+      confirmVariant: "warn" as const,
+    };
+  }, [confirmAction, currentLive?.name]);
+
   if (
     flow.phase !== "idle" &&
     flow.phase !== "running" &&
@@ -184,34 +267,51 @@ export function StudySessionBar() {
             {flow.blockSummary}
           </p>
         </div>
-        <button
-          type="button"
-          onClick={flow.completeCurrentSubjectEarly}
-          className="rounded-full p-1.5 text-[color-mix(in_srgb,var(--ink)_45%,transparent)] transition hover:bg-[var(--surface)] hover:text-[var(--ink)] active:scale-95 cursor-pointer"
-          title="Concluir matéria atual e avançar"
-          aria-label="Concluir matéria atual e avançar"
-        >
-          <SkipForward size={16} strokeWidth={2} />
-        </button>
-        <button
-          type="button"
-          onClick={flow.resetSession}
-          className="rounded-full p-1.5 text-[color-mix(in_srgb,var(--ink)_45%,transparent)] transition hover:bg-[var(--surface)] hover:text-[var(--ink)] active:scale-95 cursor-pointer"
-          title="Resetar sessão (recomeça o bloco)"
-          aria-label="Resetar sessão e recomeçar o bloco"
-        >
-          <RotateCcw size={16} strokeWidth={2} />
-        </button>
-        <button
-          type="button"
-          onClick={flow.chooseFinish}
-          className="rounded-full p-1.5 text-[color-mix(in_srgb,var(--ink)_45%,transparent)] transition hover:bg-[var(--surface)] hover:text-[var(--ink)]"
-          title="Finalizar estudos"
-          aria-label="Finalizar estudos"
-        >
-          <X size={16} strokeWidth={2} />
-        </button>
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={() => requestAction("skip")}
+            className="rounded-full p-1.5 text-[color-mix(in_srgb,var(--ink)_45%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--signal)_12%,var(--surface))] hover:text-[var(--signal)] active:scale-95 cursor-pointer"
+            title="Concluir matéria atual e avançar"
+            aria-label="Concluir matéria atual e avançar"
+          >
+            <SkipForward size={16} strokeWidth={2} />
+          </button>
+          <span
+            className="h-3.5 w-px bg-[color-mix(in_srgb,var(--line)_80%,transparent)] mx-0.5"
+            aria-hidden="true"
+          />
+          <button
+            type="button"
+            onClick={() => requestAction("reset")}
+            className="rounded-full p-1.5 text-[color-mix(in_srgb,var(--ink)_45%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--warn)_12%,var(--surface))] hover:text-[var(--warn)] active:scale-95 cursor-pointer"
+            title="Resetar sessão (recomeça o bloco)"
+            aria-label="Resetar sessão e recomeçar o bloco"
+          >
+            <RotateCcw size={16} strokeWidth={2} />
+          </button>
+          <button
+            type="button"
+            onClick={() => requestAction("finish")}
+            className="rounded-full p-1.5 text-[color-mix(in_srgb,var(--ink)_45%,transparent)] transition hover:bg-rose-500/10 hover:text-rose-600 dark:hover:text-rose-400 active:scale-95 cursor-pointer"
+            title="Finalizar estudos"
+            aria-label="Finalizar estudos"
+          >
+            <X size={16} strokeWidth={2} />
+          </button>
+        </div>
       </div>
+
+      <ConfirmDialog
+        open={confirmAction !== null}
+        title={confirmProps.title}
+        message={confirmProps.message}
+        confirmLabel={confirmProps.confirmLabel}
+        cancelLabel={confirmProps.cancelLabel}
+        confirmVariant={confirmProps.confirmVariant}
+        onConfirm={handleExecuteConfirm}
+        onCancel={handleCancelConfirm}
+      />
     </div>
   );
 }
