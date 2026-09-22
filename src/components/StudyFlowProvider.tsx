@@ -74,6 +74,8 @@ type StudyFlowContextValue = {
   dismissRestDone: () => void;
   /** Matéria na sessão: marca Concluída (manual) e avança. */
   completeCurrentSubjectEarly: () => void;
+  /** Estende o tempo da matéria atual da sessão (ex: +2 min, +5 min) e retoma. */
+  extendCurrentSubject: (extraMinutes: number) => void;
 };
 
 const StudyFlowContext = createContext<StudyFlowContextValue | null>(null);
@@ -87,10 +89,18 @@ function todayQueue(subjects: Subject[]): Subject[] {
 }
 
 export function StudyFlowProvider({ children }: { children: ReactNode }) {
-  const { data, updateSettings, setSubjectStatus, resetCycleToday, ready: appReady } = useApp();
+  const {
+    data,
+    updateSettings,
+    setSubjectStatus,
+    reopenSubjectForExtraTime,
+    resetCycleToday,
+    ready: appReady,
+  } = useApp();
   const {
     toggleSubjectTimer,
     resetSubjectTimer,
+    addSubjectTimerSeconds,
     runtime,
     subjectTimerKey,
     subjectStopwatches,
@@ -480,6 +490,28 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
     advanceAfterComplete(current.id);
   }, [isClockRunning, toggleSubjectTimer, setSubjectStatus, advanceAfterComplete]);
 
+  const extendCurrentSubject = useCallback(
+    (extraMinutes: number) => {
+      const subjects = blockRef.current;
+      const idx = indexRef.current;
+      const current = subjects[idx];
+      if (!current) return;
+
+      const seconds = Math.max(1, extraMinutes) * 60;
+      if (
+        phaseRef.current === "subject_notes" ||
+        phaseRef.current === "block_done"
+      ) {
+        reopenSubjectForExtraTime(current.id);
+      }
+      setCycleRoundCompleted(null);
+      advancingRef.current = false;
+      addSubjectTimerSeconds(current.id, seconds);
+      setPhase("running");
+    },
+    [reopenSubjectForExtraTime, addSubjectTimerSeconds],
+  );
+
   const continueToNextSubject = useCallback(() => {
     setCycleRoundCompleted(null);
     if (phaseRef.current !== "subject_notes") return;
@@ -618,6 +650,7 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
       endRestEarly,
       dismissRestDone,
       completeCurrentSubjectEarly,
+      extendCurrentSubject,
     }),
     [
       phase,
@@ -647,6 +680,7 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
       endRestEarly,
       dismissRestDone,
       completeCurrentSubjectEarly,
+      extendCurrentSubject,
     ],
   );
 

@@ -71,6 +71,8 @@ type TimerRuntimeContextValue = {
   subjectTimerKey: (subjectId: string) => string;
   toggleSubjectTimer: (subjectId: string) => void;
   resetSubjectTimer: (subjectId: string) => void;
+  /** Adiciona tempo extra (em segundos) e coloca o timer da matéria para rodar. */
+  addSubjectTimerSeconds: (subjectId: string, seconds: number) => void;
   secondsForSubject: (subjectId: string) => number;
   /** Cronômetros das matérias Livre (sobe o tempo). */
   subjectStopwatches: Record<string, StopwatchState>;
@@ -1466,6 +1468,72 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
     [subjects, showFlash, pauseSidebarTimer, flushFocusSeconds],
   );
 
+  const addSubjectTimerSeconds = useCallback(
+    (subjectId: string, seconds: number) => {
+      const key = subjectTimerKey(subjectId);
+      const sub = subjects.find((s) => s.id === subjectId);
+      if (!sub) return;
+
+      const minutes = Math.max(1, sub.study_minutes ?? 25);
+      doneRef.current[key] = false;
+      showFlash(key, "play");
+
+      setSubjectStopwatches((prev) => {
+        let changed = false;
+        const next: Record<string, StopwatchState> = { ...prev };
+        for (const [id, s] of Object.entries(prev)) {
+          if (!s.running) continue;
+          next[id] = pauseStopwatchState(s);
+          changed = true;
+        }
+        if (!changed) return prev;
+        subjectStopwatchesRef.current = next;
+        writeSubjectStopwatches(next);
+        return next;
+      });
+
+      setRuntime((prev) => {
+        const current = prev[key];
+        const currentLeft = liveSeconds(current, minutes);
+        const newSecondsLeft = Math.max(0, currentLeft) + seconds;
+
+        // Atualiza a referência de foco computado para não haver salto brusco no delta
+        focusCreditedCountdownRef.current[key] = newSecondsLeft;
+
+        const next = { ...prev };
+        for (const [id, r] of Object.entries(prev)) {
+          if (!isSubjectTimerKey(id) || id === key || !r.running) continue;
+          const otherId = subjectIdFromKey(id);
+          const other = subjects.find((s) => s.id === otherId);
+          const otherMin = Math.max(1, other?.study_minutes ?? 25);
+          const otherLeft = liveSeconds(r, otherMin);
+          next[id] = {
+            secondsLeft: otherLeft,
+            running: false,
+            endsAt: null,
+            startedAt: r.startedAt,
+          };
+        }
+
+        next[key] = {
+          secondsLeft: newSecondsLeft,
+          running: true,
+          endsAt: Date.now() + newSecondsLeft * 1000,
+          startedAt: current?.startedAt ?? new Date().toISOString(),
+        };
+
+        const paused = pauseSidebarTimer(next);
+        linkedPausedSubjectsRef.current =
+          linkedPausedSubjectsRef.current.filter((id) => id === key);
+        runtimeRef.current = paused;
+        writeStored(paused);
+        writeHeartbeat();
+        return paused;
+      });
+    },
+    [subjects, showFlash, pauseSidebarTimer],
+  );
+
   const resetSubjectTimer = useCallback(
     (subjectId: string) => {
       flushFocusSeconds();
@@ -1681,6 +1749,7 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
       subjectTimerKey,
       toggleSubjectTimer,
       resetSubjectTimer,
+      addSubjectTimerSeconds,
       secondsForSubject,
       subjectStopwatches,
       stopwatch,
@@ -1704,6 +1773,7 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
       secondsFor,
       toggleSubjectTimer,
       resetSubjectTimer,
+      addSubjectTimerSeconds,
       secondsForSubject,
       subjectStopwatches,
       stopwatch,

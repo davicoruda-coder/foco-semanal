@@ -104,6 +104,8 @@ type AppContextValue = {
   upsertSubject: (subject: Partial<Subject> & { name: string }) => void;
   /** Marca status; Ok no último do ciclo de hoje → todos (incluindo o último) voltam pra Próx. */
   setSubjectStatus: (id: string, status: SubjectStatus) => void;
+  /** Reabre matéria recém-concluída para tempo extra (reverte status para prox, decrementa cycle_done e recua o rodízio). */
+  reopenSubjectForExtraTime: (id: string) => void;
   /** Reinicia manualmente o ciclo de matérias de hoje para o status inicial (prox). */
   resetCycleToday: () => void;
   deleteSubject: (id: string) => void;
@@ -847,6 +849,48 @@ export function AppProvider({ children }: { children: ReactNode }) {
           }
 
           return { ...prev, subjects: updatedSubjects };
+        });
+      },
+      reopenSubjectForExtraTime: (id) => {
+        setData((prev) => {
+          const target = prev.subjects.find((s) => s.id === id);
+          if (!target) return prev;
+          const day = todayIndex();
+          const exclusiveCycle = isExclusiveCycleDay(prev.subjects, day);
+
+          const writeStatus = (s: Subject, next: SubjectStatus): Subject =>
+            exclusiveCycle
+              ? { ...s, exclusive_status: next }
+              : { ...s, status: next };
+
+          const revertRotation = (s: Subject): Subject => {
+            if (s.id !== id) return s;
+            const rot = normalizeRotation(s.rotation);
+            if (!rot || rot.items.length <= 1) return s;
+            const len = rot.items.length;
+            const prevIdx = (rot.index - 1 + len) % len;
+            return {
+              ...s,
+              rotation: { ...rot, index: prevIdx },
+            };
+          };
+
+          const currentDone = Math.max(0, target.cycle_done ?? 0);
+          const prevDone = Math.max(0, currentDone - 1);
+
+          return {
+            ...prev,
+            subjects: prev.subjects.map((s) => {
+              if (s.id === id) {
+                const reverted = revertRotation(s);
+                return {
+                  ...writeStatus(reverted, "prox"),
+                  cycle_done: prevDone,
+                };
+              }
+              return s;
+            }),
+          };
         });
       },
       resetCycleToday: () => {

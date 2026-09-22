@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Pause, Play, RotateCcw, SkipForward, X } from "lucide-react";
+import { Clock, Pause, Play, RotateCcw, SkipForward, X } from "lucide-react";
 import { DialogFrame } from "@/components/DialogFrame";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { AutoGrowTextarea } from "@/components/AutoGrowTextarea";
@@ -66,6 +66,40 @@ function NotesBlock({
           recursos={rotationItem ? rotationItem.recursos : subject.recursos}
           onChange={onChangeRecursos}
         />
+      </div>
+    </div>
+  );
+}
+
+function ExtraTimePrompt({
+  subjectName,
+  onExtend,
+}: {
+  subjectName?: string;
+  onExtend: (mins: number) => void;
+}) {
+  return (
+    <div className="mt-4 rounded-[var(--radius-tag)] border border-[color-mix(in_srgb,var(--signal)_25%,var(--line))] bg-[color-mix(in_srgb,var(--signal)_6%,var(--surface))] p-3">
+      <div className="flex items-center justify-between gap-2">
+        <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--ink)]">
+          <Clock size={13.5} className="text-[var(--signal)]" />
+          Precisa de mais tempo{subjectName ? ` em ${subjectName}` : ""}?
+        </span>
+        <span className="text-[11px] text-[color-mix(in_srgb,var(--ink)_50%,transparent)]">
+          Estender estudo
+        </span>
+      </div>
+      <div className="mt-2.5 grid grid-cols-3 gap-2">
+        {[2, 5, 10].map((mins) => (
+          <button
+            key={mins}
+            type="button"
+            onClick={() => onExtend(mins)}
+            className="inline-flex items-center justify-center gap-1 rounded-lg border border-[color-mix(in_srgb,var(--signal)_35%,var(--line))] bg-[var(--surface)] py-1.5 text-xs font-semibold text-[var(--ink)] shadow-xs transition hover:border-[var(--signal)] hover:bg-[var(--signal-soft)] hover:text-[var(--signal)] active:scale-95 cursor-pointer"
+          >
+            +{mins} min
+          </button>
+        ))}
       </div>
     </div>
   );
@@ -427,9 +461,18 @@ export function StudySessionChrome() {
             onChangeRecursos={handleRecursosChange}
           />
         ) : null}
+
+        <ExtraTimePrompt
+          subjectName={notesSubject?.name}
+          onExtend={(mins) => {
+            persistNotes();
+            flow.extendCurrentSubject(mins);
+          }}
+        />
+
         <button
           type="button"
-          className="btn mt-5 w-full bg-[var(--signal)] text-white"
+          className="btn mt-4 w-full bg-[var(--signal)] text-white"
           onClick={() => afterNotesThen(flow.continueToNextSubject)}
         >
           Continuar para a próxima
@@ -473,7 +516,15 @@ export function StudySessionChrome() {
           />
         ) : null}
 
-        <div className="mt-5 flex flex-col gap-2">
+        <ExtraTimePrompt
+          subjectName={notesSubject?.name}
+          onExtend={(mins) => {
+            persistNotes();
+            flow.extendCurrentSubject(mins);
+          }}
+        />
+
+        <div className="mt-4 flex flex-col gap-2">
           <button
             type="button"
             className="btn bg-[var(--signal)] text-white"
