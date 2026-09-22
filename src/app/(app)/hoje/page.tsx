@@ -8,6 +8,7 @@ import {
   ChevronDown,
   ChevronRight,
   ChevronUp,
+  RotateCcw,
 } from "lucide-react";
 import { useApp } from "@/components/AppProvider";
 import { useStudyFlow } from "@/components/StudyFlowProvider";
@@ -41,7 +42,7 @@ import { SessionSubjectClock } from "@/components/SessionSubjectClock";
 import { SubjectIcon } from "@/components/SubjectIcon";
 
 export default function HojePage() {
-  const { data, upsertSubject } = useApp();
+  const { data, upsertSubject, resetCycleToday } = useApp();
   const flow = useStudyFlow();
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [showFullCycle, setShowFullCycle] = useState(false);
@@ -290,14 +291,28 @@ export default function HojePage() {
               <h2 className="font-display text-lg font-semibold tracking-tight text-[var(--ink)] md:text-xl">
                 Ciclo de Estudos
               </h2>
-              <Link
-                href="/materias"
-                title="Gerenciar matérias"
-                aria-label="Gerenciar matérias"
-                className="inline-flex size-9 items-center justify-center rounded-full text-[color-mix(in_srgb,var(--ink)_50%,transparent)] transition hover:bg-[var(--mist)] hover:text-[var(--signal)] md:size-8"
-              >
-                <BookMarked size={18} strokeWidth={1.75} />
-              </Link>
+              <div className="flex items-center gap-1.5">
+                {flow.cycleCompleted && (
+                  <button
+                    type="button"
+                    onClick={resetCycleToday}
+                    title="Reiniciar ciclo de estudos"
+                    aria-label="Reiniciar ciclo de estudos"
+                    className="inline-flex h-8 items-center gap-1.5 rounded-full bg-[color-mix(in_srgb,var(--signal)_12%,transparent)] px-2.5 text-xs font-semibold text-[var(--signal)] transition hover:bg-[color-mix(in_srgb,var(--signal)_20%,transparent)] active:scale-95"
+                  >
+                    <RotateCcw size={13} strokeWidth={2.5} />
+                    Reiniciar ciclo
+                  </button>
+                )}
+                <Link
+                  href="/materias"
+                  title="Gerenciar matérias"
+                  aria-label="Gerenciar matérias"
+                  className="inline-flex size-9 items-center justify-center rounded-full text-[color-mix(in_srgb,var(--ink)_50%,transparent)] transition hover:bg-[var(--mist)] hover:text-[var(--signal)] md:size-8"
+                >
+                  <BookMarked size={18} strokeWidth={1.75} />
+                </Link>
+              </div>
             </div>
 
             {(exclusiveSoloToday || exclusiveCycleToday) &&

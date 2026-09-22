@@ -53,6 +53,8 @@ type StudyFlowContextValue = {
   refreshSettings: () => void;
   saveSettings: (next: BlockRangeSettings) => void;
   canStart: boolean;
+  /** Todo o ciclo de hoje foi concluído (todas as matérias estão Ok) */
+  cycleCompleted: boolean;
   sessionActive: boolean;
   /** Play individual permitido? (sessão ativa → só a matéria atual) */
   allowSubjectPlay: (subjectId: string) => boolean;
@@ -83,7 +85,7 @@ function todayQueue(subjects: Subject[]): Subject[] {
 }
 
 export function StudyFlowProvider({ children }: { children: ReactNode }) {
-  const { data, updateSettings, setSubjectStatus, ready: appReady } = useApp();
+  const { data, updateSettings, setSubjectStatus, resetCycleToday, ready: appReady } = useApp();
   const {
     toggleSubjectTimer,
     resetSubjectTimer,
@@ -269,7 +271,14 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
     phase === "resting" ||
     phase === "rest_done";
 
-  const canStart = previewBlock.length > 0 && !sessionActive;
+  const cycleCompleted = useMemo(() => {
+    const day = todayIndex();
+    const cycleSubs = cycleSubjectsOnDay(data.subjects ?? [], day);
+    const remaining = buildWeightedCycleQueue(data.subjects ?? [], day);
+    return cycleSubs.length > 0 && remaining.length === 0;
+  }, [data.subjects]);
+
+  const canStart = (previewBlock.length > 0 || cycleCompleted) && !sessionActive;
 
   const allowSubjectPlay = useCallback(
     (subjectId: string) => {
@@ -301,6 +310,16 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
   );
 
   const startSession = useCallback(() => {
+    const day = todayIndex();
+    const cycleSubs = cycleSubjectsOnDay(data.subjects ?? [], day);
+    const remaining = buildWeightedCycleQueue(data.subjects ?? [], day);
+
+    // Se o ciclo já estava 100% concluído para o dia, reinicia todas as matérias
+    // para que a nova sessão seja iniciada do começo com status "prox".
+    if (remaining.length === 0 && cycleSubs.length > 0) {
+      resetCycleToday();
+    }
+
     const queue = todayQueue(data.subjects ?? []);
     const packed = packStudyBlock(
       queue,
@@ -309,13 +328,24 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
       settings.targetMinutes,
     );
     if (packed.length === 0) return;
+
+    // Garante que matérias incluídas no bloco a ser iniciado não permaneçam com status "ok"
+    for (const s of packed) {
+      const live = (data.subjects ?? []).find((x) => x.id === s.id);
+      const exclusiveCycle = isExclusiveCycleDay(data.subjects ?? [], day);
+      const st = exclusiveCycle ? live?.exclusive_status : live?.status;
+      if (st === "ok") {
+        setSubjectStatus(s.id, "prox");
+      }
+    }
+
     advancingRef.current = false;
     setBlock(packed);
     setCurrentIndex(0);
     setPhase("running");
     setRestEndsAt(null);
     startSubjectAt(0, packed);
-  }, [data.subjects, settings, startSubjectAt]);
+  }, [data.subjects, settings, startSubjectAt, resetCycleToday, setSubjectStatus]);
 
   const pauseSession = useCallback(() => {
     if (phaseRef.current !== "running") return;
@@ -386,26 +416,10 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
     setBlock([]);
     setCurrentIndex(0);
     setRestEndsAt(null);
-    // Próximo bloco com a fila atualizada (matérias já Ok saem).
     window.setTimeout(() => {
-      const queue = todayQueue(data.subjects ?? []);
-      const packed = packStudyBlock(
-        queue,
-        settings.minMinutes,
-        settings.maxMinutes,
-        settings.targetMinutes,
-      );
-      if (packed.length === 0) {
-        notify("FocoHub", "Não há mais matérias na fila de hoje");
-        return;
-      }
-      advancingRef.current = false;
-      setBlock(packed);
-      setCurrentIndex(0);
-      setPhase("running");
-      startSubjectAt(0, packed);
+      startSession();
     }, 80);
-  }, [data.subjects, settings, startSubjectAt]);
+  }, [startSession]);
 
   const chooseFinish = useCallback(() => {
     const current = blockRef.current[indexRef.current];
@@ -495,6 +509,14 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
     return () => window.removeEventListener(SUBJECT_COMPLETE_EVENT, onComplete);
   }, [advanceAfterComplete]);
 
+  const prevSubjectStatusRef = useRef<Record<string, string | undefined>>({});
+
+  useEffect(() => {
+    if (phase !== "running" && phase !== "paused") {
+      prevSubjectStatusRef.current = {};
+    }
+  }, [phase]);
+
   // Matéria na sessão marcada como Concluída (manual / badge na lista) → avança como o fim do timer.
   useEffect(() => {
     if (phase !== "running" && phase !== "paused") return;
@@ -504,11 +526,18 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
     if (!live) return;
     const day = todayIndex();
     const exclusiveCycle = isExclusiveCycleDay(data.subjects ?? [], day);
-    const done =
-      (exclusiveCycle ? live.exclusive_status ?? "prox" : live.status) === "ok";
-    if (!done) return;
-    if (isClockRunning(current.id, current.is_free)) toggleSubjectTimer(current.id);
-    advanceAfterComplete(current.id);
+    const currentStatus =
+      (exclusiveCycle ? live.exclusive_status ?? "prox" : live.status);
+
+    const prevStatus = prevSubjectStatusRef.current[current.id];
+    prevSubjectStatusRef.current[current.id] = currentStatus;
+
+    // Só avança se o status já estava sendo monitorado nesta sessão e transitou para "ok".
+    // Isso evita pular matérias instantaneamente ao iniciar uma sessão com status já ok.
+    if (prevStatus !== undefined && prevStatus !== "ok" && currentStatus === "ok") {
+      if (isClockRunning(current.id, current.is_free)) toggleSubjectTimer(current.id);
+      advanceAfterComplete(current.id);
+    }
   }, [
     phase,
     block,
@@ -553,6 +582,7 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
       refreshSettings,
       saveSettings,
       canStart,
+      cycleCompleted,
       sessionActive,
       allowSubjectPlay,
       startSession,
@@ -580,6 +610,7 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
       refreshSettings,
       saveSettings,
       canStart,
+      cycleCompleted,
       sessionActive,
       allowSubjectPlay,
       startSession,

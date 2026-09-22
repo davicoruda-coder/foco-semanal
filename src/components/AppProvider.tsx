@@ -102,6 +102,8 @@ type AppContextValue = {
   upsertSubject: (subject: Partial<Subject> & { name: string }) => void;
   /** Marca status; Ok no último do ciclo de hoje → todos (incluindo o último) voltam pra Próx. */
   setSubjectStatus: (id: string, status: SubjectStatus) => void;
+  /** Reinicia manualmente o ciclo de matérias de hoje para o status inicial (prox). */
+  resetCycleToday: () => void;
   deleteSubject: (id: string) => void;
   upsertWeekBlock: (block: Partial<WeekBlock> & { day: number; label: string }) => void;
   deleteWeekBlock: (id: string) => void;
@@ -824,14 +826,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
             return s;
           });
 
-          // Verifica se todas as matérias ativas do ciclo de hoje completaram seus pesos
+          // Verifica se todas as matérias ativas do ciclo de hoje completaram seus pesos ou foram concluídas
           const todayAfter = cycleSubjectsOnDay(updatedSubjects, day);
           const allCycleCompleted =
             todayAfter.length > 0 &&
             todayAfter.every((s) => {
               const w = Math.max(1, s.weight ?? 1);
               const d = Math.max(0, s.cycle_done ?? 0);
-              return d >= w;
+              return exclusiveCycle
+                ? s.exclusive_status === "ok"
+                : s.status === "ok" || d >= w;
             });
 
           if (allCycleCompleted) {
@@ -839,6 +843,28 @@ export function AppProvider({ children }: { children: ReactNode }) {
           }
 
           return { ...prev, subjects: updatedSubjects };
+        });
+      },
+      resetCycleToday: () => {
+        setData((prev) => {
+          const day = todayIndex();
+          const exclusiveCycle = isExclusiveCycleDay(prev.subjects, day);
+          const writeStatus = (s: Subject, next: SubjectStatus): Subject =>
+            exclusiveCycle
+              ? { ...s, exclusive_status: next }
+              : { ...s, status: next };
+          const ids = new Set(cycleSubjectsOnDay(prev.subjects, day).map((s) => s.id));
+          return {
+            ...prev,
+            subjects: prev.subjects.map((s) =>
+              ids.has(s.id)
+                ? {
+                    ...writeStatus(s, "prox"),
+                    cycle_done: 0,
+                  }
+                : s,
+            ),
+          };
         });
       },
       deleteSubject: (id) => {
