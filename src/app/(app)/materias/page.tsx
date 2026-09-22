@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ChevronDown, ChevronUp, Pause, Play, Repeat, Trash2, X } from "lucide-react";
+import { ChevronDown, ChevronUp, FileText, Pause, Pencil, Play, Repeat, Trash2, X } from "lucide-react";
 import { useApp } from "@/components/AppProvider";
 import { SubjectIconPicker } from "@/components/SubjectIconPicker";
 import { newId } from "@/lib/demo-store";
@@ -19,6 +19,7 @@ import {
   normalizeExclusiveDays,
   statusClass,
   statusRowClass,
+  rotationWithItemNotes,
   rotationWithItemRecursos,
 } from "@/lib/utils";
 import { SubjectResources } from "@/components/SubjectResources";
@@ -179,6 +180,8 @@ function RotationEditor({
   const [newName, setNewName] = useState("");
   const [nameDrafts, setNameDrafts] = useState<Record<string, string>>({});
   const [confirmOff, setConfirmOff] = useState(false);
+  const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
+  const [noteDraft, setNoteDraft] = useState("");
 
   function addItem() {
     const name = newName.trim();
@@ -192,6 +195,7 @@ function RotationEditor({
   }
 
   function removeItem(id: string) {
+    if (editingNoteId === id) setEditingNoteId(null);
     if (!rot) return;
     const idx = rot.items.findIndex((it) => it.id === id);
     const items = rot.items.filter((it) => it.id !== id);
@@ -242,6 +246,31 @@ function RotationEditor({
         it.id === id ? { ...it, name: draft } : it,
       ),
     });
+  }
+
+  function saveNote(id: string) {
+    if (!rot) return;
+    const draftName = (nameDrafts[id] ?? "").trim();
+    const updatedRot = {
+      ...rot,
+      items: rot.items.map((it) => {
+        if (it.id !== id) return it;
+        return {
+          ...it,
+          name: draftName || it.name,
+          notes: noteDraft.trim(),
+        };
+      }),
+    };
+    if (draftName) {
+      setNameDrafts((prev) => {
+        const next = { ...prev };
+        delete next[id];
+        return next;
+      });
+    }
+    onSave(updatedRot);
+    setEditingNoteId(null);
   }
 
   if (!open) {
@@ -355,10 +384,84 @@ function RotationEditor({
                   }
                   onBlur={() => renameItem(it.id)}
                 />
-                {it.notes.trim() && (
-                  <p className="mt-0.5 truncate px-1 text-xs opacity-50">
-                    {it.notes}
-                  </p>
+                {editingNoteId === it.id ? (
+                  <div className="mt-1.5 rounded-[var(--radius-tag)] border border-[color-mix(in_srgb,var(--signal)_40%,var(--line))] bg-[var(--surface)] p-2 shadow-sm">
+                    <textarea
+                      ref={(el) => {
+                        if (el) {
+                          el.focus();
+                          el.selectionStart = el.selectionEnd = el.value.length;
+                        }
+                      }}
+                      className="w-full resize-none bg-transparent text-xs text-[var(--ink)] placeholder:text-[color-mix(in_srgb,var(--ink)_35%,transparent)] outline-none min-h-[48px] leading-relaxed"
+                      placeholder="Anotações desta disciplina (ex.: Pg1 - Q4283039)"
+                      value={noteDraft}
+                      onChange={(e) => setNoteDraft(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+                          e.preventDefault();
+                          saveNote(it.id);
+                        }
+                        if (e.key === "Escape") {
+                          setEditingNoteId(null);
+                        }
+                      }}
+                    />
+                    <div className="mt-1.5 flex items-center justify-between gap-2 border-t border-[var(--line)] pt-1.5">
+                      <span className="text-[10px] text-[color-mix(in_srgb,var(--ink)_40%,transparent)]">
+                        Ctrl+Enter para salvar
+                      </span>
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          className="btn py-1 px-2 text-xs border-transparent bg-transparent hover:bg-[var(--mist)] text-[color-mix(in_srgb,var(--ink)_70%,transparent)]"
+                          onClick={() => setEditingNoteId(null)}
+                        >
+                          Cancelar
+                        </button>
+                        <button
+                          type="button"
+                          className="btn py-1 px-2.5 text-xs bg-[var(--signal)] text-white hover:opacity-90"
+                          onClick={() => saveNote(it.id)}
+                        >
+                          Salvar
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                    {it.notes.trim() ? (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditingNoteId(it.id);
+                          setNoteDraft(it.notes);
+                        }}
+                        className="group inline-flex items-center gap-1.5 rounded-[var(--radius-tag)] border border-[color-mix(in_srgb,var(--line)_80%,transparent)] bg-[color-mix(in_srgb,var(--surface)_75%,transparent)] px-2 py-0.5 text-xs text-[color-mix(in_srgb,var(--ink)_80%,transparent)] transition hover:border-[var(--signal)] hover:text-[var(--signal)] hover:bg-[var(--surface)] text-left"
+                        title="Clique para editar anotações"
+                      >
+                        <FileText size={11} strokeWidth={2} className="shrink-0 text-[var(--signal)] opacity-85" />
+                        <span className="truncate max-w-[240px] sm:max-w-[340px] text-[11px]">
+                          {it.notes}
+                        </span>
+                        <Pencil size={10} className="shrink-0 opacity-40 transition group-hover:opacity-100" />
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditingNoteId(it.id);
+                          setNoteDraft("");
+                        }}
+                        className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] text-[color-mix(in_srgb,var(--ink)_45%,transparent)] transition hover:bg-[var(--surface)] hover:text-[var(--signal)]"
+                        title="Adicionar anotação a esta disciplina"
+                      >
+                        <FileText size={11} strokeWidth={1.75} />
+                        <span>+ anotação</span>
+                      </button>
+                    )}
+                  </div>
                 )}
                 <div className="mt-1">
                   <SubjectResources
