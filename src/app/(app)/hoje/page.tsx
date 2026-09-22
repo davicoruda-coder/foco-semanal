@@ -50,38 +50,6 @@ export default function HojePage() {
   const [weekOverride, setWeekOverride] = useState<boolean | null>(null);
   const day = todayIndex();
 
-  const subjects = useMemo(
-    () => {
-      const base = [...subjectsOnDay(data.subjects, day)];
-      const queue = buildWeightedCycleQueue(data.subjects, day);
-      
-      return base.sort((a, b) => {
-        const freeA = subjectTreatAsFree(a, day, data.subjects);
-        const freeB = subjectTreatAsFree(b, day, data.subjects);
-        
-        const idxA = queue.findIndex(q => q.id === a.id);
-        const idxB = queue.findIndex(q => q.id === b.id);
-        
-        const groupA = idxA !== -1 ? 0 : (freeA ? 1 : 2);
-        const groupB = idxB !== -1 ? 0 : (freeB ? 1 : 2);
-        
-        if (groupA !== groupB) return groupA - groupB;
-        
-        if (groupA === 0) {
-          return idxA - idxB;
-        }
-        
-        return a.cycle_order - b.cycle_order;
-      });
-    },
-    [data.subjects, day],
-  );
-
-  const queueHeadId = useMemo(
-    () => nextCycleSubjectId(data.subjects, day),
-    [data.subjects, day],
-  );
-
   const exclusiveTodayList = useMemo(
     () => exclusiveSubjectsOnDay(data.subjects, day),
     [data.subjects, day],
@@ -94,6 +62,98 @@ export default function HojePage() {
     () => isExclusiveSoloDay(data.subjects, day),
     [data.subjects, day],
   );
+
+  const subjects = useMemo(() => {
+    const base = [...subjectsOnDay(data.subjects, day)];
+    const queue = buildWeightedCycleQueue(data.subjects, day);
+
+    // Se há uma sessão ativa ou bloco em preview, as matérias do bloco têm prioridade máxima na ordem de estudo
+    const activeBlockIds = flow.sessionActive
+      ? flow.block.slice(flow.currentIndex).map((s) => s.id)
+      : flow.previewBlock.map((s) => s.id);
+
+    return base.sort((a, b) => {
+      const freeA = subjectTreatAsFree(a, day, data.subjects);
+      const freeB = subjectTreatAsFree(b, day, data.subjects);
+
+      const inBlockA = activeBlockIds.indexOf(a.id);
+      const inBlockB = activeBlockIds.indexOf(b.id);
+
+      const isDoneA = (exclusiveCycleToday ? a.exclusive_status : a.status) === "ok";
+      const isDoneB = (exclusiveCycleToday ? b.exclusive_status : b.status) === "ok";
+
+      // 0: Matérias do bloco em execução (em ordem do bloco: atual primeiro, depois as seguintes)
+      // 1: Demais matérias pendentes na fila geral
+      // 2: Matérias livres standalone
+      // 3: Matérias já concluídas
+      const groupA =
+        !isDoneA && inBlockA !== -1
+          ? 0
+          : !isDoneA && queue.some((q) => q.id === a.id)
+            ? 1
+            : freeA
+              ? 2
+              : 3;
+      const groupB =
+        !isDoneB && inBlockB !== -1
+          ? 0
+          : !isDoneB && queue.some((q) => q.id === b.id)
+            ? 1
+            : freeB
+              ? 2
+              : 3;
+
+      if (groupA !== groupB) return groupA - groupB;
+
+      // Dentro do bloco ativo, ordena rigorosamente pela ordem de estudo do bloco
+      if (groupA === 0) {
+        return inBlockA - inBlockB;
+      }
+
+      // Dentro da fila geral, ordena pela fila ponderada
+      if (groupA === 1) {
+        const idxA = queue.findIndex((q) => q.id === a.id);
+        const idxB = queue.findIndex((q) => q.id === b.id);
+        return idxA - idxB;
+      }
+
+      return a.cycle_order - b.cycle_order;
+    });
+  }, [
+    data.subjects,
+    day,
+    flow.sessionActive,
+    flow.block,
+    flow.currentIndex,
+    flow.previewBlock,
+    exclusiveCycleToday,
+  ]);
+
+  const queueHeadId = useMemo(() => {
+    if (flow.sessionActive) {
+      const remainingBlock = flow.block.slice(flow.currentIndex + 1);
+      if (remainingBlock.length > 0) {
+        return remainingBlock[0].id;
+      }
+      const activeIds = new Set(
+        flow.block.slice(flow.currentIndex).map((s) => s.id),
+      );
+      const queue = buildWeightedCycleQueue(data.subjects, day);
+      const nextInQueue = queue.find((q) => !activeIds.has(q.id));
+      return nextInQueue?.id ?? null;
+    }
+    if (flow.previewBlock.length > 0) {
+      return flow.previewBlock[0].id;
+    }
+    return nextCycleSubjectId(data.subjects, day);
+  }, [
+    flow.sessionActive,
+    flow.block,
+    flow.currentIndex,
+    flow.previewBlock,
+    data.subjects,
+    day,
+  ]);
 
   const todayBlocks = useMemo(
     () =>
@@ -342,9 +402,23 @@ export default function HojePage() {
                 const displayStatus = exclusiveCycleToday
                   ? (s.exclusive_status ?? "prox")
                   : s.status;
+                const isCurrentSession =
+                  flow.sessionActive && s.id === flow.currentSubjectId;
                 const statusUi = free
                   ? null
-                  : cycleStatusPresentation(displayStatus, s.id === queueHeadId);
+                  : isCurrentSession
+                    ? {
+                        label:
+                          flow.phase === "paused" ? "Pausada" : "Em estudo",
+                        chipClass:
+                          "bg-[var(--signal)] text-white ring-1 ring-[var(--signal)] font-semibold shadow-xs",
+                        rowClass:
+                          "bg-[var(--surface)] border border-[color-mix(in_srgb,var(--signal)_35%,var(--line))] shadow-[0_2px_10px_-2px_color-mix(in_srgb,var(--signal)_16%,transparent)] border-l-[4px] border-l-[var(--signal)]",
+                      }
+                    : cycleStatusPresentation(
+                        displayStatus,
+                        s.id === queueHeadId,
+                      );
                 return (
                   <div
                     key={s.id}
@@ -488,12 +562,23 @@ export default function HojePage() {
                     const displayStatus = exclusiveCycleToday
                       ? (s.exclusive_status ?? "prox")
                       : s.status;
+                    const isCurrentSession =
+                      flow.sessionActive && s.id === flow.currentSubjectId;
                     const statusUi = free
                       ? null
-                      : cycleStatusPresentation(
-                          displayStatus,
-                          s.id === queueHeadId,
-                        );
+                      : isCurrentSession
+                        ? {
+                            label:
+                              flow.phase === "paused" ? "Pausada" : "Em estudo",
+                            chipClass:
+                              "bg-[var(--signal)] text-white ring-1 ring-[var(--signal)] font-semibold shadow-xs",
+                            rowClass:
+                              "bg-[var(--surface)] border border-[color-mix(in_srgb,var(--signal)_35%,var(--line))] shadow-[0_2px_10px_-2px_color-mix(in_srgb,var(--signal)_16%,transparent)] border-l-[4px] border-l-[var(--signal)]",
+                          }
+                        : cycleStatusPresentation(
+                            displayStatus,
+                            s.id === queueHeadId,
+                          );
                     const rowBorder =
                       i < subjects.length - 1
                         ? "border-b-2 border-[var(--surface)]"
