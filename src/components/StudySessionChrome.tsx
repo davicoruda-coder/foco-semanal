@@ -302,6 +302,21 @@ export function StudySessionChrome() {
         <p className="mt-2 text-sm text-[color-mix(in_srgb,var(--ink)_70%,transparent)]">
           Anote onde parou antes da próxima. O tempo fica pausado.
         </p>
+
+        {flow.cycleRoundCompleted != null && (
+          <div className="mt-3 flex items-start gap-2.5 rounded-[var(--radius-tag)] border border-emerald-500/25 bg-emerald-500/10 p-3 text-emerald-950 dark:text-emerald-200">
+            <span className="text-lg leading-none select-none">🎉</span>
+            <div className="min-w-0">
+              <p className="text-sm font-semibold leading-snug">
+                {flow.cycleRoundCompleted}ª volta do ciclo concluída!
+              </p>
+              <p className="mt-0.5 text-xs text-emerald-800/80 dark:text-emerald-300/80 leading-relaxed">
+                Continue assim — vamos entrar na próxima rodada do ciclo!
+              </p>
+            </div>
+          </div>
+        )}
+
         {notesSubject ? (
           <NotesBlock
             subject={notesSubject}
@@ -332,6 +347,20 @@ export function StudySessionChrome() {
         <p className="mt-2 text-sm text-[color-mix(in_srgb,var(--ink)_70%,transparent)]">
           {flow.blockSummary}. O que deseja fazer?
         </p>
+
+        {flow.cycleRoundCompleted != null && (
+          <div className="mt-3 flex items-start gap-2.5 rounded-[var(--radius-tag)] border border-emerald-500/25 bg-emerald-500/10 p-3 text-emerald-950 dark:text-emerald-200">
+            <span className="text-lg leading-none select-none">🎉</span>
+            <div className="min-w-0">
+              <p className="text-sm font-semibold leading-snug">
+                {flow.cycleRoundCompleted}ª volta do ciclo concluída!
+              </p>
+              <p className="mt-0.5 text-xs text-emerald-800/80 dark:text-emerald-300/80 leading-relaxed">
+                Excelente rendimento no bloco. Hora de fazer uma pausa ou seguir no ritmo!
+              </p>
+            </div>
+          </div>
+        )}
 
         {notesSubject ? (
           <NotesBlock

@@ -22,7 +22,7 @@ import {
   writeBlockRange,
   type BlockRangeSettings,
 } from "@/lib/session-block";
-import { SUBJECT_COMPLETE_EVENT } from "@/lib/study-flow-events";
+import { SUBJECT_COMPLETE_EVENT, CYCLE_COMPLETE_EVENT } from "@/lib/study-flow-events";
 import {
   clearPersistedStudyFlow,
   readPersistedStudyFlow,
@@ -55,6 +55,8 @@ type StudyFlowContextValue = {
   canStart: boolean;
   /** Todo o ciclo de hoje foi concluído (todas as matérias estão Ok) */
   cycleCompleted: boolean;
+  /** Número da volta que acabou de ser concluída (ex: 1, 2) para aviso comemorativo */
+  cycleRoundCompleted: number | null;
   sessionActive: boolean;
   /** Play individual permitido? (sessão ativa → só a matéria atual) */
   allowSubjectPlay: (subjectId: string) => boolean;
@@ -113,6 +115,7 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
   const [block, setBlock] = useState<Subject[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [restEndsAt, setRestEndsAt] = useState<number | null>(null);
+  const [cycleRoundCompleted, setCycleRoundCompleted] = useState<number | null>(null);
   const [hydrated, setHydrated] = useState(false);
   const [, setTick] = useState(0);
 
@@ -310,6 +313,7 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
   );
 
   const startSession = useCallback(() => {
+    setCycleRoundCompleted(null);
     const day = todayIndex();
     const cycleSubs = cycleSubjectsOnDay(data.subjects ?? [], day);
     const remaining = buildWeightedCycleQueue(data.subjects ?? [], day);
@@ -366,6 +370,7 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
   }, [isClockRunning, toggleSubjectTimer]);
 
   const resetSession = useCallback(() => {
+    setCycleRoundCompleted(null);
     if (phaseRef.current !== "running" && phaseRef.current !== "paused") return;
     const subjects = blockRef.current;
     if (subjects.length === 0) return;
@@ -403,6 +408,7 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
   ]);
 
   const chooseRest = useCallback(() => {
+    setCycleRoundCompleted(null);
     playAlarmTone();
     const ends = Date.now() + settings.restMinutes * 60 * 1000;
     setRestEndsAt(ends);
@@ -412,6 +418,7 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
   }, [settings.restMinutes]);
 
   const chooseContinue = useCallback(() => {
+    setCycleRoundCompleted(null);
     setPhase("idle");
     setBlock([]);
     setCurrentIndex(0);
@@ -422,6 +429,7 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
   }, [startSession]);
 
   const chooseFinish = useCallback(() => {
+    setCycleRoundCompleted(null);
     const current = blockRef.current[indexRef.current];
     if (current && isClockRunning(current.id, current.is_free)) {
       toggleSubjectTimer(current.id);
@@ -473,6 +481,7 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
   }, [isClockRunning, toggleSubjectTimer, setSubjectStatus, advanceAfterComplete]);
 
   const continueToNextSubject = useCallback(() => {
+    setCycleRoundCompleted(null);
     if (phaseRef.current !== "subject_notes") return;
     const subjects = blockRef.current;
     const nextIdx = indexRef.current + 1;
@@ -488,11 +497,13 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
   }, [startSubjectAt]);
 
   const endRestEarly = useCallback(() => {
+    setCycleRoundCompleted(null);
     setRestEndsAt(null);
     setPhase("idle");
   }, []);
 
   const dismissRestDone = useCallback(() => {
+    setCycleRoundCompleted(null);
     setRestEndsAt(null);
     setPhase("idle");
   }, []);
@@ -505,8 +516,18 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
       advanceAfterComplete(subjectId);
     }
 
+    function onCycleComplete(ev: Event) {
+      const detail = (ev as CustomEvent<{ round: number }>).detail;
+      const round = detail?.round ?? 1;
+      setCycleRoundCompleted(round);
+    }
+
     window.addEventListener(SUBJECT_COMPLETE_EVENT, onComplete);
-    return () => window.removeEventListener(SUBJECT_COMPLETE_EVENT, onComplete);
+    window.addEventListener(CYCLE_COMPLETE_EVENT, onCycleComplete);
+    return () => {
+      window.removeEventListener(SUBJECT_COMPLETE_EVENT, onComplete);
+      window.removeEventListener(CYCLE_COMPLETE_EVENT, onCycleComplete);
+    };
   }, [advanceAfterComplete]);
 
   const prevSubjectStatusRef = useRef<Record<string, string | undefined>>({});
@@ -583,6 +604,7 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
       saveSettings,
       canStart,
       cycleCompleted,
+      cycleRoundCompleted,
       sessionActive,
       allowSubjectPlay,
       startSession,
@@ -611,6 +633,7 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
       saveSettings,
       canStart,
       cycleCompleted,
+      cycleRoundCompleted,
       sessionActive,
       allowSubjectPlay,
       startSession,

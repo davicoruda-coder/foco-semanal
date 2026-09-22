@@ -611,7 +611,38 @@ export function resetDailyStatusIfNeeded<T extends Subject>(
   }));
 
   localStorage.setItem(CYCLE_DATE_KEY, today);
+  localStorage.removeItem(CYCLE_ROUNDS_KEY);
   return { subjects: resetted as T[], didReset: true };
+}
+
+const CYCLE_ROUNDS_KEY = "foco_semanal_cycle_rounds_v1";
+
+export function readCycleRoundsToday(): number {
+  if (typeof window === "undefined") return 0;
+  try {
+    const raw = localStorage.getItem(CYCLE_ROUNDS_KEY);
+    if (!raw) return 0;
+    const parsed = JSON.parse(raw);
+    if (parsed.date !== todayDateStr()) return 0;
+    return Number(parsed.rounds) || 0;
+  } catch {
+    return 0;
+  }
+}
+
+export function incrementCycleRoundsToday(): number {
+  if (typeof window === "undefined") return 1;
+  try {
+    const current = readCycleRoundsToday();
+    const next = current + 1;
+    localStorage.setItem(
+      CYCLE_ROUNDS_KEY,
+      JSON.stringify({ date: todayDateStr(), rounds: next }),
+    );
+    return next;
+  } catch {
+    return 1;
+  }
 }
 
 /** Stamp today's date so subsequent loads in the same day don't re-reset. */

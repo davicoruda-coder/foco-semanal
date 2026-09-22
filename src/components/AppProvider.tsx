@@ -42,7 +42,9 @@ import {
   rotationAdvanced,
   normalizeRecursos,
   resetDailyStatusIfNeeded,
+  incrementCycleRoundsToday,
 } from "@/lib/utils";
+import { emitCycleComplete } from "@/lib/study-flow-events";
 import { parseSubjectIcon } from "@/lib/subject-icons";
 import type {
   AppData,
@@ -839,6 +841,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
             });
 
           if (allCycleCompleted) {
+            const nextRound = incrementCycleRoundsToday();
+            emitCycleComplete(nextRound);
             return { ...prev, subjects: restartToday(updatedSubjects) };
           }
 
