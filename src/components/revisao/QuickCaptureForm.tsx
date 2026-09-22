@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import {
   AlertCircle,
   CheckCircle,
@@ -22,6 +22,136 @@ import {
 import { useRevisao } from "./RevisaoProvider";
 
 const URL_REGEX = /^https?:\/\/.+/i;
+
+/* ------------------------------------------------------------------ */
+/*  Custom Combobox Select (elimina flickering gráfico do datalist)    */
+/* ------------------------------------------------------------------ */
+
+function ComboboxSelect({
+  label,
+  required,
+  value,
+  onChange,
+  options,
+  placeholder,
+}: {
+  label: string;
+  required?: boolean;
+  value: string;
+  onChange: (value: string) => void;
+  options: readonly string[];
+  placeholder?: string;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(e.target as Node)
+      ) {
+        setIsOpen(false);
+      }
+    }
+    if (isOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+      return () => {
+        document.removeEventListener("mousedown", handleClickOutside);
+      };
+    }
+  }, [isOpen]);
+
+  const filtered = useMemo(() => {
+    const q = value.trim().toLowerCase();
+    if (!q) return options;
+    const matches = options.filter((opt) => opt.toLowerCase().includes(q));
+    if (matches.length <= 1 && options.some((opt) => opt.toLowerCase() === q)) {
+      return options;
+    }
+    return matches.length > 0 ? matches : options;
+  }, [options, value]);
+
+  return (
+    <div ref={containerRef} className="relative">
+      <label className="mb-1 block text-xs font-medium uppercase tracking-wider text-[color-mix(in_srgb,var(--ink)_55%,transparent)]">
+        {label}
+      </label>
+      <div className="relative">
+        <input
+          type="text"
+          value={value}
+          required={required}
+          placeholder={placeholder}
+          onChange={(e) => {
+            onChange(e.target.value);
+            if (!isOpen) setIsOpen(true);
+          }}
+          onFocus={() => setIsOpen(true)}
+          onKeyDown={(e) => {
+            if (e.key === "Escape") {
+              setIsOpen(false);
+            }
+          }}
+          className="w-full rounded-[var(--radius-btn)] border border-[var(--line)] bg-[var(--surface)] pl-3 pr-8 py-2.5 text-sm text-[var(--ink)] outline-none transition placeholder:text-[color-mix(in_srgb,var(--ink)_35%,transparent)] focus:border-[var(--signal)] focus:ring-2 focus:ring-[var(--signal-soft)]"
+        />
+        <button
+          type="button"
+          tabIndex={-1}
+          onClick={(e) => {
+            e.preventDefault();
+            setIsOpen((prev) => !prev);
+          }}
+          className="absolute right-1 top-1/2 -translate-y-1/2 p-1.5 text-[color-mix(in_srgb,var(--ink)_45%,transparent)] hover:text-[var(--ink)] transition"
+          title="Ver opções"
+        >
+          <ChevronDown
+            size={15}
+            className={`transition-transform duration-150 ${
+              isOpen ? "rotate-180 text-[var(--signal)]" : ""
+            }`}
+          />
+        </button>
+      </div>
+
+      {isOpen && (
+        <div className="absolute left-0 right-0 top-full z-50 mt-1 max-h-52 overflow-y-auto rounded-[var(--radius-tag)] border border-[var(--line)] bg-[var(--surface)] py-1 shadow-lg backdrop-blur-md">
+          {filtered.length === 0 ? (
+            <div className="px-3 py-2 text-xs text-[color-mix(in_srgb,var(--ink)_45%,transparent)]">
+              Nenhuma sugestão encontrada.
+            </div>
+          ) : (
+            filtered.map((opt) => {
+              const isSelected =
+                opt.toLowerCase() === value.trim().toLowerCase();
+              return (
+                <button
+                  key={opt}
+                  type="button"
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    onChange(opt);
+                    setIsOpen(false);
+                  }}
+                  className={`flex w-full items-center justify-between px-3 py-2 text-left text-xs transition ${
+                    isSelected
+                      ? "bg-[color-mix(in_srgb,var(--signal)_12%,var(--surface))] font-medium text-[var(--signal)]"
+                      : "text-[var(--ink)] hover:bg-[var(--mist)] hover:text-[var(--ink)]"
+                  }`}
+                >
+                  <span className="truncate">{opt}</span>
+                  {isSelected && (
+                    <span className="text-[10px] text-[var(--signal)]">✓</span>
+                  )}
+                </button>
+              );
+            })
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
 /* ------------------------------------------------------------------ */
 /*  Quick Capture Form                                                 */
@@ -218,43 +348,21 @@ export function QuickCaptureForm({
 
       {/* Banca + Disciplina + Assunto */}
       <div className="grid gap-3 sm:grid-cols-3">
-        <div>
-          <label className="mb-1 block text-xs font-medium uppercase tracking-wider text-[color-mix(in_srgb,var(--ink)_55%,transparent)]">
-            Banca
-          </label>
-          <input
-            type="text"
-            value={banca}
-            onChange={(e) => setBanca(e.target.value)}
-            list="bancas-list"
-            placeholder="FGV, Cebraspe…"
-            className="w-full rounded-[var(--radius-btn)] border border-[var(--line)] bg-[var(--surface)] px-3 py-2.5 text-sm text-[var(--ink)] outline-none transition placeholder:text-[color-mix(in_srgb,var(--ink)_35%,transparent)] focus:border-[var(--signal)] focus:ring-2 focus:ring-[var(--signal-soft)]"
-          />
-          <datalist id="bancas-list">
-            {BANCAS_SUGERIDAS.map((b) => (
-              <option key={b} value={b} />
-            ))}
-          </datalist>
-        </div>
-        <div>
-          <label className="mb-1 block text-xs font-medium uppercase tracking-wider text-[color-mix(in_srgb,var(--ink)_55%,transparent)]">
-            Disciplina *
-          </label>
-          <input
-            type="text"
-            value={disciplina}
-            onChange={(e) => setDisciplina(e.target.value)}
-            list="materias-revisao-datalist"
-            placeholder="Português, RLM…"
-            required
-            className="w-full rounded-[var(--radius-btn)] border border-[var(--line)] bg-[var(--surface)] px-3 py-2.5 text-sm text-[var(--ink)] outline-none transition placeholder:text-[color-mix(in_srgb,var(--ink)_35%,transparent)] focus:border-[var(--signal)] focus:ring-2 focus:ring-[var(--signal-soft)]"
-          />
-          <datalist id="materias-revisao-datalist">
-            {materias.map((m) => (
-              <option key={m.id} value={m.nome} />
-            ))}
-          </datalist>
-        </div>
+        <ComboboxSelect
+          label="Banca"
+          value={banca}
+          onChange={setBanca}
+          options={BANCAS_SUGERIDAS}
+          placeholder="FGV, Cebraspe…"
+        />
+        <ComboboxSelect
+          label="Disciplina *"
+          required
+          value={disciplina}
+          onChange={setDisciplina}
+          options={materias.map((m) => m.nome)}
+          placeholder="Português, RLM…"
+        />
         <div>
           <label className="mb-1 block text-xs font-medium uppercase tracking-wider text-[color-mix(in_srgb,var(--ink)_55%,transparent)]">
             Assunto
