@@ -16,6 +16,7 @@ import {
   corNivelDominio,
 } from "@/lib/revisao/spaced-repetition";
 import { useRevisao } from "./RevisaoProvider";
+import { FormattedRuleText } from "./FormattedRuleText";
 
 export function FlashcardPlayer({
   cards,
@@ -115,19 +116,18 @@ export function FlashcardPlayer({
             <span className="text-xs font-semibold uppercase tracking-wider text-[var(--signal)]">
               Desafio / Enunciado
             </span>
-            <p className="whitespace-pre-wrap break-words [overflow-wrap:anywhere] text-base font-medium leading-relaxed text-[var(--ink)]">
-              {currentCard.frente}
-            </p>
+            <FormattedRuleText
+              text={currentCard.frente}
+              className="text-base font-medium text-[var(--ink)] leading-relaxed"
+            />
           </div>
         ) : (
           /* Verso */
-          <div className="flex flex-col justify-center space-y-4 pt-4">
+          <div className="flex flex-col justify-center space-y-3 pt-4">
             <span className="text-xs font-semibold uppercase tracking-wider text-[var(--ok,#16a34a)]">
               Regra Chave & Resolução
             </span>
-            <p className="whitespace-pre-wrap break-words [overflow-wrap:anywhere] text-sm font-medium leading-relaxed text-[var(--ink)]">
-              {currentCard.verso}
-            </p>
+            <FormattedRuleText text={currentCard.verso} />
           </div>
         )}
       </div>
