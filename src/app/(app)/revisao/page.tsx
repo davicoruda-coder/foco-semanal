@@ -8,6 +8,7 @@ import {
   Layers,
   PieChart,
   Plus,
+  Sparkles,
   X,
 } from "lucide-react";
 import { FlashcardsIcon } from "@/components/FlashcardsIcon";
@@ -16,6 +17,7 @@ import { CadernoList } from "@/components/revisao/CadernoList";
 import { QuickCaptureForm } from "@/components/revisao/QuickCaptureForm";
 import { FlashcardDeckList } from "@/components/revisao/FlashcardDeckList";
 import { RevisaoStats } from "@/components/revisao/RevisaoStats";
+import { AIFlashcardGenerator } from "@/components/revisao/AIFlashcardGenerator";
 
 type TabId = "caderno" | "flashcards" | "estatisticas";
 
@@ -24,6 +26,8 @@ function RevisaoContent() {
     useRevisao();
   const [activeTab, setActiveTab] = useState<TabId>("caderno");
   const [showCaptureModal, setShowCaptureModal] = useState(false);
+  const [showAIModal, setShowAIModal] = useState(false);
+  const [aiInitialData, setAiInitialData] = useState<{ text?: string; disciplina?: string }>({});
 
   useEffect(() => {
     reloadQuestoes();
@@ -66,15 +70,30 @@ function RevisaoContent() {
           </p>
         </div>
 
-        {/* Botão de Captura Rápida */}
-        <button
-          type="button"
-          onClick={() => setShowCaptureModal(true)}
-          className="inline-flex items-center gap-1.5 rounded-[var(--radius-btn)] bg-[var(--signal)] px-3.5 py-2 text-xs sm:text-sm font-semibold text-white shadow-sm transition hover:brightness-110 active:scale-95"
-        >
-          <Plus size={16} />
-          Capturar Erro
-        </button>
+        {/* Ações: Gerar com IA e Captura Rápida */}
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              setAiInitialData({});
+              setShowAIModal(true);
+            }}
+            className="inline-flex items-center gap-1.5 rounded-[var(--radius-btn)] bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 px-3.5 py-2 text-xs sm:text-sm font-semibold text-white shadow-sm transition hover:brightness-110 active:scale-95"
+            title="Criar flashcards automaticamente a partir de texto com IA"
+          >
+            <Sparkles size={16} />
+            Gerar com IA
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setShowCaptureModal(true)}
+            className="inline-flex items-center gap-1.5 rounded-[var(--radius-btn)] bg-[var(--signal)] px-3.5 py-2 text-xs sm:text-sm font-semibold text-white shadow-sm transition hover:brightness-110 active:scale-95"
+          >
+            <Plus size={16} />
+            Capturar Erro
+          </button>
+        </div>
       </div>
 
       {/* Navegação de Abas do Módulo */}
@@ -125,7 +144,14 @@ function RevisaoContent() {
       </div>
 
       {/* Conteúdo da Aba Ativa */}
-      {activeTab === "caderno" && <CadernoList />}
+      {activeTab === "caderno" && (
+        <CadernoList
+          onGenerateWithAI={(text, disciplina) => {
+            setAiInitialData({ text, disciplina });
+            setShowAIModal(true);
+          }}
+        />
+      )}
       {activeTab === "flashcards" && <FlashcardDeckList />}
       {activeTab === "estatisticas" && <RevisaoStats />}
 
@@ -160,6 +186,32 @@ function RevisaoContent() {
               onSuccess={() => {
                 setShowCaptureModal(false);
                 reloadQuestoes();
+                reloadFlashcards();
+              }}
+              onSwitchToAI={() => {
+                setShowCaptureModal(false);
+                setAiInitialData({});
+                setShowAIModal(true);
+              }}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Geração com IA */}
+      {showAIModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4">
+          <div
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
+            onClick={() => setShowAIModal(false)}
+          />
+
+          <div className="relative max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-[var(--radius)] border border-[var(--line)] bg-[var(--surface)] p-5 shadow-[var(--shadow-lg)]">
+            <AIFlashcardGenerator
+              initialText={aiInitialData.text}
+              initialDisciplina={aiInitialData.disciplina}
+              onClose={() => {
+                setShowAIModal(false);
                 reloadFlashcards();
               }}
             />

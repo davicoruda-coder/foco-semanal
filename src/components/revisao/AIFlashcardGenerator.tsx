@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
 import Link from "next/link";
 import {
   AlertCircle,
@@ -22,7 +22,15 @@ const MAX_TEXT_LENGTH = 8000;
 /*  Main Component                                                     */
 /* ------------------------------------------------------------------ */
 
-export function AIFlashcardGenerator({ onClose }: { onClose?: () => void }) {
+export function AIFlashcardGenerator({
+  onClose,
+  initialText = "",
+  initialDisciplina = "",
+}: {
+  onClose?: () => void;
+  initialText?: string;
+  initialDisciplina?: string;
+}) {
   const {
     materias,
     generateFlashcardsIA,
@@ -32,9 +40,14 @@ export function AIFlashcardGenerator({ onClose }: { onClose?: () => void }) {
   } = useRevisao();
 
   /* State */
-  const [texto, setTexto] = useState("");
-  const [disciplina, setDisciplina] = useState("");
+  const [texto, setTexto] = useState(initialText);
+  const [disciplina, setDisciplina] = useState(initialDisciplina);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+
+  useEffect(() => {
+    if (initialText) setTexto(initialText);
+    if (initialDisciplina) setDisciplina(initialDisciplina);
+  }, [initialText, initialDisciplina]);
 
   // Preview state (after generation)
   type PreviewCard = { frente: string; verso: string; selected: boolean };

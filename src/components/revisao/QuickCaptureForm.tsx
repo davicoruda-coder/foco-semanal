@@ -9,6 +9,7 @@ import {
   Link2,
   Loader2,
   Plus,
+  Sparkles,
   Video,
 } from "lucide-react";
 import {
@@ -162,10 +163,12 @@ export function QuickCaptureForm({
   onSuccess,
   initialData,
   onCancel,
+  onSwitchToAI,
 }: {
   onSuccess?: () => void;
   initialData?: QuestaoCaderno;
   onCancel?: () => void;
+  onSwitchToAI?: () => void;
 }) {
   const { addQuestao, updateQuestao, materias, addMateria } = useRevisao();
   const isEditing = Boolean(initialData);
@@ -349,6 +352,22 @@ export function QuickCaptureForm({
       onSubmit={handleSubmit}
       className="space-y-4"
     >
+      {/* Atalho para Gerar com IA se não estiver em modo edição */}
+      {!isEditing && onSwitchToAI && (
+        <div className="flex items-center justify-between rounded-lg bg-purple-500/10 border border-purple-500/20 p-2.5 text-xs text-purple-600 dark:text-purple-400">
+          <div className="flex items-center gap-1.5 font-medium">
+            <Sparkles size={14} className="shrink-0" />
+            <span>Quer criar flashcards colando um texto de resumo?</span>
+          </div>
+          <button
+            type="button"
+            onClick={onSwitchToAI}
+            className="font-bold underline hover:opacity-80 shrink-0 ml-2"
+          >
+            Gerar com IA →
+          </button>
+        </div>
+      )}
       {/* Feedback */}
       {feedback && (
         <div

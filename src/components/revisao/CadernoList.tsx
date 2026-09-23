@@ -15,6 +15,7 @@ import {
   Copy,
   Check,
   X,
+  Sparkles,
 } from "lucide-react";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { QuickCaptureForm } from "./QuickCaptureForm";
@@ -28,7 +29,11 @@ import {
 } from "@/lib/revisao/types";
 import { useRevisao } from "./RevisaoProvider";
 
-export function CadernoList() {
+export function CadernoList({
+  onGenerateWithAI,
+}: {
+  onGenerateWithAI?: (texto: string, disciplina: string) => void;
+} = {}) {
   const { questoes, questoesLoading, deleteQuestao } = useRevisao();
   const [search, setSearch] = useState("");
   const [bancaFiltro, setBancaFiltro] = useState<string>("todas");
@@ -313,6 +318,17 @@ export function CadernoList() {
                         )}
 
                         <div className="ml-auto flex flex-wrap items-center gap-1.5">
+                          {onGenerateWithAI && (
+                            <button
+                              type="button"
+                              onClick={() => onGenerateWithAI(q.aprendizado_chave, q.disciplina)}
+                              className="inline-flex items-center gap-1 rounded-md bg-[color-mix(in_srgb,var(--signal)_12%,var(--surface))] text-[var(--signal)] border border-[color-mix(in_srgb,var(--signal)_30%,transparent)] px-2.5 py-1 text-xs font-semibold hover:brightness-110 transition"
+                              title="Gerar flashcards com IA a partir deste resumo"
+                            >
+                              <Sparkles size={12} />
+                              Gerar Cards IA
+                            </button>
+                          )}
                           <button
                             type="button"
                             onClick={() => handleCopy(q.id, q.aprendizado_chave)}

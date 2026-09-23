@@ -373,14 +373,24 @@ export function UserAccountMenu() {
       {/* Seção de Navegação e Configurações */}
       <div className="py-2 space-y-0.5 text-xs text-[var(--ink)]">
         {role === "owner" && (
-          <Link
-            href="/ajustes#acessos"
-            onClick={() => setOpen(false)}
-            className="flex items-center gap-2.5 rounded-lg px-2.5 py-2 font-semibold text-[var(--signal)] bg-[color-mix(in_srgb,var(--signal)_8%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--signal)_15%,transparent)] mb-1"
-          >
-            <ShieldCheck size={15} strokeWidth={2} className="shrink-0 text-[var(--signal)]" />
-            <span>Gestão de Acessos (Master)</span>
-          </Link>
+          <>
+            <Link
+              href="/ajustes#acessos"
+              onClick={() => setOpen(false)}
+              className="flex items-center gap-2.5 rounded-lg px-2.5 py-2 font-semibold text-[var(--signal)] bg-[color-mix(in_srgb,var(--signal)_8%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--signal)_15%,transparent)] mb-1"
+            >
+              <ShieldCheck size={15} strokeWidth={2} className="shrink-0 text-[var(--signal)]" />
+              <span>Gestão de Acessos (Master)</span>
+            </Link>
+            <Link
+              href="/ajustes#ia"
+              onClick={() => setOpen(false)}
+              className="flex items-center gap-2.5 rounded-lg px-2.5 py-2 font-semibold text-purple-600 dark:text-purple-400 bg-purple-500/10 transition hover:bg-purple-500/15 mb-1"
+            >
+              <Sparkles size={15} strokeWidth={2} className="shrink-0" />
+              <span>Configurar IA (Master)</span>
+            </Link>
+          </>
         )}
         <Link
           href="/estatisticas"

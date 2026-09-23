@@ -194,7 +194,7 @@ export function AIAccessSettings() {
   }
 
   return (
-    <section className="surface mt-4 p-4 md:p-5">
+    <section id="ia" className="surface mt-4 p-4 md:p-5">
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--line)] pb-3">
         <div className="flex items-center gap-2">
