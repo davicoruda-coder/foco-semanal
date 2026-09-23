@@ -12,6 +12,9 @@ import {
   Video,
   ChevronDown,
   ChevronUp,
+  Eye,
+  Copy,
+  Check,
   X,
 } from "lucide-react";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
@@ -36,6 +39,18 @@ export function CadernoList() {
   const [deletandoId, setDeletandoId] = useState<string | null>(null);
   const [editingQuestao, setEditingQuestao] = useState<QuestaoCaderno | null>(null);
   const [pendingDeleteQuestao, setPendingDeleteQuestao] = useState<QuestaoCaderno | null>(null);
+  const [viewingQuestao, setViewingQuestao] = useState<QuestaoCaderno | null>(null);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  const handleCopy = async (id: string, text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedId(id);
+      setTimeout(() => setCopiedId(null), 2000);
+    } catch {
+      // Fallback silencioso se área de transferência não estiver disponível
+    }
+  };
 
   // Extrair opções únicas para filtros
   const bancas = useMemo(() => {
@@ -196,9 +211,9 @@ export function CadernoList() {
               >
                 {/* Header do Card */}
                 <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--line)] bg-[var(--mist)]/40 px-3.5 py-2 text-xs">
-                  <div className="flex flex-wrap items-center gap-1.5">
+                  <div className="flex flex-wrap items-center gap-1.5 min-w-0">
                     {q.banca && (
-                      <span className="rounded-md bg-[var(--surface)] px-2 py-0.5 font-semibold text-[var(--ink)] border border-[var(--line)]">
+                      <span className="rounded-md bg-[var(--surface)] px-2 py-0.5 font-semibold text-[var(--ink)] border border-[var(--line)] shrink-0">
                         {q.banca}
                       </span>
                     )}
@@ -211,13 +226,13 @@ export function CadernoList() {
                       </span>
                     )}
                     {q.codigo_questao && (
-                      <span className="font-mono text-[11px] font-medium text-[color-mix(in_srgb,var(--ink)_50%,transparent)]">
+                      <span className="font-mono text-[11px] font-medium text-[color-mix(in_srgb,var(--ink)_50%,transparent)] shrink-0">
                         #{q.codigo_questao}
                       </span>
                     )}
                   </div>
 
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-1.5 shrink-0">
                     <span
                       className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
                         q.status_resultado === "erro"
@@ -240,24 +255,37 @@ export function CadernoList() {
 
                 {/* Conteúdo Principal: Regra Aprendida */}
                 <div className="p-3.5">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="space-y-1">
+                  <div className="flex items-start justify-between gap-2.5">
+                    <div className="min-w-0 flex-1 space-y-1">
                       <p className="text-xs font-semibold uppercase tracking-wider text-[var(--signal)]">
                         Regra Aprendida:
                       </p>
-                      <p className="text-sm font-medium text-[var(--ink)] whitespace-pre-line leading-relaxed">
+                      <p className="text-sm font-medium text-[var(--ink)] whitespace-pre-wrap break-words [overflow-wrap:anywhere] leading-relaxed">
                         {q.aprendizado_chave}
                       </p>
                     </div>
 
-                    <button
-                      type="button"
-                      onClick={() => setItemExpandidoId(isExpanded ? null : q.id)}
-                      className="shrink-0 p-1 text-[color-mix(in_srgb,var(--ink)_50%,transparent)] hover:text-[var(--ink)]"
-                      title={isExpanded ? "Recolher detalhes" : "Ver detalhes"}
-                    >
-                      {isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
-                    </button>
+                    <div className="flex shrink-0 items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => setViewingQuestao(q)}
+                        className="rounded-lg p-1.5 text-[color-mix(in_srgb,var(--ink)_50%,transparent)] hover:bg-[var(--mist)] hover:text-[var(--signal)] transition active:scale-95"
+                        title="Visualizar ficha completa"
+                        aria-label="Visualizar ficha completa"
+                      >
+                        <Eye size={17} />
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setItemExpandidoId(isExpanded ? null : q.id)}
+                        className="rounded-lg p-1.5 text-[color-mix(in_srgb,var(--ink)_50%,transparent)] hover:bg-[var(--mist)] hover:text-[var(--ink)] transition active:scale-95"
+                        title={isExpanded ? "Recolher detalhes" : "Ver detalhes"}
+                        aria-label={isExpanded ? "Recolher detalhes" : "Ver detalhes"}
+                      >
+                        {isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+                      </button>
+                    </div>
                   </div>
 
                   {/* Seção expandida: Enunciado, Vídeo e Link */}
@@ -268,7 +296,7 @@ export function CadernoList() {
                           <p className="font-semibold text-[color-mix(in_srgb,var(--ink)_70%,transparent)] mb-1">
                             Enunciado / Trecho:
                           </p>
-                          <p className="whitespace-pre-wrap text-[color-mix(in_srgb,var(--ink)_85%,transparent)] leading-normal bg-[var(--surface)] p-2.5 rounded border border-[var(--line)]">
+                          <p className="whitespace-pre-wrap break-words [overflow-wrap:anywhere] text-[color-mix(in_srgb,var(--ink)_85%,transparent)] leading-normal bg-[var(--surface)] p-2.5 rounded border border-[var(--line)]">
                             {q.enunciado_texto}
                           </p>
                         </div>
@@ -299,7 +327,34 @@ export function CadernoList() {
                           </a>
                         )}
 
-                        <div className="ml-auto flex items-center gap-1.5">
+                        <div className="ml-auto flex flex-wrap items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => handleCopy(q.id, q.aprendizado_chave)}
+                            className="inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-medium text-[color-mix(in_srgb,var(--ink)_65%,transparent)] hover:bg-[var(--surface)] hover:text-[var(--signal)] transition"
+                            title="Copiar regra aprendida"
+                          >
+                            {copiedId === q.id ? (
+                              <>
+                                <Check size={12} className="text-[var(--ok,#16a34a)]" />
+                                <span className="text-[var(--ok,#16a34a)]">Copiado</span>
+                              </>
+                            ) : (
+                              <>
+                                <Copy size={12} />
+                                Copiar
+                              </>
+                            )}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setViewingQuestao(q)}
+                            className="inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-medium text-[color-mix(in_srgb,var(--ink)_65%,transparent)] hover:bg-[var(--surface)] hover:text-[var(--signal)] transition"
+                            title="Visualizar ficha completa"
+                          >
+                            <Eye size={12} />
+                            Ficha
+                          </button>
                           <button
                             type="button"
                             onClick={() => setEditingQuestao(q)}
@@ -327,6 +382,163 @@ export function CadernoList() {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* Modal de Visualização Completa (Modo Leitura) */}
+      {viewingQuestao && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-3 sm:p-4 backdrop-blur-sm animate-fade-in overflow-y-auto">
+          <div className="relative w-full max-w-xl max-h-[90vh] flex flex-col rounded-[var(--radius)] border border-[var(--line)] bg-[var(--surface)] shadow-2xl my-auto overflow-hidden">
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-[var(--line)] px-4 py-3 bg-[var(--mist)]/40">
+              <div className="min-w-0 pr-2">
+                <div className="flex flex-wrap items-center gap-1.5 text-xs">
+                  {viewingQuestao.banca && (
+                    <span className="rounded-md bg-[var(--surface)] px-2 py-0.5 font-semibold text-[var(--ink)] border border-[var(--line)] shrink-0">
+                      {viewingQuestao.banca}
+                    </span>
+                  )}
+                  <span className="font-semibold text-[var(--signal)]">
+                    {viewingQuestao.disciplina}
+                  </span>
+                  {viewingQuestao.assunto && (
+                    <span className="text-[color-mix(in_srgb,var(--ink)_60%,transparent)]">
+                      › {viewingQuestao.assunto}
+                    </span>
+                  )}
+                  {viewingQuestao.codigo_questao && (
+                    <span className="font-mono text-[11px] font-medium text-[color-mix(in_srgb,var(--ink)_50%,transparent)] shrink-0">
+                      #{viewingQuestao.codigo_questao}
+                    </span>
+                  )}
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setViewingQuestao(null)}
+                className="rounded-full p-1.5 text-[color-mix(in_srgb,var(--ink)_50%,transparent)] hover:bg-[var(--mist)] hover:text-[var(--ink)] transition shrink-0"
+                aria-label="Fechar visualização"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Badges de Resultado & Causa */}
+            <div className="flex items-center gap-2 px-4 py-2 border-b border-[var(--line)] bg-[var(--surface)] text-xs">
+              <span
+                className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${
+                  viewingQuestao.status_resultado === "erro"
+                    ? "bg-[color-mix(in_srgb,#ef4444_15%,transparent)] text-[#ef4444]"
+                    : viewingQuestao.status_resultado === "chute"
+                    ? "bg-[color-mix(in_srgb,#f59e0b_15%,transparent)] text-[#f59e0b]"
+                    : "bg-[color-mix(in_srgb,#8b5cf6_15%,transparent)] text-[#8b5cf6]"
+                }`}
+              >
+                {STATUS_RESULTADO_LABEL[viewingQuestao.status_resultado]}
+              </span>
+
+              <span className="rounded-full bg-[var(--mist)] px-2.5 py-0.5 text-[11px] font-medium text-[color-mix(in_srgb,var(--ink)_70%,transparent)] border border-[var(--line)]">
+                {CAUSA_ERRO_LABEL[viewingQuestao.causa_erro]}
+              </span>
+            </div>
+
+            {/* Corpo com scroll confortável */}
+            <div className="overflow-y-auto p-4 sm:p-5 space-y-4 text-sm">
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold uppercase tracking-wider text-[var(--signal)]">
+                    📌 Regra Aprendida / Resumo
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => handleCopy(`modal-${viewingQuestao.id}`, viewingQuestao.aprendizado_chave)}
+                    className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium text-[color-mix(in_srgb,var(--ink)_65%,transparent)] hover:bg-[var(--mist)] hover:text-[var(--signal)] transition"
+                  >
+                    {copiedId === `modal-${viewingQuestao.id}` ? (
+                      <>
+                        <Check size={12} className="text-[var(--ok,#16a34a)]" />
+                        <span className="text-[var(--ok,#16a34a)]">Copiado</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy size={12} />
+                        Copiar
+                      </>
+                    )}
+                  </button>
+                </div>
+                <div className="rounded-xl border border-[var(--line)] bg-[var(--mist)]/40 p-3.5 sm:p-4">
+                  <p className="text-sm sm:text-base font-medium text-[var(--ink)] whitespace-pre-wrap break-words [overflow-wrap:anywhere] leading-relaxed select-text">
+                    {viewingQuestao.aprendizado_chave}
+                  </p>
+                </div>
+              </div>
+
+              {viewingQuestao.enunciado_texto && (
+                <div className="space-y-1.5">
+                  <span className="text-xs font-bold uppercase tracking-wider text-[color-mix(in_srgb,var(--ink)_60%,transparent)]">
+                    📝 Enunciado / Trecho da Questão
+                  </span>
+                  <div className="rounded-xl border border-[var(--line)] bg-[var(--surface)] p-3 text-xs leading-relaxed text-[color-mix(in_srgb,var(--ink)_85%,transparent)]">
+                    <p className="whitespace-pre-wrap break-words [overflow-wrap:anywhere] select-text">
+                      {viewingQuestao.enunciado_texto}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {(viewingQuestao.link_questao || viewingQuestao.link_video) && (
+                <div className="flex flex-wrap items-center gap-2 pt-1">
+                  {viewingQuestao.link_questao && (
+                    <a
+                      href={viewingQuestao.link_questao}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--mist)] border border-[var(--line)] px-3 py-1.5 text-xs font-medium text-[var(--signal)] hover:bg-[var(--signal-soft)] transition"
+                    >
+                      <ExternalLink size={13} />
+                      Ver Questão no QC
+                    </a>
+                  )}
+                  {viewingQuestao.link_video && (
+                    <a
+                      href={viewingQuestao.link_video}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--mist)] border border-[var(--line)] px-3 py-1.5 text-xs font-medium text-[#ef4444] hover:bg-red-50 dark:hover:bg-red-950/30 transition"
+                    >
+                      <Video size={13} />
+                      Vídeo Resolução
+                    </a>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Footer com Ações */}
+            <div className="flex items-center justify-between border-t border-[var(--line)] px-4 py-3 bg-[var(--mist)]/30">
+              <button
+                type="button"
+                onClick={() => {
+                  const target = viewingQuestao;
+                  setViewingQuestao(null);
+                  setEditingQuestao(target);
+                }}
+                className="inline-flex items-center gap-1.5 rounded-[var(--radius-btn)] border border-[var(--line)] bg-[var(--surface)] px-3 py-1.5 text-xs font-medium text-[var(--ink)] hover:bg-[var(--mist)] hover:text-[var(--signal)] transition"
+              >
+                <Pencil size={13} />
+                Editar Ficha
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setViewingQuestao(null)}
+                className="rounded-[var(--radius-btn)] bg-[var(--signal)] px-4 py-1.5 text-xs font-semibold text-white transition hover:brightness-110 active:scale-95"
+              >
+                Fechar
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

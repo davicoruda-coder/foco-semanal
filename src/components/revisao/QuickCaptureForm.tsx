@@ -473,9 +473,9 @@ export function QuickCaptureForm({
           onChange={(e) => setAprendizado(e.target.value)}
           placeholder="A regra definitiva para não errar novamente…"
           required
-          rows={3}
+          rows={4}
           maxLength={1500}
-          className="w-full resize-none rounded-[var(--radius-btn)] border border-[var(--line)] bg-[var(--surface)] px-3 py-2.5 text-sm text-[var(--ink)] outline-none transition placeholder:text-[color-mix(in_srgb,var(--ink)_35%,transparent)] focus:border-[var(--signal)] focus:ring-2 focus:ring-[var(--signal-soft)]"
+          className="w-full min-h-[96px] resize-y rounded-[var(--radius-btn)] border border-[var(--line)] bg-[var(--surface)] px-3 py-2.5 text-sm text-[var(--ink)] outline-none transition placeholder:text-[color-mix(in_srgb,var(--ink)_35%,transparent)] focus:border-[var(--signal)] focus:ring-2 focus:ring-[var(--signal-soft)] leading-relaxed"
         />
         <p className="mt-0.5 text-right text-[10px] text-[color-mix(in_srgb,var(--ink)_35%,transparent)]">
           {aprendizado.length}/1500

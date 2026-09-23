@@ -115,7 +115,7 @@ export function FlashcardPlayer({
             <span className="text-xs font-semibold uppercase tracking-wider text-[var(--signal)]">
               Desafio / Enunciado
             </span>
-            <p className="whitespace-pre-wrap text-base font-medium leading-relaxed text-[var(--ink)]">
+            <p className="whitespace-pre-wrap break-words [overflow-wrap:anywhere] text-base font-medium leading-relaxed text-[var(--ink)]">
               {currentCard.frente}
             </p>
           </div>
@@ -125,7 +125,7 @@ export function FlashcardPlayer({
             <span className="text-xs font-semibold uppercase tracking-wider text-[var(--ok,#16a34a)]">
               Regra Chave & Resolução
             </span>
-            <p className="whitespace-pre-wrap text-sm font-medium leading-relaxed text-[var(--ink)]">
+            <p className="whitespace-pre-wrap break-words [overflow-wrap:anywhere] text-sm font-medium leading-relaxed text-[var(--ink)]">
               {currentCard.verso}
             </p>
           </div>
