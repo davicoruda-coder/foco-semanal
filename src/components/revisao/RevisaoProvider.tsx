@@ -16,6 +16,7 @@ import type {
   QuickCapturePayload,
   CadernoFilters,
   MateriaRevisao,
+  AIGeneratedCard,
 } from "@/lib/revisao/types";
 import type { RevisaoStats } from "@/lib/revisao/revisao-store";
 import { useApp } from "@/components/AppProvider";
@@ -107,6 +108,22 @@ type RevisaoContextValue = {
 
   // Module toggle
   setModuloAtivo: (ativo: boolean) => Promise<void>;
+
+  // IA
+  generateFlashcardsIA: (
+    texto: string,
+    disciplina: string,
+  ) => Promise<{ ok: boolean; cards?: AIGeneratedCard[]; count?: number; remaining?: number | null; error?: string }>;
+  aiGenerationsToday: number;
+  aiGenerating: boolean;
+  aiConfig: {
+    configured: boolean;
+    isMaster: boolean;
+    limitEnabled: boolean;
+    dailyLimit: number;
+    remaining: number | null;
+  } | null;
+  reloadAIConfig: () => Promise<void>;
 };
 
 const RevisaoContext = createContext<RevisaoContextValue | null>(null);
@@ -137,10 +154,19 @@ export function RevisaoProvider({ children }: { children: ReactNode }) {
   const [materias, setMaterias] = useState<MateriaRevisao[]>([]);
   const [materiasLoading, setMateriasLoading] = useState(false);
   const [stats, setStats] = useState<RevisaoStats | null>(null);
+  const [aiConfig, setAIConfig] = useState<{
+    configured: boolean;
+    isMaster: boolean;
+    limitEnabled: boolean;
+    dailyLimit: number;
+    remaining: number | null;
+  } | null>(null);
   const { data: appData } = useApp();
   const [hiddenNames, setHiddenNames] = useState<Set<string>>(() =>
     getHiddenMateriaNames(),
   );
+  const [aiGenerationsToday, setAIGenerationsToday] = useState(0);
+  const [aiGenerating, setAIGenerating] = useState(false);
 
   const moduloAtivo = perfil?.modulos_ativos?.revisao ?? true;
 
@@ -433,6 +459,86 @@ export function RevisaoProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  /* ---- IA Flashcards ---- */
+  const handleGenerateFlashcardsIA = useCallback(
+    async (
+      texto: string,
+      disciplina: string,
+    ): Promise<{
+      ok: boolean;
+      cards?: AIGeneratedCard[];
+      count?: number;
+      remaining?: number;
+      error?: string;
+    }> => {
+      setAIGenerating(true);
+      try {
+        const res = await fetch("/api/revisao/gerar-flashcards", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ texto, disciplina }),
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          return { ok: false, error: data.error || "Erro desconhecido." };
+        }
+
+        // Atualizar lista de flashcards localmente
+        if (data.cards && Array.isArray(data.cards)) {
+          setAllFlashcards((prev) => [...data.cards, ...prev]);
+          // Verificar se algum card é para hoje (proxima_revisao <= hoje)
+          const hoje = new Date().toISOString().slice(0, 10);
+          const novosHoje = data.cards.filter(
+            (c: Flashcard) => !c.proxima_revisao || c.proxima_revisao <= hoje,
+          );
+          if (novosHoje.length > 0) {
+            setFlashcardsDoDia((prev) => [...novosHoje, ...prev]);
+          }
+        }
+
+        // Atualizar contagem de gerações
+        if (typeof data.remaining === "number") {
+          setAIGenerationsToday(15 - data.remaining);
+        }
+
+        return {
+          ok: true,
+          cards: data.cards,
+          count: data.count,
+          remaining: data.remaining,
+        };
+      } catch (err) {
+        console.warn("[revisao] generate IA:", err);
+        return { ok: false, error: "Falha de conexão. Tente novamente." };
+      } finally {
+        setAIGenerating(false);
+      }
+    },
+    [],
+  );
+
+  // Carregar status da IA ao boot
+  const reloadAIConfig = useCallback(async () => {
+    try {
+      const res = await fetch("/api/revisao/config-ia");
+      if (res.ok) {
+        const data = await res.json();
+        setAIConfig(data);
+        if (typeof data.generationsToday === "number") {
+          setAIGenerationsToday(data.generationsToday);
+        }
+      }
+    } catch (err) {
+      console.warn("[revisao] config-ia error:", err);
+    }
+  }, []);
+
+  useEffect(() => {
+    void reloadAIConfig();
+  }, [reloadAIConfig]);
+
   const value: RevisaoContextValue = {
     ready,
     perfil,
@@ -456,6 +562,11 @@ export function RevisaoProvider({ children }: { children: ReactNode }) {
     stats,
     reloadStats,
     setModuloAtivo: handleSetModuloAtivo,
+    generateFlashcardsIA: handleGenerateFlashcardsIA,
+    aiGenerationsToday,
+    aiGenerating,
+    aiConfig,
+    reloadAIConfig,
   };
 
   return (

@@ -13,6 +13,7 @@ import type {
   CadernoFilters,
   NivelDominio,
   MateriaRevisao,
+  AIGeneratedCard,
 } from "./types";
 import { calcularProximaRevisao, type RespostaRevisao } from "./spaced-repetition";
 
@@ -515,4 +516,52 @@ export async function deleteMateriaRevisao(id: string): Promise<void> {
       console.warn("[revisao] delete materia supabase:", err);
     }
   }
+}
+
+/* ------------------------------------------------------------------ */
+/*  Flashcards gerados por IA                                          */
+/* ------------------------------------------------------------------ */
+
+/** Insere flashcards gerados por IA em lote (sem questão vinculada). */
+export async function addFlashcardsBatchIA(
+  cards: AIGeneratedCard[],
+  disciplina: string,
+): Promise<Flashcard[]> {
+  const auth = await getAuthedClient();
+  if (!auth) return [];
+
+  const rows = cards.map((c) => ({
+    user_id: auth.userId,
+    frente: clampText(c.frente, 1000),
+    verso: clampText(c.verso, 2000),
+    origem: "ia" as const,
+    disciplina: clampText(disciplina, 100),
+  }));
+
+  const { data, error } = await auth.supabase
+    .from("flashcards")
+    .insert(rows)
+    .select();
+  assertOk("batch insert IA flashcards", error);
+
+  return (data ?? []) as Flashcard[];
+}
+
+/** Conta gerações de IA nas últimas 24h para rate limiting na UI. */
+export async function getAIGenerationsToday(): Promise<number> {
+  const auth = await getAuthedClient();
+  if (!auth) return 0;
+
+  const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  const { count, error } = await auth.supabase
+    .from("ai_generation_log")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", auth.userId)
+    .gte("created_at", oneDayAgo);
+
+  if (error) {
+    console.warn("[revisao] count ai generations:", error.message);
+    return 0;
+  }
+  return count ?? 0;
 }

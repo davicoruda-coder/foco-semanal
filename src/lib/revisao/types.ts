@@ -80,6 +80,14 @@ export interface Flashcard {
   nivel_dominio: NivelDominio;
   created_at: string;
   questao?: QuestaoCaderno;
+  origem?: "caderno" | "ia" | "manual";
+  disciplina?: string; // usado para cards de IA (sem questão vinculada)
+}
+
+/** Card gerado pela IA antes de ser salvo no banco. */
+export interface AIGeneratedCard {
+  frente: string;
+  verso: string;
 }
 
 export interface PerfilUsuario {

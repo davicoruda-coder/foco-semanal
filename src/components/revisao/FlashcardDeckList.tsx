@@ -16,6 +16,7 @@ import type { Flashcard, MateriaRevisao } from "@/lib/revisao/types";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { useRevisao } from "./RevisaoProvider";
 import { FlashcardPlayer } from "./FlashcardPlayer";
+import { AIFlashcardGenerator } from "./AIFlashcardGenerator";
 
 type ActiveDeckState = {
   id: string;
@@ -38,6 +39,7 @@ export function FlashcardDeckList() {
   const [showNewMateria, setShowNewMateria] = useState(false);
   const [newMateriaName, setNewMateriaName] = useState("");
   const [savingMateria, setSavingMateria] = useState(false);
+  const [showAIGenerator, setShowAIGenerator] = useState(false);
 
   /* Criar nova matéria */
   async function handleCreateMateria(e: React.FormEvent) {
@@ -153,14 +155,28 @@ export function FlashcardDeckList() {
           </div>
 
           {!showNewMateria && (
-            <button
-              type="button"
-              onClick={() => setShowNewMateria(true)}
-              className="inline-flex items-center gap-1.5 rounded-[var(--radius-btn)] border border-[var(--line)] bg-[var(--surface)] px-3 py-1.5 text-xs sm:text-sm font-semibold text-[var(--signal)] shadow-sm hover:border-[var(--signal)] transition"
-            >
-              <Plus size={16} />
-              Nova Matéria
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setShowAIGenerator(!showAIGenerator)}
+                className={`inline-flex items-center gap-1.5 rounded-[var(--radius-btn)] border px-3 py-1.5 text-xs sm:text-sm font-semibold shadow-sm transition ${
+                  showAIGenerator
+                    ? "border-[var(--signal)] bg-[color-mix(in_srgb,var(--signal)_10%,var(--surface))] text-[var(--signal)]"
+                    : "border-[var(--line)] bg-[var(--surface)] text-[color-mix(in_srgb,#a855f7_70%,var(--ink))] hover:border-[color-mix(in_srgb,#a855f7_40%,var(--line))]"
+                }`}
+              >
+                <Sparkles size={14} />
+                Gerar com IA
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowNewMateria(true)}
+                className="inline-flex items-center gap-1.5 rounded-[var(--radius-btn)] border border-[var(--line)] bg-[var(--surface)] px-3 py-1.5 text-xs sm:text-sm font-semibold text-[var(--signal)] shadow-sm hover:border-[var(--signal)] transition"
+              >
+                <Plus size={16} />
+                Nova Matéria
+              </button>
+            </div>
           )}
         </div>
 
@@ -219,6 +235,18 @@ export function FlashcardDeckList() {
           </form>
         )}
 
+        {/* Painel de Geração com IA */}
+        {showAIGenerator && (
+          <div className="surface rounded-[var(--radius)] border border-[color-mix(in_srgb,#a855f7_25%,var(--line))] bg-[color-mix(in_srgb,#a855f7_3%,var(--surface))] p-4 sm:p-5 shadow-[var(--shadow-sm)]">
+            <AIFlashcardGenerator
+              onClose={() => {
+                setShowAIGenerator(false);
+                reloadFlashcards();
+              }}
+            />
+          </div>
+        )}
+
         {/* Grade de Matérias */}
         {materias.length === 0 ? (
           <div className="surface rounded-[var(--radius)] border border-dashed border-[var(--line)] p-8 text-center space-y-3">
@@ -246,16 +274,18 @@ export function FlashcardDeckList() {
             {materias.map((materia) => {
               const materiaNomeLower = materia.nome.toLowerCase();
 
-              // Cards de hoje desta matéria
+              // Cards de hoje desta matéria (caderno ou IA)
               const cardsHoje = flashcardsDoDia.filter(
                 (c) =>
-                  c.questao?.disciplina?.toLowerCase() === materiaNomeLower,
+                  c.questao?.disciplina?.toLowerCase() === materiaNomeLower ||
+                  c.disciplina?.toLowerCase() === materiaNomeLower,
               );
 
-              // Todos os cards desta matéria
+              // Todos os cards desta matéria (caderno ou IA)
               const cardsTotal = allFlashcards.filter(
                 (c) =>
-                  c.questao?.disciplina?.toLowerCase() === materiaNomeLower,
+                  c.questao?.disciplina?.toLowerCase() === materiaNomeLower ||
+                  c.disciplina?.toLowerCase() === materiaNomeLower,
               );
 
               const hasCardsHoje = cardsHoje.length > 0;

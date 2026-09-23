@@ -19,6 +19,7 @@ import {
 import { FlashcardsIcon } from "@/components/FlashcardsIcon";
 import { useApp } from "@/components/AppProvider";
 import { AccessManagement } from "@/components/AccessManagement";
+import { AIAccessSettings } from "@/components/AIAccessSettings";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { InstallPwaCard } from "@/components/InstallPwaCard";
 import { useStudyFlow } from "@/components/StudyFlowProvider";
@@ -371,6 +372,7 @@ export default function AjustesPage() {
         </section>
 
         <AccessManagement />
+        <AIAccessSettings />
 
       <section className="surface mt-4 p-4 md:p-5">
         <h2 className="font-display text-base font-semibold tracking-tight md:text-lg">
