@@ -312,10 +312,10 @@ export function AIAccessSettings() {
           </div>
           <div>
             <h2 className="font-display text-base font-semibold tracking-tight md:text-lg">
-              Inteligência Artificial (OpenRouter & Flashcards)
+              Inteligência Artificial (Flashcards & Tira-Dúvidas)
             </h2>
             <p className="text-xs opacity-60">
-              Configure a chave da API, selecione o modelo de IA e controle os limites de geração.
+              Configure a chave da API e escolha o modelo central que abastecerá tanto os Flashcards quanto o Tira-Dúvidas.
             </p>
           </div>
         </div>
@@ -335,7 +335,7 @@ export function AIAccessSettings() {
           <div>
             <div className="flex items-center gap-2">
               <span className="text-[11px] font-semibold uppercase tracking-wider text-[var(--signal)]">
-                Modelo Ativo no Sistema
+                Modelo Ativo no Sistema (Flashcards & Tira-Dúvidas)
               </span>
               <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2 py-0.2 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
@@ -401,7 +401,7 @@ export function AIAccessSettings() {
         <div>
           <label className="text-xs font-medium text-[var(--ink)] mb-1.5 flex items-center gap-1.5">
             <Sliders size={14} className="text-[var(--signal)]" />
-            Escolher Modelo de IA para Responder
+            Escolher Modelo de IA (Flashcards & Tira-Dúvidas)
           </label>
           <select
             value={selectedModel}
@@ -414,6 +414,9 @@ export function AIAccessSettings() {
               </option>
             ))}
           </select>
+          <p className="mt-1 text-[11px] opacity-60">
+            Este modelo único alimentará tanto a criação de Flashcards quanto o Professor IA / Tira-Dúvidas.
+          </p>
 
           {selectedModel === "custom" && (
             <div className="mt-2">
@@ -440,7 +443,7 @@ export function AIAccessSettings() {
                 Ativar limite diário por usuário
               </span>
               <span className="text-[11px] opacity-60 block">
-                Controla o número máximo de vezes que cada aluno/membro pode gerar flashcards no mesmo dia.
+                Controla o total de vezes que cada aluno/membro pode usar a IA (Flashcards + Tira-Dúvidas) por dia.
               </span>
             </div>
             <input
@@ -458,7 +461,7 @@ export function AIAccessSettings() {
                   Gerações permitidas por dia:
                 </label>
                 <span className="text-[11px] opacity-50">
-                  Cada geração pode gerar de 5 a 30 flashcards.
+                  Cota compartilhada por aluno entre gerar flashcards e tirar dúvidas.
                 </span>
               </div>
               <input
@@ -472,7 +475,7 @@ export function AIAccessSettings() {
             </div>
           ) : (
             <p className="text-xs text-[var(--signal)] font-medium pt-1">
-              ✓ Limite desativado: todos os usuários podem gerar flashcards livremente.
+              ✓ Limite desativado: todos os usuários podem usar Flashcards e Tira-Dúvidas livremente.
             </p>
           )}
 
