@@ -93,6 +93,16 @@ type RevisaoContextValue = {
     nivelAtual: 0 | 1 | 2 | 3,
     resposta: "errei" | "dificil" | "bom" | "facil",
   ) => Promise<void>;
+  updateFlashcard: (
+    id: string,
+    updates: { frente?: string; verso?: string },
+  ) => Promise<boolean>;
+  deleteFlashcard: (id: string) => Promise<boolean>;
+  addFlashcardManual: (
+    disciplina: string,
+    frente: string,
+    verso: string,
+  ) => Promise<Flashcard | null>;
   reloadFlashcards: () => Promise<void>;
 
   // Matérias
@@ -435,6 +445,71 @@ export function RevisaoProvider({ children }: { children: ReactNode }) {
     [],
   );
 
+  const handleUpdateFlashcard = useCallback(
+    async (
+      id: string,
+      updates: { frente?: string; verso?: string },
+    ): Promise<boolean> => {
+      try {
+        const store = await import("@/lib/revisao/revisao-store");
+        const ok = await store.updateFlashcard(id, updates);
+        if (ok) {
+          setAllFlashcards((prev) =>
+            prev.map((f) => (f.id === id ? { ...f, ...updates } : f)),
+          );
+          setFlashcardsDoDia((prev) =>
+            prev.map((f) => (f.id === id ? { ...f, ...updates } : f)),
+          );
+        }
+        return ok;
+      } catch (err) {
+        console.warn("[revisao] update flashcard:", err);
+        return false;
+      }
+    },
+    [],
+  );
+
+  const handleDeleteFlashcard = useCallback(
+    async (id: string): Promise<boolean> => {
+      try {
+        const store = await import("@/lib/revisao/revisao-store");
+        const ok = await store.deleteFlashcard(id);
+        if (ok) {
+          setAllFlashcards((prev) => prev.filter((f) => f.id !== id));
+          setFlashcardsDoDia((prev) => prev.filter((f) => f.id !== id));
+        }
+        return ok;
+      } catch (err) {
+        console.warn("[revisao] delete flashcard:", err);
+        return false;
+      }
+    },
+    [],
+  );
+
+  const handleAddFlashcardManual = useCallback(
+    async (
+      disciplina: string,
+      frente: string,
+      verso: string,
+    ): Promise<Flashcard | null> => {
+      try {
+        const store = await import("@/lib/revisao/revisao-store");
+        const card = await store.addFlashcardManual(disciplina, frente, verso);
+        if (card) {
+          setAllFlashcards((prev) => [card, ...prev]);
+          setFlashcardsDoDia((prev) => [card, ...prev]);
+        }
+        return card;
+      } catch (err) {
+        console.warn("[revisao] add manual flashcard:", err);
+        return null;
+      }
+    },
+    [],
+  );
+
   /* ---- Stats ---- */
   const reloadStats = useCallback(async () => {
     try {
@@ -555,6 +630,9 @@ export function RevisaoProvider({ children }: { children: ReactNode }) {
     flashcardsLoading,
     allFlashcards,
     responderFlashcard: handleResponderFlashcard,
+    updateFlashcard: handleUpdateFlashcard,
+    deleteFlashcard: handleDeleteFlashcard,
+    addFlashcardManual: handleAddFlashcardManual,
     reloadFlashcards,
     materias: combinedMaterias,
     materiasLoading,

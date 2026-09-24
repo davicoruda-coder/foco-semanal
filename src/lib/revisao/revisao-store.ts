@@ -288,6 +288,70 @@ export async function responderFlashcard(
   assertOk("responder flashcard", error);
 }
 
+/** Atualiza frente e/ou verso de um flashcard existente. */
+export async function updateFlashcard(
+  id: string,
+  updates: { frente?: string; verso?: string },
+): Promise<boolean> {
+  const auth = await getAuthedClient();
+  if (!auth) return false;
+
+  const patch: Record<string, string> = {};
+  if (updates.frente !== undefined) patch.frente = clampText(updates.frente, 5000);
+  if (updates.verso !== undefined) patch.verso = clampText(updates.verso, 5000);
+
+  const { error } = await auth.supabase
+    .from("flashcards")
+    .update(patch)
+    .eq("id", id)
+    .eq("user_id", auth.userId);
+  assertOk("update flashcard", error);
+  return true;
+}
+
+/** Exclui um flashcard específico. */
+export async function deleteFlashcard(id: string): Promise<boolean> {
+  const auth = await getAuthedClient();
+  if (!auth) return false;
+
+  const { error } = await auth.supabase
+    .from("flashcards")
+    .delete()
+    .eq("id", id)
+    .eq("user_id", auth.userId);
+  assertOk("delete flashcard", error);
+  return true;
+}
+
+/** Cria um flashcard manual para uma matéria. */
+export async function addFlashcardManual(
+  disciplina: string,
+  frente: string,
+  verso: string,
+): Promise<Flashcard | null> {
+  const auth = await getAuthedClient();
+  if (!auth) return null;
+
+  const hoje = new Date().toISOString().slice(0, 10);
+  const row = {
+    user_id: auth.userId,
+    frente: clampText(frente, 5000),
+    verso: clampText(verso, 5000),
+    disciplina: clampText(disciplina, 100),
+    origem: "manual" as const,
+    proxima_revisao: hoje,
+    nivel_dominio: 0,
+  };
+
+  const { data, error } = await auth.supabase
+    .from("flashcards")
+    .insert(row)
+    .select()
+    .single();
+  assertOk("insert manual flashcard", error);
+  return data as Flashcard;
+}
+
 /* ------------------------------------------------------------------ */
 /*  Perfil / Módulos                                                   */
 /* ------------------------------------------------------------------ */

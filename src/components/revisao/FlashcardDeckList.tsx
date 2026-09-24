@@ -7,7 +7,9 @@ import {
   Calendar,
   Flame,
   Layers,
+  Pencil,
   Plus,
+  SlidersHorizontal,
   Sparkles,
   Trash2,
   X,
@@ -17,6 +19,7 @@ import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { useRevisao } from "./RevisaoProvider";
 import { FlashcardPlayer } from "./FlashcardPlayer";
 import { AIFlashcardGenerator } from "./AIFlashcardGenerator";
+import { FlashcardManagerModal } from "./FlashcardManagerModal";
 
 type ActiveDeckState = {
   id: string;
@@ -40,6 +43,9 @@ export function FlashcardDeckList() {
   const [newMateriaName, setNewMateriaName] = useState("");
   const [savingMateria, setSavingMateria] = useState(false);
   const [showAIGenerator, setShowAIGenerator] = useState(false);
+  const [managingMateria, setManagingMateria] = useState<MateriaRevisao | null>(
+    null,
+  );
 
   /* Criar nova matéria */
   async function handleCreateMateria(e: React.FormEvent) {
@@ -336,39 +342,70 @@ export function FlashcardDeckList() {
                     </div>
                   </div>
 
-                  <div className="pt-3 border-t border-[var(--line)]/50">
+                  <div className="pt-3 border-t border-[var(--line)]/50 space-y-2">
                     {hasCardsHoje ? (
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setActiveDeck({
-                            id: materia.id,
-                            title: materia.nome,
-                            cards: cardsHoje,
-                          })
-                        }
-                        className="w-full rounded-[var(--radius-btn)] bg-[var(--signal)] py-2 text-xs sm:text-sm font-semibold text-white shadow-sm transition hover:brightness-110 active:scale-95"
-                      >
-                        Treinar Hoje ({cardsHoje.length})
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setActiveDeck({
+                              id: materia.id,
+                              title: materia.nome,
+                              cards: cardsHoje,
+                            })
+                          }
+                          className="flex-1 rounded-[var(--radius-btn)] bg-[var(--signal)] py-2 text-xs sm:text-sm font-semibold text-white shadow-sm transition hover:brightness-110 active:scale-95"
+                        >
+                          Treinar Hoje ({cardsHoje.length})
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setManagingMateria(materia)}
+                          title="Gerenciar, editar ou excluir flashcards"
+                          aria-label="Gerenciar flashcards desta matéria"
+                          className="rounded-[var(--radius-btn)] border border-[var(--line)] bg-[var(--surface)] p-2 text-[color-mix(in_srgb,var(--ink)_65%,transparent)] hover:border-[var(--signal)] hover:text-[var(--signal)] hover:bg-[var(--mist)] transition shrink-0"
+                        >
+                          <SlidersHorizontal size={16} />
+                        </button>
+                      </div>
                     ) : hasTotalCards ? (
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setActiveDeck({
-                            id: materia.id,
-                            title: `${materia.nome} (Modo Livre)`,
-                            cards: cardsTotal,
-                          })
-                        }
-                        className="w-full rounded-[var(--radius-btn)] border border-[var(--line)] bg-[var(--surface)] py-2 text-xs sm:text-sm font-semibold text-[var(--ink)] transition hover:bg-[var(--mist)] hover:text-[var(--signal)] active:scale-95"
-                      >
-                        Praticar Todos ({cardsTotal.length})
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setActiveDeck({
+                              id: materia.id,
+                              title: `${materia.nome} (Modo Livre)`,
+                              cards: cardsTotal,
+                            })
+                          }
+                          className="flex-1 rounded-[var(--radius-btn)] border border-[var(--line)] bg-[var(--surface)] py-2 text-xs sm:text-sm font-semibold text-[var(--ink)] transition hover:bg-[var(--mist)] hover:text-[var(--signal)] active:scale-95"
+                        >
+                          Praticar Todos ({cardsTotal.length})
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setManagingMateria(materia)}
+                          title="Gerenciar, editar ou excluir flashcards"
+                          aria-label="Gerenciar flashcards desta matéria"
+                          className="rounded-[var(--radius-btn)] border border-[var(--line)] bg-[var(--surface)] p-2 text-[color-mix(in_srgb,var(--ink)_65%,transparent)] hover:border-[var(--signal)] hover:text-[var(--signal)] hover:bg-[var(--mist)] transition shrink-0"
+                        >
+                          <SlidersHorizontal size={16} />
+                        </button>
+                      </div>
                     ) : (
-                      <p className="text-center text-[11px] text-[color-mix(in_srgb,var(--ink)_45%,transparent)] py-1.5">
-                        Capture erros nesta matéria para gerar cards.
-                      </p>
+                      <div className="space-y-1.5">
+                        <p className="text-center text-[11px] text-[color-mix(in_srgb,var(--ink)_45%,transparent)]">
+                          Nenhum card cadastrado.
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => setManagingMateria(materia)}
+                          className="w-full rounded-[var(--radius-btn)] border border-dashed border-[var(--line)] bg-[var(--surface)] py-1.5 text-xs font-semibold text-[var(--signal)] hover:border-[var(--signal)] hover:bg-[var(--mist)] transition flex items-center justify-center gap-1.5"
+                        >
+                          <Plus size={13} strokeWidth={2.5} /> Criar / Gerenciar Cards
+                        </button>
+                      </div>
                     )}
                   </div>
                 </div>
@@ -425,6 +462,14 @@ export function FlashcardDeckList() {
         }}
         onCancel={() => setPendingDeleteMateria(null)}
       />
+
+      {/* Modal de gerenciamento de flashcards da matéria */}
+      {managingMateria && (
+        <FlashcardManagerModal
+          materia={managingMateria}
+          onClose={() => setManagingMateria(null)}
+        />
+      )}
     </div>
   );
 }
