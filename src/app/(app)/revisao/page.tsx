@@ -6,6 +6,7 @@ import {
   BookMarked,
   ChevronRight,
   Layers,
+  MessageCircleQuestion,
   PieChart,
   Plus,
   Sparkles,
@@ -18,8 +19,9 @@ import { QuickCaptureForm } from "@/components/revisao/QuickCaptureForm";
 import { FlashcardDeckList } from "@/components/revisao/FlashcardDeckList";
 import { RevisaoStats } from "@/components/revisao/RevisaoStats";
 import { AIFlashcardGenerator } from "@/components/revisao/AIFlashcardGenerator";
+import { TiraDuvidas } from "@/components/revisao/TiraDuvidas";
 
-type TabId = "caderno" | "flashcards" | "estatisticas";
+type TabId = "caderno" | "flashcards" | "tira-duvidas" | "estatisticas";
 
 function RevisaoContent() {
   const { reloadQuestoes, reloadFlashcards, flashcardsDoDia, moduloAtivo } =
@@ -131,6 +133,22 @@ function RevisaoContent() {
 
         <button
           type="button"
+          onClick={() => setActiveTab("tira-duvidas")}
+          className={`relative flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold transition ${
+            activeTab === "tira-duvidas"
+              ? "bg-[var(--surface)] text-[var(--signal)] shadow-sm"
+              : "text-[color-mix(in_srgb,var(--ink)_60%,transparent)] hover:text-[var(--ink)]"
+          }`}
+        >
+          <MessageCircleQuestion size={14} />
+          Tira-Dúvidas
+          <span className="rounded-full bg-gradient-to-r from-[var(--signal)] to-[color-mix(in_srgb,#f59e0b_50%,var(--signal))] px-1.5 py-px text-[9px] font-bold text-white leading-none">
+            IA
+          </span>
+        </button>
+
+        <button
+          type="button"
           onClick={() => setActiveTab("estatisticas")}
           className={`relative flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold transition ${
             activeTab === "estatisticas"
@@ -153,6 +171,7 @@ function RevisaoContent() {
         />
       )}
       {activeTab === "flashcards" && <FlashcardDeckList />}
+      {activeTab === "tira-duvidas" && <TiraDuvidas />}
       {activeTab === "estatisticas" && <RevisaoStats />}
 
       {/* Modal de Captura Rápida */}
