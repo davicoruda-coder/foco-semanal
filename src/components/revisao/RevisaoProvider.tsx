@@ -258,10 +258,25 @@ export function RevisaoProvider({ children }: { children: ReactNode }) {
       }
     }
 
+    // 4. Disciplinas de flashcards (manuais, IA ou tira-dúvidas)
+    for (const f of allFlashcards) {
+      const nome = f.disciplina?.trim() || f.questao?.disciplina?.trim();
+      if (nome) {
+        const key = nome.toLowerCase();
+        if (!hiddenNames.has(key) && !map.has(key)) {
+          map.set(key, {
+            id: `fc-${key}`,
+            nome,
+            created_at: f.created_at || new Date().toISOString(),
+          });
+        }
+      }
+    }
+
     return Array.from(map.values()).sort((a, b) =>
       a.nome.localeCompare(b.nome, "pt-BR"),
     );
-  }, [materias, appData.subjects, questoes, hiddenNames]);
+  }, [materias, appData.subjects, questoes, allFlashcards, hiddenNames]);
 
   /* ---- Boot: carregar perfil ---- */
   useEffect(() => {

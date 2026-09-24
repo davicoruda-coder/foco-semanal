@@ -449,7 +449,7 @@ export async function getRevisaoStats(): Promise<RevisaoStats> {
   };
   if (!auth) return empty;
 
-  const [{ data: questoes }, { data: pendentes }] = await Promise.all([
+  const [questoesRes, pendentesRes] = await Promise.all([
     auth.supabase
       .from("questoes_caderno")
       .select("disciplina, banca, causa_erro, status_resultado")
@@ -462,9 +462,9 @@ export async function getRevisaoStats(): Promise<RevisaoStats> {
   ]);
 
   const stats = { ...empty };
-  if (questoes) {
-    stats.totalQuestoes = questoes.length;
-    for (const q of questoes) {
+  if (questoesRes.data) {
+    stats.totalQuestoes = questoesRes.data.length;
+    for (const q of questoesRes.data) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const row = q as any;
       if (row.disciplina)
@@ -480,7 +480,7 @@ export async function getRevisaoStats(): Promise<RevisaoStats> {
           (stats.porResultado[row.status_resultado] || 0) + 1;
     }
   }
-  stats.flashcardsPendentes = pendentes?.length ?? 0;
+  stats.flashcardsPendentes = pendentesRes.count ?? 0;
   return stats;
 }
 

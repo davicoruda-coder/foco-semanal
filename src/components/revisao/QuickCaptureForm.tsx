@@ -603,7 +603,9 @@ export function QuickCaptureForm({
             ? "Salvando…"
             : isEditing
               ? "Salvar Alterações"
-              : "Salvar no Caderno"}
+              : criarFlashcard
+                ? "Salvar e Criar Flashcard"
+                : "Salvar no Caderno"}
         </button>
       </div>
     </form>
