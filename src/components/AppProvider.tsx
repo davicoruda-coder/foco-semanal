@@ -194,8 +194,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
     ) {
       const { createClient } = await import("@/lib/supabase/client");
       const supabase = createClient();
-      const access = await checkCurrentUserAccess(supabase);
-      if (!access.allowed) {
+      let access = { allowed: true, configured: true };
+      try {
+        access = await checkCurrentUserAccess(supabase);
+      } catch (err) {
+        console.warn("[foco] checkCurrentUserAccess falhou (offline/instabilidade):", err);
+        // Em caso de falha de rede/offline, não chuta o usuário; tenta usar sessão e cache local
+      }
+      if (access.configured && !access.allowed) {
         await supabase.auth.signOut();
         if (!cancelled) clearSession();
         return;
@@ -340,8 +346,29 @@ export function AppProvider({ children }: { children: ReactNode }) {
       try {
         const { createClient } = await import("@/lib/supabase/client");
         const supabase = createClient();
-        const { data: userData } = await supabase.auth.getUser();
-        const authUser = userData.user;
+        
+        let authUser: {
+          id: string;
+          email?: string | null;
+          user_metadata?: { full_name?: string; custom_avatar?: string; avatar_url?: string; picture?: string };
+        } | null = null;
+
+        try {
+          const { data: userData, error: userError } = await supabase.auth.getUser();
+          if (!userError && userData?.user) {
+            authUser = userData.user;
+          } else {
+            const { data: sessionData } = await supabase.auth.getSession();
+            if (sessionData?.session?.user) {
+              authUser = sessionData.session.user;
+            }
+          }
+        } catch {
+          const { data: sessionData } = await supabase.auth.getSession().catch(() => ({ data: { session: null } }));
+          if (sessionData?.session?.user) {
+            authUser = sessionData.session.user;
+          }
+        }
 
         if (authUser && !cancelled) {
           await enterSession(authUser.id, authUser);
