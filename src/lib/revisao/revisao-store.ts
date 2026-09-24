@@ -86,7 +86,7 @@ function gerarFlashcard(
 
 export async function addQuestao(
   payload: QuickCapturePayload,
-): Promise<{ questao: QuestaoCaderno; flashcard: Flashcard } | null> {
+): Promise<{ questao: QuestaoCaderno; flashcard: Flashcard | null } | null> {
   const auth = await getAuthedClient();
   if (!auth) return null;
 
@@ -111,21 +111,28 @@ export async function addQuestao(
     .single();
   assertOk("insert questao", qErr);
 
-  // Gerar flashcard automaticamente
-  const { frente, verso } = gerarFlashcard(payload, questao.id);
-  const { data: flashcard, error: fErr } = await auth.supabase
-    .from("flashcards")
-    .insert({
-      questao_id: questao.id,
-      user_id: auth.userId,
-      frente,
-      verso,
-    })
-    .select()
-    .single();
-  assertOk("insert flashcard", fErr);
+  let flashcard: Flashcard | null = null;
 
-  return { questao: questao as QuestaoCaderno, flashcard: flashcard as Flashcard };
+  // Gerar flashcard apenas se solicitado
+  if (payload.criar_flashcard) {
+    const { frente, verso } = gerarFlashcard(payload, questao.id);
+    const { data: fc, error: fErr } = await auth.supabase
+      .from("flashcards")
+      .insert({
+        questao_id: questao.id,
+        user_id: auth.userId,
+        frente,
+        verso,
+        origem: "caderno",
+        disciplina: clampText(payload.disciplina, 100),
+      })
+      .select()
+      .single();
+    assertOk("insert flashcard", fErr);
+    flashcard = fc as Flashcard;
+  }
+
+  return { questao: questao as QuestaoCaderno, flashcard };
 }
 
 export async function listQuestoes(
@@ -323,25 +330,30 @@ export async function deleteFlashcard(id: string): Promise<boolean> {
   return true;
 }
 
-/** Cria um flashcard manual para uma matéria. */
+/** Cria um flashcard manual para uma matéria (opcionalmente vinculado a uma questão). */
 export async function addFlashcardManual(
   disciplina: string,
   frente: string,
   verso: string,
+  questaoId?: string,
 ): Promise<Flashcard | null> {
   const auth = await getAuthedClient();
   if (!auth) return null;
 
   const hoje = new Date().toISOString().slice(0, 10);
-  const row = {
+  const row: Record<string, unknown> = {
     user_id: auth.userId,
     frente: clampText(frente, 5000),
     verso: clampText(verso, 5000),
     disciplina: clampText(disciplina, 100),
-    origem: "manual" as const,
+    origem: questaoId ? ("caderno" as const) : ("manual" as const),
     proxima_revisao: hoje,
     nivel_dominio: 0,
   };
+
+  if (questaoId) {
+    row.questao_id = questaoId;
+  }
 
   const { data, error } = await auth.supabase
     .from("flashcards")

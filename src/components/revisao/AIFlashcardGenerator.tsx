@@ -16,7 +16,7 @@ import {
 import { useRevisao } from "./RevisaoProvider";
 
 const MAX_GENERATIONS_PER_DAY = 15;
-const MIN_TEXT_LENGTH = 50;
+const MIN_TEXT_LENGTH = 15;
 const MAX_TEXT_LENGTH = 8000;
 
 /* ------------------------------------------------------------------ */

@@ -16,6 +16,9 @@ import {
   Check,
   X,
   Sparkles,
+  Layers,
+  Plus,
+  Loader2,
 } from "lucide-react";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { QuickCaptureForm } from "./QuickCaptureForm";
@@ -34,7 +37,7 @@ export function CadernoList({
 }: {
   onGenerateWithAI?: (texto: string, disciplina: string) => void;
 } = {}) {
-  const { questoes, questoesLoading, deleteQuestao } = useRevisao();
+  const { questoes, questoesLoading, deleteQuestao, allFlashcards, addFlashcardManual } = useRevisao();
   const [search, setSearch] = useState("");
   const [bancaFiltro, setBancaFiltro] = useState<string>("todas");
   const [disciplinaFiltro, setDisciplinaFiltro] = useState<string>("todas");
@@ -45,6 +48,68 @@ export function CadernoList({
   const [editingQuestao, setEditingQuestao] = useState<QuestaoCaderno | null>(null);
   const [pendingDeleteQuestao, setPendingDeleteQuestao] = useState<QuestaoCaderno | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  // Estado para criação de card manual a partir da questão
+  const [manualCardQuestao, setManualCardQuestao] = useState<QuestaoCaderno | null>(null);
+  const [cardFrente, setCardFrente] = useState("");
+  const [cardVerso, setCardVerso] = useState("");
+  const [savingManualCard, setSavingManualCard] = useState(false);
+  const [manualCardFeedback, setManualCardFeedback] = useState<string | null>(null);
+
+  // Mapeamento de quantos flashcards existem para cada questão
+  const cardsVinculados = useMemo(() => {
+    const map = new Map<string, number>();
+    allFlashcards.forEach((f) => {
+      if (f.questao_id) {
+        map.set(f.questao_id, (map.get(f.questao_id) || 0) + 1);
+      }
+    });
+    return map;
+  }, [allFlashcards]);
+
+  const handleOpenManualCard = (q: QuestaoCaderno) => {
+    setManualCardQuestao(q);
+    const prefix = [q.banca ? `[${q.banca}]` : "", q.disciplina, q.assunto ? `› ${q.assunto}` : ""].filter(Boolean).join(" ");
+    const detalhe = q.enunciado_texto ? `\n\n${q.enunciado_texto.slice(0, 250)}${q.enunciado_texto.length > 250 ? "…" : ""}` : q.codigo_questao ? `\n\nQuestão #${q.codigo_questao}` : "";
+    setCardFrente(`${prefix}${detalhe}`);
+    setCardVerso(`📌 ${q.aprendizado_chave}`);
+    setManualCardFeedback(null);
+  };
+
+  const handleSaveManualCard = async () => {
+    if (!manualCardQuestao || !cardFrente.trim() || !cardVerso.trim() || savingManualCard) return;
+    setSavingManualCard(true);
+    try {
+      const card = await addFlashcardManual(
+        manualCardQuestao.disciplina,
+        cardFrente.trim(),
+        cardVerso.trim(),
+        manualCardQuestao.id,
+      );
+      if (card) {
+        setManualCardFeedback("Flashcard criado com sucesso!");
+        setTimeout(() => {
+          setManualCardQuestao(null);
+          setManualCardFeedback(null);
+        }, 800);
+      }
+    } finally {
+      setSavingManualCard(false);
+    }
+  };
+
+  const handleGenerateAIForQuestao = (q: QuestaoCaderno) => {
+    if (!onGenerateWithAI) return;
+    const parts = [
+      q.banca ? `Banca: ${q.banca}` : "",
+      `Disciplina: ${q.disciplina}`,
+      q.assunto ? `Assunto: ${q.assunto}` : "",
+      q.codigo_questao ? `Código: #${q.codigo_questao}` : "",
+      q.enunciado_texto ? `Enunciado:\n${q.enunciado_texto}` : "",
+      `Regra Aprendida / Resumo:\n${q.aprendizado_chave}`,
+    ].filter(Boolean).join("\n\n");
+    onGenerateWithAI(parts, q.disciplina);
+  };
 
   const handleCopy = async (id: string, text: string) => {
     try {
@@ -254,6 +319,24 @@ export function CadernoList({
                     >
                       {CAUSA_ERRO_LABEL[q.causa_erro]}
                     </span>
+
+                    {/* Indicador se possui flashcards */}
+                    {cardsVinculados.get(q.id) ? (
+                      <span
+                        className="inline-flex items-center gap-1 rounded-full bg-[color-mix(in_srgb,var(--signal)_12%,var(--surface))] px-2 py-0.5 text-[10px] font-semibold text-[var(--signal)] border border-[color-mix(in_srgb,var(--signal)_25%,transparent)]"
+                        title={`${cardsVinculados.get(q.id)} flashcard(s) criado(s) a partir desta questão`}
+                      >
+                        <Layers size={10} />
+                        {cardsVinculados.get(q.id)} {cardsVinculados.get(q.id) === 1 ? "card" : "cards"}
+                      </span>
+                    ) : (
+                      <span
+                        className="inline-flex items-center gap-1 rounded-full bg-[var(--mist)] px-2 py-0.5 text-[10px] font-medium text-[color-mix(in_srgb,var(--ink)_45%,transparent)]"
+                        title="Apenas registrado no caderno (sem flashcard criado ainda)"
+                      >
+                        Sem card
+                      </span>
+                    )}
                   </div>
                 </div>
 
@@ -318,12 +401,22 @@ export function CadernoList({
                         )}
 
                         <div className="ml-auto flex flex-wrap items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => handleOpenManualCard(q)}
+                            className="inline-flex items-center gap-1 rounded-md bg-[var(--surface)] border border-[var(--line)] px-2.5 py-1 text-xs font-medium text-[var(--ink)] hover:border-[var(--signal)] hover:text-[var(--signal)] transition active:scale-95"
+                            title="Criar um flashcard manual para este aprendizado"
+                          >
+                            <Plus size={12} />
+                            + Card Manual
+                          </button>
+
                           {onGenerateWithAI && (
                             <button
                               type="button"
-                              onClick={() => onGenerateWithAI(q.aprendizado_chave, q.disciplina)}
-                              className="inline-flex items-center gap-1 rounded-md bg-[color-mix(in_srgb,var(--signal)_12%,var(--surface))] text-[var(--signal)] border border-[color-mix(in_srgb,var(--signal)_30%,transparent)] px-2.5 py-1 text-xs font-semibold hover:brightness-110 transition"
-                              title="Gerar flashcards com IA a partir deste resumo"
+                              onClick={() => handleGenerateAIForQuestao(q)}
+                              className="inline-flex items-center gap-1 rounded-md bg-[color-mix(in_srgb,var(--signal)_12%,var(--surface))] text-[var(--signal)] border border-[color-mix(in_srgb,var(--signal)_30%,transparent)] px-2.5 py-1 text-xs font-semibold hover:brightness-110 transition active:scale-95"
+                              title="Gerar flashcards com IA a partir deste aprendizado"
                             >
                               <Sparkles size={12} />
                               Gerar Cards IA
@@ -408,11 +501,111 @@ export function CadernoList({
         </div>
       )}
 
+      {/* Modal de Criação de Card Manual a partir do Caderno */}
+      {manualCardQuestao && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-fade-in overflow-y-auto">
+          <div className="relative w-full max-w-lg rounded-[var(--radius)] border border-[var(--line)] bg-[var(--surface)] p-5 shadow-2xl my-8 space-y-4">
+            <div className="flex items-center justify-between border-b border-[var(--line)] pb-3">
+              <div>
+                <h2 className="text-base font-semibold text-[var(--ink)] flex items-center gap-2">
+                  <Layers size={18} className="text-[var(--signal)]" />
+                  Criar Flashcard Manual
+                </h2>
+                <p className="text-xs text-[color-mix(in_srgb,var(--ink)_60%,transparent)]">
+                  Crie um flashcard personalizado a partir deste aprendizado do caderno
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setManualCardQuestao(null)}
+                className="rounded-full p-1.5 text-[color-mix(in_srgb,var(--ink)_50%,transparent)] hover:bg-[var(--mist)] hover:text-[var(--ink)] transition"
+                aria-label="Fechar"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Contexto da questão */}
+            <div className="flex flex-wrap items-center gap-1.5 rounded-lg bg-[var(--mist)] p-2 text-xs">
+              <span className="font-semibold text-[var(--signal)]">{manualCardQuestao.disciplina}</span>
+              {manualCardQuestao.banca && (
+                <span className="rounded bg-[var(--surface)] px-1.5 py-0.5 border border-[var(--line)] text-[var(--ink)]">
+                  {manualCardQuestao.banca}
+                </span>
+              )}
+              {manualCardQuestao.assunto && (
+                <span className="text-[color-mix(in_srgb,var(--ink)_65%,transparent)]">
+                  › {manualCardQuestao.assunto}
+                </span>
+              )}
+            </div>
+
+            {manualCardFeedback && (
+              <div className="rounded-[var(--radius-btn)] bg-[color-mix(in_srgb,var(--ok)_12%,var(--surface))] p-2.5 text-xs font-semibold text-[var(--ok)] flex items-center gap-1.5">
+                <Check size={14} />
+                {manualCardFeedback}
+              </div>
+            )}
+
+            <div className="space-y-3">
+              <div>
+                <label className="mb-1 block text-xs font-medium uppercase tracking-wider text-[color-mix(in_srgb,var(--ink)_55%,transparent)]">
+                  Frente (Pergunta ou Contexto) *
+                </label>
+                <textarea
+                  value={cardFrente}
+                  onChange={(e) => setCardFrente(e.target.value)}
+                  rows={3}
+                  className="w-full resize-none rounded-[var(--radius-btn)] border border-[var(--line)] bg-[var(--surface)] px-3 py-2.5 text-sm text-[var(--ink)] outline-none transition focus:border-[var(--signal)] focus:ring-2 focus:ring-[var(--signal-soft)] leading-relaxed"
+                  placeholder="Ex: Qual é a regra sobre..."
+                />
+              </div>
+
+              <div>
+                <label className="mb-1 block text-xs font-medium uppercase tracking-wider text-[color-mix(in_srgb,var(--ink)_55%,transparent)]">
+                  Verso (Resposta ou Regra) *
+                </label>
+                <textarea
+                  value={cardVerso}
+                  onChange={(e) => setCardVerso(e.target.value)}
+                  rows={3}
+                  className="w-full resize-none rounded-[var(--radius-btn)] border border-[var(--line)] bg-[var(--surface)] px-3 py-2.5 text-sm text-[var(--ink)] outline-none transition focus:border-[var(--signal)] focus:ring-2 focus:ring-[var(--signal-soft)] leading-relaxed"
+                  placeholder="Ex: Não ocorre crase..."
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-[var(--line)]">
+              <button
+                type="button"
+                onClick={() => setManualCardQuestao(null)}
+                className="rounded-[var(--radius-btn)] border border-[var(--line)] bg-[var(--surface)] px-4 py-2 text-xs font-semibold text-[var(--ink)] transition hover:bg-[var(--mist)]"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                disabled={savingManualCard || !cardFrente.trim() || !cardVerso.trim()}
+                onClick={handleSaveManualCard}
+                className="inline-flex items-center gap-1.5 rounded-[var(--radius-btn)] bg-[var(--signal)] px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:brightness-110 disabled:opacity-60"
+              >
+                {savingManualCard ? (
+                  <Loader2 size={14} className="animate-spin" />
+                ) : (
+                  <Check size={14} />
+                )}
+                {savingManualCard ? "Salvando…" : "Salvar Flashcard"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Confirmação de Exclusão */}
       <ConfirmDialog
         open={pendingDeleteQuestao !== null}
         title="Excluir questão do caderno"
-        message={`Tem certeza que deseja remover esta anotação do caderno (${pendingDeleteQuestao?.codigo_questao || pendingDeleteQuestao?.disciplina || "Item"})? O aprendizado registrado e o flashcard serão excluídos.`}
+        message={`Tem certeza que deseja remover esta anotação do caderno (${pendingDeleteQuestao?.codigo_questao || pendingDeleteQuestao?.disciplina || "Item"})? O aprendizado registrado e os eventuais flashcards vinculados serão excluídos.`}
         confirmLabel={deletandoId ? "Excluindo…" : "Excluir"}
         cancelLabel="Cancelar"
         confirmVariant="danger"

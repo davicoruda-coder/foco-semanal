@@ -198,6 +198,7 @@ export function QuickCaptureForm({
   );
 
   const [saving, setSaving] = useState(false);
+  const [criarFlashcard, setCriarFlashcard] = useState(false);
   const [feedback, setFeedback] = useState<{
     ok: boolean;
     msg: string;
@@ -277,6 +278,7 @@ export function QuickCaptureForm({
         status_resultado: resultado,
         causa_erro: causa,
         aprendizado_chave: aprendizado.trim(),
+        criar_flashcard: isEditing ? false : criarFlashcard,
       };
 
       if (isEditing && initialData) {
@@ -303,7 +305,12 @@ export function QuickCaptureForm({
           if (payload.disciplina) {
             void addMateria(payload.disciplina);
           }
-          setFeedback({ ok: true, msg: "Questão registrada + flashcard criado!" });
+          setFeedback({
+            ok: true,
+            msg: criarFlashcard
+              ? "Questão registrada + flashcard criado!"
+              : "Erro registrado no Caderno com sucesso!",
+          });
           // Reset form
           setCodigoOuLink("");
           setBanca("");
@@ -315,6 +322,7 @@ export function QuickCaptureForm({
           setExpandido(false);
           setResultado("erro");
           setCausa("teoria");
+          setCriarFlashcard(false);
           feedbackTimer.current = setTimeout(() => setFeedback(null), 4000);
           onSuccess?.();
         } else {
@@ -336,6 +344,7 @@ export function QuickCaptureForm({
       aprendizado,
       linkVideo,
       enunciado,
+      criarFlashcard,
       addQuestao,
       parseCodigoOuLink,
       onSuccess,
@@ -545,6 +554,28 @@ export function QuickCaptureForm({
         </div>
       )}
 
+      {/* Opção Opcional: Criar Flashcard Imediato */}
+      {!isEditing && (
+        <div className="rounded-[var(--radius)] border border-[var(--line)] bg-[var(--mist)]/40 p-3">
+          <label className="flex items-start gap-2.5 cursor-pointer text-xs font-medium text-[var(--ink)]">
+            <input
+              type="checkbox"
+              checked={criarFlashcard}
+              onChange={(e) => setCriarFlashcard(e.target.checked)}
+              className="mt-0.5 h-4 w-4 rounded border-[var(--line)] text-[var(--signal)] focus:ring-[var(--signal)] cursor-pointer"
+            />
+            <div className="space-y-0.5 select-none">
+              <span className="font-semibold text-[var(--ink)]">
+                Criar flashcard automático agora
+              </span>
+              <p className="text-[11px] text-[color-mix(in_srgb,var(--ink)_55%,transparent)] leading-relaxed">
+                Deixe desmarcado se quiser apenas registrar no seu Caderno. Você pode criar flashcards manuais ou com IA depois a qualquer momento.
+              </p>
+            </div>
+          </label>
+        </div>
+      )}
+
       {/* Submit / Cancel */}
       <div className="flex items-center gap-2">
         {onCancel && (
@@ -572,7 +603,7 @@ export function QuickCaptureForm({
             ? "Salvando…"
             : isEditing
               ? "Salvar Alterações"
-              : "Registrar Questão"}
+              : "Salvar no Caderno"}
         </button>
       </div>
     </form>

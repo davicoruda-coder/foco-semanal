@@ -102,6 +102,7 @@ type RevisaoContextValue = {
     disciplina: string,
     frente: string,
     verso: string,
+    questaoId?: string,
   ) => Promise<Flashcard | null>;
   reloadFlashcards: () => Promise<void>;
 
@@ -302,7 +303,10 @@ export function RevisaoProvider({ children }: { children: ReactNode }) {
         const result = await store.addQuestao(payload);
         if (result) {
           setQuestoes((prev) => [result.questao, ...prev]);
-          setFlashcardsDoDia((prev) => [result.flashcard, ...prev]);
+          if (result.flashcard) {
+            setFlashcardsDoDia((prev) => [result.flashcard!, ...prev]);
+            setAllFlashcards((prev) => [result.flashcard!, ...prev]);
+          }
           return true;
         }
         return false;
@@ -493,10 +497,11 @@ export function RevisaoProvider({ children }: { children: ReactNode }) {
       disciplina: string,
       frente: string,
       verso: string,
+      questaoId?: string,
     ): Promise<Flashcard | null> => {
       try {
         const store = await import("@/lib/revisao/revisao-store");
-        const card = await store.addFlashcardManual(disciplina, frente, verso);
+        const card = await store.addFlashcardManual(disciplina, frente, verso, questaoId);
         if (card) {
           setAllFlashcards((prev) => [card, ...prev]);
           setFlashcardsDoDia((prev) => [card, ...prev]);

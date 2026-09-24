@@ -189,7 +189,7 @@ function RevisaoContent() {
                   Captura Rápida de Questão
                 </h3>
                 <p className="text-[11px] text-[color-mix(in_srgb,var(--ink)_55%,transparent)]">
-                  Gera automaticamente a entrada no caderno e o flashcard
+                  Registre o erro no caderno e decida se quer criar flashcards agora ou depois
                 </p>
               </div>
               <button

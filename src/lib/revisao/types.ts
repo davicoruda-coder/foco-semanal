@@ -72,7 +72,7 @@ export interface MateriaRevisao {
 
 export interface Flashcard {
   id: string;
-  questao_id: string;
+  questao_id?: string | null;
   user_id: string;
   frente: string;
   verso: string;
@@ -119,6 +119,7 @@ export interface QuickCapturePayload {
   status_resultado: StatusResultado;
   causa_erro: CausaErro;
   aprendizado_chave: string;
+  criar_flashcard?: boolean;
 }
 
 /* ------------------------------------------------------------------ */
