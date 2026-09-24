@@ -316,7 +316,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       </header>
 
-      <main className="mx-auto max-w-7xl px-2.5 pb-5 pt-3 sm:px-5 sm:pb-6 sm:pt-4 md:px-8 lg:pb-10 lg:pt-6">
+      <main className="mx-auto max-w-7xl px-2.5 pb-28 pt-3 sm:px-5 sm:pb-24 sm:pt-4 md:px-8 lg:pb-10 lg:pt-6">
         {children}
       </main>
 

@@ -76,7 +76,7 @@ export function FlashcardPlayer({
   };
 
   return (
-    <div className="mx-auto max-w-xl space-y-4">
+    <div className="mx-auto max-w-xl space-y-4 pb-8">
       {/* Indicador de Progresso */}
       <div className="flex items-center justify-between text-xs text-[color-mix(in_srgb,var(--ink)_60%,transparent)]">
         <span>
