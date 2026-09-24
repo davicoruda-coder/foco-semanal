@@ -881,14 +881,14 @@ function ModulosSettings() {
               <div className="space-y-1">
                 <div className="flex flex-wrap items-center gap-2">
                   <h2 className="font-display text-base font-semibold tracking-tight text-[var(--ink)] md:text-lg">
-                    Revisão & Flashcards
+                    Revisão & Fixação Ativa
                   </h2>
                   <span className="rounded-full bg-[var(--signal-soft)] px-2 py-0.5 text-[10px] font-semibold text-[var(--signal)]">
                     Opcional
                   </span>
                 </div>
                 <p className="text-xs sm:text-sm text-[color-mix(in_srgb,var(--ink)_75%,transparent)] leading-relaxed max-w-xl">
-                  Caderno de erros com repetição espaçada, captura de falhas em questões e diagnóstico de retenção.
+                  Caderno de erros, flashcards com repetição espaçada, tutor IA e diagnóstico de retenção.
                 </p>
               </div>
             </div>

@@ -75,7 +75,7 @@ const TOPICS: TutorialTopic[] = [
   {
     id: "revisao",
     icon: BrainCircuit,
-    title: "Revisão: Caderno de Erros & Flashcards",
+    title: "Revisão & Fixação Ativa: Caderno de Erros, Cards & Tutor IA",
     badge: "Estudo Reverso",
     summary: "Aprenda com as questões erradas e retenha com repetição espaçada.",
     concept:

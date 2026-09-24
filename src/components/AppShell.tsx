@@ -304,6 +304,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                     className={active ? "text-[var(--signal)]" : "opacity-60"}
                   />
                   <span>{label}</span>
+                  {href === "/revisao" && (
+                    <span className="rounded-full bg-gradient-to-r from-purple-600 to-indigo-600 px-1 py-px text-[9px] font-bold text-white leading-none shadow-xs">
+                      IA
+                    </span>
+                  )}
                 </Link>
               );
             })}
@@ -347,11 +352,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 }`}
               >
                 <span
-                  className={`grid size-9 place-items-center rounded-xl transition-colors ${
+                  className={`relative grid size-9 place-items-center rounded-xl transition-colors ${
                     active ? "nav-tab-active-chip" : "bg-transparent"
                   }`}
                 >
                   <Icon size={24} strokeWidth={1.85} />
+                  {href === "/revisao" && (
+                    <span className="absolute top-1.5 right-1.5 size-2 rounded-full bg-gradient-to-r from-purple-600 to-indigo-600 ring-1 ring-[var(--surface)]" />
+                  )}
                 </span>
                 <span className="max-w-full truncate px-0.5 leading-none">
                   {label}
