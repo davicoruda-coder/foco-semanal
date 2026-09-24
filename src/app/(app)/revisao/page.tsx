@@ -66,7 +66,7 @@ function RevisaoContent() {
         <div>
           <h1 className="font-display text-2xl font-bold tracking-tight md:text-3xl text-[var(--ink)] flex items-center gap-2">
             Revisão & Fixação Ativa
-            <span className="rounded-full bg-gradient-to-r from-purple-600 to-indigo-600 px-2 py-0.5 text-[11px] font-bold text-white shadow-xs">
+            <span className="rounded-full bg-[var(--signal)] px-2 py-0.5 text-[11px] font-bold text-white shadow-xs">
               IA
             </span>
           </h1>
@@ -83,7 +83,7 @@ function RevisaoContent() {
               setAiInitialData({});
               setShowAIModal(true);
             }}
-            className="inline-flex items-center gap-1.5 rounded-[var(--radius-btn)] bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 px-3.5 py-2 text-xs sm:text-sm font-semibold text-white shadow-sm transition hover:brightness-110 active:scale-95"
+            className="inline-flex items-center gap-1.5 rounded-[var(--radius-btn)] border border-[color-mix(in_srgb,var(--signal)_35%,var(--line))] bg-[var(--surface)] px-3.5 py-2 text-xs sm:text-sm font-semibold text-[var(--signal)] shadow-xs transition hover:bg-[var(--signal-soft)] active:scale-95"
             title="Criar flashcards automaticamente a partir de texto com IA"
           >
             <Sparkles size={16} />

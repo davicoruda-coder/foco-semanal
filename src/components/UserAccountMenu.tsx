@@ -478,11 +478,11 @@ export function UserAccountMenu() {
       <button
         type="button"
         onClick={() => setOpen((prev) => !prev)}
-        className={`group relative inline-flex items-center gap-2 rounded-full border transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--signal)] focus-visible:ring-offset-2 active:scale-95 ${
+        className={`group relative inline-flex items-center gap-2.5 rounded-full border transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--signal)] focus-visible:ring-offset-2 active:scale-95 ${
           open
             ? "border-[color-mix(in_srgb,var(--signal)_50%,var(--line))] bg-[var(--surface)] shadow-xs"
             : "border-[var(--line)] bg-[var(--surface)]/80 hover:border-[color-mix(in_srgb,var(--signal)_35%,var(--line))] hover:bg-[var(--mist)] hover:shadow-xs"
-        } max-sm:size-9 max-sm:justify-center max-sm:border-transparent max-sm:bg-transparent max-sm:p-0 sm:h-8.5 sm:px-1.5`}
+        } max-sm:size-9 max-sm:justify-center max-sm:border-transparent max-sm:bg-transparent max-sm:p-0 sm:h-9.5 sm:pl-1.5 sm:pr-3`}
         title={`Conta: ${user.name || user.email}`}
         aria-label="Menu de conta do usuário"
         aria-expanded={open}
@@ -493,20 +493,20 @@ export function UserAccountMenu() {
             src={user.avatarUrl}
             alt="Foto de perfil"
             onError={() => setImgError(true)}
-            className="size-7 rounded-full object-cover ring-1 ring-[color-mix(in_srgb,var(--ink)_14%,transparent)] transition-all duration-200 group-hover:scale-105 group-hover:ring-[var(--signal)] shadow-xs"
+            className="size-8 rounded-full object-cover ring-1 ring-[color-mix(in_srgb,var(--ink)_14%,transparent)] transition-all duration-200 group-hover:scale-105 group-hover:ring-[var(--signal)] shadow-xs"
           />
         ) : (
-          <span className="flex size-7 items-center justify-center rounded-full bg-[var(--signal-soft)] text-[11px] font-bold tracking-tight text-[var(--signal)] ring-1 ring-[color-mix(in_srgb,var(--ink)_14%,transparent)] transition-all duration-200 group-hover:scale-105 group-hover:ring-[var(--signal)] shadow-xs">
+          <span className="flex size-8 items-center justify-center rounded-full bg-[var(--signal-soft)] text-xs font-bold tracking-tight text-[var(--signal)] ring-1 ring-[color-mix(in_srgb,var(--ink)_14%,transparent)] transition-all duration-200 group-hover:scale-105 group-hover:ring-[var(--signal)] shadow-xs">
             {initials}
           </span>
         )}
 
-        <span className="hidden sm:inline-block max-w-[120px] truncate text-xs font-semibold tracking-tight text-[var(--ink)] transition-colors group-hover:text-[var(--signal)]">
+        <span className="hidden sm:inline-block max-w-[130px] truncate text-sm font-semibold tracking-tight text-[var(--ink)] transition-colors group-hover:text-[var(--signal)]">
           {firstName}
         </span>
 
         <ChevronDown
-          size={13}
+          size={14}
           strokeWidth={2.2}
           className={`hidden sm:inline-block text-[color-mix(in_srgb,var(--ink)_45%,transparent)] transition-transform duration-200 ${
             open ? "rotate-180 text-[var(--signal)]" : "group-hover:text-[var(--ink)]"

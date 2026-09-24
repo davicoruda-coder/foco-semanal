@@ -265,15 +265,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </header>
 
       <header className="sticky top-0 z-20 hidden border-b border-[var(--line)] bg-[var(--surface)]/90 backdrop-blur-md lg:block">
-        <div className="mx-auto flex h-14 max-w-7xl items-center justify-between gap-4 px-5 md:px-8">
+        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-5 md:px-8">
           {/* Logo / Marca */}
           <Link
             href="/hoje"
             className="flex min-w-0 shrink-0 items-center gap-2.5 transition hover:opacity-90"
             title="FocoHub"
           >
-            <BrandIcon size={30} />
-            <span className="font-display truncate text-base font-semibold tracking-tight text-[var(--ink)]">
+            <BrandIcon size={32} />
+            <span className="font-display truncate text-[17px] font-bold tracking-tight text-[var(--ink)]">
               FocoHub
             </span>
           </Link>
@@ -292,20 +292,20 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   title={label}
                   aria-label={label}
                   aria-current={active ? "page" : undefined}
-                  className={`relative inline-flex h-8 items-center gap-1.5 rounded-lg px-3.5 text-xs font-semibold transition-all duration-200 ${
+                  className={`relative inline-flex h-9.5 items-center gap-2 rounded-lg px-4 text-sm font-semibold transition-all duration-200 ${
                     active
                       ? "bg-[var(--surface)] text-[var(--ink)] shadow-[0_1px_4px_rgba(0,0,0,0.08)]"
-                      : "text-[color-mix(in_srgb,var(--ink)_50%,transparent)] hover:text-[color-mix(in_srgb,var(--ink)_80%,transparent)] hover:bg-black/[0.02]"
+                      : "text-[color-mix(in_srgb,var(--ink)_55%,transparent)] hover:text-[color-mix(in_srgb,var(--ink)_85%,transparent)] hover:bg-black/[0.02]"
                   }`}
                 >
                   <Icon
-                    size={15}
-                    strokeWidth={active ? 2.25 : 1.75}
+                    size={17}
+                    strokeWidth={active ? 2.25 : 1.85}
                     className={active ? "text-[var(--signal)]" : "opacity-60"}
                   />
                   <span>{label}</span>
                   {href === "/revisao" && (
-                    <span className="rounded-full bg-gradient-to-r from-purple-600 to-indigo-600 px-1 py-px text-[9px] font-bold text-white leading-none shadow-xs">
+                    <span className="rounded-full bg-[var(--signal)] px-1.5 py-0.5 text-[10px] font-bold text-white leading-none shadow-xs">
                       IA
                     </span>
                   )}
@@ -358,7 +358,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 >
                   <Icon size={24} strokeWidth={1.85} />
                   {href === "/revisao" && (
-                    <span className="absolute top-1.5 right-1.5 size-2 rounded-full bg-gradient-to-r from-purple-600 to-indigo-600 ring-1 ring-[var(--surface)]" />
+                    <span className="absolute top-1.5 right-1.5 size-2 rounded-full bg-[var(--signal)] ring-1 ring-[var(--surface)]" />
                   )}
                 </span>
                 <span className="max-w-full truncate px-0.5 leading-none">
