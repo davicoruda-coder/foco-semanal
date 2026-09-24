@@ -1,9 +1,27 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { BarChart3, ChevronDown, ChevronUp, FileText, Minus, Pause, Pencil, Play, Plus, Repeat, Trash2, X } from "lucide-react";
+import {
+  BarChart3,
+  ChevronDown,
+  ChevronUp,
+  ChevronsUpDown,
+  Clock,
+  FileText,
+  Minus,
+  Pause,
+  Pencil,
+  Play,
+  Plus,
+  Repeat,
+  SlidersHorizontal,
+  Sparkles,
+  Trash2,
+  X,
+} from "lucide-react";
 import { useApp } from "@/components/AppProvider";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { SubjectIcon } from "@/components/SubjectIcon";
 import { SubjectIconPicker } from "@/components/SubjectIconPicker";
 import { newId } from "@/lib/demo-store";
 import {
@@ -857,6 +875,8 @@ export default function MateriasPage() {
   const [newIsFree, setNewIsFree] = useState(false);
   const [newWeight, setNewWeight] = useState(1);
   const [newFreq, setNewFreq] = useState<DraftFreq>({ mode: "all", days: [] });
+  const [showNewAdvanced, setShowNewAdvanced] = useState(false);
+  const [expandedIds, setExpandedIds] = useState<Record<string, boolean>>({});
   /** Rascunho local: permite abrir “Dias da semana” antes de marcar algum dia. */
   const [freqDrafts, setFreqDrafts] = useState<Record<string, DraftFreq>>({});
   const [minutesDraft, setMinutesDraft] = useState<Record<string, string>>({});
@@ -873,6 +893,27 @@ export default function MateriasPage() {
   }, [pendingDelete]);
 
   const subjects = [...data.subjects].sort((a, b) => a.cycle_order - b.cycle_order);
+
+  function toggleExpanded(id: string) {
+    setExpandedIds((prev) => ({
+      ...prev,
+      [id]: !prev[id],
+    }));
+  }
+
+  function expandAll() {
+    const all: Record<string, boolean> = {};
+    subjects.forEach((s) => {
+      all[s.id] = true;
+    });
+    setExpandedIds(all);
+  }
+
+  function collapseAll() {
+    setExpandedIds({});
+  }
+
+  const allExpanded = subjects.length > 0 && subjects.every((s) => expandedIds[s.id]);
 
   function move(id: string, dir: -1 | 1) {
     setData((prev) => {
@@ -922,13 +963,35 @@ export default function MateriasPage() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl">
-      <h1 className="font-display pb-0.5 text-2xl font-semibold leading-normal tracking-tight md:text-3xl">
-        Matérias
-      </h1>
+    <div className="mx-auto max-w-3xl pb-16">
+      {/* Cabeçalho */}
+      <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
+        <div>
+          <h1 className="font-display pb-0.5 text-2xl font-semibold leading-normal tracking-tight md:text-3xl">
+            Matérias
+          </h1>
+          <p className="text-xs text-[color-mix(in_srgb,var(--ink)_55%,transparent)]">
+            {subjects.length} {subjects.length === 1 ? "matéria cadastrada" : "matérias cadastradas"} no ciclo
+          </p>
+        </div>
 
+        {subjects.length > 0 && (
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={allExpanded ? collapseAll : expandAll}
+              className="inline-flex items-center gap-1.5 rounded-full border border-[var(--line)] bg-[var(--surface)] px-3 py-1.5 text-xs font-medium text-[color-mix(in_srgb,var(--ink)_75%,transparent)] transition hover:border-[color-mix(in_srgb,var(--signal)_40%,var(--line))] hover:text-[var(--ink)]"
+            >
+              <ChevronsUpDown size={14} strokeWidth={2} className="text-[var(--signal)]" />
+              <span>{allExpanded ? "Recolher todas" : "Expandir todas"}</span>
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Formulário de Adição */}
       <form
-        className="surface mt-8 flex flex-col gap-3 p-4"
+        className="surface mt-6 flex flex-col gap-3 p-4 transition-all"
         onSubmit={(e) => {
           e.preventDefault();
           if (!name.trim()) return;
@@ -947,18 +1010,18 @@ export default function MateriasPage() {
           setNewIsFree(false);
           setNewWeight(1);
           setNewFreq({ mode: "all", days: [] });
+          setShowNewAdvanced(false);
         }}
       >
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center">
           <input
-            className="input"
-            placeholder="Nova matéria"
+            className="input flex-1"
+            placeholder="Nova matéria (ex: Português, RLM...)"
             value={name}
             onChange={(e) => setName(e.target.value)}
           />
           {!newIsFree && (
-            <label className="flex shrink-0 items-center gap-2 text-sm">
-              <span className="opacity-60">Min</span>
+            <label className="flex shrink-0 items-center gap-1.5 text-sm">
               <input
                 className="input w-20 py-2 text-center font-mono-num"
                 type="number"
@@ -971,374 +1034,575 @@ export default function MateriasPage() {
                   setNewMinutes(String(parseMinutes(newMinutes, 25)))
                 }
               />
+              <span className="text-xs opacity-60">min</span>
             </label>
           )}
           <button type="submit" className="btn btn-primary whitespace-nowrap">
-            Adicionar
+            <Plus size={16} strokeWidth={2.5} /> Adicionar
           </button>
         </div>
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="inline-flex items-center gap-0.5 rounded-full border border-[var(--line)] bg-[color-mix(in_srgb,var(--ink)_6%,transparent)] p-0.5">
-            <button
-              type="button"
-              className={`rounded-full px-2.5 py-1 text-xs font-medium transition ${
-                !newIsFree
-                  ? "bg-[var(--signal)] text-white"
-                  : "text-[color-mix(in_srgb,var(--ink)_55%,transparent)] hover:text-[var(--ink)]"
-              }`}
-              onClick={() => setNewIsFree(false)}
-            >
-              Com tempo
-            </button>
-            <button
-              type="button"
-              className={`rounded-full px-2.5 py-1 text-xs font-medium transition ${
-                newIsFree
-                  ? "bg-[var(--signal)] text-white"
-                  : "text-[color-mix(in_srgb,var(--ink)_55%,transparent)] hover:text-[var(--ink)]"
-              }`}
-              onClick={() => setNewIsFree(true)}
-            >
-              Livre
-            </button>
-          </div>
 
-          <div className="flex items-center gap-1.5 text-xs text-[color-mix(in_srgb,var(--ink)_65%,transparent)]">
-            <span className="font-medium">Peso:</span>
+        {/* Linha de controles rápidos / toggle de opções avançadas */}
+        <div className="flex flex-wrap items-center justify-between gap-2 pt-0.5">
+          <div className="flex flex-wrap items-center gap-2">
             <div className="inline-flex items-center gap-0.5 rounded-full border border-[var(--line)] bg-[color-mix(in_srgb,var(--ink)_6%,transparent)] p-0.5">
-              {[1, 2, 3, 4].map((w) => (
-                <button
-                  key={w}
-                  type="button"
-                  className={`rounded-full px-2.5 py-1 text-xs font-medium transition ${
-                    newWeight === w
-                      ? "bg-[var(--signal)] text-white shadow-sm"
-                      : "text-[color-mix(in_srgb,var(--ink)_55%,transparent)] hover:text-[var(--ink)]"
-                  }`}
-                  onClick={() => setNewWeight(w)}
-                >
-                  {w}x
-                </button>
-              ))}
+              <button
+                type="button"
+                className={`rounded-full px-2.5 py-1 text-xs font-medium transition ${
+                  !newIsFree
+                    ? "bg-[var(--signal)] text-white shadow-sm"
+                    : "text-[color-mix(in_srgb,var(--ink)_55%,transparent)] hover:text-[var(--ink)]"
+                }`}
+                onClick={() => setNewIsFree(false)}
+              >
+                Com tempo
+              </button>
+              <button
+                type="button"
+                className={`rounded-full px-2.5 py-1 text-xs font-medium transition ${
+                  newIsFree
+                    ? "bg-[var(--signal)] text-white shadow-sm"
+                    : "text-[color-mix(in_srgb,var(--ink)_55%,transparent)] hover:text-[var(--ink)]"
+                }`}
+                onClick={() => setNewIsFree(true)}
+              >
+                Livre
+              </button>
             </div>
+
+            <button
+              type="button"
+              onClick={() => setShowNewAdvanced((v) => !v)}
+              className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium text-[color-mix(in_srgb,var(--ink)_60%,transparent)] transition hover:bg-[var(--mist)] hover:text-[var(--ink)]"
+            >
+              <SlidersHorizontal size={12} strokeWidth={2} />
+              <span>{showNewAdvanced ? "Ocultar opções" : "Mais opções (peso, dias)"}</span>
+              <ChevronDown
+                size={13}
+                className={`transition-transform duration-200 ${showNewAdvanced ? "rotate-180" : ""}`}
+              />
+            </button>
           </div>
         </div>
-        <StudyDaysPicker value={newFreq} onChange={setNewFreq} />
+
+        {/* Opções avançadas no cadastro */}
+        {showNewAdvanced && (
+          <div className="mt-2 space-y-3 rounded-[var(--radius-tag)] border border-[var(--line)] bg-[color-mix(in_srgb,var(--mist)_40%,var(--surface))] p-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-xs font-medium text-[color-mix(in_srgb,var(--ink)_70%,transparent)]">
+                Peso no ciclo:
+              </span>
+              <div className="inline-flex items-center gap-0.5 rounded-full border border-[var(--line)] bg-[var(--surface)] p-0.5">
+                {[1, 2, 3, 4].map((w) => (
+                  <button
+                    key={w}
+                    type="button"
+                    className={`rounded-full px-2.5 py-0.5 text-xs font-medium transition ${
+                      newWeight === w
+                        ? "bg-[var(--signal)] text-white shadow-sm"
+                        : "text-[color-mix(in_srgb,var(--ink)_55%,transparent)] hover:text-[var(--ink)]"
+                    }`}
+                    onClick={() => setNewWeight(w)}
+                  >
+                    {w}x
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <p className="mb-1.5 text-xs font-medium text-[color-mix(in_srgb,var(--ink)_70%,transparent)]">
+                Frequência de estudo:
+              </p>
+              <StudyDaysPicker value={newFreq} onChange={setNewFreq} />
+            </div>
+          </div>
+        )}
       </form>
 
-      <ul className="mt-6 space-y-4">
-        {subjects.map((s) => {
+      {/* Lista de Matérias com Accordion */}
+      <ul className="mt-6 space-y-3">
+        {subjects.map((s, idx) => {
           const freq = freqForSubject(s);
           const free = Boolean(s.is_free);
           const isActive = s.active !== false;
+          const isExpanded = Boolean(expandedIds[s.id]);
+          const rot = normalizeRotation(s.rotation);
+          const currentRotItem = rot ? rot.items[rot.index] ?? rot.items[0] : null;
+          const exclusiveDays = normalizeExclusiveDays(s.exclusive_days) ?? [];
+          const customStudyDays = normalizeStudyDays(s.study_days);
+
           return (
             <li
               key={s.id}
-              className={`surface px-4 py-3 transition-all ${
+              className={`surface overflow-hidden rounded-[var(--radius)] transition-all ${
                 !isActive
                   ? "border-[color-mix(in_srgb,var(--line)_80%,transparent)] bg-[color-mix(in_srgb,var(--mist)_35%,var(--surface))]"
                   : ""
               } ${free ? freeRowClass() : statusRowClass(s.status)}`}
             >
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div className="flex flex-wrap items-center gap-2">
-                  <input
-                    className="input max-w-xs font-medium"
-                    value={s.name}
-                    onChange={(e) => upsertSubject({ ...s, name: e.target.value })}
-                  />
-                  {!isActive && (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 border border-amber-500/30 px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wider text-amber-700 dark:text-amber-400">
-                      <Pause size={12} strokeWidth={2.5} /> Pausada
+              {/* CABEÇALHO DO CARD (Sempre visível / Compacto) */}
+              <div className="flex flex-col gap-2 p-3 sm:p-3.5">
+                <div className="flex items-center justify-between gap-2.5">
+                  {/* Lado Esquerdo: Posição, Ícone, Nome */}
+                  <div className="flex min-w-0 flex-1 items-center gap-2.5">
+                    {/* Botões rápidos de subir/descer (compactos) */}
+                    <div className="flex flex-col items-center -my-1 shrink-0 text-[color-mix(in_srgb,var(--ink)_40%,transparent)]">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          move(s.id, -1);
+                        }}
+                        disabled={!isActive || idx === 0}
+                        aria-label={`Subir ${s.name}`}
+                        title="Subir no ciclo"
+                        className="rounded p-0.5 hover:bg-[var(--mist)] hover:text-[var(--ink)] disabled:opacity-20 transition"
+                      >
+                        <ChevronUp size={13} strokeWidth={2.5} />
+                      </button>
+                      <span className="text-[10px] font-mono-num font-semibold leading-none opacity-50">
+                        {idx + 1}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          move(s.id, 1);
+                        }}
+                        disabled={!isActive || idx === subjects.length - 1}
+                        aria-label={`Descer ${s.name}`}
+                        title="Descer no ciclo"
+                        className="rounded p-0.5 hover:bg-[var(--mist)] hover:text-[var(--ink)] disabled:opacity-20 transition"
+                      >
+                        <ChevronDown size={13} strokeWidth={2.5} />
+                      </button>
+                    </div>
+
+                    {/* Ícone da Matéria */}
+                    <div className="shrink-0">
+                      <SubjectIcon name={s.name || "?"} icon={s.icon} size={30} />
+                    </div>
+
+                    {/* Nome da Matéria */}
+                    <div className="min-w-0 flex-1">
+                      <input
+                        className="input w-full font-semibold text-sm sm:text-base py-1 px-2.5 bg-transparent border-transparent hover:border-[var(--line)] focus:bg-[var(--surface)] focus:border-[var(--signal)] rounded-lg transition"
+                        value={s.name}
+                        onClick={(e) => e.stopPropagation()}
+                        onChange={(e) => upsertSubject({ ...s, name: e.target.value })}
+                        placeholder="Nome da matéria"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Lado Direito: Status & Botão de Expandir Configurações */}
+                  <div className="flex shrink-0 items-center gap-2">
+                    {/* Status Badge */}
+                    {!isActive ? (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 border border-amber-500/30 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wider text-amber-700 dark:text-amber-400">
+                        <Pause size={11} strokeWidth={2.5} /> Pausada
+                      </span>
+                    ) : free ? (
+                      <span className="rounded-full bg-[var(--signal-soft)] border border-[color-mix(in_srgb,var(--signal)_30%,transparent)] px-2 py-0.5 text-[11px] font-semibold text-[var(--signal)]">
+                        Livre
+                      </span>
+                    ) : (
+                      <span
+                        className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wider ${statusClass(
+                          s.status
+                        )}`}
+                      >
+                        {STATUS_LABEL[s.status]}
+                      </span>
+                    )}
+
+                    {/* Botão com seta para expandir/recolher configurações */}
+                    <button
+                      type="button"
+                      onClick={() => toggleExpanded(s.id)}
+                      className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium transition ${
+                        isExpanded
+                          ? "border-[var(--signal)] bg-[var(--signal-soft)] text-[var(--signal)]"
+                          : "border-[var(--line)] bg-[var(--surface)] text-[color-mix(in_srgb,var(--ink)_75%,transparent)] hover:border-[color-mix(in_srgb,var(--signal)_40%,var(--line))] hover:text-[var(--ink)]"
+                      }`}
+                      aria-expanded={isExpanded}
+                      title={isExpanded ? "Ocultar configurações" : "Abrir configurações"}
+                    >
+                      <span className="hidden sm:inline">
+                        {isExpanded ? "Ocultar" : "Configurações"}
+                      </span>
+                      <ChevronDown
+                        size={15}
+                        strokeWidth={2.2}
+                        className={`transition-transform duration-200 ${
+                          isExpanded ? "rotate-180" : ""
+                        }`}
+                      />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Resumo de Badges / Metadados no Card Fechado */}
+                <div
+                  className="flex flex-wrap items-center gap-1.5 pl-8 sm:pl-9 text-xs text-[color-mix(in_srgb,var(--ink)_65%,transparent)] cursor-pointer"
+                  onClick={() => toggleExpanded(s.id)}
+                >
+                  {!free && (
+                    <span className="inline-flex items-center gap-1 rounded-md bg-[color-mix(in_srgb,var(--ink)_5%,transparent)] px-2 py-0.5 font-medium">
+                      <Clock size={11} className="opacity-60" />
+                      <span>{s.study_minutes ?? 25} min</span>
+                    </span>
+                  )}
+
+                  {(s.weight ?? 1) > 1 && (
+                    <span className="inline-flex items-center gap-1 rounded-md bg-[color-mix(in_srgb,var(--signal)_12%,transparent)] px-2 py-0.5 font-medium text-[var(--signal)]">
+                      <span>{s.weight}x por ciclo</span>
+                    </span>
+                  )}
+
+                  {customStudyDays && customStudyDays.length > 0 && (
+                    <span className="rounded-md bg-[color-mix(in_srgb,var(--ink)_5%,transparent)] px-2 py-0.5 font-medium">
+                      {customStudyDays.map((d) => DAYS[d]?.slice(0, 3)).join(", ")}
+                    </span>
+                  )}
+
+                  {exclusiveDays.length > 0 && (
+                    <span className="rounded-md bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 font-medium text-amber-700 dark:text-amber-400">
+                      Foco: {exclusiveDays.map((d) => DAYS[d]?.slice(0, 3)).join(", ")}
+                    </span>
+                  )}
+
+                  {rot && rot.items.length > 0 && currentRotItem && (
+                    <span className="inline-flex items-center gap-1 rounded-md bg-[var(--signal-soft)] px-2 py-0.5 font-medium text-[var(--signal)]">
+                      <Repeat size={11} strokeWidth={2} />
+                      <span className="truncate max-w-[140px]">
+                        {currentRotItem.name}
+                      </span>
+                    </span>
+                  )}
+
+                  {s.progress && (
+                    <span className="inline-flex items-center gap-1 rounded-md bg-emerald-500/10 px-2 py-0.5 font-medium text-emerald-600 dark:text-emerald-400">
+                      <BarChart3 size={11} />
+                      <span>{progressPercent(s.progress)}%</span>
+                    </span>
+                  )}
+
+                  {/* Snippet da anotação (se houver e não for rodízio) */}
+                  {!rot && s.notes && s.notes.trim() && (
+                    <span className="inline-flex items-center gap-1 rounded-md bg-[color-mix(in_srgb,var(--ink)_4%,transparent)] px-2 py-0.5 text-[11px] text-[color-mix(in_srgb,var(--ink)_70%,transparent)] max-w-full">
+                      <FileText size={11} className="opacity-50 shrink-0" />
+                      <span className="truncate max-w-[220px] sm:max-w-[340px]">
+                        {s.notes.trim()}
+                      </span>
                     </span>
                   )}
                 </div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <div className="inline-flex items-center gap-0.5 rounded-full border border-[var(--line)] bg-[color-mix(in_srgb,var(--ink)_6%,transparent)] p-0.5">
-                    <button
-                      type="button"
-                      className={`rounded-full px-2.5 py-1 text-xs font-medium transition ${
-                        !free
-                          ? "bg-[var(--signal)] text-white"
-                          : "text-[color-mix(in_srgb,var(--ink)_55%,transparent)] hover:text-[var(--ink)]"
-                      }`}
-                      onClick={() => {
-                        if (!free) return;
-                        upsertSubject({ ...s, is_free: false });
-                      }}
-                    >
-                      Com tempo
-                    </button>
-                    <button
-                      type="button"
-                      className={`rounded-full px-2.5 py-1 text-xs font-medium transition ${
-                        free
-                          ? "bg-[var(--signal)] text-white"
-                          : "text-[color-mix(in_srgb,var(--ink)_55%,transparent)] hover:text-[var(--ink)]"
-                      }`}
-                      onClick={() => {
-                        if (free) return;
-                        upsertSubject({ ...s, is_free: true });
-                      }}
-                    >
-                      Livre
-                    </button>
-                  </div>
-                  <div className="inline-flex items-center gap-0.5 rounded-full border border-[var(--line)] bg-[color-mix(in_srgb,var(--ink)_6%,transparent)] p-0.5">
-                      {(["ok", "prox"] as SubjectStatus[]).map((st) => {
-                        const active = s.status === st;
-                        return (
-                          <button
-                            key={st}
-                            type="button"
-                            className={`rounded-full px-2.5 py-1 text-xs font-medium transition ${
-                              active
-                                ? statusClass(st)
-                                : "text-[color-mix(in_srgb,var(--ink)_55%,transparent)] hover:text-[var(--ink)]"
-                            }`}
-                            onClick={() => setSubjectStatus(s.id, st)}
-                          >
-                            {STATUS_LABEL[st]}
-                          </button>
-                        );
-                      })}
-                    </div>
-                </div>
               </div>
-              <div className={`mt-3 space-y-4 transition-opacity ${!isActive ? "opacity-60" : ""}`}>
-                {!free && (
-                  <div>
-                    <p className="mb-1.5 text-xs font-medium uppercase tracking-wider opacity-50">
-                      Tempo de estudo
-                    </p>
-                    <label className="flex items-center gap-2 text-sm">
-                      <input
-                        className="input w-20 py-2 text-center font-mono-num"
-                        type="number"
-                        min={1}
-                        max={999}
-                        inputMode="numeric"
-                        value={
-                          minutesDraft[s.id] ?? String(s.study_minutes ?? 25)
-                        }
-                        onChange={(e) =>
-                          setMinutesDraft((prev) => ({
-                            ...prev,
-                            [s.id]: e.target.value,
-                          }))
-                        }
-                        onBlur={() => {
-                          const next = parseMinutes(
-                            minutesDraft[s.id] ?? String(s.study_minutes ?? 25),
-                            s.study_minutes ?? 25,
-                          );
-                          setMinutesDraft((prev) => {
-                            const copy = { ...prev };
-                            delete copy[s.id];
-                            return copy;
-                          });
-                          if (next !== (s.study_minutes ?? 25)) {
-                            upsertSubject({ ...s, study_minutes: next });
-                          }
-                        }}
-                      />
-                      <span className="opacity-55">min</span>
-                    </label>
-                  </div>
-                )}
 
-                <div>
-                  <div className="mb-1.5 flex items-center justify-between gap-2">
-                    <p className="text-xs font-medium uppercase tracking-wider opacity-50">
-                      Peso no ciclo
-                    </p>
-                    <span className="text-[11px] opacity-55">
-                      {(s.weight ?? 1) > 1
-                        ? `${s.weight}x por ciclo (intercalado)`
-                        : "1x por ciclo (padrão)"}
-                    </span>
-                  </div>
-                  <div className="inline-flex items-center gap-1 rounded-full border border-[var(--line)] bg-[color-mix(in_srgb,var(--ink)_6%,transparent)] p-0.5">
-                    {[1, 2, 3, 4].map((w) => {
-                      const active = (s.weight ?? 1) === w;
-                      return (
+              {/* CORPO EXPANDIDO (Configurações detalhadas da matéria) */}
+              {isExpanded && (
+                <div className="border-t border-[var(--line)] bg-[color-mix(in_srgb,var(--mist)_25%,var(--surface))] p-4 space-y-4 transition-all">
+                  {/* Status & Modo de Estudo */}
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="text-xs font-medium uppercase tracking-wider opacity-50">
+                        Modo:
+                      </span>
+                      <div className="inline-flex items-center gap-0.5 rounded-full border border-[var(--line)] bg-[var(--surface)] p-0.5">
                         <button
-                          key={w}
                           type="button"
-                          className={`rounded-full px-3 py-1 text-xs font-medium transition ${
-                            active
+                          className={`rounded-full px-2.5 py-1 text-xs font-medium transition ${
+                            !free
                               ? "bg-[var(--signal)] text-white shadow-sm"
                               : "text-[color-mix(in_srgb,var(--ink)_55%,transparent)] hover:text-[var(--ink)]"
                           }`}
                           onClick={() => {
-                            if (active) return;
-                            upsertSubject({ ...s, weight: w });
+                            if (!free) return;
+                            upsertSubject({ ...s, is_free: false });
                           }}
                         >
-                          {w === 1 ? "1x (Normal)" : `${w}x`}
+                          Com tempo
                         </button>
-                      );
-                    })}
+                        <button
+                          type="button"
+                          className={`rounded-full px-2.5 py-1 text-xs font-medium transition ${
+                            free
+                              ? "bg-[var(--signal)] text-white shadow-sm"
+                              : "text-[color-mix(in_srgb,var(--ink)_55%,transparent)] hover:text-[var(--ink)]"
+                          }`}
+                          onClick={() => {
+                            if (free) return;
+                            upsertSubject({ ...s, is_free: true });
+                          }}
+                        >
+                          Livre
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="text-xs font-medium uppercase tracking-wider opacity-50">
+                        Ciclo:
+                      </span>
+                      <div className="inline-flex items-center gap-0.5 rounded-full border border-[var(--line)] bg-[var(--surface)] p-0.5">
+                        {(["ok", "prox"] as SubjectStatus[]).map((st) => {
+                          const active = s.status === st;
+                          return (
+                            <button
+                              key={st}
+                              type="button"
+                              className={`rounded-full px-2.5 py-1 text-xs font-medium transition ${
+                                active
+                                  ? statusClass(st)
+                                  : "text-[color-mix(in_srgb,var(--ink)_55%,transparent)] hover:text-[var(--ink)]"
+                              }`}
+                              onClick={() => setSubjectStatus(s.id, st)}
+                            >
+                              {STATUS_LABEL[st]}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
                   </div>
-                </div>
-                {/* Empilha no mobile: side-by-side deixava Foco do dia em coluna estreita por cima da Frequência. */}
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:items-start">
-                  <div className="min-w-0">
-                    <p className="mb-1.5 text-xs font-medium uppercase tracking-wider opacity-50">
-                      Frequência
-                    </p>
-                    <StudyDaysPicker
-                      value={freq}
-                      onChange={(next) => updateStudyDays(s, next)}
-                    />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="mb-1.5 text-xs font-medium uppercase tracking-wider opacity-50">
-                      Foco do dia
-                    </p>
-                    <p className="mb-1.5 text-[11px] leading-snug opacity-50">
-                      Nestes dias o foco é só as matérias marcadas.
-                    </p>
-                    <ExclusiveDaysPicker
-                      value={normalizeExclusiveDays(s.exclusive_days) ?? []}
-                      onChange={(days) =>
-                        upsertSubject({ ...s, exclusive_days: days })
-                      }
-                    />
-                  </div>
-                </div>
-              </div>
-              {!free && (
-                <div className="mt-3">
-                  <RotationEditor
-                    subject={s}
-                    onSave={(rotation) => upsertSubject({ ...s, rotation })}
-                  />
-                </div>
-              )}
-              {!normalizeRotation(s.rotation) && (
-                <div className="mt-3">
-                  <textarea
-                    className="input w-full min-h-20"
-                    placeholder="Anotações"
-                    value={s.notes}
-                    onChange={(e) =>
-                      upsertSubject({ ...s, notes: e.target.value })
-                    }
-                  />
-                  <SubjectResources
-                    recursos={s.recursos}
-                    onChange={(recursos) => upsertSubject({ ...s, recursos })}
-                  />
-                </div>
-              )}
-              <div className="mt-3">
-                <ProgressEditor
-                  progress={s.progress}
-                  onSave={(progress) => upsertSubject({ ...s, progress })}
-                />
-              </div>
-              <div className="mt-3">
-                <SubjectIconPicker
-                  name={s.name}
-                  value={s.icon}
-                  onChange={(icon) => upsertSubject({ ...s, icon })}
-                />
-              </div>
-              {pendingDelete?.id === s.id ? (
-                <div
-                  id={`delete-confirm-${s.id}`}
-                  className="mt-3 rounded-[var(--radius-tag)] border border-[color-mix(in_srgb,var(--warn)_40%,var(--line))] bg-[color-mix(in_srgb,var(--warn)_10%,var(--surface))] p-3"
-                  role="alertdialog"
-                  aria-labelledby={`delete-title-${s.id}`}
-                >
-                  <p
-                    id={`delete-title-${s.id}`}
-                    className="text-sm font-semibold text-[var(--warn)]"
-                  >
-                    Excluir “{s.name}”?
-                  </p>
-                  <p className="mt-1 text-xs leading-snug text-[color-mix(in_srgb,var(--ink)_65%,transparent)]">
-                    Essa ação não pode ser desfeita.
-                  </p>
-                  <div className="mt-3 flex flex-wrap items-center gap-2">
-                    <button
-                      type="button"
-                      className="btn"
-                      onClick={() => setPendingDelete(null)}
-                    >
-                      Cancelar
-                    </button>
-                    <button
-                      type="button"
-                      className="btn ml-auto border-[var(--warn)] bg-[color-mix(in_srgb,var(--warn)_12%,var(--surface))] text-[var(--warn)]"
-                      onClick={() => {
-                        deleteSubject(s.id);
-                        setFreqDrafts((prev) => {
-                          const next = { ...prev };
-                          delete next[s.id];
-                          return next;
-                        });
-                        setPendingDelete(null);
-                      }}
-                    >
-                      <Trash2 size={16} strokeWidth={1.75} /> Sim, excluir
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div className="mt-3 flex flex-wrap items-center gap-2">
-                  <button
-                    type="button"
-                    className="btn"
-                    onClick={() => move(s.id, -1)}
-                    disabled={!isActive}
-                    title={!isActive ? "Ative a matéria para reordenar" : undefined}
-                  >
-                    Subir no ciclo
-                  </button>
-                  <button
-                    type="button"
-                    className="btn"
-                    onClick={() => move(s.id, 1)}
-                    disabled={!isActive}
-                    title={!isActive ? "Ative a matéria para reordenar" : undefined}
-                  >
-                    Descer
-                  </button>
-                  <button
-                    type="button"
-                    className={`btn inline-flex items-center gap-1.5 transition ${
-                      isActive
-                        ? "text-[color-mix(in_srgb,var(--ink)_75%,transparent)] hover:text-[var(--ink)]"
-                        : "btn-primary shadow-sm"
-                    }`}
-                    onClick={() => upsertSubject({ ...s, active: !isActive })}
-                    title={
-                      isActive
-                        ? "Pausar matéria (não aparecerá no ciclo até ser reativada)"
-                        : "Reativar matéria no ciclo"
-                    }
-                  >
-                    {isActive ? (
-                      <>
-                        <Pause size={14} strokeWidth={2} /> Pausar matéria
-                      </>
-                    ) : (
-                      <>
-                        <Play size={14} strokeWidth={2.5} fill="currentColor" /> Ativar matéria
-                      </>
+
+                  {/* Tempo & Peso */}
+                  <div className={`space-y-4 transition-opacity ${!isActive ? "opacity-60" : ""}`}>
+                    {!free && (
+                      <div>
+                        <p className="mb-1.5 text-xs font-medium uppercase tracking-wider opacity-50">
+                          Tempo de estudo
+                        </p>
+                        <label className="flex items-center gap-2 text-sm">
+                          <input
+                            className="input w-20 py-1.5 text-center font-mono-num"
+                            type="number"
+                            min={1}
+                            max={999}
+                            inputMode="numeric"
+                            value={
+                              minutesDraft[s.id] ?? String(s.study_minutes ?? 25)
+                            }
+                            onChange={(e) =>
+                              setMinutesDraft((prev) => ({
+                                ...prev,
+                                [s.id]: e.target.value,
+                              }))
+                            }
+                            onBlur={() => {
+                              const next = parseMinutes(
+                                minutesDraft[s.id] ?? String(s.study_minutes ?? 25),
+                                s.study_minutes ?? 25,
+                              );
+                              setMinutesDraft((prev) => {
+                                const copy = { ...prev };
+                                delete copy[s.id];
+                                return copy;
+                              });
+                              if (next !== (s.study_minutes ?? 25)) {
+                                upsertSubject({ ...s, study_minutes: next });
+                              }
+                            }}
+                          />
+                          <span className="opacity-55 text-xs">minutos por sessão</span>
+                        </label>
+                      </div>
                     )}
-                  </button>
-                  <button
-                    type="button"
-                    className="btn ml-auto text-[var(--warn)]"
-                    onClick={() =>
-                      setPendingDelete({ id: s.id, name: s.name })
-                    }
-                  >
-                    <Trash2 size={16} strokeWidth={1.75} /> Excluir
-                  </button>
+
+                    <div>
+                      <div className="mb-1.5 flex items-center justify-between gap-2">
+                        <p className="text-xs font-medium uppercase tracking-wider opacity-50">
+                          Peso no ciclo
+                        </p>
+                        <span className="text-[11px] opacity-55">
+                          {(s.weight ?? 1) > 1
+                            ? `${s.weight}x por ciclo (intercalado)`
+                            : "1x por ciclo (padrão)"}
+                        </span>
+                      </div>
+                      <div className="inline-flex items-center gap-1 rounded-full border border-[var(--line)] bg-[var(--surface)] p-0.5">
+                        {[1, 2, 3, 4].map((w) => {
+                          const active = (s.weight ?? 1) === w;
+                          return (
+                            <button
+                              key={w}
+                              type="button"
+                              className={`rounded-full px-3 py-1 text-xs font-medium transition ${
+                                active
+                                  ? "bg-[var(--signal)] text-white shadow-sm"
+                                  : "text-[color-mix(in_srgb,var(--ink)_55%,transparent)] hover:text-[var(--ink)]"
+                              }`}
+                              onClick={() => {
+                                if (active) return;
+                                upsertSubject({ ...s, weight: w });
+                              }}
+                            >
+                              {w === 1 ? "1x (Normal)" : `${w}x`}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Frequência & Foco do dia */}
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:items-start">
+                      <div className="min-w-0">
+                        <p className="mb-1.5 text-xs font-medium uppercase tracking-wider opacity-50">
+                          Frequência
+                        </p>
+                        <StudyDaysPicker
+                          value={freq}
+                          onChange={(next) => updateStudyDays(s, next)}
+                        />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="mb-1.5 text-xs font-medium uppercase tracking-wider opacity-50">
+                          Foco do dia
+                        </p>
+                        <p className="mb-1.5 text-[11px] leading-snug opacity-50">
+                          Nestes dias o foco é só as matérias marcadas.
+                        </p>
+                        <ExclusiveDaysPicker
+                          value={exclusiveDays}
+                          onChange={(days) =>
+                            upsertSubject({ ...s, exclusive_days: days })
+                          }
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Rodízio interno de disciplinas */}
+                  {!free && (
+                    <div className="pt-2">
+                      <RotationEditor
+                        subject={s}
+                        onSave={(rotation) => upsertSubject({ ...s, rotation })}
+                      />
+                    </div>
+                  )}
+
+                  {/* Anotações e Recursos quando não usa rodízio */}
+                  {!rot && (
+                    <div className="space-y-2 pt-1">
+                      <p className="text-xs font-medium uppercase tracking-wider opacity-50">
+                        Anotações & Recursos
+                      </p>
+                      <textarea
+                        className="input w-full min-h-20"
+                        placeholder="Onde parou, links rápidos, resumo..."
+                        value={s.notes}
+                        onChange={(e) =>
+                          upsertSubject({ ...s, notes: e.target.value })
+                        }
+                      />
+                      <SubjectResources
+                        recursos={s.recursos}
+                        onChange={(recursos) => upsertSubject({ ...s, recursos })}
+                      />
+                    </div>
+                  )}
+
+                  {/* Progresso do Módulo */}
+                  <div className="pt-1">
+                    <ProgressEditor
+                      progress={s.progress}
+                      onSave={(progress) => upsertSubject({ ...s, progress })}
+                    />
+                  </div>
+
+                  {/* Ícone */}
+                  <div className="pt-1">
+                    <SubjectIconPicker
+                      name={s.name}
+                      value={s.icon}
+                      onChange={(icon) => upsertSubject({ ...s, icon })}
+                    />
+                  </div>
+
+                  {/* Diálogo de confirmação de exclusão */}
+                  {pendingDelete?.id === s.id ? (
+                    <div
+                      id={`delete-confirm-${s.id}`}
+                      className="rounded-[var(--radius-tag)] border border-[color-mix(in_srgb,var(--warn)_40%,var(--line))] bg-[color-mix(in_srgb,var(--warn)_10%,var(--surface))] p-3"
+                      role="alertdialog"
+                      aria-labelledby={`delete-title-${s.id}`}
+                    >
+                      <p
+                        id={`delete-title-${s.id}`}
+                        className="text-sm font-semibold text-[var(--warn)]"
+                      >
+                        Excluir “{s.name}”?
+                      </p>
+                      <p className="mt-1 text-xs leading-snug text-[color-mix(in_srgb,var(--ink)_65%,transparent)]">
+                        Essa ação não pode ser desfeita. O histórico e as configurações desta matéria serão excluídos.
+                      </p>
+                      <div className="mt-3 flex flex-wrap items-center gap-2">
+                        <button
+                          type="button"
+                          className="btn"
+                          onClick={() => setPendingDelete(null)}
+                        >
+                          Cancelar
+                        </button>
+                        <button
+                          type="button"
+                          className="btn ml-auto border-[var(--warn)] bg-[color-mix(in_srgb,var(--warn)_12%,var(--surface))] text-[var(--warn)]"
+                          onClick={() => {
+                            deleteSubject(s.id);
+                            setFreqDrafts((prev) => {
+                              const next = { ...prev };
+                              delete next[s.id];
+                              return next;
+                            });
+                            setPendingDelete(null);
+                          }}
+                        >
+                          <Trash2 size={16} strokeWidth={1.75} /> Sim, excluir
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    /* Ações do Rodapé da Matéria */
+                    <div className="flex flex-wrap items-center gap-2 border-t border-[var(--line)]/60 pt-3">
+                      <button
+                        type="button"
+                        className={`btn inline-flex items-center gap-1.5 transition ${
+                          isActive
+                            ? "text-[color-mix(in_srgb,var(--ink)_75%,transparent)] hover:text-[var(--ink)]"
+                            : "btn-primary shadow-sm"
+                        }`}
+                        onClick={() => upsertSubject({ ...s, active: !isActive })}
+                        title={
+                          isActive
+                            ? "Pausar matéria (não aparecerá no ciclo até ser reativada)"
+                            : "Reativar matéria no ciclo"
+                        }
+                      >
+                        {isActive ? (
+                          <>
+                            <Pause size={14} strokeWidth={2} /> Pausar matéria
+                          </>
+                        ) : (
+                          <>
+                            <Play size={14} strokeWidth={2.5} fill="currentColor" /> Ativar matéria
+                          </>
+                        )}
+                      </button>
+
+                      <button
+                        type="button"
+                        className="btn ml-auto text-[var(--warn)] hover:bg-[var(--warn-soft)]"
+                        onClick={() =>
+                          setPendingDelete({ id: s.id, name: s.name })
+                        }
+                      >
+                        <Trash2 size={15} strokeWidth={1.75} /> Excluir
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
             </li>

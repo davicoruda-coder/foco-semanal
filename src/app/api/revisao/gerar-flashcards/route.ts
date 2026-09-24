@@ -6,11 +6,23 @@ import { createAdminClient } from "@/lib/supabase/admin";
 /*  Config & Defaults                                                  */
 /* ------------------------------------------------------------------ */
 
-const DEFAULT_MODEL = "google/gemini-2.0-flash-001";
+const DEFAULT_MODEL = "google/gemini-2.5-flash";
 const DEFAULT_LIMIT = 15;
 const MIN_TEXT_LENGTH = 50;
 const MAX_TEXT_LENGTH = 8000;
 const MAX_CARDS_PER_GENERATION = 30;
+
+const DEPRECATED_MODEL_MAP: Record<string, string> = {
+  "google/gemini-2.0-flash-001": "google/gemini-2.5-flash",
+  "anthropic/claude-3.5-haiku": "google/gemini-2.5-flash",
+  "anthropic/claude-3.5-haiku-20241022": "google/gemini-2.5-flash",
+};
+
+export function resolveAIModel(rawModel?: string | null): string {
+  const trimmed = rawModel?.trim();
+  if (!trimmed) return DEFAULT_MODEL;
+  return DEPRECATED_MODEL_MAP[trimmed] || trimmed;
+}
 
 const SYSTEM_PROMPT = `Você é um gerador de flashcards para estudo de concursos públicos. Dado o texto abaixo, extraia os conceitos-chave e crie flashcards no formato pergunta/resposta.
 
@@ -108,7 +120,8 @@ export async function POST(request: Request) {
   const envModel = process.env.OPENROUTER_MODEL?.trim() || "";
 
   const apiKey = (typeof dbConfig?.api_key === "string" ? dbConfig.api_key : "") || envKey;
-  const model = (typeof dbConfig?.model === "string" ? dbConfig.model : "") || envModel || DEFAULT_MODEL;
+  const rawModel = (typeof dbConfig?.model === "string" ? dbConfig.model : "") || envModel || DEFAULT_MODEL;
+  const model = resolveAIModel(rawModel);
   const limitEnabled = typeof dbConfig?.limit_enabled === "boolean" ? dbConfig.limit_enabled : true;
   const dailyLimit = typeof dbConfig?.daily_limit === "number" ? dbConfig.daily_limit : DEFAULT_LIMIT;
 
@@ -205,8 +218,16 @@ export async function POST(request: Request) {
     if (!orResponse.ok) {
       const errBody = await orResponse.text().catch(() => "");
       console.error("[revisao-ia] OpenRouter error:", orResponse.status, errBody);
+      let errorMsg = `Erro ao comunicar com a IA (${orResponse.status}). Verifique a chave e modelo em Ajustes.`;
+      if (orResponse.status === 404) {
+        errorMsg = `O modelo de IA "${model}" não foi encontrado no OpenRouter (404). Selecione outro modelo (ex: Gemini 2.5 Flash) em Ajustes.`;
+      } else if (orResponse.status === 401) {
+        errorMsg = `Chave de API do OpenRouter inválida ou expirada (401). Verifique a chave em Ajustes.`;
+      } else if (orResponse.status === 402) {
+        errorMsg = `Créditos insuficientes no OpenRouter (402). Recarregue seus créditos ou escolha outro provedor.`;
+      }
       return NextResponse.json(
-        { error: `Erro ao comunicar com a IA (${orResponse.status}). Verifique a chave e modelo em Ajustes.` },
+        { error: errorMsg },
         { status: 502 },
       );
     }

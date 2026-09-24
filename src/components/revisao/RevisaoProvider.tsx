@@ -122,6 +122,7 @@ type RevisaoContextValue = {
     limitEnabled: boolean;
     dailyLimit: number;
     remaining: number | null;
+    model?: string;
   } | null;
   reloadAIConfig: () => Promise<void>;
 };
@@ -160,6 +161,7 @@ export function RevisaoProvider({ children }: { children: ReactNode }) {
     limitEnabled: boolean;
     dailyLimit: number;
     remaining: number | null;
+    model?: string;
   } | null>(null);
   const { data: appData } = useApp();
   const [hiddenNames, setHiddenNames] = useState<Set<string>>(() =>

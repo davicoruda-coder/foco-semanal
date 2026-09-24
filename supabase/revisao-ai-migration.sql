@@ -79,7 +79,7 @@ BEGIN
     RETURN jsonb_build_object(
       'is_admin', true,
       'api_key', COALESCE(v_config ->> 'api_key', ''),
-      'model', COALESCE(v_config ->> 'model', 'google/gemini-2.0-flash-001'),
+      'model', COALESCE(v_config ->> 'model', 'google/gemini-2.5-flash'),
       'limit_enabled', COALESCE((v_config ->> 'limit_enabled')::boolean, true),
       'daily_limit', COALESCE((v_config ->> 'daily_limit')::int, 15)
     );
@@ -88,7 +88,7 @@ BEGIN
   RETURN jsonb_build_object(
     'is_admin', false,
     'configured', (v_config ->> 'api_key') IS NOT NULL AND (v_config ->> 'api_key') != '',
-    'model', COALESCE(v_config ->> 'model', 'google/gemini-2.0-flash-001'),
+    'model', COALESCE(v_config ->> 'model', 'google/gemini-2.5-flash'),
     'limit_enabled', COALESCE((v_config ->> 'limit_enabled')::boolean, true),
     'daily_limit', COALESCE((v_config ->> 'daily_limit')::int, 15)
   );

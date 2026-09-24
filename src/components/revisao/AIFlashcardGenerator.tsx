@@ -11,6 +11,7 @@ import {
   X,
   Check,
   FileText,
+  Bot,
 } from "lucide-react";
 import { useRevisao } from "./RevisaoProvider";
 
@@ -187,8 +188,8 @@ export function AIFlashcardGenerator({
         </div>
       )}
 
-      {/* Rate limit badge */}
-      <div className="flex items-center gap-2">
+      {/* Badges de Limite e Modelo Ativo */}
+      <div className="flex flex-wrap items-center gap-2">
         {isUnlimited ? (
           <span className="inline-flex items-center gap-1 rounded-full bg-[color-mix(in_srgb,var(--signal)_12%,var(--surface))] px-2.5 py-0.5 text-[11px] font-semibold text-[var(--signal)]">
             <Sparkles size={11} />
@@ -206,6 +207,16 @@ export function AIFlashcardGenerator({
             {canGenerate
               ? `${remaining} geração${remaining !== 1 ? "ões" : ""} restante${remaining !== 1 ? "s" : ""} hoje`
               : "Limite diário atingido"}
+          </span>
+        )}
+
+        {aiConfig?.model && (
+          <span
+            className="inline-flex items-center gap-1 rounded-full bg-[var(--surface-soft)] px-2.5 py-0.5 text-[11px] font-medium text-[var(--ink-soft)] border border-[var(--line)]"
+            title={`Modelo ativo: ${aiConfig.model}`}
+          >
+            <Bot size={11} className="text-[var(--signal)]" />
+            <span>IA: {aiConfig.model.split("/").pop()?.replace(/-001$/, "") || "Gemini 2.5"}</span>
           </span>
         )}
       </div>

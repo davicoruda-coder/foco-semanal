@@ -12,8 +12,14 @@ export interface AISettingsPayload {
   dailyLimit: number;
 }
 
-const DEFAULT_MODEL = "google/gemini-2.0-flash-001";
+const DEFAULT_MODEL = "google/gemini-2.5-flash";
 const DEFAULT_LIMIT = 15;
+
+const DEPRECATED_MODEL_MAP: Record<string, string> = {
+  "google/gemini-2.0-flash-001": "google/gemini-2.5-flash",
+  "anthropic/claude-3.5-haiku": "google/gemini-2.5-flash",
+  "anthropic/claude-3.5-haiku-20241022": "google/gemini-2.5-flash",
+};
 
 /* ------------------------------------------------------------------ */
 /*  GET: Carrega configurações da IA (apenas Master)                   */
@@ -52,7 +58,8 @@ export async function GET() {
   const envModel = process.env.OPENROUTER_MODEL?.trim() || "";
 
   const apiKey = (typeof dbConfig?.api_key === "string" ? dbConfig.api_key : "") || envKey;
-  const model = (typeof dbConfig?.model === "string" ? dbConfig.model : "") || envModel || DEFAULT_MODEL;
+  const rawModel = (typeof dbConfig?.model === "string" ? dbConfig.model : "") || envModel || DEFAULT_MODEL;
+  const model = DEPRECATED_MODEL_MAP[rawModel] || rawModel;
   const limitEnabled = typeof dbConfig?.limit_enabled === "boolean" ? dbConfig.limit_enabled : true;
   const dailyLimit = typeof dbConfig?.daily_limit === "number" ? dbConfig.daily_limit : DEFAULT_LIMIT;
 
@@ -125,9 +132,33 @@ export async function POST(request: Request) {
       const keyInfo = await testRes.json().catch(() => ({}));
       const label = (keyInfo as { data?: { label?: string } })?.data?.label || "Chave identificada";
 
+      // Validação de existência do modelo no catálogo do OpenRouter
+      const modelToTest = DEPRECATED_MODEL_MAP[rawModel] || rawModel;
+      let modelMsg = "";
+      if (modelToTest) {
+        try {
+          const modelsRes = await fetch("https://openrouter.ai/api/v1/models");
+          if (modelsRes.ok) {
+            const modelsData = (await modelsRes.json()) as { data?: { id?: string }[] };
+            const exists = Array.isArray(modelsData?.data) &&
+              modelsData.data.some((m) => m.id === modelToTest);
+            if (exists) {
+              modelMsg = ` • Modelo "${modelToTest}" verificado com sucesso no OpenRouter.`;
+            } else {
+              return NextResponse.json({
+                ok: false,
+                error: `A chave é válida (${label}), mas o modelo "${modelToTest}" não existe no OpenRouter (404). Selecione outro modelo.`,
+              });
+            }
+          }
+        } catch {
+          // ignora se falhar listagem
+        }
+      }
+
       return NextResponse.json({
         ok: true,
-        message: `Conexão bem-sucedida com OpenRouter! (${label})`,
+        message: `Conexão bem-sucedida com OpenRouter! (${label})${modelMsg}`,
       });
     } catch (err) {
       console.error("[admin/ai-settings] teste de conexão falhou:", err);
@@ -138,10 +169,12 @@ export async function POST(request: Request) {
     }
   }
 
+  const finalModel = DEPRECATED_MODEL_MAP[rawModel] || rawModel || DEFAULT_MODEL;
+
   // --- Modo de Salvamento no Banco (system_settings) ---
   const settingsValue = {
     api_key: rawKey,
-    model: rawModel || DEFAULT_MODEL,
+    model: finalModel,
     limit_enabled: limitEnabled,
     daily_limit: dailyLimit,
   };

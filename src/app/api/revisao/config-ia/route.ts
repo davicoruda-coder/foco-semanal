@@ -41,9 +41,21 @@ export async function GET() {
     }
   }
 
+const DEFAULT_MODEL = "google/gemini-2.5-flash";
+
+const DEPRECATED_MODEL_MAP: Record<string, string> = {
+  "google/gemini-2.0-flash-001": "google/gemini-2.5-flash",
+  "anthropic/claude-3.5-haiku": "google/gemini-2.5-flash",
+  "anthropic/claude-3.5-haiku-20241022": "google/gemini-2.5-flash",
+};
+
   const envKey = process.env.OPENROUTER_API_KEY?.trim() || "";
   const apiKey = (typeof dbConfig?.api_key === "string" ? dbConfig.api_key : "") || envKey;
   const isConfigured = Boolean(apiKey);
+
+  const envModel = process.env.OPENROUTER_MODEL?.trim() || "";
+  const rawModel = (typeof dbConfig?.model === "string" ? dbConfig.model : "") || envModel || DEFAULT_MODEL;
+  const model = DEPRECATED_MODEL_MAP[rawModel] || rawModel;
 
   const limitEnabled = typeof dbConfig?.limit_enabled === "boolean" ? dbConfig.limit_enabled : true;
   const dailyLimit = typeof dbConfig?.daily_limit === "number" ? dbConfig.daily_limit : 15;
@@ -66,5 +78,7 @@ export async function GET() {
     dailyLimit,
     generationsToday: count,
     remaining,
+    model,
   });
 }
+

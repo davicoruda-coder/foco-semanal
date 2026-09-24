@@ -13,44 +13,70 @@ import {
   Sliders,
   Sparkles,
   Wifi,
+  Bot,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
-const MODEL_OPTIONS = [
+export const MODEL_OPTIONS = [
   {
-    id: "google/gemini-2.0-flash-001",
-    label: "Google Gemini 2.0 Flash (Recomendado — Rápido e Barato)",
+    id: "google/gemini-2.5-flash",
+    label: "Google Gemini 2.5 Flash (Recomendado — Rápido, Inteligente e Econômico)",
+    badge: "Recomendado",
   },
   {
     id: "google/gemini-2.5-flash-lite",
-    label: "Google Gemini 2.5 Flash Lite (Ultra Rápido)",
+    label: "Google Gemini 2.5 Flash Lite (Ultra Rápido e Muito Barato)",
+    badge: "Mais Rápido",
+  },
+  {
+    id: "google/gemini-3.8-flash",
+    label: "Google Gemini 3.8 Flash (Nova Geração)",
+    badge: "Novo",
   },
   {
     id: "deepseek/deepseek-chat",
-    label: "DeepSeek V3 (Excelente qualidade em português)",
+    label: "DeepSeek V3 (Excelente para provas e concursos em português)",
+    badge: "Alta Qualidade",
   },
   {
     id: "openai/gpt-4o-mini",
-    label: "OpenAI GPT-4o Mini",
-  },
-  {
-    id: "anthropic/claude-3.5-haiku",
-    label: "Anthropic Claude 3.5 Haiku",
+    label: "OpenAI GPT-4o Mini (Alta confiabilidade)",
+    badge: "OpenAI",
   },
   {
     id: "custom",
-    label: "Outro modelo (digitar manualmente)",
+    label: "Outro modelo (digitar identificador do OpenRouter)",
+    badge: "Personalizado",
   },
 ];
+
+export function getModelDisplayName(modelId?: string | null): string {
+  if (!modelId) return "Google Gemini 2.5 Flash";
+  const match = MODEL_OPTIONS.find((m) => m.id === modelId);
+  if (match && match.id !== "custom") return match.label;
+  if (modelId === "google/gemini-2.0-flash-001") return "Google Gemini 2.5 Flash (atualizado)";
+  return modelId;
+}
+
+interface MemberAIConfig {
+  configured: boolean;
+  isMaster: boolean;
+  limitEnabled: boolean;
+  dailyLimit: number;
+  generationsToday: number;
+  remaining: number | null;
+  model: string;
+}
 
 export function AIAccessSettings() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [memberConfig, setMemberConfig] = useState<MemberAIConfig | null>(null);
 
-  // Form state
+  // Form state (Master)
   const [apiKey, setApiKey] = useState("");
   const [showKey, setShowKey] = useState(false);
-  const [selectedModel, setSelectedModel] = useState("google/gemini-2.0-flash-001");
+  const [selectedModel, setSelectedModel] = useState("google/gemini-2.5-flash");
   const [customModel, setCustomModel] = useState("");
   const [limitEnabled, setLimitEnabled] = useState(true);
   const [dailyLimit, setDailyLimit] = useState(15);
@@ -72,6 +98,16 @@ export function AIAccessSettings() {
 
       if (adminError || !admin) {
         setIsAdmin(false);
+        // Membros buscam configuração pública
+        try {
+          const res = await fetch("/api/revisao/config-ia");
+          if (res.ok) {
+            const data = (await res.json()) as MemberAIConfig;
+            setMemberConfig(data);
+          }
+        } catch {
+          // ignore
+        }
         setLoading(false);
         return;
       }
@@ -85,7 +121,12 @@ export function AIAccessSettings() {
         setLimitEnabled(data.limitEnabled ?? true);
         setDailyLimit(data.dailyLimit || 15);
 
-        const loadedModel = data.model || "google/gemini-2.0-flash-001";
+        let loadedModel = data.model || "google/gemini-2.5-flash";
+        // Migração de modelos descontinuados
+        if (loadedModel === "google/gemini-2.0-flash-001" || loadedModel === "anthropic/claude-3.5-haiku") {
+          loadedModel = "google/gemini-2.5-flash";
+        }
+
         const isPreset = MODEL_OPTIONS.some((o) => o.id === loadedModel);
         if (isPreset) {
           setSelectedModel(loadedModel);
@@ -121,12 +162,15 @@ export function AIAccessSettings() {
     setTesting(true);
     setTestResult(null);
 
+    const modelToTest = selectedModel === "custom" ? customModel.trim() : selectedModel;
+
     try {
       const res = await fetch("/api/admin/ai-settings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           apiKey: apiKey.trim(),
+          model: modelToTest,
           testOnly: true,
         }),
       });
@@ -135,7 +179,7 @@ export function AIAccessSettings() {
       if (data.ok) {
         setTestResult({ ok: true, msg: data.message || "Conexão estabelecida com sucesso!" });
       } else {
-        setTestResult({ ok: false, msg: data.error || "Falha ao validar a chave com o OpenRouter." });
+        setTestResult({ ok: false, msg: data.error || "Falha ao validar com o OpenRouter." });
       }
     } catch {
       setTestResult({ ok: false, msg: "Erro de conexão ao testar com o servidor." });
@@ -189,9 +233,73 @@ export function AIAccessSettings() {
     }
   };
 
-  if (loading || !isAdmin) {
+  if (loading) {
     return null;
   }
+
+  // --- Visão de Membro Comum (Visualizar Modelo de IA) ---
+  if (!isAdmin) {
+    return (
+      <section id="ia" className="surface mt-4 p-4 md:p-5">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--line)] pb-3">
+          <div className="flex items-center gap-2">
+            <div className="grid h-8 w-8 place-items-center rounded-lg bg-[var(--signal-soft)] text-[var(--signal)]">
+              <Sparkles size={18} />
+            </div>
+            <div>
+              <h2 className="font-display text-base font-semibold tracking-tight md:text-lg">
+                Inteligência Artificial (Revisão & Flashcards)
+              </h2>
+              <p className="text-xs opacity-60">
+                Modelo de IA ativo para elaboração e resolução de flashcards.
+              </p>
+            </div>
+          </div>
+          <span className="rounded-full bg-[var(--surface-soft)] px-2.5 py-0.5 text-xs font-medium text-[var(--ink-soft)]">
+            Membro
+          </span>
+        </div>
+
+        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          {/* Card do Modelo em Uso */}
+          <div className="rounded-xl border border-[var(--line)] bg-[var(--surface-soft)] p-3.5">
+            <span className="text-[11px] font-semibold text-[var(--signal)] uppercase tracking-wider block mb-1">
+              Modelo em Uso
+            </span>
+            <p className="text-sm font-semibold text-[var(--ink)]">
+              {getModelDisplayName(memberConfig?.model)}
+            </p>
+            <p className="mt-1 font-mono text-[11px] text-[var(--ink-soft)] truncate">
+              ID: {memberConfig?.model || "google/gemini-2.5-flash"}
+            </p>
+            <p className="mt-2 text-[11px] opacity-60">
+              Gerenciado pelo Administrador Master via OpenRouter.
+            </p>
+          </div>
+
+          {/* Card de Cotas / Limites */}
+          <div className="rounded-xl border border-[var(--line)] bg-[var(--surface-soft)] p-3.5">
+            <span className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider block mb-1">
+              Seu Limite de Gerações
+            </span>
+            <p className="text-sm font-semibold text-[var(--ink)]">
+              {!memberConfig?.limitEnabled
+                ? "Gerações Ilimitadas"
+                : `${memberConfig?.remaining ?? 0} restante${(memberConfig?.remaining ?? 0) !== 1 ? "s" : ""} hoje`}
+            </p>
+            <p className="mt-1 text-xs text-[var(--ink-soft)]">
+              {!memberConfig?.limitEnabled
+                ? "Uso liberado sem limite diário."
+                : `Permite ${memberConfig?.dailyLimit ?? 15} gerações por dia.`}
+            </p>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  // --- Visão de Administrador Master (Escolher e Configurar Modelo) ---
+  const currentActiveModelId = selectedModel === "custom" ? customModel : selectedModel;
 
   return (
     <section id="ia" className="surface mt-4 p-4 md:p-5">
@@ -206,7 +314,7 @@ export function AIAccessSettings() {
               Inteligência Artificial (OpenRouter & Flashcards)
             </h2>
             <p className="text-xs opacity-60">
-              Configure a chave da API e controle os limites de uso da geração de flashcards.
+              Configure a chave da API, selecione o modelo de IA e controle os limites de geração.
             </p>
           </div>
         </div>
@@ -218,6 +326,30 @@ export function AIAccessSettings() {
       {sourceInfo && (
         <p className="mt-2 text-xs opacity-50 italic">{sourceInfo}</p>
       )}
+
+      {/* Banner de Modelo Ativo */}
+      <div className="mt-3.5 rounded-xl border border-[var(--signal)]/30 bg-[var(--signal-soft)]/30 p-3 flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center gap-2.5">
+          <Bot size={18} className="text-[var(--signal)] shrink-0" />
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-[var(--signal)]">
+                Modelo Ativo no Sistema
+              </span>
+              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2 py-0.2 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                Pronto para Responder
+              </span>
+            </div>
+            <p className="text-xs font-semibold text-[var(--ink)] mt-0.5">
+              {getModelDisplayName(currentActiveModelId)}
+            </p>
+            <p className="font-mono text-[11px] text-[var(--ink-soft)]">
+              {currentActiveModelId || "Nenhum modelo selecionado"}
+            </p>
+          </div>
+        </div>
+      </div>
 
       {/* Form */}
       <form onSubmit={(e) => void handleSave(e)} className="mt-4 space-y-4">
@@ -266,9 +398,9 @@ export function AIAccessSettings() {
 
         {/* Modelo */}
         <div>
-          <label className="block text-xs font-medium text-[var(--ink)] mb-1.5 flex items-center gap-1.5">
+          <label className="text-xs font-medium text-[var(--ink)] mb-1.5 flex items-center gap-1.5">
             <Sliders size={14} className="text-[var(--signal)]" />
-            Modelo de IA
+            Escolher Modelo de IA para Responder
           </label>
           <select
             value={selectedModel}
@@ -293,7 +425,7 @@ export function AIAccessSettings() {
                 className="input w-full font-mono text-xs sm:text-sm"
               />
               <p className="mt-1 text-[11px] opacity-50">
-                Insira o ID exato do modelo conforme listado na documentação do OpenRouter.
+                Insira o ID exato do modelo conforme listado no catálogo do OpenRouter.
               </p>
             </div>
           )}
@@ -391,7 +523,7 @@ export function AIAccessSettings() {
             ) : (
               <Wifi size={15} />
             )}
-            {testing ? "Testando conexão..." : "Testar Conexão"}
+            {testing ? "Testando conexão e modelo..." : "Testar Conexão"}
           </button>
 
           <button
