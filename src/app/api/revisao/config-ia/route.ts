@@ -78,7 +78,7 @@ const DEPRECATED_MODEL_MAP: Record<string, string> = {
     dailyLimit,
     generationsToday: count,
     remaining,
-    model,
+    model: isMaster ? model : undefined,
   });
 }
 

@@ -65,7 +65,7 @@ interface MemberAIConfig {
   dailyLimit: number;
   generationsToday: number;
   remaining: number | null;
-  model: string;
+  model?: string;
 }
 
 export function AIAccessSettings() {
@@ -251,7 +251,7 @@ export function AIAccessSettings() {
                 Inteligência Artificial (Revisão & Flashcards)
               </h2>
               <p className="text-xs opacity-60">
-                Modelo de IA ativo para elaboração e resolução de flashcards.
+                Recursos inteligentes para elaboração de flashcards e resolução didática de dúvidas.
               </p>
             </div>
           </div>
@@ -261,19 +261,20 @@ export function AIAccessSettings() {
         </div>
 
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
-          {/* Card do Modelo em Uso */}
+          {/* Card do Motor de IA */}
           <div className="rounded-xl border border-[var(--line)] bg-[var(--surface-soft)] p-3.5">
             <span className="text-[11px] font-semibold text-[var(--signal)] uppercase tracking-wider block mb-1">
-              Modelo em Uso
+              Motor de IA Integrado
             </span>
-            <p className="text-sm font-semibold text-[var(--ink)]">
-              {getModelDisplayName(memberConfig?.model)}
+            <p className="text-sm font-semibold text-[var(--ink)] flex items-center gap-1.5">
+              <Bot size={16} className="text-[var(--signal)]" />
+              IA FocoHub
             </p>
-            <p className="mt-1 font-mono text-[11px] text-[var(--ink-soft)] truncate">
-              ID: {memberConfig?.model || "google/gemini-2.5-flash"}
+            <p className="mt-1 text-xs text-[var(--ink-soft)]">
+              Pronta para criar flashcards, resumos e explicar dúvidas com passo a passo.
             </p>
             <p className="mt-2 text-[11px] opacity-60">
-              Gerenciado pelo Administrador Master via OpenRouter.
+              Otimizado e gerenciado pelo Administrador da plataforma.
             </p>
           </div>
 

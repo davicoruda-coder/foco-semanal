@@ -210,15 +210,13 @@ export function AIFlashcardGenerator({
           </span>
         )}
 
-        {aiConfig?.model && (
-          <span
-            className="inline-flex items-center gap-1 rounded-full bg-[var(--surface-soft)] px-2.5 py-0.5 text-[11px] font-medium text-[var(--ink-soft)] border border-[var(--line)]"
-            title={`Modelo ativo: ${aiConfig.model}`}
-          >
-            <Bot size={11} className="text-[var(--signal)]" />
-            <span>IA: {aiConfig.model.split("/").pop()?.replace(/-001$/, "") || "Gemini 2.5"}</span>
-          </span>
-        )}
+        <span
+          className="inline-flex items-center gap-1 rounded-full bg-[var(--surface-soft)] px-2.5 py-0.5 text-[11px] font-medium text-[var(--ink-soft)] border border-[var(--line)]"
+          title={aiConfig?.isMaster && aiConfig?.model ? `Modelo ativo (Master): ${aiConfig.model}` : "Inteligência Artificial Integrada"}
+        >
+          <Bot size={11} className="text-[var(--signal)]" />
+          <span>IA</span>
+        </span>
       </div>
 
       {/* Feedback */}
