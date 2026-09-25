@@ -11,12 +11,12 @@ import {
   GraduationCap,
   KeyRound,
   Moon,
+  Sparkles,
   Sun,
   SunMoon,
   Upload,
   Volume2,
 } from "lucide-react";
-import { FlashcardsIcon } from "@/components/FlashcardsIcon";
 import { useApp } from "@/components/AppProvider";
 import { AccessManagement } from "@/components/AccessManagement";
 import { AIAccessSettings } from "@/components/AIAccessSettings";
@@ -840,7 +840,7 @@ function ModulosSettings() {
       const store = await import("@/lib/revisao/revisao-store");
       await store.setModuloAtivo("revisao", ativo);
       setMensagem(
-        ativo ? "Módulo Revisão ativado!" : "Módulo Revisão desativado.",
+        ativo ? "Módulo Fixação ativado!" : "Módulo Fixação desativado.",
       );
     } catch {
       setMensagem("Salvo localmente neste aparelho.");
@@ -873,12 +873,12 @@ function ModulosSettings() {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="flex items-start gap-3.5">
               <div className="mt-0.5 grid size-10 shrink-0 place-items-center rounded-xl bg-[var(--signal-soft)] text-[var(--signal)]">
-                <FlashcardsIcon size={20} />
+                <Sparkles size={20} />
               </div>
               <div className="space-y-1">
                 <div className="flex flex-wrap items-center gap-2">
                   <h2 className="font-display text-base font-semibold tracking-tight text-[var(--ink)] md:text-lg">
-                    Revisão & Fixação Ativa
+                    Fixação Ativa
                   </h2>
                   <span className="rounded-full bg-[var(--signal-soft)] px-2 py-0.5 text-[10px] font-semibold text-[var(--signal)]">
                     Opcional
