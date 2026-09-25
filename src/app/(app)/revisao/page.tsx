@@ -65,14 +65,11 @@ function RevisaoContent() {
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--line)] pb-3">
         <div className="min-w-0 max-w-full">
           <h1 className="font-display text-xl sm:text-2xl font-bold tracking-tight md:text-3xl text-[var(--ink)] flex flex-wrap items-center gap-2">
-            Revisão & Fixação Ativa
+            Fixação Ativa
             <span className="rounded-full bg-[var(--signal)] px-2 py-0.5 text-[11px] font-bold text-white shadow-xs">
               IA
             </span>
           </h1>
-          <p className="mt-1 text-xs sm:text-sm text-[color-mix(in_srgb,var(--ink)_75%,transparent)] leading-relaxed">
-            Caderno de Erros, Flashcards com Repetição Espaçada e Tutor Inteligente
-          </p>
         </div>
 
         {/* Ações: Gerar com IA e Captura Rápida */}
