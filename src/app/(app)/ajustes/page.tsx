@@ -11,6 +11,8 @@ import {
   GraduationCap,
   KeyRound,
   Moon,
+  Palette,
+  ShieldCheck,
   Sparkles,
   Sun,
   SunMoon,
@@ -52,6 +54,14 @@ const OPTIONS: { value: ThemePref; label: string; icon: typeof Sun }[] = [
   { value: "auto", label: "Automático", icon: SunMoon },
 ];
 
+const SETTINGS_TABS = [
+  { id: "estudo", label: "Estudo & Rotina", icon: GraduationCap },
+  { id: "aparencia", label: "Aparência & Som", icon: Palette },
+  { id: "conta", label: "Conta & Segurança", icon: ShieldCheck },
+] as const;
+
+type SettingsTab = (typeof SETTINGS_TABS)[number]["id"];
+
 export default function AjustesPage() {
   const {
     themePref,
@@ -65,6 +75,7 @@ export default function AjustesPage() {
     logout,
   } = useApp();
   const fileRef = useRef<HTMLInputElement>(null);
+  const [activeTab, setActiveTab] = useState<SettingsTab>("estudo");
   const [backupMsg, setBackupMsg] = useState<string | null>(null);
   const [cloudWipeBusy, setCloudWipeBusy] = useState(false);
   const [cloudWipeMsg, setCloudWipeMsg] = useState<string | null>(null);
@@ -80,6 +91,30 @@ export default function AjustesPage() {
     NotificationPermission | "unsupported"
   >("default");
   const [notifMsg, setNotifMsg] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const hash = window.location.hash.replace("#", "");
+      if (hash === "estudo" || hash === "aparencia" || hash === "conta") {
+        setActiveTab(hash as SettingsTab);
+      } else {
+        const params = new URLSearchParams(window.location.search);
+        const tab = params.get("tab");
+        if (tab === "estudo" || tab === "aparencia" || tab === "conta") {
+          setActiveTab(tab as SettingsTab);
+        }
+      }
+    }
+  }, []);
+
+  const handleTabChange = (tab: SettingsTab) => {
+    setActiveTab(tab);
+    if (typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      url.searchParams.set("tab", tab);
+      window.history.replaceState({}, "", url.toString());
+    }
+  };
 
   async function savePassword(e: React.FormEvent) {
     e.preventDefault();
@@ -205,320 +240,333 @@ export default function AjustesPage() {
         </Link>
       </div>
 
-      {/* GRUPO 1: ESTUDO & PRODUTIVIDADE */}
-      <div className="mt-8 space-y-4">
-        <div className="flex items-center gap-2 border-b border-[var(--line)] pb-2 text-xs font-semibold uppercase tracking-wider text-[var(--signal)]">
-          <GraduationCap size={16} />
-          Estudo & Produtividade
-        </div>
-
-        <ModulosSettings />
-        <SessionBlockSettings />
-        <SidebarTimerSettings />
+      {/* Navegação por Abas Segmentadas */}
+      <div className="mt-5 flex w-full max-w-full items-center gap-1 overflow-x-auto scrollbar-none rounded-xl border border-[var(--line)] bg-[var(--mist)] p-1 sm:w-fit">
+        {SETTINGS_TABS.map(({ id, label, icon: Icon }) => {
+          const active = activeTab === id;
+          return (
+            <button
+              key={id}
+              type="button"
+              onClick={() => handleTabChange(id)}
+              className={`flex flex-1 sm:flex-initial shrink-0 items-center justify-center gap-2 rounded-lg px-3.5 py-2 text-xs sm:text-sm font-semibold transition ${
+                active
+                  ? "bg-[var(--surface)] text-[var(--signal)] shadow-sm"
+                  : "text-[color-mix(in_srgb,var(--ink)_65%,transparent)] hover:text-[var(--ink)]"
+              }`}
+            >
+              <Icon size={16} strokeWidth={active ? 2.25 : 1.75} />
+              <span>{label}</span>
+            </button>
+          );
+        })}
       </div>
 
-      {/* GRUPO 2: APARÊNCIA & ALERTAS */}
-      <div className="mt-8 space-y-4">
-        <div className="flex items-center gap-2 border-b border-[var(--line)] pb-2 text-xs font-semibold uppercase tracking-wider text-[var(--signal)]">
-          <Bell size={16} />
-          Aparência & Alertas
-        </div>
+      {/* ABA 1: ESTUDO & ROTINA */}
+      {activeTab === "estudo" && (
+        <div className="mt-6 space-y-4">
+          <ModulosSettings />
+          <SessionBlockSettings />
+          <SidebarTimerSettings />
 
-        <section className="surface p-4 md:p-5">
-          <h2 className="font-display text-base font-semibold tracking-tight md:text-lg">
-            Aparência
-          </h2>
-          <div className="mt-3 grid gap-2.5 sm:grid-cols-3">
-            {OPTIONS.map(({ value, label, icon: Icon }) => {
-              const active = themePref === value;
-              return (
-                <button
-                  key={value}
-                  type="button"
-                  onClick={() => setTheme(value)}
-                  className={`flex items-center gap-3 rounded-[var(--radius)] border px-3.5 py-3 text-left transition ${
-                    active
-                      ? "border-[var(--signal)] bg-[var(--signal-soft)]"
-                      : "border-[var(--line)] bg-[var(--surface)] hover:border-[color-mix(in_srgb,var(--signal)_30%,var(--line))]"
-                  }`}
-                >
-                  <span
-                    className={`grid h-8 w-8 shrink-0 place-items-center rounded-full ${
+          {/* Central de Ajuda & Metodologia */}
+          <div className="surface mt-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 md:p-5 rounded-[var(--radius)] border-[var(--line)]">
+            <div className="flex items-center gap-3">
+              <div className="grid size-9 shrink-0 place-items-center rounded-xl bg-[var(--signal-soft)] text-[var(--signal)]">
+                <CircleHelp size={18} />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-[var(--ink)]">
+                  Dúvidas sobre ciclo ou metodologia de estudos?
+                </p>
+                <p className="text-xs text-[color-mix(in_srgb,var(--ink)_75%,transparent)] sm:text-sm">
+                  Consulte as regras de ouro, conceitos de rodízio e tutoriais passo a passo.
+                </p>
+              </div>
+            </div>
+            <Link
+              href="/ajuda"
+              className="inline-flex shrink-0 items-center gap-1 rounded-[var(--radius-btn)] border border-[var(--line)] bg-[var(--surface)] px-3 py-1.5 text-xs font-semibold text-[var(--signal)] shadow-sm hover:border-[var(--signal)] sm:text-sm self-start sm:self-auto"
+            >
+              Acessar Guia <ChevronRight size={15} />
+            </Link>
+          </div>
+        </div>
+      )}
+
+      {/* ABA 2: APARÊNCIA & ALERTAS */}
+      {activeTab === "aparencia" && (
+        <div className="mt-6 space-y-4">
+          <section className="surface p-4 md:p-5">
+            <h2 className="font-display text-base font-semibold tracking-tight md:text-lg">
+              Aparência
+            </h2>
+            <div className="mt-3 grid gap-2.5 sm:grid-cols-3">
+              {OPTIONS.map(({ value, label, icon: Icon }) => {
+                const active = themePref === value;
+                return (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => setTheme(value)}
+                    className={`flex items-center gap-3 rounded-[var(--radius)] border px-3.5 py-3 text-left transition ${
                       active
-                        ? "bg-[var(--signal)] text-white"
-                        : "bg-[var(--mist)] text-[var(--ink)]"
+                        ? "border-[var(--signal)] bg-[var(--signal-soft)]"
+                        : "border-[var(--line)] bg-[var(--surface)] hover:border-[color-mix(in_srgb,var(--signal)_30%,var(--line))]"
                     }`}
                   >
-                    <Icon size={16} strokeWidth={1.75} />
-                  </span>
-                  <span className="text-sm font-medium">{label}</span>
-                </button>
-              );
-            })}
-          </div>
-          {themePref === "auto" && (
-            <p className="mt-2 text-xs text-[color-mix(in_srgb,var(--ink)_65%,transparent)] sm:text-sm">
-              Automático: claro das 6h às 18h, escuro à noite.
-            </p>
-          )}
-        </section>
-
-        <AlarmSettings />
-
-        <section className="surface p-4 md:p-5">
-          <h2 className="font-display text-base font-semibold tracking-tight md:text-lg">
-            Notificações
-          </h2>
-          <p className="mt-1 text-xs text-[color-mix(in_srgb,var(--ink)_75%,transparent)] sm:text-sm leading-relaxed">
-            Alarme ao terminar um temporizador e avisos de lembretes com sino.
-            Funcionam com o app/aba abertos. No celular, o PWA instalado costuma
-            ser mais estável que o navegador.
-          </p>
-          <div className="mt-3 flex flex-wrap items-center gap-2">
-            {notifPermission === "granted" ? (
-              <div className="inline-flex items-center gap-2 rounded-[var(--radius-btn)] border border-[color-mix(in_srgb,var(--ok)_35%,var(--line))] bg-[color-mix(in_srgb,var(--ok)_12%,var(--surface))] px-3.5 py-2.5 text-sm font-medium text-[var(--ok)]">
-                <Bell size={16} strokeWidth={1.75} />
-                Notificações ativas
-              </div>
-            ) : (
-              <button
-                type="button"
-                className="btn btn-primary"
-                disabled={notifPermission === "unsupported"}
-                onClick={async () => {
-                  const ok = await ensureNotificationPermission();
-                  if (typeof window !== "undefined" && "Notification" in window) {
-                    setNotifPermission(Notification.permission);
-                  }
-                  setNotifMsg(
-                    ok
-                      ? "Notificações permitidas."
-                      : "Não foi possível permitir. Confira o cadeado na barra de endereço.",
-                  );
-                }}
-              >
-                <Bell size={16} strokeWidth={1.75} />
-                Permitir notificações do navegador
-              </button>
+                    <span
+                      className={`grid h-8 w-8 shrink-0 place-items-center rounded-full ${
+                        active
+                          ? "bg-[var(--signal)] text-white"
+                          : "bg-[var(--mist)] text-[var(--ink)]"
+                      }`}
+                    >
+                      <Icon size={16} strokeWidth={1.75} />
+                    </span>
+                    <span className="text-sm font-medium">{label}</span>
+                  </button>
+                );
+              })}
+            </div>
+            {themePref === "auto" && (
+              <p className="mt-2 text-xs text-[color-mix(in_srgb,var(--ink)_65%,transparent)] sm:text-sm">
+                Automático: claro das 6h às 18h, escuro à noite.
+              </p>
             )}
-          </div>
-          {notifPermission === "granted" && (
-            <p className="mt-2 text-xs text-[color-mix(in_srgb,var(--ink)_65%,transparent)] sm:text-sm">
-              Para desativar, use o cadeado na barra de endereço do navegador →
-              Notificações → Bloquear.
+          </section>
+
+          <AlarmSettings />
+
+          <section className="surface p-4 md:p-5">
+            <h2 className="font-display text-base font-semibold tracking-tight md:text-lg">
+              Notificações
+            </h2>
+            <p className="mt-1 text-xs text-[color-mix(in_srgb,var(--ink)_75%,transparent)] sm:text-sm leading-relaxed">
+              Alarme ao terminar um temporizador e avisos de lembretes com sino.
+              Funcionam com o app/aba abertos. No celular, o PWA instalado costuma
+              ser mais estável que o navegador.
             </p>
-          )}
-          {notifPermission === "denied" && (
-            <p className="mt-2 text-xs text-[var(--warn)] sm:text-sm font-medium">
-              Bloqueadas neste site. Libere em Configurações do navegador →
-              Notificações.
-            </p>
-          )}
-          {notifPermission === "unsupported" && (
-            <p className="mt-2 text-xs text-[color-mix(in_srgb,var(--ink)_65%,transparent)] sm:text-sm">
-              Este navegador não suporta notificações.
-            </p>
-          )}
-          {notifMsg && <p className="mt-2 text-sm text-[color-mix(in_srgb,var(--ink)_85%,transparent)]">{notifMsg}</p>}
-        </section>
-
-        <InstallPwaCard />
-      </div>
-
-      {/* GRUPO 3: CONTA & SEGURANÇA */}
-      <div className="mt-8 space-y-4">
-        <div className="flex items-center gap-2 border-b border-[var(--line)] pb-2 text-xs font-semibold uppercase tracking-wider text-[var(--signal)]">
-          <KeyRound size={16} />
-          Conta & Segurança
-        </div>
-
-        <section className="surface p-4 md:p-5">
-          <h2 className="font-display text-base font-semibold tracking-tight md:text-lg">
-            Backup
-          </h2>
-          <p className="mt-1 text-xs text-[color-mix(in_srgb,var(--ink)_75%,transparent)] sm:text-sm leading-relaxed">
-            Exportar/importar um arquivo JSON de segurança. Importar só
-            atualiza o que veio no arquivo — não apaga o resto na nuvem.
-          </p>
-          <div className="mt-3 flex flex-wrap gap-2">
-            <button type="button" className="btn btn-primary" onClick={downloadBackup}>
-              <Download size={16} strokeWidth={1.75} /> Exportar
-            </button>
-            <button
-              type="button"
-              className="btn"
-              onClick={() => fileRef.current?.click()}
-            >
-              <Upload size={16} strokeWidth={1.75} /> Importar
-            </button>
-          </div>
-          <input
-            ref={fileRef}
-            type="file"
-            accept="application/json,.json"
-            className="hidden"
-            onChange={(e) => {
-              const f = e.target.files?.[0];
-              if (f) void onImportFile(f);
-              e.target.value = "";
-            }}
-          />
-          {backupMsg && (
-            <p className="mt-3 text-sm opacity-70">{backupMsg}</p>
-          )}
-        </section>
-
-        <AccessManagement />
-        <AIAccessSettings />
-
-      <section className="surface mt-4 p-4 md:p-5">
-        <h2 className="font-display text-base font-semibold tracking-tight md:text-lg">
-          Conta
-        </h2>
-        <div className="mt-3 flex items-center gap-3">
-          <div
-            className="grid h-10 w-10 shrink-0 place-items-center rounded-full text-sm font-semibold"
-            style={{ background: "var(--signal-soft)", color: "var(--signal)" }}
-          >
-            {(user?.name || user?.email || "?").trim().charAt(0).toUpperCase()}
-          </div>
-          <div className="min-w-0">
-            <p className="truncate text-sm font-medium">{user?.name}</p>
-            <p className="truncate text-xs opacity-60">{user?.email}</p>
-            <p className="mt-0.5 text-xs opacity-50">
-              {cloud
-                ? "Conectado · alterações salvam na nuvem"
-                : supabaseReady
-                  ? "Entre com o e-mail para sincronizar"
-                  : "Supabase não configurado"}
-            </p>
-          </div>
-        </div>
-
-        <div className="mt-4 space-y-3">
-          {cloud && (
-            <div>
-              {!passwordFormOpen ? (
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              {notifPermission === "granted" ? (
+                <div className="inline-flex items-center gap-2 rounded-[var(--radius-btn)] border border-[color-mix(in_srgb,var(--ok)_35%,var(--line))] bg-[color-mix(in_srgb,var(--ok)_12%,var(--surface))] px-3.5 py-2.5 text-sm font-medium text-[var(--ok)]">
+                  <Bell size={16} strokeWidth={1.75} />
+                  Notificações ativas
+                </div>
+              ) : (
                 <button
                   type="button"
-                  className="btn"
-                  onClick={() => {
-                    setPasswordFormOpen(true);
-                    setPasswordErr(null);
-                    setPasswordMsg(null);
+                  className="btn btn-primary"
+                  disabled={notifPermission === "unsupported"}
+                  onClick={async () => {
+                    const ok = await ensureNotificationPermission();
+                    if (typeof window !== "undefined" && "Notification" in window) {
+                      setNotifPermission(Notification.permission);
+                    }
+                    setNotifMsg(
+                      ok
+                        ? "Notificações permitidas."
+                        : "Não foi possível permitir. Confira o cadeado na barra de endereço.",
+                    );
                   }}
                 >
-                  <KeyRound size={16} strokeWidth={1.75} />
-                  Definir / alterar senha
+                  <Bell size={16} strokeWidth={1.75} />
+                  Permitir notificações do navegador
                 </button>
-              ) : (
-                <form className="space-y-2" onSubmit={(e) => void savePassword(e)}>
-                  <p className="text-xs text-[color-mix(in_srgb,var(--ink)_75%,transparent)] sm:text-sm leading-relaxed">
-                    Defina a senha para entrar neste e-mail em outro aparelho.
-                  </p>
-                  <input
-                    className="input w-full"
-                    type="password"
-                    autoComplete="new-password"
-                    required
-                    minLength={MIN_PASSWORD_LENGTH}
-                    placeholder="Nova senha"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                  />
-                  <input
-                    className="input w-full"
-                    type="password"
-                    autoComplete="new-password"
-                    required
-                    minLength={MIN_PASSWORD_LENGTH}
-                    placeholder="Confirmar senha"
-                    value={passwordConfirm}
-                    onChange={(e) => setPasswordConfirm(e.target.value)}
-                  />
-                  <div className="flex flex-wrap gap-2">
-                    <button
-                      type="submit"
-                      className="btn btn-primary"
-                      disabled={passwordBusy}
-                    >
-                      {passwordBusy ? "Salvando…" : "Salvar senha"}
-                    </button>
+              )}
+            </div>
+            {notifPermission === "granted" && (
+              <p className="mt-2 text-xs text-[color-mix(in_srgb,var(--ink)_65%,transparent)] sm:text-sm">
+                Para desativar, use o cadeado na barra de endereço do navegador →
+                Notificações → Bloquear.
+              </p>
+            )}
+            {notifPermission === "denied" && (
+              <p className="mt-2 text-xs text-[var(--warn)] sm:text-sm font-medium">
+                Bloqueadas neste site. Libere em Configurações do navegador →
+                Notificações.
+              </p>
+            )}
+            {notifPermission === "unsupported" && (
+              <p className="mt-2 text-xs text-[color-mix(in_srgb,var(--ink)_65%,transparent)] sm:text-sm">
+                Este navegador não suporta notificações.
+              </p>
+            )}
+            {notifMsg && <p className="mt-2 text-sm text-[color-mix(in_srgb,var(--ink)_85%,transparent)]">{notifMsg}</p>}
+          </section>
+
+          <InstallPwaCard />
+        </div>
+      )}
+
+      {/* ABA 3: CONTA & SEGURANÇA */}
+      {activeTab === "conta" && (
+        <div className="mt-6 space-y-4">
+          <section className="surface p-4 md:p-5">
+            <h2 className="font-display text-base font-semibold tracking-tight md:text-lg">
+              Conta
+            </h2>
+            <div className="mt-3 flex items-center gap-3">
+              <div
+                className="grid h-10 w-10 shrink-0 place-items-center rounded-full text-sm font-semibold"
+                style={{ background: "var(--signal-soft)", color: "var(--signal)" }}
+              >
+                {(user?.name || user?.email || "?").trim().charAt(0).toUpperCase()}
+              </div>
+              <div className="min-w-0">
+                <p className="truncate text-sm font-medium">{user?.name}</p>
+                <p className="truncate text-xs opacity-60">{user?.email}</p>
+                <p className="mt-0.5 text-xs opacity-50">
+                  {cloud
+                    ? "Conectado · alterações salvam na nuvem"
+                    : supabaseReady
+                      ? "Entre com o e-mail para sincronizar"
+                      : "Supabase não configurado"}
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-4 space-y-3">
+              {cloud && (
+                <div>
+                  {!passwordFormOpen ? (
                     <button
                       type="button"
                       className="btn"
-                      disabled={passwordBusy}
                       onClick={() => {
-                        setPasswordFormOpen(false);
-                        setPassword("");
-                        setPasswordConfirm("");
+                        setPasswordFormOpen(true);
                         setPasswordErr(null);
+                        setPasswordMsg(null);
                       }}
                     >
-                      Cancelar
+                      <KeyRound size={16} strokeWidth={1.75} />
+                      Definir / alterar senha
                     </button>
-                  </div>
-                </form>
+                  ) : (
+                    <form className="space-y-2" onSubmit={(e) => void savePassword(e)}>
+                      <p className="text-xs text-[color-mix(in_srgb,var(--ink)_75%,transparent)] sm:text-sm leading-relaxed">
+                        Defina a senha para entrar neste e-mail em outro aparelho.
+                      </p>
+                      <input
+                        className="input w-full"
+                        type="password"
+                        autoComplete="new-password"
+                        required
+                        minLength={MIN_PASSWORD_LENGTH}
+                        placeholder="Nova senha"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                      />
+                      <input
+                        className="input w-full"
+                        type="password"
+                        autoComplete="new-password"
+                        required
+                        minLength={MIN_PASSWORD_LENGTH}
+                        placeholder="Confirmar senha"
+                        value={passwordConfirm}
+                        onChange={(e) => setPasswordConfirm(e.target.value)}
+                      />
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          type="submit"
+                          className="btn btn-primary"
+                          disabled={passwordBusy}
+                        >
+                          {passwordBusy ? "Salvando…" : "Salvar senha"}
+                        </button>
+                        <button
+                          type="button"
+                          className="btn"
+                          disabled={passwordBusy}
+                          onClick={() => {
+                            setPasswordFormOpen(false);
+                            setPassword("");
+                            setPasswordConfirm("");
+                            setPasswordErr(null);
+                          }}
+                        >
+                          Cancelar
+                        </button>
+                      </div>
+                    </form>
+                  )}
+                  {passwordErr && (
+                    <p className="mt-2 text-sm text-[var(--warn)]">{passwordErr}</p>
+                  )}
+                  {passwordMsg && (
+                    <p className="mt-2 text-sm opacity-70">{passwordMsg}</p>
+                  )}
+                </div>
               )}
-              {passwordErr && (
-                <p className="mt-2 text-sm text-[var(--warn)]">{passwordErr}</p>
-              )}
-              {passwordMsg && (
-                <p className="mt-2 text-sm opacity-70">{passwordMsg}</p>
+              <button type="button" className="btn" onClick={() => setConfirmLogout(true)}>
+                Sair
+              </button>
+              {cloud && (
+                <div className="border-t border-[var(--line)] pt-3">
+                  <p className="text-xs text-[color-mix(in_srgb,var(--ink)_75%,transparent)] sm:text-sm leading-relaxed">
+                    Apaga matérias, semana, lembretes, notas e sessões na nuvem. A
+                    conta permanece conectada. Pede a senha de autorização.
+                  </p>
+                  <button
+                    type="button"
+                    className="btn mt-2 text-[var(--warn)]"
+                    disabled={cloudWipeBusy}
+                    onClick={() => {
+                      setCloudWipeMsg(null);
+                      setConfirmCloudWipe(true);
+                    }}
+                  >
+                    {cloudWipeBusy ? "Apagando…" : "Apagar dados na nuvem"}
+                  </button>
+                  {cloudWipeMsg && (
+                    <p className="mt-2 text-sm opacity-70">{cloudWipeMsg}</p>
+                  )}
+                </div>
               )}
             </div>
-          )}
-          <button type="button" className="btn" onClick={() => setConfirmLogout(true)}>
-            Sair
-          </button>
-          {cloud && (
-            <div className="border-t border-[var(--line)] pt-3">
-              <p className="text-xs text-[color-mix(in_srgb,var(--ink)_75%,transparent)] sm:text-sm leading-relaxed">
-                Apaga matérias, semana, lembretes, notas e sessões na nuvem. A
-                conta permanece conectada. Pede a senha de autorização.
-              </p>
+          </section>
+
+          <section className="surface p-4 md:p-5">
+            <h2 className="font-display text-base font-semibold tracking-tight md:text-lg">
+              Backup & Dados
+            </h2>
+            <p className="mt-1 text-xs text-[color-mix(in_srgb,var(--ink)_75%,transparent)] sm:text-sm leading-relaxed">
+              Exportar ou importar um arquivo JSON de segurança. Importar só
+              atualiza o que veio no arquivo — não apaga o resto na nuvem.
+            </p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <button type="button" className="btn btn-primary" onClick={downloadBackup}>
+                <Download size={16} strokeWidth={1.75} /> Exportar
+              </button>
               <button
                 type="button"
-                className="btn mt-2 text-[var(--warn)]"
-                disabled={cloudWipeBusy}
-                onClick={() => {
-                  setCloudWipeMsg(null);
-                  setConfirmCloudWipe(true);
-                }}
+                className="btn"
+                onClick={() => fileRef.current?.click()}
               >
-                {cloudWipeBusy ? "Apagando…" : "Apagar dados na nuvem"}
+                <Upload size={16} strokeWidth={1.75} /> Importar
               </button>
-              {cloudWipeMsg && (
-                <p className="mt-2 text-sm opacity-70">{cloudWipeMsg}</p>
-              )}
             </div>
-          )}
-        </div>
-      </section>
+            <input
+              ref={fileRef}
+              type="file"
+              accept="application/json,.json"
+              className="hidden"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) void onImportFile(f);
+                e.target.value = "";
+              }}
+            />
+            {backupMsg && (
+              <p className="mt-3 text-sm opacity-70">{backupMsg}</p>
+            )}
+          </section>
 
-      {/* Rodapé: Central de Ajuda & Tutoriais */}
-      <div className="surface flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 md:p-5 rounded-[var(--radius)] border-[var(--line)]">
-        <div className="flex items-center gap-3">
-          <div className="grid size-9 shrink-0 place-items-center rounded-xl bg-[var(--signal-soft)] text-[var(--signal)]">
-            <CircleHelp size={18} />
-          </div>
-          <div>
-            <p className="text-sm font-semibold text-[var(--ink)]">
-              Dúvidas sobre ciclo ou metodologia de estudos?
-            </p>
-            <p className="text-xs text-[color-mix(in_srgb,var(--ink)_75%,transparent)] sm:text-sm">
-              Consulte as regras de ouro, conceitos de rodízio e tutoriais passo a passo.
-            </p>
-          </div>
+          <AccessManagement />
+          <AIAccessSettings />
         </div>
-        <Link
-          href="/ajuda"
-          className="inline-flex shrink-0 items-center gap-1 rounded-[var(--radius-btn)] border border-[var(--line)] bg-[var(--surface)] px-3 py-1.5 text-xs font-semibold text-[var(--signal)] shadow-sm hover:border-[var(--signal)] sm:text-sm self-start sm:self-auto"
-        >
-          Acessar Guia <ChevronRight size={15} />
-        </Link>
-      </div>
-      </div>
+      )}
     </div>
   );
 }
