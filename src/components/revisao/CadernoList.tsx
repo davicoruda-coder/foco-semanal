@@ -195,7 +195,7 @@ export function CadernoList({
           <select
             value={disciplinaFiltro}
             onChange={(e) => setDisciplinaFiltro(e.target.value)}
-            className="rounded-[var(--radius-btn)] border border-[var(--line)] bg-[var(--mist)] px-2.5 py-1.5 text-xs text-[var(--ink)] outline-none"
+            className="w-full min-w-0 truncate rounded-[var(--radius-btn)] border border-[var(--line)] bg-[var(--mist)] px-2.5 py-1.5 text-xs text-[var(--ink)] outline-none"
           >
             <option value="todas">Todas Disciplinas</option>
             {disciplinas.map((d) => (
@@ -208,7 +208,7 @@ export function CadernoList({
           <select
             value={bancaFiltro}
             onChange={(e) => setBancaFiltro(e.target.value)}
-            className="rounded-[var(--radius-btn)] border border-[var(--line)] bg-[var(--mist)] px-2.5 py-1.5 text-xs text-[var(--ink)] outline-none"
+            className="w-full min-w-0 truncate rounded-[var(--radius-btn)] border border-[var(--line)] bg-[var(--mist)] px-2.5 py-1.5 text-xs text-[var(--ink)] outline-none"
           >
             <option value="todas">Todas Bancas</option>
             {bancas.map((b) => (
@@ -221,7 +221,7 @@ export function CadernoList({
           <select
             value={causaFiltro}
             onChange={(e) => setCausaFiltro(e.target.value)}
-            className="rounded-[var(--radius-btn)] border border-[var(--line)] bg-[var(--mist)] px-2.5 py-1.5 text-xs text-[var(--ink)] outline-none"
+            className="w-full min-w-0 truncate rounded-[var(--radius-btn)] border border-[var(--line)] bg-[var(--mist)] px-2.5 py-1.5 text-xs text-[var(--ink)] outline-none"
           >
             <option value="todas">Todas Causas</option>
             {(Object.entries(CAUSA_ERRO_LABEL) as [CausaErro, string][]).map(
@@ -236,7 +236,7 @@ export function CadernoList({
           <select
             value={resultadoFiltro}
             onChange={(e) => setResultadoFiltro(e.target.value)}
-            className="rounded-[var(--radius-btn)] border border-[var(--line)] bg-[var(--mist)] px-2.5 py-1.5 text-xs text-[var(--ink)] outline-none"
+            className="w-full min-w-0 truncate rounded-[var(--radius-btn)] border border-[var(--line)] bg-[var(--mist)] px-2.5 py-1.5 text-xs text-[var(--ink)] outline-none"
           >
             <option value="todas">Todos Resultados</option>
             {(
@@ -280,7 +280,7 @@ export function CadernoList({
               >
                 {/* Header do Card */}
                 <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--line)] bg-[var(--mist)]/40 px-3.5 py-2 text-xs">
-                  <div className="flex flex-wrap items-center gap-1.5 min-w-0">
+                  <div className="flex flex-wrap items-center gap-1.5 min-w-0 max-w-full">
                     {q.banca && (
                       <span className="rounded-md bg-[var(--surface)] px-2 py-0.5 font-semibold text-[var(--ink)] border border-[var(--line)] shrink-0">
                         {q.banca}
@@ -301,7 +301,7 @@ export function CadernoList({
                     )}
                   </div>
 
-                  <div className="flex items-center gap-1.5 shrink-0">
+                  <div className="flex flex-wrap items-center gap-1.5 shrink-0 max-w-full">
                     <span
                       className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
                         q.status_resultado === "erro"

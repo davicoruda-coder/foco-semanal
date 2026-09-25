@@ -279,7 +279,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   });
 
   return (
-    <div className="relative min-h-screen pb-[calc(4.5rem+env(safe-area-inset-bottom))] lg:pb-0">
+    <div className="relative min-h-screen w-full max-w-full overflow-x-hidden pb-[calc(4.5rem+env(safe-area-inset-bottom,0px))] lg:pb-0">
       {cloudSync.message ? (
         <div
           className={`px-4 py-2 text-center text-xs font-medium ${
@@ -292,7 +292,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           {cloudSync.message}
         </div>
       ) : null}
-      <header className="sticky top-0 z-20 border-b border-[var(--line)] bg-[var(--surface)]/95 pt-[env(safe-area-inset-top)] backdrop-blur-md [transform:translateZ(0)] lg:hidden">
+      <header className="sticky top-0 z-20 border-b border-[var(--line)] bg-[var(--surface)]/95 pt-[env(safe-area-inset-top,0px)] backdrop-blur-md lg:hidden">
         <div className="mx-auto flex h-12 max-w-lg items-center justify-between px-3">
           <Link
             href="/hoje"
@@ -368,7 +368,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       </header>
 
-      <main className="mx-auto max-w-7xl px-2.5 pb-28 pt-3 sm:px-5 sm:pb-24 sm:pt-4 md:px-8 lg:pb-10 lg:pt-6">
+      <main className="mx-auto w-full max-w-7xl min-w-0 px-2.5 pb-28 pt-3 sm:px-5 sm:pb-24 sm:pt-4 md:px-8 lg:pb-10 lg:pt-6">
         {children}
       </main>
 
@@ -380,7 +380,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       />
 
       <nav
-        className="fixed inset-x-0 bottom-0 z-50 border-t border-[var(--line)] bg-[var(--surface)]/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-md [transform:translateZ(0)] lg:hidden"
+        className="fixed bottom-0 left-0 right-0 z-50 w-full border-t border-[var(--line)] bg-[var(--surface)] pb-[env(safe-area-inset-bottom,0px)] shadow-[0_-2px_10px_rgba(0,0,0,0.06)] lg:hidden"
         aria-label="Navegação principal"
       >
         <div className="mx-auto flex h-[4.5rem] w-full max-w-lg">
