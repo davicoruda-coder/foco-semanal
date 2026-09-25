@@ -239,6 +239,26 @@ export async function getFlashcardsDoDia(): Promise<
   })) as (Flashcard & { questao?: QuestaoCaderno })[];
 }
 
+/** Retorna apenas o total de flashcards agendados para hoje ou anterior (consulta leve de contagem). */
+export async function getFlashcardsCountDoDia(): Promise<number> {
+  const auth = await getAuthedClient();
+  if (!auth) return 0;
+
+  const hoje = new Date().toISOString().slice(0, 10);
+  const { count, error } = await auth.supabase
+    .from("flashcards")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", auth.userId)
+    .lte("proxima_revisao", hoje);
+
+  if (error) {
+    console.warn("[revisao] count flashcards do dia:", error);
+    return 0;
+  }
+
+  return count ?? 0;
+}
+
 /** Lista todos os flashcards, opcionalmente filtrados por disciplina/banca. */
 export async function listFlashcards(filters?: {
   disciplina?: string;

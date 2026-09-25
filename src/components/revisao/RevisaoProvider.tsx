@@ -163,6 +163,7 @@ export function RevisaoProvider({ children }: { children: ReactNode }) {
     (Flashcard & { questao?: QuestaoCaderno })[]
   >([]);
   const [flashcardsLoading, setFlashcardsLoading] = useState(false);
+  const [flashcardsLoaded, setFlashcardsLoaded] = useState(false);
   const [materias, setMaterias] = useState<MateriaRevisao[]>([]);
   const [materiasLoading, setMateriasLoading] = useState(false);
   const [stats, setStats] = useState<RevisaoStats | null>(null);
@@ -375,12 +376,23 @@ export function RevisaoProvider({ children }: { children: ReactNode }) {
       ]);
       setFlashcardsDoDia(dia);
       setAllFlashcards(todos);
+      setFlashcardsLoaded(true);
     } catch (err) {
       console.warn("[revisao] load flashcards:", err);
     } finally {
       setFlashcardsLoading(false);
     }
   }, []);
+
+  useEffect(() => {
+    if (flashcardsLoaded && typeof window !== "undefined") {
+      window.dispatchEvent(
+        new CustomEvent("foco-flashcards-count-changed", {
+          detail: { count: flashcardsDoDia.length },
+        }),
+      );
+    }
+  }, [flashcardsLoaded, flashcardsDoDia.length]);
 
   /* ---- Matérias ---- */
   const reloadMaterias = useCallback(async () => {

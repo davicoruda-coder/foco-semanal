@@ -168,6 +168,50 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const [moreOpen, setMoreOpen] = useState(false);
   const [revisaoActive, setRevisaoActive] = useState(true);
   const [semanaActive, setSemanaActive] = useState(true);
+  const [pendingFlashcardsCount, setPendingFlashcardsCount] = useState(0);
+
+  useEffect(() => {
+    if (!ready || !user || !revisaoActive) {
+      setPendingFlashcardsCount(0);
+      return;
+    }
+
+    let isMounted = true;
+    const fetchCount = async () => {
+      try {
+        const { getFlashcardsCountDoDia } = await import(
+          "@/lib/revisao/revisao-store"
+        );
+        const count = await getFlashcardsCountDoDia();
+        if (isMounted) setPendingFlashcardsCount(count);
+      } catch (err) {
+        console.warn("[AppShell] erro ao buscar contagem de flashcards:", err);
+      }
+    };
+
+    fetchCount();
+
+    const handleCountEvent = (e: Event) => {
+      const customEvent = e as CustomEvent<{ count: number }>;
+      if (typeof customEvent.detail?.count === "number") {
+        setPendingFlashcardsCount(customEvent.detail.count);
+      } else {
+        fetchCount();
+      }
+    };
+
+    window.addEventListener("foco-flashcards-count-changed", handleCountEvent);
+    window.addEventListener("focus", fetchCount);
+
+    return () => {
+      isMounted = false;
+      window.removeEventListener(
+        "foco-flashcards-count-changed",
+        handleCountEvent,
+      );
+      window.removeEventListener("focus", fetchCount);
+    };
+  }, [ready, user, revisaoActive]);
 
   useEffect(() => {
     const fetchAdminModules = async () => {
@@ -304,9 +348,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                     className={active ? "text-[var(--signal)]" : "opacity-60"}
                   />
                   <span>{label}</span>
-                  {href === "/revisao" && (
-                    <span className="rounded-full bg-[var(--signal)] px-1.5 py-0.5 text-[10px] font-bold text-white leading-none shadow-xs">
-                      IA
+                  {href === "/revisao" && pendingFlashcardsCount > 0 && (
+                    <span
+                      title={`${pendingFlashcardsCount} flashcard${pendingFlashcardsCount > 1 ? "s" : ""} para revisar hoje`}
+                      className="rounded-full bg-[var(--signal)] px-1.5 py-0.5 text-[10px] font-bold text-white leading-none shadow-xs"
+                    >
+                      {pendingFlashcardsCount > 99 ? "99+" : pendingFlashcardsCount}
                     </span>
                   )}
                 </Link>
@@ -357,8 +404,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   }`}
                 >
                   <Icon size={24} strokeWidth={1.85} />
-                  {href === "/revisao" && (
-                    <span className="absolute top-1.5 right-1.5 size-2 rounded-full bg-[var(--signal)] ring-1 ring-[var(--surface)]" />
+                  {href === "/revisao" && pendingFlashcardsCount > 0 && (
+                    <span
+                      title={`${pendingFlashcardsCount} flashcard${pendingFlashcardsCount > 1 ? "s" : ""} para revisar hoje`}
+                      className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-[var(--signal)] px-1 text-[10px] font-bold text-white shadow-xs ring-2 ring-[var(--surface)]"
+                    >
+                      {pendingFlashcardsCount > 99 ? "99+" : pendingFlashcardsCount}
+                    </span>
                   )}
                 </span>
                 <span className="max-w-full truncate px-0.5 leading-none">
