@@ -521,11 +521,7 @@ export default function EstatisticasPage() {
       <h1 className="font-display pb-0.5 text-2xl font-semibold leading-normal tracking-tight md:text-3xl">
         Estatísticas
       </h1>
-      <p className="mt-1 text-xs sm:text-sm text-[color-mix(in_srgb,var(--ink)_75%,transparent)] leading-relaxed">
-        Tempo de foco por dia, semana, mês e ano.
-      </p>
-
-      <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
+      <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
         <span className="inline-flex items-center gap-2">
           <span
             className={`inline-flex h-2 w-2 rounded-full ${

@@ -733,9 +733,6 @@ export default function SemanaPage() {
       <h1 className="font-display pb-0.5 text-2xl font-semibold leading-normal tracking-tight md:text-3xl">
         Semana
       </h1>
-      <p className="mt-1 text-xs sm:text-sm text-[color-mix(in_srgb,var(--ink)_75%,transparent)] leading-relaxed">
-        Clique para editar · arraste o bloco para reordenar ou mudar de dia.
-      </p>
 
       <div className="mt-6 flex gap-3 overflow-x-auto overscroll-x-contain pb-2 sm:mt-8 sm:grid sm:grid-cols-2 sm:overflow-visible sm:pb-0 md:grid-cols-3 lg:grid-cols-7">
         {DAYS.map((name, i) => (
