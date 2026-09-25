@@ -82,7 +82,7 @@ export default function AjudaPage() {
               Errou questão? Registre na hora
             </h3>
             <p className="mt-1.5 text-xs sm:text-sm text-[color-mix(in_srgb,var(--ink)_75%,transparent)] leading-relaxed">
-              Na aba Revisão, registre a causa do erro e a regra aprendida. A retenção a longo prazo vem de transformar falhas em flashcards com repetição espaçada.
+              Na aba Fixar, registre a causa do erro e a regra aprendida. A retenção a longo prazo vem de transformar falhas em flashcards com repetição espaçada.
             </p>
           </div>
         </div>

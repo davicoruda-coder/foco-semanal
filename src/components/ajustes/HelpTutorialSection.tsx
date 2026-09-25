@@ -81,12 +81,12 @@ const TOPICS: TutorialTopic[] = [
     concept:
       "O estudo reverso direciona seu tempo cirurgicamente para as suas reais deficiências em provas e questões de concurso.",
     steps: [
-      "Na aba Revisão, clique em '+ Capturar Erro' logo após errar ou ter dúvida em uma questão de simulado ou prova.",
+      "Na aba Fixar, clique em '+ Capturar Erro' logo após errar ou ter dúvida em uma questão de simulado ou prova.",
       "Preencha os dados essenciais: Disciplina, Assunto, Causa do Erro (Atenção, Teoria ou Interpretação) e a Regra Aprendida / O que não esquecer.",
       "Flashcards com IA e Manuais: formule seus próprios cartões ou use o botão 'Gerar com IA' para criar flashcards objetivos de fixação a partir do erro registrado.",
-      "Repetição Espaçada & Notificações: o sistema calcula as próximas datas de estudo na curva de esquecimento. Quando houver flashcards para revisar hoje, um aviso visual na aba Revisão alerta você sobre as pendências.",
+      "Repetição Espaçada & Notificações: o sistema calcula as próximas datas de estudo na curva de esquecimento. Quando houver flashcards para revisar hoje, um aviso visual na aba Fixar alerta você sobre as pendências.",
     ],
-    tip: "Consulte a aba Estatísticas em Revisão para ver o diagnóstico das causas dos seus erros e onde você mais precisa reforçar a teoria.",
+    tip: "Consulte a aba Diagnóstico em Fixar para ver o raio-X das causas dos seus erros e onde você mais precisa reforçar a teoria.",
   },
   {
     id: "agenda",
