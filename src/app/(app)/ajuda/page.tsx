@@ -69,10 +69,10 @@ export default function AjudaPage() {
           <div className="rounded-[var(--radius-sm)] border border-[var(--line)]/60 bg-[color-mix(in_srgb,var(--ink)_2.5%,transparent)] p-4">
             <h3 className="text-sm sm:text-base font-semibold text-[var(--ink)] flex items-center gap-2">
               <CheckCircle2 size={17} className="text-[var(--signal)] shrink-0" />
-              Respeite os 5 minutos de pausa
+              Respeite as pausas entre as sessões
             </h3>
             <p className="mt-1.5 text-xs sm:text-sm text-[color-mix(in_srgb,var(--ink)_75%,transparent)] leading-relaxed">
-              Ao terminar o bloco de foco, levante, beba água e descanse a vista. Isso restaura a atenção para o próximo bloco.
+              Ao concluir um bloco de foco, aproveite o tempo de descanso configurado por você (ex.: 5 a 15 min). Levante, beba água e descanse a vista para renovar a atenção para a próxima sessão.
             </p>
           </div>
 
@@ -82,7 +82,7 @@ export default function AjudaPage() {
               Errou questão? Registre na hora
             </h3>
             <p className="mt-1.5 text-xs sm:text-sm text-[color-mix(in_srgb,var(--ink)_75%,transparent)] leading-relaxed">
-              Na aba Revisão, cadastre a causa do erro em 20s. A retenção a longo prazo vem de transformar falhas em flashcards.
+              Na aba Revisão, registre a causa do erro e a regra aprendida. A retenção a longo prazo vem de transformar falhas em flashcards com repetição espaçada.
             </p>
           </div>
         </div>

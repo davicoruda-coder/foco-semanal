@@ -50,12 +50,12 @@ const TOPICS: TutorialTopic[] = [
     concept:
       "Transforme sua fila de matérias em uma sessão contínua sem precisar configurar cronômetros manuais a cada troca de disciplina.",
     steps: [
-      "No topo da tela Hoje, clique em 'Iniciar sessão' para agrupar as próximas matérias da fila em um bloco de estudos (~40 min).",
+      "No topo da tela Hoje, clique em 'Iniciar sessão' para agrupar as próximas matérias da fila em uma sessão de foco contínuo.",
       "Controles da sessão: use a barra do topo para pausar/retomar a sessão, avançar matéria (⏭), recomeçar o bloco do início (↻) ou encerrar os estudos (✕).",
       "Finalizar matéria em play: clique no ícone de avançar (⏭) na barra de sessão para salvar o foco, registrar anotações e passar imediatamente para a próxima.",
-      "Descanso pós-bloco: ao terminar todas as matérias do bloco, o sistema oferece a pausa (ex.: 20 min) com alarme suave antes do próximo bloco.",
+      "Descanso entre sessões: ao concluir as matérias do bloco, o sistema inicia automaticamente a pausa configurada por você em Ajustes (ex.: 5 a 15 min), com alarme sonoro suave antes da próxima sessão.",
     ],
-    tip: "O tempo que você passa escrevendo anotações na transição não entra no cronômetro de foco, garantindo contagem 100% fiel.",
+    tip: "Você pode personalizar a duração de foco de cada matéria, o tempo de descanso e a quantidade de matérias por sessão em Ajustes > Sessão & Blocos.",
   },
   {
     id: "rodizio",
@@ -81,11 +81,12 @@ const TOPICS: TutorialTopic[] = [
     concept:
       "O estudo reverso direciona seu tempo cirurgicamente para as suas reais deficiências em provas e questões de concurso.",
     steps: [
-      "Na aba Revisão, clique em '+ Novo Erro' logo após errar uma questão em uma bateria de simulado.",
-      "Preencha em ~20 segundos: Código/link, Disciplina, Assunto, Causa do Erro (Atenção, Teoria ou Interpretação) e o Aprendizado Chave.",
-      "O sistema gera um Flashcard automático e agenda suas revisões nos intervalos científicos (24 horas, 7 dias e 30 dias).",
+      "Na aba Revisão, clique em '+ Capturar Erro' logo após errar ou ter dúvida em uma questão de simulado ou prova.",
+      "Preencha os dados essenciais: Disciplina, Assunto, Causa do Erro (Atenção, Teoria ou Interpretação) e a Regra Aprendida / O que não esquecer.",
+      "Flashcards com IA e Manuais: formule seus próprios cartões ou use o botão 'Gerar com IA' para criar flashcards objetivos de fixação a partir do erro registrado.",
+      "Repetição Espaçada & Notificações: o sistema calcula as próximas datas de estudo na curva de esquecimento. Quando houver flashcards para revisar hoje, um aviso visual na aba Revisão alerta você sobre as pendências.",
     ],
-    tip: "Consulte a aba Estatísticas em Revisão para ver um raio-X das causas dos seus erros e onde você mais perde pontos.",
+    tip: "Consulte a aba Estatísticas em Revisão para ver o diagnóstico das causas dos seus erros e onde você mais precisa reforçar a teoria.",
   },
   {
     id: "agenda",
@@ -111,11 +112,11 @@ const TOPICS: TutorialTopic[] = [
     concept:
       "Recursos para dias de imersão e para não perder prazos ou simulados agendados.",
     steps: [
-      "Foco do Dia: em Matérias, selecione dias específicos para 'Foco do dia'. Naqueles dias, o ciclo normal dá lugar exclusivamente a essas matérias.",
-      "Lembretes: crie recados rápidos com sino ativado para receber avisos sonoros e notificações mesmo com o app em segundo plano.",
-      "Notas Rápidas: use o quadro de post-its na barra lateral para anotações livres, fórmulas e links rápidos.",
+      "Foco do Dia: em Matérias, defina dias da semana para 'Foco do dia' em disciplinas específicas. Nesses dias, elas assumem prioridade no ciclo.",
+      "Lembretes & Alarmes: crie lembretes com data, hora e alerta sonoro/notificação. Acesse facilmente pela barra lateral no computador ou pela aba dedicada 'Lembretes' no menu inferior do celular.",
+      "Notas Rápidas: use o mural de post-its para anotações livres, fórmulas, links e rascunhos sem sair do fluxo de estudos.",
     ],
-    tip: "Instale o FocoHub como aplicativo (PWA) no seu celular ou PC para notificações mais estáveis e tela cheia.",
+    tip: "Instale o FocoHub como aplicativo (PWA) no seu celular ou PC para notificações sonoras e tela cheia.",
   },
 ];
 
