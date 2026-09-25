@@ -5,17 +5,16 @@ import { useEffect, useId, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import {
   BookMarked,
-  BrainCircuit,
   CalendarDays,
   CircleHelp,
   Ellipsis,
   Home,
   Settings,
+  Sparkles,
   StickyNote,
   ChartColumn,
 } from "lucide-react";
 import { BrandIcon } from "@/components/BrandIcon";
-import { FlashcardsIcon } from "@/components/FlashcardsIcon";
 import { useApp } from "@/components/AppProvider";
 import { LoginScreen } from "@/components/LoginScreen";
 import { UserAccountMenu } from "@/components/UserAccountMenu";
@@ -25,14 +24,14 @@ import { useOpenTransition } from "@/lib/use-open-transition";
 const DESKTOP_PRIMARY_TABS = [
   { href: "/hoje", label: "Hoje", icon: Home },
   { href: "/semana", label: "Semana", icon: CalendarDays },
-  { href: "/revisao", label: "Fixar", icon: BrainCircuit },
+  { href: "/revisao", label: "Fixar", icon: Sparkles },
 ];
 
 /** Mobile: abas principais. */
 const MOBILE_PRIMARY = [
   { href: "/hoje", label: "Estudo", icon: BookMarked },
   { href: "/agenda", label: "Agenda", icon: CalendarDays },
-  { href: "/revisao", label: "Fixar", icon: BrainCircuit },
+  { href: "/revisao", label: "Fixar", icon: Sparkles },
   { href: "/lembretes", label: "Lembretes", icon: StickyNote },
 ];
 
