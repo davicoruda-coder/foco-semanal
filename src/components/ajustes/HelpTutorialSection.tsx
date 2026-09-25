@@ -55,7 +55,7 @@ const TOPICS: TutorialTopic[] = [
       "Finalizar matéria em play: clique no ícone de avançar (⏭) na barra de sessão para salvar o foco, registrar anotações e passar imediatamente para a próxima.",
       "Descanso entre sessões: ao concluir as matérias do bloco, o sistema inicia automaticamente a pausa configurada por você em Ajustes (ex.: 5 a 15 min), com alarme sonoro suave antes da próxima sessão.",
     ],
-    tip: "Você pode personalizar a duração de foco de cada matéria, o tempo de descanso e a quantidade de matérias por sessão em Ajustes > Sessão & Blocos.",
+    tip: "Você pode personalizar a duração de foco de cada matéria, o descanso e as matérias por sessão em Ajustes. O temporizador/cronômetro da barra lateral no PC funciona como relógio livre para tarefas avulsas (redações, simulados) e não avança o ciclo automaticamente.",
   },
   {
     id: "rodizio",

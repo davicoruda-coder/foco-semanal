@@ -697,6 +697,7 @@ export function SessionClock({
           {showStopwatch ? (
             <div
               className={`flex flex-col items-center ${stack ? "px-3 py-2.5 pb-3" : "px-3 py-4"}`}
+              title="Cronômetro livre (estudo avulso, não avança o ciclo)"
             >
               {renderStopwatchRing(
                 stack ? 120 : 116,
@@ -704,13 +705,11 @@ export function SessionClock({
                 false,
                 true,
               )}
-              <p className="mt-2 text-[10px] tracking-wide text-[color-mix(in_srgb,var(--ink)_45%,transparent)]">
-                Relógio livre · não avança o ciclo
-              </p>
             </div>
           ) : (
             <div
               className={`flex flex-col items-center ${stack ? "px-3 py-2.5 pb-3" : "px-3 py-4"}`}
+              title="Temporizador livre (estudo avulso, não avança o ciclo)"
             >
               {sidebarTimerName !== "Temporizador" && (
                 <p className="mb-2 max-w-full truncate text-xs font-medium text-[color-mix(in_srgb,var(--ink)_55%,transparent)]">
@@ -723,9 +722,6 @@ export function SessionClock({
                 false,
                 true,
               )}
-              <p className="mt-2 text-[10px] tracking-wide text-[color-mix(in_srgb,var(--ink)_45%,transparent)]">
-                Relógio livre · não avança o ciclo
-              </p>
             </div>
           )}
         </>
