@@ -380,7 +380,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       />
 
       <nav
-        className="fixed bottom-0 left-0 right-0 z-50 w-full border-t border-[var(--line)] bg-[var(--surface)] pb-[env(safe-area-inset-bottom,0px)] shadow-[0_-2px_10px_rgba(0,0,0,0.06)] lg:hidden"
+        className="fixed bottom-0 left-0 right-0 z-50 w-full border-t border-[var(--line)] bg-[var(--surface)] pb-[env(safe-area-inset-bottom,0px)] shadow-[0_-2px_10px_rgba(0,0,0,0.06)] lg:hidden after:absolute after:inset-x-0 after:top-full after:h-4 after:bg-[var(--surface)]"
         aria-label="Navegação principal"
       >
         <div className="mx-auto flex h-[4.5rem] w-full max-w-lg">
