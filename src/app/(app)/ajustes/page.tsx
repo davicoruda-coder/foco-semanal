@@ -204,9 +204,6 @@ export default function AjustesPage() {
           <span>Guia & Ajuda</span>
         </Link>
       </div>
-      <p className="mt-1 text-xs text-[color-mix(in_srgb,var(--ink)_75%,transparent)] sm:text-sm leading-relaxed">
-        Configure métodos de estudo, alarmes sonoros, aparência e segurança da conta.
-      </p>
 
       {/* GRUPO 1: ESTUDO & PRODUTIVIDADE */}
       <div className="mt-8 space-y-4">
