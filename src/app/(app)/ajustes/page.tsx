@@ -236,7 +236,7 @@ export default function AjustesPage() {
           className="inline-flex items-center gap-1.5 rounded-[var(--radius-btn)] border border-[var(--line)] bg-[var(--surface)] px-3 py-1.5 text-xs font-semibold text-[var(--ink)] shadow-[var(--shadow-xs)] transition hover:border-[var(--signal)] hover:text-[var(--signal)] sm:text-sm"
         >
           <CircleHelp size={15} />
-          <span>Guia & Ajuda</span>
+          <span>Guia & Tutorial</span>
         </Link>
       </div>
 

@@ -9,6 +9,15 @@ import { HelpTutorialSection } from "@/components/ajustes/HelpTutorialSection";
 export default function AjudaPage() {
   return (
     <div className="mx-auto max-w-4xl space-y-6 pb-16">
+      {/* Cabeçalho da página fora dos blocos (padrão FocoHub / Ajustes) */}
+      <div>
+        <h1 className="font-display text-2xl font-bold tracking-tight md:text-3xl text-[var(--ink)]">
+          Guia Rápido & Tutorial
+        </h1>
+        <p className="mt-1 text-xs text-[color-mix(in_srgb,var(--ink)_70%,transparent)] sm:text-sm">
+          Aprenda o fluxo e domine todas as ferramentas do FocoHub em poucos minutos.
+        </p>
+      </div>
 
       {/* Guia Rápido & Tutorial Interativo */}
       <HelpTutorialSection />

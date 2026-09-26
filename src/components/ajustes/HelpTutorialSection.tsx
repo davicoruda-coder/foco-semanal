@@ -135,7 +135,7 @@ export function HelpTutorialSection() {
         </div>
         <div>
           <h2 className="font-display text-base font-semibold tracking-tight text-[var(--ink)] sm:text-lg">
-            Guia Rápido & Tutorial
+            Como funciona o FocoHub?
           </h2>
           <p className="text-xs sm:text-sm text-[color-mix(in_srgb,var(--ink)_70%,transparent)]">
             Toque nos tópicos abaixo para entender o fluxo de cada função em menos de 30 segundos.
