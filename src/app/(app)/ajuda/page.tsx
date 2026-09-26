@@ -11,18 +11,19 @@ export default function AjudaPage() {
   return (
     <div className="mx-auto max-w-4xl space-y-6 pb-16">
       {/* Hero Banner Editorial */}
-      <div className="relative overflow-hidden rounded-[var(--radius)] border border-[color-mix(in_srgb,var(--signal)_25%,var(--line))] bg-[linear-gradient(135deg,color-mix(in_srgb,var(--signal)_8%,var(--surface)),var(--surface))] p-5 sm:p-7 shadow-[var(--shadow-sm)]">
-        <div className="relative z-10 max-w-2xl">
-          <div className="inline-flex items-center gap-2 rounded-full bg-[var(--signal-soft)] px-3 py-1 text-xs font-semibold text-[var(--signal)]">
-            <Sparkles size={14} />
-            Central de Ajuda & Metodologia
+      <div className="rounded-[var(--radius)] border border-[color-mix(in_srgb,var(--signal)_22%,var(--line))] bg-gradient-to-r from-[color-mix(in_srgb,var(--signal)_8%,var(--surface))] via-[var(--surface)] to-[color-mix(in_srgb,var(--signal)_3%,var(--surface))] p-4 sm:p-5 shadow-[var(--shadow-sm)]">
+        <div className="flex items-start gap-3.5 max-w-3xl">
+          <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[var(--signal-soft)] text-[var(--signal)] mt-0.5">
+            <Sparkles size={18} />
           </div>
-          <h1 className="font-display mt-3 text-xl font-bold tracking-tight text-[var(--ink)] sm:text-2xl md:text-3xl">
-            Como dominar o método FocoHub
-          </h1>
-          <p className="mt-2 text-sm leading-relaxed text-[color-mix(in_srgb,var(--ink)_75%,transparent)] sm:text-base">
-            O FocoHub foi desenhado para eliminar a paralisia do &ldquo;o que estudar agora&rdquo; através do <strong>Ciclo de Estudos contínuo</strong>, sessões focadas e revisões cirúrgicas.
-          </p>
+          <div className="space-y-1">
+            <div className="inline-flex items-center gap-1.5 rounded-full bg-[var(--signal-soft)] px-2.5 py-0.5 text-[11px] font-semibold text-[var(--signal)]">
+              Central de Ajuda & Metodologia
+            </div>
+            <p className="text-xs sm:text-sm text-[color-mix(in_srgb,var(--ink)_75%,transparent)] leading-relaxed">
+              O FocoHub foi desenhado para eliminar a paralisia do &ldquo;o que estudar agora&rdquo; através do ciclo de estudos contínuo, sessões focadas e revisões cirúrgicas.
+            </p>
+          </div>
         </div>
       </div>
 

@@ -128,14 +128,14 @@ export function HelpTutorialSection() {
   }
 
   return (
-    <section className="surface mt-5 p-4 md:p-5">
+    <section className="surface p-4 md:p-5">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <div className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[var(--signal)]">
+          <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--signal)]">
             <Sparkles size={14} />
             Guia Rápido & Tutorial
           </div>
-          <h2 className="font-display mt-0.5 text-base font-semibold tracking-tight md:text-lg">
+          <h2 className="font-display mt-0.5 text-base font-semibold tracking-tight md:text-lg text-[var(--ink)]">
             Como funciona o FocoHub?
           </h2>
           <p className="mt-1 text-xs text-[color-mix(in_srgb,var(--ink)_65%,transparent)]">
