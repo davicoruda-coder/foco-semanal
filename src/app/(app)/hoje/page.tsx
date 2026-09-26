@@ -8,6 +8,7 @@ import {
   ChevronDown,
   ChevronRight,
   ChevronUp,
+  Pencil,
   RotateCcw,
 } from "lucide-react";
 import { useApp } from "@/components/AppProvider";
@@ -296,25 +297,37 @@ export default function HojePage() {
                   month: "2-digit",
                 })}`}
               </button>
-              <button
-                type="button"
-                title={showFullWeek ? "Mostrar apenas hoje" : "Mostrar grade da semana toda"}
-                aria-label={
-                  showFullWeek ? "Mostrar apenas hoje" : "Mostrar grade da semana toda"
-                }
-                className="inline-flex min-h-10 items-center gap-1 rounded-full bg-[color-mix(in_srgb,var(--ink)_8%,transparent)] px-3.5 py-2 text-sm font-medium text-[color-mix(in_srgb,var(--ink)_70%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--ink)_12%,transparent)] hover:text-[var(--ink)] md:min-h-0 md:rounded-[var(--radius-tag)] md:px-2.5 md:py-1 md:text-xs"
-                onClick={() => setWeekOverride(showFullWeek ? false : true)}
-              >
-                {showFullWeek ? (
-                  <>
-                    <ChevronUp size={14} strokeWidth={2} /> Ocultar grade
-                  </>
-                ) : (
-                  <>
-                    <ChevronDown size={14} strokeWidth={2} /> Grade semanal
-                  </>
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                {showFullWeek && (
+                  <Link
+                    href="/semana"
+                    title="Editar blocos da semana (adicionar, mover, renomear)"
+                    className="inline-flex min-h-10 items-center gap-1.5 rounded-full border border-[var(--line)] bg-[var(--surface)] px-3 py-1.5 text-xs font-semibold text-[var(--ink)] shadow-xs transition hover:border-[var(--signal)] hover:text-[var(--signal)] active:scale-95 md:min-h-0 md:rounded-[var(--radius-tag)] md:px-2.5 md:py-1"
+                  >
+                    <Pencil size={12} strokeWidth={2} />
+                    <span>Editar grade</span>
+                  </Link>
                 )}
-              </button>
+                <button
+                  type="button"
+                  title={showFullWeek ? "Mostrar apenas hoje" : "Mostrar grade da semana toda"}
+                  aria-label={
+                    showFullWeek ? "Mostrar apenas hoje" : "Mostrar grade da semana toda"
+                  }
+                  className="inline-flex min-h-10 items-center gap-1 rounded-full bg-[color-mix(in_srgb,var(--ink)_8%,transparent)] px-3.5 py-2 text-sm font-medium text-[color-mix(in_srgb,var(--ink)_70%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--ink)_12%,transparent)] hover:text-[var(--ink)] md:min-h-0 md:rounded-[var(--radius-tag)] md:px-2.5 md:py-1 md:text-xs"
+                  onClick={() => setWeekOverride(showFullWeek ? false : true)}
+                >
+                  {showFullWeek ? (
+                    <>
+                      <ChevronUp size={14} strokeWidth={2} /> Ocultar grade
+                    </>
+                  ) : (
+                    <>
+                      <ChevronDown size={14} strokeWidth={2} /> Grade semanal
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
 
             {showFullWeek ? (

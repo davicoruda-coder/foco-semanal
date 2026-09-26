@@ -23,7 +23,6 @@ import { useOpenTransition } from "@/lib/use-open-transition";
 /** Desktop: navegação central de trabalho (workflow diário). */
 const DESKTOP_PRIMARY_TABS = [
   { href: "/hoje", label: "Hoje", icon: Home },
-  { href: "/semana", label: "Semana", icon: CalendarDays },
   { href: "/revisao", label: "Fixar", icon: Sparkles },
 ];
 

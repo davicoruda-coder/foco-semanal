@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
+  CalendarDays,
   Camera,
   FileText,
   Loader2,
@@ -378,6 +379,15 @@ export function UserAccountMenu() {
         >
           <ChartColumn size={15} strokeWidth={1.8} className="opacity-70" />
           <span>Estatísticas de Foco</span>
+        </Link>
+
+        <Link
+          href="/semana"
+          onClick={() => setOpen(false)}
+          className="flex items-center gap-2.5 rounded-lg px-2.5 py-2 font-medium transition hover:bg-[var(--mist)]"
+        >
+          <CalendarDays size={15} strokeWidth={1.8} className="opacity-70" />
+          <span>Grade Semanal (Rotina)</span>
         </Link>
 
         <Link
