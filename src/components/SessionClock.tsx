@@ -1,8 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo } from "react";
-import { Pause, Play, RotateCcw, SlidersHorizontal } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import {
+  ChevronDown,
+  ChevronUp,
+  Pause,
+  Play,
+  RotateCcw,
+  SlidersHorizontal,
+} from "lucide-react";
 import { useApp } from "@/components/AppProvider";
 import { SIDEBAR_TIMER_ID, useTimerRuntime } from "@/components/TimerRuntimeProvider";
 import { sanitizeCssColor } from "@/lib/utils";
@@ -477,6 +484,31 @@ export function SessionClock({
     secondsForSidebar < sidebarTotal &&
     Boolean(sidebar?.startedAt);
 
+  const [collapsed, setCollapsed] = useState(false);
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("foco_sidebar_clock_collapsed");
+      if (saved === "true") {
+        setCollapsed(true);
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  const toggleCollapsed = () => {
+    setCollapsed((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem("foco_sidebar_clock_collapsed", String(next));
+      } catch {
+        // ignore
+      }
+      return next;
+    });
+  };
+
   function renderSidebarRing(
     ringSize: number,
     stroke: number,
@@ -629,16 +661,72 @@ export function SessionClock({
   }
 
   return (
-    <div className="surface overflow-hidden p-0">
+    <div className="surface overflow-hidden p-0 transition-all duration-200">
       <div
-        className={`flex flex-wrap items-center justify-between gap-2 border-b border-[var(--line)] ${
-          stack ? "px-3 py-1.5" : "px-3 py-2.5 md:px-5"
-        }`}
+        className={`flex flex-wrap items-center justify-between gap-2 ${
+          collapsed ? "" : "border-b border-[var(--line)]"
+        } ${stack ? "px-3 py-1.5" : "px-3 py-2.5 md:px-5"}`}
       >
         {livreOnly ? (
-          <div className="flex min-w-0 flex-1 flex-wrap items-center justify-between gap-2">
+          <div className="flex min-w-0 flex-1 items-center justify-between gap-1.5">
             {livreTabs}
-            {livreGear}
+            <div className="flex items-center gap-1 shrink-0">
+              {collapsed && (
+                <div
+                  className={`flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-mono font-medium transition ${
+                    (showStopwatch ? stopwatch.running : sidebarRunning)
+                      ? "bg-[color-mix(in_srgb,var(--signal)_14%,var(--surface))] text-[var(--signal)] ring-1 ring-[var(--signal)]/30 shadow-xs"
+                      : "bg-[var(--mist)] text-[color-mix(in_srgb,var(--ink)_75%,transparent)]"
+                  }`}
+                >
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (showStopwatch) {
+                        toggleStopwatch();
+                      } else {
+                        toggleSidebarTimer();
+                      }
+                    }}
+                    className="grid size-5 place-items-center rounded-full text-[var(--signal)] hover:bg-[var(--signal-soft)] transition active:scale-95"
+                    title={
+                      (showStopwatch ? stopwatch.running : sidebarRunning)
+                        ? "Pausar"
+                        : "Iniciar"
+                    }
+                    aria-label={
+                      (showStopwatch ? stopwatch.running : sidebarRunning)
+                        ? "Pausar"
+                        : "Iniciar"
+                    }
+                  >
+                    {(showStopwatch ? stopwatch.running : sidebarRunning) ? (
+                      <Pause size={10} fill="currentColor" />
+                    ) : (
+                      <Play size={10} fill="currentColor" className="ml-0.5" />
+                    )}
+                  </button>
+                  <span className="text-[11px] font-semibold tracking-tight">
+                    {formatTime(showStopwatch ? stopwatchSeconds : secondsForSidebar)}
+                  </span>
+                </div>
+              )}
+              {livreGear}
+              <button
+                type="button"
+                onClick={toggleCollapsed}
+                title={collapsed ? "Expandir relógio" : "Recolher relógio"}
+                aria-label={collapsed ? "Expandir relógio" : "Recolher relógio"}
+                className="shrink-0 rounded-full p-1.5 text-[color-mix(in_srgb,var(--ink)_50%,transparent)] transition hover:bg-[var(--mist)] hover:text-[var(--ink)] active:scale-95"
+              >
+                {collapsed ? (
+                  <ChevronDown size={15} strokeWidth={2} />
+                ) : (
+                  <ChevronUp size={15} strokeWidth={2} />
+                )}
+              </button>
+            </div>
           </div>
         ) : (
           <>
@@ -679,88 +767,105 @@ export function SessionClock({
               );
             })}
           </div>
-          <Link
-            href="/ajustes"
-            title="Ajustes"
-            aria-label="Ajustes"
-            className="shrink-0 rounded-full p-1.5 text-[color-mix(in_srgb,var(--ink)_45%,transparent)] transition hover:bg-[var(--mist)] hover:text-[var(--signal)]"
-          >
-            <SlidersHorizontal size={16} strokeWidth={1.75} />
-          </Link>
+          <div className="flex items-center gap-1 shrink-0">
+            <Link
+              href="/ajustes"
+              title="Ajustes"
+              aria-label="Ajustes"
+              className="shrink-0 rounded-full p-1.5 text-[color-mix(in_srgb,var(--ink)_45%,transparent)] transition hover:bg-[var(--mist)] hover:text-[var(--signal)]"
+            >
+              <SlidersHorizontal size={16} strokeWidth={1.75} />
+            </Link>
+            <button
+              type="button"
+              onClick={toggleCollapsed}
+              title={collapsed ? "Expandir relógio" : "Recolher relógio"}
+              aria-label={collapsed ? "Expandir relógio" : "Recolher relógio"}
+              className="shrink-0 rounded-full p-1.5 text-[color-mix(in_srgb,var(--ink)_50%,transparent)] transition hover:bg-[var(--mist)] hover:text-[var(--ink)] active:scale-95"
+            >
+              {collapsed ? (
+                <ChevronDown size={15} strokeWidth={2} />
+              ) : (
+                <ChevronUp size={15} strokeWidth={2} />
+              )}
+            </button>
+          </div>
           </>
         )}
       </div>
 
-      <div key={mode} className="fade-in">
-      {livreOnly ? (
-        <>
-          {showStopwatch ? (
-            <div
-              className={`flex flex-col items-center ${stack ? "px-3 py-2.5 pb-3" : "px-3 py-4"}`}
-              title="Cronômetro livre (estudo avulso, não avança o ciclo)"
-            >
-              {renderStopwatchRing(
-                stack ? 120 : 116,
-                4,
-                false,
-                true,
-              )}
-            </div>
-          ) : (
-            <div
-              className={`flex flex-col items-center ${stack ? "px-3 py-2.5 pb-3" : "px-3 py-4"}`}
-              title="Temporizador livre (estudo avulso, não avança o ciclo)"
-            >
-              {sidebarTimerName !== "Temporizador" && (
-                <p className="mb-2 max-w-full truncate text-xs font-medium text-[color-mix(in_srgb,var(--ink)_55%,transparent)]">
-                  {sidebarTimerName}
-                </p>
-              )}
-              {renderSidebarRing(
-                stack ? 120 : 116,
-                4,
-                false,
-                true,
-              )}
-            </div>
-          )}
-        </>
-      ) : showStopwatch ? (
-        <div
-          className={`flex justify-center ${livreOnly ? (stack ? "px-3 py-3" : "px-3 py-4") : stack ? "px-3 py-5" : "px-3 py-6"}`}
-        >
-          <MiniRing
-            display={formatTime(stopwatchSeconds)}
-            size={livreOnly ? (stack ? 124 : 112) : stack ? 170 : 128}
-            stroke={livreOnly ? 4.5 : stack ? 6 : 4.5}
-            progress={1}
-            accent="var(--signal)"
-            softRing
-            active={stopwatch.running}
-            paused={swPaused}
-            flash={flash?.id === "stopwatch" ? flash.kind : null}
-            flashKey={flash?.id === "stopwatch" ? flash.key : undefined}
-            onToggle={toggleStopwatch}
-            onReset={resetStopwatch}
-          />
-        </div>
-      ) : sessionTimers.length === 0 ? (
-        <div className="px-5 py-8 text-center text-sm opacity-60">
-          Nenhum Bloco de sessão.{" "}
-          <Link href="/ajustes" className="text-[var(--signal)]">
-            Ver ajustes
-          </Link>
-        </div>
-      ) : stack ? (
-        <div className="flex flex-col gap-1 px-2 py-2">
-          {sessionTimers.map((t) => renderTimerRing(t, size, 5, true))}
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 place-items-center gap-3 px-3 py-5 sm:px-6 md:px-8">
-          {sessionTimers.map((t) => renderTimerRing(t, size, 7))}
+      {!collapsed && (
+        <div key={mode} className="fade-in">
+        {livreOnly ? (
+          <>
+            {showStopwatch ? (
+              <div
+                className={`flex flex-col items-center ${stack ? "px-3 py-2.5 pb-3" : "px-3 py-4"}`}
+                title="Cronômetro livre (estudo avulso, não avança o ciclo)"
+              >
+                {renderStopwatchRing(
+                  stack ? 120 : 116,
+                  4,
+                  false,
+                  true,
+                )}
+              </div>
+            ) : (
+              <div
+                className={`flex flex-col items-center ${stack ? "px-3 py-2.5 pb-3" : "px-3 py-4"}`}
+                title="Temporizador livre (estudo avulso, não avança o ciclo)"
+              >
+                {sidebarTimerName !== "Temporizador" && (
+                  <p className="mb-2 max-w-full truncate text-xs font-medium text-[color-mix(in_srgb,var(--ink)_55%,transparent)]">
+                    {sidebarTimerName}
+                  </p>
+                )}
+                {renderSidebarRing(
+                  stack ? 120 : 116,
+                  4,
+                  false,
+                  true,
+                )}
+              </div>
+            )}
+          </>
+        ) : showStopwatch ? (
+          <div
+            className={`flex justify-center ${livreOnly ? (stack ? "px-3 py-3" : "px-3 py-4") : stack ? "px-3 py-5" : "px-3 py-6"}`}
+          >
+            <MiniRing
+              display={formatTime(stopwatchSeconds)}
+              size={livreOnly ? (stack ? 124 : 112) : stack ? 170 : 128}
+              stroke={livreOnly ? 4.5 : stack ? 6 : 4.5}
+              progress={1}
+              accent="var(--signal)"
+              softRing
+              active={stopwatch.running}
+              paused={swPaused}
+              flash={flash?.id === "stopwatch" ? flash.kind : null}
+              flashKey={flash?.id === "stopwatch" ? flash.key : undefined}
+              onToggle={toggleStopwatch}
+              onReset={resetStopwatch}
+            />
+          </div>
+        ) : sessionTimers.length === 0 ? (
+          <div className="px-5 py-8 text-center text-sm opacity-60">
+            Nenhum Bloco de sessão.{" "}
+            <Link href="/ajustes" className="text-[var(--signal)]">
+              Ver ajustes
+            </Link>
+          </div>
+        ) : stack ? (
+          <div className="flex flex-col gap-1 px-2 py-2">
+            {sessionTimers.map((t) => renderTimerRing(t, size, 5, true))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 place-items-center gap-3 px-3 py-5 sm:px-6 md:px-8">
+            {sessionTimers.map((t) => renderTimerRing(t, size, 7))}
+          </div>
+        )}
         </div>
       )}
-      </div>
     </div>
   );
 }
