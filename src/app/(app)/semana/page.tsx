@@ -329,7 +329,7 @@ function DayCard({
               {editing ? (
                 <div
                   ref={editWrapRef}
-                  className="rounded-[var(--radius-tag)] p-2.5 ring-2 ring-[var(--signal)]/40"
+                  className={`rounded-[var(--radius-tag)] p-2.5 ring-2 ring-[var(--signal)]/40 ${style.className}`}
                   style={style.style}
                 >
                   <textarea
@@ -350,7 +350,7 @@ function DayCard({
                 </div>
               ) : (
                 <div
-                  className={`group relative cursor-grab touch-none rounded-[var(--radius-tag)] px-2.5 py-2 text-sm select-none active:cursor-grabbing border border-black/[0.06] shadow-[0_1px_2px_rgba(0,0,0,0.03)] hover:shadow-[0_2px_6px_rgba(0,0,0,0.07)] hover:-translate-y-[0.5px] transition-all duration-150 ${
+                  className={`group relative cursor-grab touch-none rounded-[var(--radius-tag)] px-2.5 py-2 text-sm select-none active:cursor-grabbing shadow-[0_1px_2px_rgba(0,0,0,0.03)] hover:shadow-[0_2px_6px_rgba(0,0,0,0.07)] hover:-translate-y-[0.5px] transition-all duration-150 ${style.className} ${
                     isDragging ? "opacity-35" : ""
                   }`}
                   style={style.style}

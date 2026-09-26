@@ -74,11 +74,12 @@ export function blockStyle(
   opts?: { muted?: boolean; pill?: boolean },
 ): {
   className: string;
-  style?: {
+  style: {
     background: string;
     color: string;
     borderLeft?: string;
     border?: string;
+    [key: string]: string | undefined;
   };
 } {
   const raw = sanitizeCssColor(
@@ -89,39 +90,49 @@ export function blockStyle(
   const palette = BLOCK_COLOR_PALETTE[upper];
 
   const bg = palette ? palette.bg : raw;
-  const accent = palette ? palette.accent : `color-mix(in srgb, ${raw} 65%, black 35%)`;
-  const text = palette ? palette.text : "#14201a";
+  const accent = palette ? palette.accent : getBlockAccent(raw);
+  const text = palette ? palette.text : "#0f172a";
 
-  if (opts?.muted) {
+  const isMuted = !!opts?.muted;
+  const isPill = !!opts?.pill;
+
+  if (isMuted) {
     return {
-      className: "",
+      className: "agenda-block agenda-block-muted",
       style: {
-        background: `color-mix(in srgb, ${bg} 72%, var(--surface))`,
-        color: "#525e57",
-        ...(opts?.pill
-          ? { border: `1px solid color-mix(in srgb, ${accent} 25%, transparent)` }
-          : { borderLeft: `3px solid color-mix(in srgb, ${accent} 40%, transparent)` }),
+        "--b-acc": accent,
+        "--b-bg-raw": bg,
+        "--b-fg-raw": text,
+        background: "var(--block-muted-bg)",
+        color: "var(--block-muted-fg)",
+        border: isPill ? "var(--block-pill-border)" : "var(--block-muted-border)",
       },
     };
   }
 
-  if (opts?.pill) {
+  if (isPill) {
     return {
-      className: "",
+      className: "agenda-block agenda-block-pill",
       style: {
-        background: bg,
-        color: text,
-        border: `1px solid color-mix(in srgb, ${accent} 30%, transparent)`,
+        "--b-acc": accent,
+        "--b-bg-raw": bg,
+        "--b-fg-raw": text,
+        background: "var(--block-bg)",
+        color: "var(--block-fg)",
+        border: "var(--block-pill-border)",
       },
     };
   }
 
   return {
-    className: "",
+    className: "agenda-block agenda-block-active",
     style: {
-      background: bg,
-      color: text,
-      borderLeft: `3.5px solid ${accent}`,
+      "--b-acc": accent,
+      "--b-bg-raw": bg,
+      "--b-fg-raw": text,
+      background: "var(--block-bg)",
+      color: "var(--block-fg)",
+      border: "var(--block-border)",
     },
   };
 }

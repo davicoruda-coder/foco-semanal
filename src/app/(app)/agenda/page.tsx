@@ -129,24 +129,28 @@ export default function AgendaPage() {
                 return (
                   <div
                     key={name}
-                    className="min-h-[min(58vh,28rem)] min-w-0 bg-[var(--mist)] md:min-h-44"
+                    className={`min-h-[min(58vh,28rem)] min-w-0 transition-colors md:min-h-44 ${
+                      isToday
+                        ? "bg-[color-mix(in_srgb,var(--signal)_4%,var(--surface))]"
+                        : "bg-[var(--mist)]/75"
+                    }`}
                   >
                     <div
-                      className={`border-b px-2 py-2.5 text-center text-xs font-semibold uppercase tracking-wider md:px-2 md:py-2 ${
+                      className={`border-b px-2 py-2.5 text-center text-xs font-semibold uppercase tracking-wider transition-colors md:px-2 md:py-2 ${
                         isToday
-                          ? "relative z-[1] border-[color-mix(in_srgb,var(--signal)_18%,var(--line))] text-[var(--signal)]"
-                          : "border-[var(--line)] text-[color-mix(in_srgb,var(--ink)_72%,transparent)]"
+                          ? "relative z-[1] border-b-2 border-b-[var(--signal)] bg-[color-mix(in_srgb,var(--signal)_12%,var(--surface))] font-bold text-[var(--signal)] shadow-xs"
+                          : "border-[var(--line)] bg-[var(--mist)] text-[color-mix(in_srgb,var(--ink)_68%,transparent)]"
                       }`}
-                      style={
-                        isToday
-                          ? {
-                              background:
-                                "color-mix(in srgb, var(--signal) 10%, var(--surface))",
-                            }
-                          : undefined
-                      }
                     >
-                      {name.slice(0, 3)}
+                      <span className="inline-flex items-center justify-center gap-1.5">
+                        {name.slice(0, 3)}
+                        {isToday && (
+                          <span
+                            className="inline-block h-1.5 w-1.5 rounded-full bg-[var(--signal)]"
+                            title="Hoje"
+                          />
+                        )}
+                      </span>
                     </div>
                     <div className="space-y-2 p-2 md:space-y-1.5">
                       {blocks.length === 0 && (
@@ -160,7 +164,7 @@ export default function AgendaPage() {
                           <div
                             key={b.id}
                             title={b.label}
-                            className="rounded-[var(--radius-tag)] px-2 py-2 text-sm font-medium leading-snug break-words hyphens-auto tabular-nums md:px-2 md:py-1.5 md:text-xs lg:text-sm"
+                            className={`rounded-[var(--radius-tag)] px-2 py-2 text-sm font-medium leading-snug break-words hyphens-auto tabular-nums shadow-xs transition-colors md:px-2 md:py-1.5 md:text-xs lg:text-sm ${style.className}`}
                             style={style.style}
                             lang="pt-BR"
                           >
@@ -187,7 +191,7 @@ export default function AgendaPage() {
                 return (
                   <div
                     key={b.id}
-                    className="rounded-[var(--radius-tag)] px-3 py-2.5 text-sm font-medium leading-snug break-words tabular-nums"
+                    className={`rounded-[var(--radius-tag)] px-3 py-2.5 text-sm font-medium leading-snug break-words tabular-nums shadow-xs transition-colors ${style.className}`}
                     style={style.style}
                   >
                     {b.label}
