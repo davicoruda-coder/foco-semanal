@@ -388,13 +388,6 @@ export function CadernoList({
         </div>
       </div>
 
-      {/* Dica de Uso */}
-      <div className="flex items-center justify-between px-1 text-xs text-[color-mix(in_srgb,var(--ink)_45%,transparent)]">
-        <span className="text-[11px]">
-          Clique em qualquer ficha para abrir o modo de leitura e folhear com as setas ← →
-        </span>
-      </div>
-
       {/* Lista ou Grade de Registros */}
       {questoesLoading ? (
         <div className="py-12 text-center text-sm text-[color-mix(in_srgb,var(--ink)_50%,transparent)]">
