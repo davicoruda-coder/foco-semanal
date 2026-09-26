@@ -14,9 +14,6 @@ export default function AjudaPage() {
         <h1 className="font-display text-2xl font-bold tracking-tight md:text-3xl text-[var(--ink)]">
           Guia Rápido & Tutorial
         </h1>
-        <p className="mt-1 text-xs text-[color-mix(in_srgb,var(--ink)_70%,transparent)] sm:text-sm">
-          Aprenda o fluxo e domine todas as ferramentas do FocoHub em poucos minutos.
-        </p>
       </div>
 
       {/* Guia Rápido & Tutorial Interativo */}
