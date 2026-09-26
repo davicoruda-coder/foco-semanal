@@ -299,16 +299,14 @@ export default function HojePage() {
                 })}`}
               </button>
               <div className="flex items-center gap-1.5 sm:gap-2">
-                {showFullWeek && (
-                  <Link
-                    href="/semana"
-                    title="Editar blocos da semana (adicionar, mover, renomear)"
-                    className="inline-flex min-h-10 items-center gap-1.5 rounded-full border border-[var(--line)] bg-[var(--surface)] px-3 py-1.5 text-xs font-semibold text-[var(--ink)] shadow-xs transition hover:border-[var(--signal)] hover:text-[var(--signal)] active:scale-95 md:min-h-0 md:rounded-[var(--radius-tag)] md:px-2.5 md:py-1"
-                  >
-                    <Pencil size={12} strokeWidth={2} />
-                    <span>Editar grade</span>
-                  </Link>
-                )}
+                <Link
+                  href="/semana"
+                  title="Editar blocos da semana (adicionar, mover, renomear)"
+                  className="inline-flex min-h-10 items-center gap-1.5 rounded-full border border-[var(--line)] bg-[var(--surface)] px-3 py-1.5 text-xs font-semibold text-[var(--ink)] shadow-xs transition hover:border-[var(--signal)] hover:text-[var(--signal)] active:scale-95 md:min-h-0 md:rounded-[var(--radius-tag)] md:px-2.5 md:py-1"
+                >
+                  <Pencil size={12} strokeWidth={2} />
+                  <span>Editar grade</span>
+                </Link>
                 <button
                   type="button"
                   title={showFullWeek ? "Mostrar apenas hoje" : "Mostrar grade da semana toda"}

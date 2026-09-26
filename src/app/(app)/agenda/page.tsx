@@ -59,12 +59,12 @@ export default function AgendaPage() {
         </h1>
         <Link
           href="/semana"
-          title="Editar semana"
-          aria-label="Editar semana"
-          className="inline-flex min-h-10 items-center gap-1.5 rounded-[var(--radius-btn)] px-3 text-sm font-medium text-[color-mix(in_srgb,var(--ink)_70%,transparent)] transition hover:bg-[var(--mist)] hover:text-[var(--ink)]"
+          title="Editar grade semanal (adicionar, mover ou renomear matérias)"
+          aria-label="Editar grade semanal"
+          className="inline-flex min-h-9 items-center gap-1.5 rounded-full border border-[var(--line)] bg-[var(--surface)] px-3 py-1 text-xs font-semibold text-[var(--ink)] shadow-xs transition hover:border-[var(--signal)] hover:text-[var(--signal)] active:scale-95 sm:min-h-10 sm:px-3.5 sm:text-sm"
         >
-          <Pencil size={16} strokeWidth={1.75} />
-          <span className="hidden sm:inline">Editar semana</span>
+          <Pencil size={13} strokeWidth={2} />
+          <span>Editar grade</span>
         </Link>
       </div>
 

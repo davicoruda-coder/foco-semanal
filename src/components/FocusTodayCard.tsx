@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { Target } from "lucide-react";
+import { ArrowUpRight, Target } from "lucide-react";
 import { useApp } from "@/components/AppProvider";
 import { SIDEBAR_TIMER_ID, useTimerRuntime } from "@/components/TimerRuntimeProvider";
 import {
@@ -108,6 +108,8 @@ export function FocusTodayCard({
   return (
     <Link
       href="/estatisticas"
+      title="Ver estatísticas detalhadas e gráficos de foco"
+      aria-label="Ver estatísticas detalhadas e gráficos de foco"
       className={`group block transition ${
         embedded
           ? "px-3.5 py-3 hover:bg-[color-mix(in_srgb,var(--mist)_70%,transparent)]"
@@ -122,7 +124,13 @@ export function FocusTodayCard({
             className="text-[var(--signal)]"
             aria-hidden
           />
-          Foco hoje
+          <span>Foco hoje</span>
+          <ArrowUpRight
+            size={13}
+            strokeWidth={2}
+            className="opacity-40 transition-all duration-200 group-hover:opacity-100 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-[var(--signal)]"
+            aria-hidden
+          />
         </p>
         <p
           className={`font-mono-num font-semibold tracking-tight ${
@@ -183,8 +191,9 @@ export function FocusTodayCard({
           ainda sem foco registrado
         </p>
       ) : !compact ? (
-        <p className="mt-1.5 text-xs font-medium text-[color-mix(in_srgb,var(--signal)_70%,var(--ink))] opacity-0 transition group-hover:opacity-100">
-          Ver estatísticas →
+        <p className="mt-1.5 flex items-center justify-between text-xs font-medium text-[color-mix(in_srgb,var(--signal)_75%,var(--ink))] opacity-75 transition group-hover:opacity-100">
+          <span>Ver gráficos e histórico</span>
+          <span className="text-[11px] transition-transform duration-200 group-hover:translate-x-0.5">→</span>
         </p>
       ) : null}
     </Link>
