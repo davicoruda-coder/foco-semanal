@@ -2,7 +2,6 @@
 
 import {
   CheckCircle2,
-  Sparkles,
   Zap,
 } from "lucide-react";
 import { HelpTutorialSection } from "@/components/ajustes/HelpTutorialSection";
@@ -10,22 +9,6 @@ import { HelpTutorialSection } from "@/components/ajustes/HelpTutorialSection";
 export default function AjudaPage() {
   return (
     <div className="mx-auto max-w-4xl space-y-6 pb-16">
-      {/* Hero Banner Editorial */}
-      <div className="rounded-[var(--radius)] border border-[color-mix(in_srgb,var(--signal)_22%,var(--line))] bg-gradient-to-r from-[color-mix(in_srgb,var(--signal)_8%,var(--surface))] via-[var(--surface)] to-[color-mix(in_srgb,var(--signal)_3%,var(--surface))] p-4 sm:p-5 shadow-[var(--shadow-sm)]">
-        <div className="flex items-start gap-3.5 max-w-3xl">
-          <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[var(--signal-soft)] text-[var(--signal)] mt-0.5">
-            <Sparkles size={18} />
-          </div>
-          <div className="space-y-1">
-            <div className="inline-flex items-center gap-1.5 rounded-full bg-[var(--signal-soft)] px-2.5 py-0.5 text-[11px] font-semibold text-[var(--signal)]">
-              Central de Ajuda & Metodologia
-            </div>
-            <p className="text-xs sm:text-sm text-[color-mix(in_srgb,var(--ink)_75%,transparent)] leading-relaxed">
-              O FocoHub foi desenhado para eliminar a paralisia do &ldquo;o que estudar agora&rdquo; através do ciclo de estudos contínuo, sessões focadas e revisões cirúrgicas.
-            </p>
-          </div>
-        </div>
-      </div>
 
       {/* Guia Rápido & Tutorial Interativo */}
       <HelpTutorialSection />

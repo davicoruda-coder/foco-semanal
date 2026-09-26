@@ -405,7 +405,7 @@ export function UserAccountMenu() {
           className="flex items-center gap-2.5 rounded-lg px-2.5 py-2 font-medium transition hover:bg-[var(--mist)]"
         >
           <CircleHelp size={15} strokeWidth={1.8} className="opacity-70" />
-          <span>Ajuda & Guia de Estudos</span>
+          <span>Guia Rápido & Tutorial</span>
         </Link>
       </div>
 

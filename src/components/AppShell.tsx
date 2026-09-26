@@ -37,7 +37,7 @@ const MOBILE_PRIMARY = [
 /** Mobile: opções dentro do ⋯ */
 const MOBILE_MORE = [
   { href: "/estatisticas", label: "Estatísticas", icon: ChartColumn },
-  { href: "/ajuda", label: "Ajuda & Guia", icon: CircleHelp },
+  { href: "/ajuda", label: "Guia & Tutorial", icon: CircleHelp },
   { href: "/ajustes", label: "Ajustes", icon: Settings },
 ];
 

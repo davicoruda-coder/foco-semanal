@@ -269,7 +269,7 @@ export default function AjustesPage() {
           <SessionBlockSettings />
           <SidebarTimerSettings />
 
-          {/* Central de Ajuda & Metodologia */}
+          {/* Guia Rápido & Tutorial */}
           <div className="surface mt-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 md:p-5 rounded-[var(--radius)] border-[var(--line)]">
             <div className="flex items-center gap-3">
               <div className="grid size-9 shrink-0 place-items-center rounded-xl bg-[var(--signal-soft)] text-[var(--signal)]">
