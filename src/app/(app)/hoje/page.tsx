@@ -23,6 +23,7 @@ import {
   freeRowClass,
   formatSubjectFocusList,
   normalizeRotation,
+  rotationJustStudied,
   buildWeightedCycleQueue,
   nextCycleSubjectId,
   parseProgressFromNotes,
@@ -474,13 +475,16 @@ export default function HojePage() {
                 const free = subjectTreatAsFree(s, day, data.subjects);
                 const libreInCycle = Boolean(s.is_free) && !free;
                 const rot = normalizeRotation(s.rotation);
-                const rotItem = rot ? rot.items[rot.index] : null;
-                const activeProgress = rotItem ? rotItem.progress : s.progress;
                 const displayStatus = exclusiveCycleToday
                   ? (s.exclusive_status ?? "prox")
                   : s.status;
                 const isCurrentSession =
                   flow.sessionActive && s.id === flow.currentSubjectId;
+                const isDone = displayStatus === "ok" && !isCurrentSession;
+                const rotItem = rot
+                  ? (isDone ? rotationJustStudied(rot) : rot.items[rot.index])
+                  : null;
+                const activeProgress = rotItem ? rotItem.progress : s.progress;
                 const statusUi = free
                   ? null
                   : isCurrentSession
@@ -638,13 +642,16 @@ export default function HojePage() {
                     const free = subjectTreatAsFree(s, day, data.subjects);
                     const libreInCycle = Boolean(s.is_free) && !free;
                     const rot = normalizeRotation(s.rotation);
-                    const rotItem = rot ? rot.items[rot.index] : null;
-                    const activeProgress = rotItem ? rotItem.progress : s.progress;
                     const displayStatus = exclusiveCycleToday
                       ? (s.exclusive_status ?? "prox")
                       : s.status;
                     const isCurrentSession =
                       flow.sessionActive && s.id === flow.currentSubjectId;
+                    const isDone = displayStatus === "ok" && !isCurrentSession;
+                    const rotItem = rot
+                      ? (isDone ? rotationJustStudied(rot) : rot.items[rot.index])
+                      : null;
+                    const activeProgress = rotItem ? rotItem.progress : s.progress;
                     const statusUi = free
                       ? null
                       : isCurrentSession
