@@ -22,6 +22,9 @@ import {
   Plus,
   Loader2,
   BookOpen,
+  LayoutGrid,
+  List,
+  RotateCcw,
 } from "lucide-react";
 import { DialogFrame } from "@/components/DialogFrame";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
@@ -47,6 +50,33 @@ export function CadernoList({
   const [disciplinaFiltro, setDisciplinaFiltro] = useState<string>("todas");
   const [causaFiltro, setCausaFiltro] = useState<string>("todas");
   const [resultadoFiltro, setResultadoFiltro] = useState<string>("todas");
+  const [viewMode, setViewMode] = useState<"grid" | "list">(() => {
+    if (typeof window === "undefined") return "grid";
+    return (localStorage.getItem("foco_semanal_caderno_view") as "grid" | "list") || "grid";
+  });
+
+  const handleViewModeChange = (mode: "grid" | "list") => {
+    setViewMode(mode);
+    try {
+      localStorage.setItem("foco_semanal_caderno_view", mode);
+    } catch {}
+  };
+
+  const hasActiveFilters = Boolean(
+    search.trim() ||
+    disciplinaFiltro !== "todas" ||
+    bancaFiltro !== "todas" ||
+    causaFiltro !== "todas" ||
+    resultadoFiltro !== "todas"
+  );
+
+  const handleClearFilters = () => {
+    setSearch("");
+    setDisciplinaFiltro("todas");
+    setBancaFiltro("todas");
+    setCausaFiltro("todas");
+    setResultadoFiltro("todas");
+  };
   const [readingQuestao, setReadingQuestao] = useState<QuestaoCaderno | null>(null);
   const [deletandoId, setDeletandoId] = useState<string | null>(null);
   const [editingQuestao, setEditingQuestao] = useState<QuestaoCaderno | null>(null);
@@ -211,27 +241,87 @@ export function CadernoList({
 
   return (
     <div className="space-y-4">
-      {/* Barra de Busca e Filtros Rápidos */}
-      <div className="space-y-2 rounded-[var(--radius)] border border-[var(--line)] bg-[var(--surface)] p-3">
-        <div className="relative">
-          <Search
-            size={16}
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-[color-mix(in_srgb,var(--ink)_45%,transparent)]"
-          />
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Buscar por código, regra, assunto..."
-            className="w-full rounded-[var(--radius-btn)] border border-[var(--line)] bg-[var(--mist)] py-2 pl-9 pr-3 text-sm text-[var(--ink)] outline-none transition placeholder:text-[color-mix(in_srgb,var(--ink)_40%,transparent)] focus:border-[var(--signal)] focus:bg-[var(--surface)]"
-          />
+      {/* Barra de Busca e Filtros Rápidos Compacta */}
+      <div className="rounded-[var(--radius)] border border-[var(--line)] bg-[var(--surface)] p-2.5 sm:p-3 shadow-xs space-y-2.5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+          {/* Campo de Busca Compacto com largura contida */}
+          <div className="relative flex-1 max-w-full sm:max-w-md">
+            <Search
+              size={15}
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-[color-mix(in_srgb,var(--ink)_45%,transparent)]"
+            />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Buscar por código, regra, assunto..."
+              className="w-full rounded-[var(--radius-btn)] border border-[var(--line)] bg-[var(--mist)] py-1.5 pl-8 pr-8 text-xs sm:text-sm text-[var(--ink)] outline-none transition placeholder:text-[color-mix(in_srgb,var(--ink)_40%,transparent)] focus:border-[var(--signal)] focus:bg-[var(--surface)]"
+            />
+            {search && (
+              <button
+                type="button"
+                onClick={() => setSearch("")}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[color-mix(in_srgb,var(--ink)_40%,transparent)] hover:text-[var(--ink)] p-0.5"
+                title="Limpar busca"
+              >
+                <X size={13} />
+              </button>
+            )}
+          </div>
+
+          {/* Toggle Grade / Lista e Contador de Resultados */}
+          <div className="flex items-center justify-between sm:justify-end gap-2.5">
+            <span className="text-xs text-[color-mix(in_srgb,var(--ink)_55%,transparent)] font-medium">
+              {questoesFiltradas.length === 1
+                ? "1 anotação"
+                : `${questoesFiltradas.length} anotações`}
+            </span>
+
+            {/* Alternador de Visualização: Grade vs Lista */}
+            <div className="flex items-center rounded-lg border border-[var(--line)] bg-[var(--mist)] p-0.5 text-[color-mix(in_srgb,var(--ink)_60%,transparent)]">
+              <button
+                type="button"
+                onClick={() => handleViewModeChange("grid")}
+                title="Visualização em Grade (Fichas)"
+                aria-label="Visualização em Grade"
+                className={`flex items-center gap-1 rounded-md px-2 py-1 text-xs font-semibold transition ${
+                  viewMode === "grid"
+                    ? "bg-[var(--surface)] text-[var(--signal)] shadow-xs"
+                    : "hover:text-[var(--ink)]"
+                }`}
+              >
+                <LayoutGrid size={13} />
+                <span className="hidden md:inline">Grade</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleViewModeChange("list")}
+                title="Visualização em Lista"
+                aria-label="Visualização em Lista"
+                className={`flex items-center gap-1 rounded-md px-2 py-1 text-xs font-semibold transition ${
+                  viewMode === "list"
+                    ? "bg-[var(--surface)] text-[var(--signal)] shadow-xs"
+                    : "hover:text-[var(--ink)]"
+                }`}
+              >
+                <List size={13} />
+                <span className="hidden md:inline">Lista</span>
+              </button>
+            </div>
+          </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+        {/* Filtros em Linha Compacta */}
+        <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-[color-mix(in_srgb,var(--line)_50%,transparent)]">
+          <div className="flex items-center gap-1.5 text-xs text-[color-mix(in_srgb,var(--ink)_50%,transparent)] shrink-0 mr-1">
+            <Filter size={13} />
+            <span className="text-[11px] font-medium hidden sm:inline">Filtros:</span>
+          </div>
+
           <select
             value={disciplinaFiltro}
             onChange={(e) => setDisciplinaFiltro(e.target.value)}
-            className="w-full min-w-0 truncate rounded-[var(--radius-btn)] border border-[var(--line)] bg-[var(--mist)] px-2.5 py-1.5 text-xs text-[var(--ink)] outline-none"
+            className="min-w-0 max-w-[160px] truncate rounded-[var(--radius-btn)] border border-[var(--line)] bg-[var(--mist)] px-2.5 py-1 text-xs text-[var(--ink)] outline-none cursor-pointer hover:border-[var(--signal)] transition"
           >
             <option value="todas">Todas Disciplinas</option>
             {disciplinas.map((d) => (
@@ -244,7 +334,7 @@ export function CadernoList({
           <select
             value={bancaFiltro}
             onChange={(e) => setBancaFiltro(e.target.value)}
-            className="w-full min-w-0 truncate rounded-[var(--radius-btn)] border border-[var(--line)] bg-[var(--mist)] px-2.5 py-1.5 text-xs text-[var(--ink)] outline-none"
+            className="min-w-0 max-w-[140px] truncate rounded-[var(--radius-btn)] border border-[var(--line)] bg-[var(--mist)] px-2.5 py-1 text-xs text-[var(--ink)] outline-none cursor-pointer hover:border-[var(--signal)] transition"
           >
             <option value="todas">Todas Bancas</option>
             {bancas.map((b) => (
@@ -257,7 +347,7 @@ export function CadernoList({
           <select
             value={causaFiltro}
             onChange={(e) => setCausaFiltro(e.target.value)}
-            className="w-full min-w-0 truncate rounded-[var(--radius-btn)] border border-[var(--line)] bg-[var(--mist)] px-2.5 py-1.5 text-xs text-[var(--ink)] outline-none"
+            className="min-w-0 max-w-[150px] truncate rounded-[var(--radius-btn)] border border-[var(--line)] bg-[var(--mist)] px-2.5 py-1 text-xs text-[var(--ink)] outline-none cursor-pointer hover:border-[var(--signal)] transition"
           >
             <option value="todas">Todas Causas</option>
             {(Object.entries(CAUSA_ERRO_LABEL) as [CausaErro, string][]).map(
@@ -272,7 +362,7 @@ export function CadernoList({
           <select
             value={resultadoFiltro}
             onChange={(e) => setResultadoFiltro(e.target.value)}
-            className="w-full min-w-0 truncate rounded-[var(--radius-btn)] border border-[var(--line)] bg-[var(--mist)] px-2.5 py-1.5 text-xs text-[var(--ink)] outline-none"
+            className="min-w-0 max-w-[140px] truncate rounded-[var(--radius-btn)] border border-[var(--line)] bg-[var(--mist)] px-2.5 py-1 text-xs text-[var(--ink)] outline-none cursor-pointer hover:border-[var(--signal)] transition"
           >
             <option value="todas">Todos Resultados</option>
             {(
@@ -283,22 +373,29 @@ export function CadernoList({
               </option>
             ))}
           </select>
+
+          {hasActiveFilters && (
+            <button
+              type="button"
+              onClick={handleClearFilters}
+              className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-medium text-[color-mix(in_srgb,var(--ink)_60%,transparent)] hover:text-rose-600 hover:bg-rose-500/10 transition"
+              title="Limpar todos os filtros"
+            >
+              <RotateCcw size={11} />
+              Limpar
+            </button>
+          )}
         </div>
       </div>
 
-      {/* Contador e Dica de Uso */}
-      <div className="flex flex-wrap items-center justify-between gap-2 px-1 text-xs text-[color-mix(in_srgb,var(--ink)_55%,transparent)]">
-        <span>
-          {questoesFiltradas.length === 1
-            ? "1 anotação encontrada"
-            : `${questoesFiltradas.length} anotações encontradas`}
-        </span>
-        <span className="hidden sm:inline text-[11px] text-[color-mix(in_srgb,var(--ink)_45%,transparent)]">
-          Clique no card para abrir a ficha completa
+      {/* Dica de Uso */}
+      <div className="flex items-center justify-between px-1 text-xs text-[color-mix(in_srgb,var(--ink)_45%,transparent)]">
+        <span className="text-[11px]">
+          Clique em qualquer ficha para abrir o modo de leitura e folhear com as setas ← →
         </span>
       </div>
 
-      {/* Lista de Registros Compactos */}
+      {/* Lista ou Grade de Registros */}
       {questoesLoading ? (
         <div className="py-12 text-center text-sm text-[color-mix(in_srgb,var(--ink)_50%,transparent)]">
           Carregando questões do caderno...
@@ -317,7 +414,13 @@ export function CadernoList({
           </p>
         </div>
       ) : (
-        <div className="space-y-2.5">
+        <div
+          className={
+            viewMode === "grid"
+              ? "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-3.5"
+              : "space-y-2.5 max-w-4xl"
+          }
+        >
           {questoesFiltradas.map((q) => {
             const rawLines = (q.aprendizado_chave || "")
               .split("\n")
@@ -334,24 +437,21 @@ export function CadernoList({
               <div
                 key={q.id}
                 onClick={() => setReadingQuestao(q)}
-                className="group relative cursor-pointer rounded-[var(--radius)] border border-[var(--line)] bg-[var(--surface)] p-3.5 transition-all duration-150 hover:border-[var(--signal)] hover:shadow-xs active:scale-[0.999]"
+                className={`group relative cursor-pointer rounded-[var(--radius)] border border-[var(--line)] bg-[var(--surface)] p-3.5 sm:p-4 transition-all duration-150 hover:border-[var(--signal)] hover:shadow-xs active:scale-[0.999] ${
+                  viewMode === "grid" ? "flex flex-col justify-between" : ""
+                }`}
               >
                 {/* Header do Card com Chips */}
-                <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+                <div className="flex flex-wrap items-start justify-between gap-1.5 text-xs">
                   <div className="flex flex-wrap items-center gap-1.5 min-w-0 max-w-full">
                     {q.banca && (
                       <span className="rounded-md bg-[var(--mist)] px-2 py-0.5 font-semibold text-[var(--ink)] border border-[var(--line)] shrink-0 text-[11px]">
                         {q.banca}
                       </span>
                     )}
-                    <span className="font-semibold text-[var(--signal)] text-[12px]">
+                    <span className="font-semibold text-[var(--signal)] text-[12px] truncate max-w-[140px] sm:max-w-[180px]">
                       {q.disciplina}
                     </span>
-                    {q.assunto && (
-                      <span className="text-[color-mix(in_srgb,var(--ink)_65%,transparent)] font-medium text-[12px] truncate max-w-[200px] sm:max-w-[340px]">
-                        › {q.assunto}
-                      </span>
-                    )}
                     {q.codigo_questao && (
                       <span className="font-mono text-[11px] font-medium text-[color-mix(in_srgb,var(--ink)_50%,transparent)] shrink-0">
                         #{q.codigo_questao}
@@ -372,9 +472,11 @@ export function CadernoList({
                       {STATUS_RESULTADO_LABEL[q.status_resultado]}
                     </span>
 
-                    <span className="rounded-full bg-[var(--mist)] px-2 py-0.5 text-[10px] font-medium text-[color-mix(in_srgb,var(--ink)_65%,transparent)] hidden sm:inline-block">
-                      {CAUSA_ERRO_LABEL[q.causa_erro]}
-                    </span>
+                    {viewMode === "list" && (
+                      <span className="rounded-full bg-[var(--mist)] px-2 py-0.5 text-[10px] font-medium text-[color-mix(in_srgb,var(--ink)_65%,transparent)] hidden sm:inline-block">
+                        {CAUSA_ERRO_LABEL[q.causa_erro]}
+                      </span>
+                    )}
 
                     {cardsCount > 0 ? (
                       <span
@@ -388,20 +490,38 @@ export function CadernoList({
                   </div>
                 </div>
 
+                {q.assunto && (
+                  <p className="mt-1 text-[11px] text-[color-mix(in_srgb,var(--ink)_60%,transparent)] font-medium truncate">
+                    › {q.assunto}
+                  </p>
+                )}
+
                 {/* Conteúdo do Card: Título + Snippet */}
-                <div className="mt-2.5">
-                  <h3 className="text-sm font-semibold text-[var(--ink)] leading-snug group-hover:text-[var(--signal)] transition-colors line-clamp-1">
+                <div className="mt-2.5 flex-1">
+                  <h3
+                    className={`font-semibold text-[var(--ink)] leading-snug group-hover:text-[var(--signal)] transition-colors ${
+                      viewMode === "grid"
+                        ? "text-sm line-clamp-2"
+                        : "text-sm line-clamp-1"
+                    }`}
+                  >
                     {primaryLine}
                   </h3>
                   {secondarySnippet ? (
-                    <p className="mt-1 line-clamp-2 text-xs text-[color-mix(in_srgb,var(--ink)_70%,transparent)] leading-relaxed">
+                    <p
+                      className={`mt-1.5 text-xs text-[color-mix(in_srgb,var(--ink)_70%,transparent)] leading-relaxed ${
+                        viewMode === "grid"
+                          ? "line-clamp-3"
+                          : "line-clamp-2"
+                      }`}
+                    >
                       {secondarySnippet}
                     </p>
                   ) : null}
                 </div>
 
                 {/* Rodapé do Card: Dica de clique + Ações Rápidas */}
-                <div className="mt-3 flex items-center justify-between pt-2 border-t border-[color-mix(in_srgb,var(--line)_50%,transparent)] text-xs text-[color-mix(in_srgb,var(--ink)_50%,transparent)]">
+                <div className="mt-3.5 flex items-center justify-between pt-2.5 border-t border-[color-mix(in_srgb,var(--line)_50%,transparent)] text-xs text-[color-mix(in_srgb,var(--ink)_50%,transparent)]">
                   <span className="inline-flex items-center gap-1.5 font-medium text-[11px] text-[var(--signal)] group-hover:underline">
                     <BookOpen size={12} />
                     Ver ficha completa
