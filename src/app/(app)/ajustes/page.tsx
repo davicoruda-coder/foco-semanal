@@ -55,9 +55,24 @@ const OPTIONS: { value: ThemePref; label: string; icon: typeof Sun }[] = [
 ];
 
 const SETTINGS_TABS = [
-  { id: "estudo", label: "Estudo & Rotina", icon: GraduationCap },
-  { id: "aparencia", label: "Aparência & Som", icon: Palette },
-  { id: "conta", label: "Conta & Segurança", icon: ShieldCheck },
+  {
+    id: "estudo",
+    label: "Estudo & Rotina",
+    desc: "Módulos, blocos e timers",
+    icon: GraduationCap,
+  },
+  {
+    id: "aparencia",
+    label: "Aparência & Som",
+    desc: "Tema e notificações sonoras",
+    icon: Palette,
+  },
+  {
+    id: "conta",
+    label: "Conta & Segurança",
+    desc: "Backup, nuvem e perfil",
+    icon: ShieldCheck,
+  },
 ] as const;
 
 type SettingsTab = (typeof SETTINGS_TABS)[number]["id"];
@@ -182,7 +197,7 @@ export default function AjustesPage() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl">
+    <div className="w-full max-w-7xl mx-auto space-y-4 sm:space-y-5">
       <ConfirmDialog
         open={confirmLogout}
         title="Sair da conta?"
@@ -227,40 +242,105 @@ export default function AjustesPage() {
         }}
       />
 
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="font-display text-xl sm:text-2xl font-semibold tracking-tight text-[var(--ink)]">
-          Ajustes
-        </h1>
-        <Link
-          href="/ajuda"
-          className="inline-flex items-center gap-1.5 rounded-[var(--radius-btn)] border border-[var(--line)] bg-[var(--surface)] px-3 py-1.5 text-xs font-semibold text-[var(--ink)] shadow-[var(--shadow-xs)] transition hover:border-[var(--signal)] hover:text-[var(--signal)] sm:text-sm"
-        >
-          <CircleHelp size={15} />
-          <span>Guia & Tutorial</span>
-        </Link>
-      </div>
+      {/* Grid Principal: Sidebar de Seções (Desktop) + Conteúdo (Direita) */}
+      <div className="grid items-start gap-5 lg:grid-cols-[250px_minmax(0,1fr)] xl:grid-cols-[270px_minmax(0,1fr)]">
+        {/* Sidebar Desktop (Sticky) */}
+        <aside className="hidden lg:sticky lg:top-[4.5rem] lg:block lg:self-start space-y-4">
+          <section className="surface p-4 sm:p-5 shadow-xs space-y-4">
+            <div>
+              <h1 className="font-display text-xl xl:text-2xl font-semibold tracking-tight text-[var(--ink)]">
+                Ajustes
+              </h1>
+              <p className="mt-0.5 text-xs text-[color-mix(in_srgb,var(--ink)_60%,transparent)]">
+                Preferências do FocoHub
+              </p>
+            </div>
 
-      {/* Navegação por Abas Segmentadas */}
-      <div className="mt-5 flex w-full max-w-full items-center gap-1 overflow-x-auto scrollbar-none rounded-xl border border-[var(--line)] bg-[var(--mist)] p-1 sm:w-fit">
-        {SETTINGS_TABS.map(({ id, label, icon: Icon }) => {
-          const active = activeTab === id;
-          return (
-            <button
-              key={id}
-              type="button"
-              onClick={() => handleTabChange(id)}
-              className={`flex flex-1 sm:flex-initial shrink-0 items-center justify-center gap-2 rounded-lg px-3.5 py-2 text-xs sm:text-sm font-semibold transition ${
-                active
-                  ? "bg-[var(--surface)] text-[var(--signal)] shadow-sm"
-                  : "text-[color-mix(in_srgb,var(--ink)_65%,transparent)] hover:text-[var(--ink)]"
-              }`}
-            >
-              <Icon size={16} strokeWidth={active ? 2.25 : 1.75} />
-              <span>{label}</span>
-            </button>
-          );
-        })}
-      </div>
+            <nav className="space-y-1.5 pt-1">
+              {SETTINGS_TABS.map(({ id, label, icon: Icon, desc }) => {
+                const active = activeTab === id;
+                return (
+                  <button
+                    key={id}
+                    type="button"
+                    onClick={() => handleTabChange(id)}
+                    className={`w-full flex items-start gap-3 rounded-xl p-3 text-left transition ${
+                      active
+                        ? "bg-[color-mix(in_srgb,var(--signal)_10%,var(--surface))] text-[var(--signal)] border border-[color-mix(in_srgb,var(--signal)_35%,var(--line))] shadow-xs"
+                        : "text-[color-mix(in_srgb,var(--ink)_70%,transparent)] hover:bg-[var(--mist)] hover:text-[var(--ink)]"
+                    }`}
+                  >
+                    <Icon
+                      size={18}
+                      strokeWidth={active ? 2.25 : 1.75}
+                      className={`mt-0.5 shrink-0 ${active ? "text-[var(--signal)]" : "opacity-70"}`}
+                    />
+                    <div className="min-w-0 flex-1">
+                      <p className={`text-sm font-semibold leading-tight ${active ? "text-[var(--signal)]" : "text-[var(--ink)]"}`}>
+                        {label}
+                      </p>
+                      {desc && (
+                        <p className="mt-0.5 text-xs opacity-60 leading-tight">
+                          {desc}
+                        </p>
+                      )}
+                    </div>
+                  </button>
+                );
+              })}
+            </nav>
+
+            <div className="pt-3 border-t border-[var(--line)]">
+              <Link
+                href="/ajuda"
+                className="flex items-center gap-2 rounded-lg px-2.5 py-2 text-xs font-semibold text-[color-mix(in_srgb,var(--ink)_75%,transparent)] transition hover:bg-[var(--mist)] hover:text-[var(--signal)]"
+              >
+                <CircleHelp size={15} />
+                <span>Guia Rápido & Tutorial</span>
+              </Link>
+            </div>
+          </section>
+        </aside>
+
+        {/* Coluna Principal de Conteúdo */}
+        <div className="min-w-0 space-y-4">
+          {/* Header e Abas Mobile / Tablet (< lg) */}
+          <div className="lg:hidden space-y-3">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <h1 className="font-display text-xl sm:text-2xl font-semibold tracking-tight text-[var(--ink)]">
+                Ajustes
+              </h1>
+              <Link
+                href="/ajuda"
+                className="inline-flex items-center gap-1.5 rounded-[var(--radius-btn)] border border-[var(--line)] bg-[var(--surface)] px-3 py-1.5 text-xs font-semibold text-[var(--ink)] shadow-[var(--shadow-xs)] transition hover:border-[var(--signal)] hover:text-[var(--signal)] sm:text-sm"
+              >
+                <CircleHelp size={15} />
+                <span>Guia & Tutorial</span>
+              </Link>
+            </div>
+
+            {/* Abas Horizontais no Mobile */}
+            <div className="flex w-full max-w-full items-center gap-1 overflow-x-auto scrollbar-none rounded-xl border border-[var(--line)] bg-[var(--mist)] p-1">
+              {SETTINGS_TABS.map(({ id, label, icon: Icon }) => {
+                const active = activeTab === id;
+                return (
+                  <button
+                    key={id}
+                    type="button"
+                    onClick={() => handleTabChange(id)}
+                    className={`flex flex-1 shrink-0 items-center justify-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold transition ${
+                      active
+                        ? "bg-[var(--surface)] text-[var(--signal)] shadow-sm"
+                        : "text-[color-mix(in_srgb,var(--ink)_65%,transparent)] hover:text-[var(--ink)]"
+                    }`}
+                  >
+                    <Icon size={16} strokeWidth={active ? 2.25 : 1.75} />
+                    <span className="whitespace-nowrap">{label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
 
       {/* ABA 1: ESTUDO & ROTINA */}
       {activeTab === "estudo" && (
@@ -567,6 +647,8 @@ export default function AjustesPage() {
           <AIAccessSettings />
         </div>
       )}
+        </div>
+      </div>
     </div>
   );
 }
