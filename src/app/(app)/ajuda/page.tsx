@@ -4,7 +4,6 @@ import Link from "next/link";
 import {
   CheckCircle2,
   ChevronRight,
-  Settings,
   Sparkles,
   Zap,
 } from "lucide-react";
@@ -33,22 +32,13 @@ export default function AjudaPage() {
   return (
     <div className="w-full max-w-7xl mx-auto space-y-4 sm:space-y-5">
       {/* Cabeçalho da página fora dos blocos */}
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="font-display text-xl sm:text-2xl font-semibold tracking-tight text-[var(--ink)]">
-            Guia Rápido & Tutorial
-          </h1>
-          <p className="mt-0.5 text-xs text-[color-mix(in_srgb,var(--ink)_65%,transparent)] sm:text-sm">
-            Entenda a metodologia do ciclo de estudos e o fluxo prático de cada ferramenta.
-          </p>
-        </div>
-        <Link
-          href="/ajustes"
-          className="inline-flex items-center gap-1.5 self-start sm:self-auto rounded-[var(--radius-btn)] border border-[var(--line)] bg-[var(--surface)] px-3 py-1.5 text-xs font-semibold text-[var(--ink)] shadow-xs transition hover:border-[var(--signal)] hover:text-[var(--signal)]"
-        >
-          <Settings size={15} />
-          <span>Configurar em Ajustes</span>
-        </Link>
+      <div>
+        <h1 className="font-display text-xl sm:text-2xl font-semibold tracking-tight text-[var(--ink)]">
+          Guia Rápido & Tutorial
+        </h1>
+        <p className="mt-0.5 text-xs text-[color-mix(in_srgb,var(--ink)_65%,transparent)] sm:text-sm">
+          Entenda a metodologia do ciclo de estudos e o fluxo prático de cada ferramenta.
+        </p>
       </div>
 
       {/* Grid Principal do Guia: Tutorial na Esquerda + Dicas de Ouro e Atalhos no Aside */}
