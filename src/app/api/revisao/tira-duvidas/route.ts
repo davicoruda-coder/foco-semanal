@@ -32,6 +32,7 @@ Responda APENAS com JSON válido no seguinte formato:
   "pegadinha": "Onde está a pegadinha ou armadilha mais comum sobre este tema. Se não houver, explique o erro mais frequente dos alunos.",
   "passo_a_passo": ["Passo 1: ...", "Passo 2: ...", "Passo 3: ..."],
   "conceito_chave": "O conceito central envolvido em uma frase curta.",
+  "disciplina_sugerida": "Nome da matéria ou disciplina principal identificada na questão (ex.: Direito Constitucional, Português, Raciocínio Lógico, Informática, etc.)",
   "flashcard_sugerido": {
     "frente": "Pergunta objetiva para memorização",
     "verso": "Resposta concisa e correta"
@@ -52,6 +53,7 @@ interface TiraDuvidasResponse {
   pegadinha: string;
   passo_a_passo: string[];
   conceito_chave: string;
+  disciplina_sugerida?: string;
   flashcard_sugerido?: { frente: string; verso: string };
 }
 
@@ -86,6 +88,10 @@ function parseAIResponse(raw: string): TiraDuvidasResponse | null {
           typeof parsed.conceito_chave === "string"
             ? parsed.conceito_chave.trim()
             : "",
+        disciplina_sugerida:
+          typeof parsed.disciplina_sugerida === "string" && parsed.disciplina_sugerida.trim()
+            ? parsed.disciplina_sugerida.trim()
+            : undefined,
         flashcard_sugerido:
           parsed.flashcard_sugerido &&
           typeof parsed.flashcard_sugerido.frente === "string" &&

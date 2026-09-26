@@ -4,6 +4,8 @@ import { useState, useCallback, useMemo, useEffect } from "react";
 import Link from "next/link";
 import {
   AlertCircle,
+  BookMarked,
+  BookmarkPlus,
   CheckCircle,
   ChevronDown,
   ChevronUp,
@@ -11,6 +13,7 @@ import {
   Lightbulb,
   Loader2,
   MessageCircleQuestion,
+  Plus,
   Sparkles,
   Target,
   TriangleAlert,
@@ -116,6 +119,7 @@ interface TiraDuvidasResponse {
   pegadinha: string;
   passo_a_passo: string[];
   conceito_chave: string;
+  disciplina_sugerida?: string;
   flashcard_sugerido?: { frente: string; verso: string };
 }
 
@@ -125,19 +129,28 @@ export function TiraDuvidas() {
     aiGenerationsToday,
     aiConfig,
     addFlashcardManual,
+    addQuestao,
+    addMateria,
     reloadFlashcards,
+    reloadQuestoes,
+    reloadMaterias,
     reloadAIConfig,
   } = useRevisao();
 
   /* State */
   const [pergunta, setPergunta] = useState("");
   const [imagem, setImagem] = useState("");
-  const [disciplina, setDisciplina] = useState("");
-  const [dropdownOpen, setDropdownOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [resposta, setResposta] = useState<TiraDuvidasResponse | null>(null);
   const [feedback, setFeedback] = useState<{ ok: boolean; msg: string } | null>(null);
+
+  /* Salvar Flashcard & Caderno na tela de resposta */
+  const [saveDisciplina, setSaveDisciplina] = useState("");
+  const [saveDropdownOpen, setSaveDropdownOpen] = useState(false);
   const [flashcardSaved, setFlashcardSaved] = useState(false);
+  const [savingFlashcard, setSavingFlashcard] = useState(false);
+  const [cadernoSaved, setCadernoSaved] = useState(false);
+  const [savingCaderno, setSavingCaderno] = useState(false);
 
   /* Derived */
   const isMaster = Boolean(aiConfig?.isMaster);
@@ -153,12 +166,12 @@ export function TiraDuvidas() {
     (textLength >= MIN_TEXT_LENGTH || imagem.length > 0) &&
     textLength <= MAX_TEXT_LENGTH;
 
-  /* Filtered matérias for dropdown */
-  const filteredMaterias = useMemo(() => {
-    const q = disciplina.trim().toLowerCase();
+  /* Filtered matérias for save dropdown */
+  const filteredSaveMaterias = useMemo(() => {
+    const q = saveDisciplina.trim().toLowerCase();
     if (!q) return materias;
     return materias.filter((m) => m.nome.toLowerCase().includes(q));
-  }, [materias, disciplina]);
+  }, [materias, saveDisciplina]);
 
   /* Ask the AI */
   const handleAsk = useCallback(async () => {
@@ -166,6 +179,7 @@ export function TiraDuvidas() {
     setFeedback(null);
     setResposta(null);
     setFlashcardSaved(false);
+    setCadernoSaved(false);
     setLoading(true);
 
     try {
@@ -175,7 +189,6 @@ export function TiraDuvidas() {
         body: JSON.stringify({
           pergunta: pergunta.trim(),
           imagem: imagem || undefined,
-          disciplina: disciplina.trim() || undefined,
         }),
       });
 
@@ -188,6 +201,16 @@ export function TiraDuvidas() {
 
       if (data.resposta) {
         setResposta(data.resposta);
+        // Preenche sugestão de disciplina para salvar
+        const sug = (data.resposta as TiraDuvidasResponse).disciplina_sugerida?.trim();
+        if (sug) {
+          const match = materias.find((m) => m.nome.toLowerCase() === sug.toLowerCase());
+          setSaveDisciplina(match ? match.nome : sug);
+        } else if (materias.length > 0) {
+          setSaveDisciplina(materias[0].nome);
+        } else {
+          setSaveDisciplina("Geral");
+        }
         setFeedback({
           ok: true,
           msg: "✅ Resposta recebida! Confira a explicação abaixo.",
@@ -201,31 +224,78 @@ export function TiraDuvidas() {
     } finally {
       setLoading(false);
     }
-  }, [isValid, loading, canGenerate, pergunta, imagem, disciplina, reloadAIConfig]);
+  }, [isValid, loading, canGenerate, pergunta, imagem, materias, reloadAIConfig]);
 
   /* Save flashcard */
   const handleSaveFlashcard = useCallback(async () => {
-    if (!resposta?.flashcard_sugerido || flashcardSaved) return;
-    const disc = disciplina.trim() || "Geral";
-    const card = await addFlashcardManual(
-      disc,
-      resposta.flashcard_sugerido.frente,
-      resposta.flashcard_sugerido.verso,
-    );
-    if (card) {
-      setFlashcardSaved(true);
-      await reloadFlashcards();
+    if (!resposta?.flashcard_sugerido || flashcardSaved || savingFlashcard) return;
+    setSavingFlashcard(true);
+    try {
+      const disc = saveDisciplina.trim() || "Geral";
+      const exists = materias.some((m) => m.nome.toLowerCase() === disc.toLowerCase());
+      if (!exists && disc !== "Geral") {
+        await addMateria(disc);
+        await reloadMaterias();
+      }
+
+      const card = await addFlashcardManual(
+        disc,
+        resposta.flashcard_sugerido.frente,
+        resposta.flashcard_sugerido.verso,
+      );
+      if (card) {
+        setFlashcardSaved(true);
+        await reloadFlashcards();
+      }
+    } finally {
+      setSavingFlashcard(false);
     }
-  }, [resposta, flashcardSaved, disciplina, addFlashcardManual, reloadFlashcards]);
+  }, [resposta, flashcardSaved, savingFlashcard, saveDisciplina, materias, addMateria, reloadMaterias, addFlashcardManual, reloadFlashcards]);
+
+  /* Save caderno de erros */
+  const handleSaveCaderno = useCallback(async () => {
+    if (cadernoSaved || savingCaderno) return;
+    setSavingCaderno(true);
+    try {
+      const disc = saveDisciplina.trim() || "Geral";
+      const exists = materias.some((m) => m.nome.toLowerCase() === disc.toLowerCase());
+      if (!exists && disc !== "Geral") {
+        await addMateria(disc);
+        await reloadMaterias();
+      }
+
+      const ok = await addQuestao({
+        enunciado_texto: pergunta.trim() || "Questão analisada pelo Tira-Dúvidas com IA",
+        banca: "IA / Dúvida",
+        disciplina: disc,
+        assunto: resposta?.conceito_chave || "Dúvida de Fixação",
+        status_resultado: resposta?.pegadinha ? "pegadinha" : "erro",
+        causa_erro: "teoria",
+        aprendizado_chave: resposta?.pegadinha
+          ? `Pegadinha/Regra: ${resposta.pegadinha}`
+          : resposta?.explicacao
+            ? resposta.explicacao.slice(0, 350)
+            : "Revisão e fixação conceitual",
+      });
+
+      if (ok) {
+        setCadernoSaved(true);
+        await reloadQuestoes();
+      }
+    } finally {
+      setSavingCaderno(false);
+    }
+  }, [cadernoSaved, savingCaderno, saveDisciplina, materias, addMateria, reloadMaterias, addQuestao, pergunta, resposta, reloadQuestoes]);
 
   /* Reset */
   const handleReset = useCallback(() => {
     setPergunta("");
     setImagem("");
-    setDisciplina("");
     setResposta(null);
     setFeedback(null);
     setFlashcardSaved(false);
+    setCadernoSaved(false);
+    setSaveDisciplina("");
   }, []);
 
   /* Global paste listener for images */
@@ -349,54 +419,6 @@ export function TiraDuvidas() {
       {/* ---- Input Mode ---- */}
       {!resposta && (
         <div className="surface rounded-[var(--radius)] border border-[var(--line)] p-4 sm:p-5 shadow-[var(--shadow-sm)] space-y-4">
-          {/* Matéria (opcional) */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[var(--line)]/60 pb-3">
-            <div>
-              <label className="text-xs font-semibold text-[var(--ink)]">
-                Matéria ou Disciplina
-              </label>
-              <p className="text-[11px] text-[color-mix(in_srgb,var(--ink)_50%,transparent)]">
-                Opcional — direciona a linguagem técnica da explicação
-              </p>
-            </div>
-            <div className="relative w-full sm:w-72">
-              <input
-                type="text"
-                value={disciplina}
-                onChange={(e) => {
-                  setDisciplina(e.target.value);
-                  setDropdownOpen(true);
-                }}
-                onFocus={() => setDropdownOpen(true)}
-                onBlur={() => setTimeout(() => setDropdownOpen(false), 200)}
-                placeholder="Ex: Direito Constitucional, RLM…"
-                className="w-full rounded-[var(--radius-btn)] border border-[var(--line)] bg-[var(--surface)] px-3 py-1.5 text-xs sm:text-sm text-[var(--ink)] outline-none transition placeholder:text-[color-mix(in_srgb,var(--ink)_35%,transparent)] focus:border-[var(--signal)] focus:ring-2 focus:ring-[var(--signal-soft)]"
-              />
-              {dropdownOpen && filteredMaterias.length > 0 && (
-                <div className="absolute left-0 right-0 top-full z-50 mt-1 max-h-44 overflow-y-auto rounded-[var(--radius-tag)] border border-[var(--line)] bg-[var(--surface)] py-1 shadow-lg">
-                  {filteredMaterias.map((m) => (
-                    <button
-                      key={m.id}
-                      type="button"
-                      onMouseDown={(e) => {
-                        e.preventDefault();
-                        setDisciplina(m.nome);
-                        setDropdownOpen(false);
-                      }}
-                      className={`flex w-full items-center px-3 py-2 text-left text-xs transition ${
-                        m.nome.toLowerCase() === disciplina.trim().toLowerCase()
-                          ? "bg-[color-mix(in_srgb,var(--signal)_12%,var(--surface))] font-medium text-[var(--signal)]"
-                          : "text-[var(--ink)] hover:bg-[var(--mist)]"
-                      }`}
-                    >
-                      {m.nome}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-
           {/* Textarea */}
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
@@ -547,49 +569,161 @@ export function TiraDuvidas() {
             </ResponseSection>
           )}
 
-          {/* Flashcard sugerido */}
-          {resposta.flashcard_sugerido && (
-            <div className="rounded-xl border border-[var(--signal)]/25 bg-[color-mix(in_srgb,var(--signal)_5%,var(--surface))] p-3.5">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--signal)] flex items-center gap-1">
-                  <Sparkles size={11} />
-                  Flashcard Sugerido
-                </span>
+          {/* Card de Ação: Salvar e Fixar */}
+          <div className="rounded-xl border border-[color-mix(in_srgb,var(--signal)_25%,var(--line))] bg-[color-mix(in_srgb,var(--signal)_4%,var(--surface))] p-4 sm:p-5 space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[var(--line)]/60 pb-3">
+              <div>
+                <h4 className="text-sm font-bold text-[var(--ink)] flex items-center gap-1.5">
+                  <BookmarkPlus size={16} className="text-[var(--signal)]" />
+                  Salvar nos seus estudos
+                </h4>
+                <p className="text-[11px] text-[color-mix(in_srgb,var(--ink)_60%,transparent)]">
+                  Escolha a matéria para salvar como Flashcard ou guardar no Caderno de Erros
+                </p>
+              </div>
+
+              {/* Seletor de Matéria com busca e opção de nova matéria */}
+              <div className="relative w-full sm:w-64">
+                <label className="block text-[10px] font-semibold uppercase tracking-wider text-[color-mix(in_srgb,var(--ink)_50%,transparent)] mb-1">
+                  Matéria de Destino
+                </label>
+                <input
+                  type="text"
+                  value={saveDisciplina}
+                  onChange={(e) => {
+                    setSaveDisciplina(e.target.value);
+                    setSaveDropdownOpen(true);
+                  }}
+                  onFocus={() => setSaveDropdownOpen(true)}
+                  onBlur={() => setTimeout(() => setSaveDropdownOpen(false), 200)}
+                  placeholder="Selecione ou digite nova…"
+                  className="w-full rounded-[var(--radius-btn)] border border-[var(--line)] bg-[var(--surface)] px-3 py-1.5 text-xs text-[var(--ink)] outline-none transition focus:border-[var(--signal)] focus:ring-1 focus:ring-[var(--signal)] placeholder:text-[color-mix(in_srgb,var(--ink)_35%,transparent)]"
+                />
+                {saveDropdownOpen && (
+                  <div className="absolute left-0 right-0 top-full z-50 mt-1 max-h-40 overflow-y-auto rounded-[var(--radius-tag)] border border-[var(--line)] bg-[var(--surface)] py-1 shadow-lg text-xs">
+                    {filteredSaveMaterias.map((m) => (
+                      <button
+                        key={m.id}
+                        type="button"
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          setSaveDisciplina(m.nome);
+                          setSaveDropdownOpen(false);
+                        }}
+                        className={`flex w-full items-center px-3 py-1.5 text-left transition ${
+                          m.nome.toLowerCase() === saveDisciplina.trim().toLowerCase()
+                            ? "bg-[color-mix(in_srgb,var(--signal)_12%,var(--surface))] font-semibold text-[var(--signal)]"
+                            : "text-[var(--ink)] hover:bg-[var(--mist)]"
+                        }`}
+                      >
+                        {m.nome}
+                      </button>
+                    ))}
+                    {saveDisciplina.trim() &&
+                      !materias.some(
+                        (m) => m.nome.toLowerCase() === saveDisciplina.trim().toLowerCase()
+                      ) && (
+                        <div className="border-t border-[var(--line)]/50 p-1">
+                          <button
+                            type="button"
+                            onMouseDown={(e) => {
+                              e.preventDefault();
+                              setSaveDropdownOpen(false);
+                            }}
+                            className="flex w-full items-center gap-1.5 rounded px-2.5 py-1.5 text-left text-xs font-semibold text-[var(--signal)] hover:bg-[var(--signal-soft)]"
+                          >
+                            <Plus size={13} />
+                            Criar matéria &quot;{saveDisciplina.trim()}&quot;
+                          </button>
+                        </div>
+                      )}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Prévia do Flashcard Sugerido */}
+            {resposta.flashcard_sugerido && (
+              <div className="rounded-lg border border-[var(--line)]/60 bg-[var(--surface)] p-3 space-y-2">
+                <div className="flex items-center justify-between text-[11px] font-semibold text-[var(--signal)]">
+                  <span className="flex items-center gap-1">
+                    <Sparkles size={12} />
+                    Flashcard Sugerido
+                  </span>
+                  <span className="text-[10px] text-[color-mix(in_srgb,var(--ink)_50%,transparent)] font-normal">
+                    Deck: {saveDisciplina.trim() || "Geral"}
+                  </span>
+                </div>
+                <div className="text-xs font-semibold text-[var(--ink)] leading-relaxed break-words">
+                  {resposta.flashcard_sugerido.frente}
+                </div>
+                <div className="border-t border-[var(--line)]/50 pt-2 text-[11px] text-[color-mix(in_srgb,var(--ink)_75%,transparent)] leading-relaxed break-words">
+                  {resposta.flashcard_sugerido.verso}
+                </div>
+              </div>
+            )}
+
+            {/* Botões de Ação para Salvar */}
+            <div className="flex flex-wrap items-center gap-2 pt-1">
+              {resposta.flashcard_sugerido && (
                 <button
                   type="button"
                   onClick={handleSaveFlashcard}
-                  disabled={flashcardSaved}
-                  className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-semibold transition active:scale-95 ${
+                  disabled={flashcardSaved || savingFlashcard}
+                  className={`inline-flex items-center gap-1.5 rounded-[var(--radius-btn)] px-3.5 py-2 text-xs font-semibold transition active:scale-95 ${
                     flashcardSaved
-                      ? "bg-[color-mix(in_srgb,var(--ok)_15%,var(--surface))] text-[var(--ok)] cursor-default"
-                      : "bg-[var(--signal)] text-white hover:brightness-110 shadow-sm"
+                      ? "bg-[color-mix(in_srgb,var(--ok)_15%,var(--surface))] text-[var(--ok)] border border-[var(--ok)]/30 cursor-default"
+                      : "bg-[var(--signal)] text-white hover:brightness-110 shadow-xs"
                   }`}
                 >
                   {flashcardSaved ? (
                     <>
-                      <CheckCircle size={12} />
-                      Salvo no Deck!
+                      <CheckCircle size={14} />
+                      Flashcard Salvo no Deck!
+                    </>
+                  ) : savingFlashcard ? (
+                    <>
+                      <Loader2 size={14} className="animate-spin" />
+                      Salvando...
                     </>
                   ) : (
                     <>
-                      <Zap size={12} />
+                      <Zap size={14} />
                       Criar Flashcard
                     </>
                   )}
                 </button>
-              </div>
-              <div className="rounded-lg border border-[var(--line)]/50 bg-[var(--surface)] p-3 space-y-2">
-                <p className="text-xs font-semibold text-[var(--ink)] leading-relaxed break-words [overflow-wrap:anywhere]">
-                  {resposta.flashcard_sugerido.frente}
-                </p>
-                <div className="border-t border-[var(--line)]/50 pt-2">
-                  <p className="text-[11px] text-[color-mix(in_srgb,var(--ink)_70%,transparent)] leading-relaxed break-words [overflow-wrap:anywhere]">
-                    {resposta.flashcard_sugerido.verso}
-                  </p>
-                </div>
-              </div>
+              )}
+
+              <button
+                type="button"
+                onClick={handleSaveCaderno}
+                disabled={cadernoSaved || savingCaderno}
+                className={`inline-flex items-center gap-1.5 rounded-[var(--radius-btn)] border px-3.5 py-2 text-xs font-semibold transition active:scale-95 ${
+                  cadernoSaved
+                    ? "bg-[color-mix(in_srgb,var(--ok)_15%,var(--surface))] text-[var(--ok)] border-[var(--ok)]/30 cursor-default"
+                    : "border-[var(--line)] bg-[var(--surface)] text-[var(--ink)] hover:border-[var(--signal)] hover:text-[var(--signal)] shadow-xs"
+                }`}
+              >
+                {cadernoSaved ? (
+                  <>
+                    <CheckCircle size={14} />
+                    Salvo no Caderno de Erros!
+                  </>
+                ) : savingCaderno ? (
+                  <>
+                    <Loader2 size={14} className="animate-spin" />
+                    Salvando...
+                  </>
+                ) : (
+                  <>
+                    <BookMarked size={14} />
+                    Salvar no Caderno de Erros
+                  </>
+                )}
+              </button>
             </div>
-          )}
+          </div>
 
           {/* Ações */}
           <div className="flex items-center justify-between gap-3 pt-2">
