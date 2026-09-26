@@ -92,26 +92,31 @@ export function ImagePasteArea({ value, onChange, disabled }: ImagePasteAreaProp
 
   if (value) {
     return (
-      <div className="relative rounded-[var(--radius-btn)] border border-[var(--line)] bg-[var(--surface-soft,var(--mist))] p-2">
-        <div className="flex items-start gap-2">
+      <div className="relative rounded-[var(--radius-btn)] border border-[color-mix(in_srgb,var(--signal)_30%,var(--line))] bg-[color-mix(in_srgb,var(--signal)_6%,var(--surface))] p-2.5">
+        <div className="flex items-center gap-3">
           <img
             src={value}
             alt="Print colado"
-            className="max-h-48 max-w-full rounded-lg border border-[var(--line)] object-contain"
+            className="max-h-20 max-w-[140px] rounded-lg border border-[var(--line)] object-contain bg-white dark:bg-black/30"
           />
+          <div className="flex-1 min-w-0">
+            <span className="text-xs font-semibold text-[var(--ink)] flex items-center gap-1.5">
+              <ImagePlus size={14} className="text-[var(--signal)]" /> Print anexado
+            </span>
+            <p className="mt-0.5 text-[11px] text-[color-mix(in_srgb,var(--ink)_55%,transparent)] leading-relaxed">
+              A imagem será enviada e analisada pela IA junto com o seu texto.
+            </p>
+          </div>
           <button
             type="button"
             onClick={() => onChange("")}
             disabled={disabled}
-            className="shrink-0 grid size-7 place-items-center rounded-lg border border-[var(--line)] bg-[var(--surface)] text-[var(--ink-soft,color-mix(in_srgb,var(--ink)_50%,transparent))] transition hover:bg-[var(--warn-soft)] hover:text-[var(--warn)] hover:border-[var(--warn)]/30 disabled:opacity-40"
-            title="Remover imagem"
+            className="shrink-0 flex items-center gap-1 rounded-[var(--radius-btn)] border border-[var(--line)] bg-[var(--surface)] px-2.5 py-1.5 text-xs font-semibold text-[var(--warn)] transition hover:bg-[var(--warn-soft)] hover:border-[var(--warn)]/30 disabled:opacity-40"
+            title="Remover print"
           >
-            <X size={14} />
+            <X size={13} /> Remover
           </button>
         </div>
-        <p className="mt-1.5 text-[10px] text-[color-mix(in_srgb,var(--ink)_40%,transparent)]">
-          Print anexado. Você pode adicionar texto acima para complementar.
-        </p>
       </div>
     );
   }
@@ -128,24 +133,24 @@ export function ImagePasteArea({ value, onChange, disabled }: ImagePasteAreaProp
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") handleClick();
       }}
-      className={`group cursor-pointer rounded-[var(--radius-btn)] border-2 border-dashed transition-all duration-200 ${
+      className={`group cursor-pointer rounded-[var(--radius-btn)] border border-dashed transition-all duration-200 ${
         dragging
           ? "border-[var(--signal)] bg-[var(--signal-soft)] scale-[1.01]"
-          : "border-[var(--line)] bg-[color-mix(in_srgb,var(--ink)_2%,var(--surface))] hover:border-[var(--signal)]/50 hover:bg-[var(--signal-soft)]/30"
-      } ${disabled ? "opacity-40 pointer-events-none" : ""} px-4 py-4 text-center`}
+          : "border-[var(--line)] bg-[color-mix(in_srgb,var(--ink)_2%,var(--surface))] hover:border-[var(--signal)]/50 hover:bg-[var(--signal-soft)]/20"
+      } ${disabled ? "opacity-40 pointer-events-none" : ""} px-4 py-2.5 text-center`}
     >
-      <div className="flex flex-col items-center gap-1.5">
-        <div className="flex items-center gap-2 text-[color-mix(in_srgb,var(--ink)_45%,transparent)] group-hover:text-[var(--signal)] transition-colors">
-          <ImagePlus size={18} />
-          <Clipboard size={14} />
+      <div className="flex flex-wrap items-center justify-center gap-2 text-xs">
+        <div className="flex items-center gap-1.5 text-[var(--signal)] font-medium">
+          <ImagePlus size={16} />
+          <span>Anexar Print ou Imagem</span>
         </div>
-        <p className="text-xs font-medium text-[color-mix(in_srgb,var(--ink)_55%,transparent)] group-hover:text-[var(--ink)] transition-colors">
-          <span className="font-semibold text-[var(--signal)]">Ctrl + V</span>{" "}
-          para colar print • ou clique para selecionar
-        </p>
-        <p className="text-[10px] text-[color-mix(in_srgb,var(--ink)_35%,transparent)]">
-          PNG, JPG ou WEBP até 4MB
-        </p>
+        <span className="text-[color-mix(in_srgb,var(--ink)_40%,transparent)]">•</span>
+        <span className="text-[color-mix(in_srgb,var(--ink)_65%,transparent)]">
+          Pressione <strong className="font-semibold text-[var(--ink)]">Ctrl + V</strong> para colar direto ou clique para buscar
+        </span>
+        <span className="text-[10px] text-[color-mix(in_srgb,var(--ink)_40%,transparent)]">
+          (PNG, JPG até 4MB)
+        </span>
       </div>
       <input
         ref={inputRef}

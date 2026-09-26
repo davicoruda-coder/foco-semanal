@@ -4,7 +4,6 @@ import { useState, useCallback, useMemo, useEffect } from "react";
 import Link from "next/link";
 import {
   AlertCircle,
-  Bot,
   CheckCircle,
   ChevronDown,
   ChevronUp,
@@ -267,19 +266,49 @@ export function TiraDuvidas() {
   /* ---------------------------------------------------------------- */
 
   return (
-    <div className="space-y-5">
-      {/* Header */}
-      <div className="flex items-center gap-2.5">
-        <div className="grid size-9 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-[color-mix(in_srgb,var(--signal)_20%,var(--surface))] to-[color-mix(in_srgb,#f59e0b_15%,var(--surface))] text-[var(--signal)]">
-          <MessageCircleQuestion size={18} />
+    <div className="mx-auto max-w-4xl space-y-4">
+      {/* Header Unificado & Status de IA */}
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-[var(--radius)] border border-[color-mix(in_srgb,var(--signal)_28%,var(--line))] bg-gradient-to-r from-[color-mix(in_srgb,var(--signal)_12%,var(--surface))] via-[var(--surface)] to-[color-mix(in_srgb,var(--signal)_5%,var(--surface))] p-4 sm:p-5 shadow-[var(--shadow-sm)]">
+        <div className="flex items-center gap-3.5 min-w-0">
+          <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-[var(--signal)] text-white shadow-sm">
+            <MessageCircleQuestion size={22} />
+          </div>
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <h3 className="font-display text-base font-bold text-[var(--ink)] sm:text-lg">
+                Tira-Dúvidas com IA
+              </h3>
+              <span className="inline-flex items-center gap-1 rounded-full bg-[var(--signal-soft)] px-2.5 py-0.5 text-[11px] font-semibold text-[var(--signal)]">
+                Didática & Resolução
+              </span>
+            </div>
+            <p className="mt-0.5 text-xs text-[color-mix(in_srgb,var(--ink)_65%,transparent)]">
+              Análise didática de questões de prova, pegadinhas e teoria
+            </p>
+          </div>
         </div>
-        <div>
-          <h3 className="font-display font-semibold text-base text-[var(--ink)]">
-            Tira-Dúvidas com IA
-          </h3>
-          <p className="text-[11px] text-[color-mix(in_srgb,var(--ink)_50%,transparent)]">
-            Cole texto ou print de uma questão e a IA explica com didática
-          </p>
+
+        {/* Badges de Cota / Limite */}
+        <div className="flex items-center gap-2 shrink-0">
+          {isUnlimited ? (
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-[color-mix(in_srgb,var(--signal)_25%,transparent)] bg-[color-mix(in_srgb,var(--signal)_12%,var(--surface))] px-3 py-1 text-xs font-semibold text-[var(--signal)]">
+              <Sparkles size={12} />
+              {isMaster ? "Acesso Master · Ilimitado" : "Uso liberado · Ilimitado"}
+            </span>
+          ) : (
+            <span
+              className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold ${
+                canGenerate
+                  ? "border-[color-mix(in_srgb,var(--signal)_25%,transparent)] bg-[color-mix(in_srgb,var(--signal)_12%,var(--surface))] text-[var(--signal)]"
+                  : "border-[color-mix(in_srgb,var(--warn)_25%,transparent)] bg-[color-mix(in_srgb,var(--warn)_12%,var(--surface))] text-[var(--warn)]"
+              }`}
+            >
+              <Sparkles size={12} />
+              {canGenerate
+                ? `${remaining} ${remaining === 1 ? "geração restante" : "gerações restantes"} hoje`
+                : "Limite diário atingido"}
+            </span>
+          )}
         </div>
       </div>
 
@@ -309,39 +338,6 @@ export function TiraDuvidas() {
         </div>
       )}
 
-      {/* Badges de Limite e Modelo */}
-      <div className="flex flex-wrap items-center gap-2">
-        {isUnlimited ? (
-          <span className="inline-flex items-center gap-1 rounded-full bg-[color-mix(in_srgb,var(--signal)_12%,var(--surface))] px-2.5 py-0.5 text-[11px] font-semibold text-[var(--signal)]">
-            <Sparkles size={11} />
-            {isMaster
-              ? "Acesso Master · Ilimitado"
-              : "Uso liberado · Ilimitado"}
-          </span>
-        ) : (
-          <span
-            className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${
-              canGenerate
-                ? "bg-[color-mix(in_srgb,var(--signal)_12%,var(--surface))] text-[var(--signal)]"
-                : "bg-[color-mix(in_srgb,var(--warn)_12%,var(--surface))] text-[var(--warn)]"
-            }`}
-          >
-            <Sparkles size={11} />
-            {canGenerate
-              ? `${remaining} geração${remaining !== 1 ? "ões" : ""} restante${remaining !== 1 ? "s" : ""} hoje`
-              : "Limite diário atingido"}
-          </span>
-        )}
-
-        <span
-          className="inline-flex items-center gap-1 rounded-full bg-[var(--surface-soft,var(--mist))] px-2.5 py-0.5 text-[11px] font-medium text-[var(--ink-soft,color-mix(in_srgb,var(--ink)_55%,transparent))] border border-[var(--line)]"
-          title={aiConfig?.isMaster && aiConfig?.model ? `Modelo ativo (Master): ${aiConfig.model}` : "Inteligência Artificial Integrada"}
-        >
-          <Bot size={11} className="text-[var(--signal)]" />
-          <span>IA</span>
-        </span>
-      </div>
-
       {/* Feedback */}
       {feedback && (
         <div
@@ -362,74 +358,74 @@ export function TiraDuvidas() {
 
       {/* ---- Input Mode ---- */}
       {!resposta && (
-        <>
+        <div className="surface rounded-[var(--radius)] border border-[var(--line)] p-4 sm:p-5 shadow-[var(--shadow-sm)] space-y-4">
           {/* Matéria (opcional) */}
-          <div className="relative">
-            <label className="mb-1 block text-xs font-medium uppercase tracking-wider text-[color-mix(in_srgb,var(--ink)_55%,transparent)]">
-              Matéria <span className="normal-case font-normal">(opcional)</span>
-            </label>
-            <input
-              type="text"
-              value={disciplina}
-              onChange={(e) => {
-                setDisciplina(e.target.value);
-                setDropdownOpen(true);
-              }}
-              onFocus={() => setDropdownOpen(true)}
-              onBlur={() => setTimeout(() => setDropdownOpen(false), 200)}
-              placeholder="Direito Constitucional, Matemática…"
-              className="w-full rounded-[var(--radius-btn)] border border-[var(--line)] bg-[var(--surface)] px-3 py-2.5 text-sm text-[var(--ink)] outline-none transition placeholder:text-[color-mix(in_srgb,var(--ink)_35%,transparent)] focus:border-[var(--signal)] focus:ring-2 focus:ring-[var(--signal-soft)]"
-            />
-            {dropdownOpen && filteredMaterias.length > 0 && (
-              <div className="absolute left-0 right-0 top-full z-50 mt-1 max-h-44 overflow-y-auto rounded-[var(--radius-tag)] border border-[var(--line)] bg-[var(--surface)] py-1 shadow-lg">
-                {filteredMaterias.map((m) => (
-                  <button
-                    key={m.id}
-                    type="button"
-                    onMouseDown={(e) => {
-                      e.preventDefault();
-                      setDisciplina(m.nome);
-                      setDropdownOpen(false);
-                    }}
-                    className={`flex w-full items-center px-3 py-2 text-left text-xs transition ${
-                      m.nome.toLowerCase() === disciplina.trim().toLowerCase()
-                        ? "bg-[color-mix(in_srgb,var(--signal)_12%,var(--surface))] font-medium text-[var(--signal)]"
-                        : "text-[var(--ink)] hover:bg-[var(--mist)]"
-                    }`}
-                  >
-                    {m.nome}
-                  </button>
-                ))}
-              </div>
-            )}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[var(--line)]/60 pb-3">
+            <div>
+              <label className="text-xs font-semibold text-[var(--ink)]">
+                Matéria ou Disciplina
+              </label>
+              <p className="text-[11px] text-[color-mix(in_srgb,var(--ink)_50%,transparent)]">
+                Opcional — direciona a linguagem técnica da explicação
+              </p>
+            </div>
+            <div className="relative w-full sm:w-72">
+              <input
+                type="text"
+                value={disciplina}
+                onChange={(e) => {
+                  setDisciplina(e.target.value);
+                  setDropdownOpen(true);
+                }}
+                onFocus={() => setDropdownOpen(true)}
+                onBlur={() => setTimeout(() => setDropdownOpen(false), 200)}
+                placeholder="Ex: Direito Constitucional, RLM…"
+                className="w-full rounded-[var(--radius-btn)] border border-[var(--line)] bg-[var(--surface)] px-3 py-1.5 text-xs sm:text-sm text-[var(--ink)] outline-none transition placeholder:text-[color-mix(in_srgb,var(--ink)_35%,transparent)] focus:border-[var(--signal)] focus:ring-2 focus:ring-[var(--signal-soft)]"
+              />
+              {dropdownOpen && filteredMaterias.length > 0 && (
+                <div className="absolute left-0 right-0 top-full z-50 mt-1 max-h-44 overflow-y-auto rounded-[var(--radius-tag)] border border-[var(--line)] bg-[var(--surface)] py-1 shadow-lg">
+                  {filteredMaterias.map((m) => (
+                    <button
+                      key={m.id}
+                      type="button"
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        setDisciplina(m.nome);
+                        setDropdownOpen(false);
+                      }}
+                      className={`flex w-full items-center px-3 py-2 text-left text-xs transition ${
+                        m.nome.toLowerCase() === disciplina.trim().toLowerCase()
+                          ? "bg-[color-mix(in_srgb,var(--signal)_12%,var(--surface))] font-medium text-[var(--signal)]"
+                          : "text-[var(--ink)] hover:bg-[var(--mist)]"
+                      }`}
+                    >
+                      {m.nome}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Textarea */}
-          <div>
-            <label className="mb-1 flex items-center gap-1.5 text-xs font-medium uppercase tracking-wider text-[color-mix(in_srgb,var(--ink)_55%,transparent)]">
-              <MessageCircleQuestion size={12} />
-              Sua dúvida ou questão *
-            </label>
-            <textarea
-              value={pergunta}
-              onChange={(e) => setPergunta(e.target.value)}
-              placeholder={"Cole aqui a questão de prova, trecho do assunto, ou descreva sua dúvida…\n\nDica: Use Ctrl + V para colar prints de questões diretamente!"}
-              rows={6}
-              maxLength={MAX_TEXT_LENGTH}
-              className="w-full min-h-[120px] resize-y rounded-[var(--radius-btn)] border border-[var(--line)] bg-[var(--surface)] px-3 py-2.5 text-sm text-[var(--ink)] outline-none transition placeholder:text-[color-mix(in_srgb,var(--ink)_35%,transparent)] focus:border-[var(--signal)] focus:ring-2 focus:ring-[var(--signal-soft)] leading-relaxed"
-            />
-            <div className="mt-0.5 flex items-center justify-between text-[10px] text-[color-mix(in_srgb,var(--ink)_35%,transparent)]">
-              <span>
-                {textLength === 0 && !imagem
-                  ? "Digite sua dúvida ou cole uma imagem"
-                  : textLength < MIN_TEXT_LENGTH && !imagem
-                    ? `Mínimo ${MIN_TEXT_LENGTH} caracteres`
-                    : `${textLength} caracteres`}
-              </span>
-              <span>
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-semibold text-[var(--ink)] flex items-center gap-1.5">
+                <span>Enunciado da questão ou sua dúvida</span>
+                <span className="text-[var(--warn)]">*</span>
+              </label>
+              <span className="text-[11px] text-[color-mix(in_srgb,var(--ink)_45%,transparent)]">
                 {textLength}/{MAX_TEXT_LENGTH}
               </span>
             </div>
+            <textarea
+              value={pergunta}
+              onChange={(e) => setPergunta(e.target.value)}
+              placeholder="Cole aqui o texto da questão, a alternativa que gerou dúvida, ou descreva sua dúvida teórica..."
+              rows={5}
+              maxLength={MAX_TEXT_LENGTH}
+              className="w-full min-h-[120px] resize-y rounded-[var(--radius-btn)] border border-[var(--line)] bg-[var(--surface)] p-3 text-sm text-[var(--ink)] outline-none transition placeholder:text-[color-mix(in_srgb,var(--ink)_35%,transparent)] focus:border-[var(--signal)] focus:ring-2 focus:ring-[var(--signal-soft)] leading-relaxed"
+            />
           </div>
 
           {/* Área de imagem */}
@@ -439,26 +435,38 @@ export function TiraDuvidas() {
             disabled={loading}
           />
 
-          {/* Botão Perguntar */}
-          <button
-            type="button"
-            onClick={handleAsk}
-            disabled={!isValid || loading || !canGenerate}
-            className="w-full flex items-center justify-center gap-2 rounded-[var(--radius-btn)] bg-gradient-to-r from-[var(--signal)] to-[color-mix(in_srgb,#f59e0b_50%,var(--signal))] px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:brightness-110 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {loading ? (
-              <>
-                <Loader2 size={16} className="animate-spin" />
-                Analisando sua dúvida…
-              </>
-            ) : (
-              <>
-                <Sparkles size={16} />
-                Perguntar à IA
-              </>
-            )}
-          </button>
-        </>
+          {/* Botão Perguntar e Status */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2 border-t border-[var(--line)]/60">
+            <div className="text-xs text-[color-mix(in_srgb,var(--ink)_50%,transparent)]">
+              {textLength === 0 && !imagem ? (
+                <span>Digite sua dúvida ou anexe um print para consultar a IA</span>
+              ) : textLength < MIN_TEXT_LENGTH && !imagem ? (
+                <span className="text-[var(--warn)]">Mínimo de {MIN_TEXT_LENGTH} caracteres</span>
+              ) : (
+                <span className="font-medium text-[var(--ok,#16a34a)]">✓ Pronto para consultar</span>
+              )}
+            </div>
+
+            <button
+              type="button"
+              onClick={handleAsk}
+              disabled={!isValid || loading || !canGenerate}
+              className="flex w-full sm:w-auto items-center justify-center gap-2 rounded-[var(--radius-btn)] bg-gradient-to-r from-[var(--signal)] to-[color-mix(in_srgb,#f59e0b_50%,var(--signal))] px-5 py-2.5 text-xs sm:text-sm font-semibold text-white shadow-sm transition hover:brightness-110 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loading ? (
+                <>
+                  <Loader2 size={16} className="animate-spin" />
+                  Analisando dúvida…
+                </>
+              ) : (
+                <>
+                  <Sparkles size={16} />
+                  Perguntar à IA
+                </>
+              )}
+            </button>
+          </div>
+        </div>
       )}
 
       {/* ---- Response Mode ---- */}
@@ -594,14 +602,14 @@ export function TiraDuvidas() {
           )}
 
           {/* Ações */}
-          <div className="flex items-center gap-2 pt-2">
+          <div className="flex items-center justify-between gap-3 pt-2">
             <button
               type="button"
               onClick={handleReset}
-              className="flex-1 flex items-center justify-center gap-1.5 rounded-[var(--radius-btn)] border border-[var(--line)] bg-[var(--surface)] px-3 py-2.5 text-xs font-semibold text-[var(--ink)] transition hover:bg-[var(--mist)] active:scale-[0.98]"
+              className="inline-flex items-center justify-center gap-1.5 rounded-[var(--radius-btn)] border border-[var(--line)] bg-[var(--surface)] px-4 py-2.5 text-xs sm:text-sm font-semibold text-[var(--ink)] transition hover:bg-[var(--mist)] active:scale-[0.98]"
             >
-              <MessageCircleQuestion size={13} />
-              Nova Dúvida
+              <MessageCircleQuestion size={14} />
+              Fazer Nova Pergunta
             </button>
           </div>
         </div>
