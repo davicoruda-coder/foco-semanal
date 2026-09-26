@@ -139,16 +139,12 @@ export function ImagePasteArea({ value, onChange, disabled }: ImagePasteAreaProp
           : "border-[var(--line)] bg-[color-mix(in_srgb,var(--ink)_2%,var(--surface))] hover:border-[var(--signal)]/50 hover:bg-[var(--signal-soft)]/20"
       } ${disabled ? "opacity-40 pointer-events-none" : ""} px-4 py-2.5 text-center`}
     >
-      <div className="flex flex-wrap items-center justify-center gap-2 text-xs">
+      <div className="flex items-center justify-center gap-2 text-xs">
         <div className="flex items-center gap-1.5 text-[var(--signal)] font-medium">
-          <ImagePlus size={16} />
+          <ImagePlus size={15} />
           <span>Anexar Print ou Imagem</span>
         </div>
-        <span className="text-[color-mix(in_srgb,var(--ink)_40%,transparent)]">•</span>
-        <span className="text-[color-mix(in_srgb,var(--ink)_65%,transparent)]">
-          Pressione <strong className="font-semibold text-[var(--ink)]">Ctrl + V</strong> para colar direto ou clique para buscar
-        </span>
-        <span className="text-[10px] text-[color-mix(in_srgb,var(--ink)_40%,transparent)]">
+        <span className="text-[11px] text-[color-mix(in_srgb,var(--ink)_40%,transparent)]">
           (PNG, JPG até 4MB)
         </span>
       </div>

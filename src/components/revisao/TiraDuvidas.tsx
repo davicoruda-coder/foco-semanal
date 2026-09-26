@@ -449,13 +449,9 @@ export function TiraDuvidas() {
 
           {/* Botão Perguntar e Status */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2 border-t border-[var(--line)]/60">
-            <div className="text-xs text-[color-mix(in_srgb,var(--ink)_50%,transparent)]">
-              {textLength === 0 && !imagem ? (
-                <span>Digite sua dúvida ou anexe um print para consultar a IA</span>
-              ) : textLength < MIN_TEXT_LENGTH && !imagem ? (
-                <span className="text-[var(--warn)]">Mínimo de {MIN_TEXT_LENGTH} caracteres</span>
-              ) : (
-                <span className="font-medium text-[var(--ok,#16a34a)]">✓ Pronto para consultar</span>
+            <div className="text-xs">
+              {textLength > 0 && textLength < MIN_TEXT_LENGTH && !imagem && (
+                <span className="text-[var(--warn)] font-medium">Mínimo de {MIN_TEXT_LENGTH} caracteres</span>
               )}
             </div>
 
@@ -463,7 +459,7 @@ export function TiraDuvidas() {
               type="button"
               onClick={handleAsk}
               disabled={!isValid || loading || !canGenerate}
-              className="flex w-full sm:w-auto items-center justify-center gap-2 rounded-[var(--radius-btn)] bg-gradient-to-r from-[var(--signal)] to-[color-mix(in_srgb,#f59e0b_50%,var(--signal))] px-5 py-2.5 text-xs sm:text-sm font-semibold text-white shadow-sm transition hover:brightness-110 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex w-full sm:w-auto items-center justify-center gap-2 rounded-[var(--radius-btn)] bg-gradient-to-r from-[var(--signal)] to-[color-mix(in_srgb,#f59e0b_50%,var(--signal))] px-5 py-2.5 text-xs sm:text-sm font-semibold text-white shadow-sm transition hover:brightness-110 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed sm:ml-auto"
             >
               {loading ? (
                 <>
