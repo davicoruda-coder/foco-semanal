@@ -182,7 +182,7 @@ export default function AjustesPage() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl">
+    <div className="mx-auto max-w-3xl">
       <ConfirmDialog
         open={confirmLogout}
         title="Sair da conta?"

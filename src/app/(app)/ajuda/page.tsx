@@ -8,7 +8,7 @@ import { HelpTutorialSection } from "@/components/ajustes/HelpTutorialSection";
 
 export default function AjudaPage() {
   return (
-    <div className="mx-auto max-w-4xl space-y-6 pb-16">
+    <div className="mx-auto max-w-3xl space-y-6 pb-16">
       {/* Cabeçalho da página fora dos blocos (padrão FocoHub / Ajustes) */}
       <div>
         <h1 className="font-display text-xl sm:text-2xl font-semibold tracking-tight text-[var(--ink)]">

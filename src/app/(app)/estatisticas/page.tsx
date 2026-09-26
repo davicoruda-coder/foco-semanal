@@ -417,7 +417,7 @@ export default function EstatisticasPage() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl">
+    <div className="w-full max-w-7xl mx-auto space-y-4 sm:space-y-5">
       <ConfirmDialog
         open={confirmReset}
         title="Resetar histórico de tempo?"
@@ -518,72 +518,79 @@ export default function EstatisticasPage() {
         </div>
       </DialogFrame>
 
-      <h1 className="font-display text-xl sm:text-2xl font-semibold tracking-tight text-[var(--ink)]">
-        Estatísticas
-      </h1>
-      <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
-        <span className="inline-flex items-center gap-2">
-          <span
-            className={`inline-flex h-2 w-2 rounded-full ${
-              tracking
-                ? "bg-[var(--ok)]"
-                : "bg-[color-mix(in_srgb,var(--ink)_25%,transparent)]"
-            }`}
-          />
-          <span className="opacity-60">
-            {tracking ? "Registrando agora…" : "Pausado — não está contando"}
-          </span>
-        </span>
-        {user ? (
-          <span className="opacity-50">
-            {syncing ? "Sincronizando…" : syncHint}
-          </span>
-        ) : null}
+      {/* Top Header com Título e Seletor de Período */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="font-display text-xl sm:text-2xl font-semibold tracking-tight text-[var(--ink)]">
+            Estatísticas
+          </h1>
+          <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
+            <span className="inline-flex items-center gap-2">
+              <span
+                className={`inline-flex h-2 w-2 rounded-full ${
+                  tracking
+                    ? "bg-[var(--ok)]"
+                    : "bg-[color-mix(in_srgb,var(--ink)_25%,transparent)]"
+                }`}
+              />
+              <span className="opacity-60">
+                {tracking ? "Registrando agora…" : "Pausado — não está contando"}
+              </span>
+            </span>
+            {user ? (
+              <span className="opacity-50">
+                {syncing ? "Sincronizando…" : syncHint}
+              </span>
+            ) : null}
+          </div>
+        </div>
+
+        {/* Range Selector: Dia | Semana | Mês | Ano */}
+        <div className="flex flex-wrap gap-1 rounded-full border border-[var(--line)] bg-[var(--surface)] p-1 shadow-xs">
+          {(
+            [
+              ["dia", "Dia"],
+              ["semana", "Semana"],
+              ["mes", "Mês"],
+              ["ano", "Ano"],
+            ] as const
+          ).map(([value, label]) => {
+            const active = range === value;
+            return (
+              <button
+                key={value}
+                type="button"
+                onClick={() => setRange(value)}
+                className={`rounded-full px-3.5 py-1 text-xs sm:text-sm font-semibold transition ${
+                  active
+                    ? "bg-[var(--signal)] text-white shadow-xs"
+                    : "text-[color-mix(in_srgb,var(--ink)_65%,transparent)] hover:text-[var(--ink)]"
+                }`}
+              >
+                {label}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
-      <div className="mt-5 flex flex-wrap gap-1.5 rounded-full bg-[color-mix(in_srgb,var(--ink)_7%,transparent)] p-1">
-        {(
-          [
-            ["dia", "Dia"],
-            ["semana", "Semana"],
-            ["mes", "Mês"],
-            ["ano", "Ano"],
-          ] as const
-        ).map(([value, label]) => {
-          const active = range === value;
-          return (
-            <button
-              key={value}
-              type="button"
-              onClick={() => setRange(value)}
-              className={`rounded-full px-3.5 py-1.5 text-sm font-medium transition ${
-                active
-                  ? "bg-[var(--surface)] text-[var(--signal)] shadow-sm"
-                  : "text-[color-mix(in_srgb,var(--ink)_55%,transparent)] hover:text-[var(--ink)]"
-              }`}
-            >
-              {label}
-            </button>
-          );
-        })}
-      </div>
-
-      <div className="mt-3 flex items-center gap-2 rounded-[var(--radius-btn)] border border-[var(--line)] bg-[var(--surface)]/70 p-2">
+      {/* Navegador de período (Anterior / Atual / Próximo) */}
+      <div className="flex items-center gap-2 rounded-[var(--radius-btn)] border border-[var(--line)] bg-[var(--surface)] p-2 shadow-xs">
         <button
           type="button"
-          className="grid h-10 w-10 shrink-0 place-items-center rounded-full transition hover:bg-[var(--mist)]"
+          className="grid h-9 w-9 shrink-0 place-items-center rounded-full transition hover:bg-[var(--mist)]"
           title="Período anterior"
           aria-label="Mostrar período anterior"
           onClick={() =>
             setReferenceDate((date) => shiftPeriod(date, range, -1))
           }
         >
-          <ChevronLeft size={20} strokeWidth={2} />
+          <ChevronLeft size={18} strokeWidth={2} />
         </button>
 
         <div className="min-w-0 flex-1 text-center">
           <p
-            className={`truncate text-sm font-semibold ${
+            className={`truncate text-sm font-semibold text-[var(--ink)] ${
               range === "dia" ? "capitalize" : ""
             }`}
           >
@@ -592,13 +599,13 @@ export default function EstatisticasPage() {
           {!viewingCurrentPeriod ? (
             <button
               type="button"
-              className="mt-0.5 text-xs font-medium text-[var(--signal)] hover:underline"
+              className="mt-0.5 text-xs font-semibold text-[var(--signal)] hover:underline"
               onClick={() => setReferenceDate(new Date())}
             >
               Voltar para {CURRENT_PERIOD_LABEL[range].toLowerCase()}
             </button>
           ) : (
-            <p className="mt-0.5 text-xs opacity-45">
+            <p className="mt-0.5 text-xs opacity-50">
               {CURRENT_PERIOD_LABEL[range]}
             </p>
           )}
@@ -606,7 +613,7 @@ export default function EstatisticasPage() {
 
         <button
           type="button"
-          className="grid h-10 w-10 shrink-0 place-items-center rounded-full transition hover:bg-[var(--mist)] disabled:cursor-default disabled:opacity-25 disabled:hover:bg-transparent"
+          className="grid h-9 w-9 shrink-0 place-items-center rounded-full transition hover:bg-[var(--mist)] disabled:cursor-default disabled:opacity-25 disabled:hover:bg-transparent"
           title="Próximo período"
           aria-label="Mostrar próximo período"
           disabled={viewingCurrentPeriod}
@@ -614,153 +621,171 @@ export default function EstatisticasPage() {
             setReferenceDate((date) => shiftPeriod(date, range, 1))
           }
         >
-          <ChevronRight size={20} strokeWidth={2} />
+          <ChevronRight size={18} strokeWidth={2} />
         </button>
       </div>
 
-      <section className="surface mt-5 p-5 md:p-6">
-        <p className="text-xs font-semibold uppercase tracking-wider opacity-50">
-          Total
-        </p>
-        <p className="font-mono-num mt-1 text-3xl font-medium tracking-tight md:text-4xl">
-          {formatFocusDuration(headline)}
-        </p>
-        <div className="mt-6">
-          <FocusBarChart bars={bars} height={range === "mes" ? 160 : 180} />
-        </div>
-      </section>
+      {/* Grid Dashboard: Coluna Principal (Gráfico + Resumos) + Coluna Lateral (Ações + Avisos) */}
+      <div className="grid items-start gap-4 sm:gap-5 lg:grid-cols-[minmax(0,1fr)_320px] xl:grid-cols-[minmax(0,1fr)_340px]">
+        {/* Coluna Principal */}
+        <div className="min-w-0 space-y-4 sm:space-y-5">
+          <section className="surface p-5 sm:p-6 shadow-xs">
+            <p className="text-xs font-semibold uppercase tracking-wider opacity-60">
+              Tempo Total no Período
+            </p>
+            <p className="font-mono-num mt-1 text-3xl font-semibold tracking-tight md:text-4xl text-[var(--ink)]">
+              {formatFocusDuration(headline)}
+            </p>
+            <div className="mt-6">
+              <FocusBarChart bars={bars} height={range === "mes" ? 170 : 190} />
+            </div>
+          </section>
 
-      <section className="mt-4 grid gap-3 sm:grid-cols-3">
-        <div className="surface relative overflow-hidden border-[color-mix(in_srgb,var(--signal)_55%,transparent)] bg-[color-mix(in_srgb,var(--signal)_16%,var(--surface))] p-4 pl-5">
-          <span
-            className="absolute inset-y-0 left-0 w-1 bg-[var(--signal)]"
-            aria-hidden
-          />
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-[var(--signal)]">
-            Hoje
-          </p>
-          <p className="font-mono-num mt-1 text-lg font-medium">
-            {formatFocusDuration(currentDay.seconds)}
-          </p>
-        </div>
-        <div className="surface p-4">
-          <p className="text-[11px] font-semibold uppercase tracking-wider opacity-50">
-            Esta semana
-          </p>
-          <p className="font-mono-num mt-1 text-lg font-medium">
-            {formatFocusDuration(currentWeekTotal)}
-          </p>
-        </div>
-        <div className="surface p-4">
-          <p className="text-[11px] font-semibold uppercase tracking-wider opacity-50">
-            Este mês
-          </p>
-          <p className="font-mono-num mt-1 text-lg font-medium">
-            {formatFocusDuration(currentMonthTotal)}
-          </p>
-        </div>
-      </section>
-
-      {interrupts.length > 0 ? (
-        <section className="surface mt-4 p-5 md:p-6">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wider opacity-50">
-                Sessão interrompida (histórico)
+          {/* Cards de Resumo Rápido */}
+          <section className="grid gap-3 sm:grid-cols-3">
+            <div className="surface relative overflow-hidden border-[color-mix(in_srgb,var(--signal)_45%,var(--line))] bg-[color-mix(in_srgb,var(--signal)_8%,var(--surface))] p-4 pl-5 shadow-xs">
+              <span
+                className="absolute inset-y-0 left-0 w-1 bg-[var(--signal)]"
+                aria-hidden
+              />
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-[var(--signal)]">
+                Hoje
               </p>
-              <p className="mt-1 text-sm opacity-65">
-                O computador desligou ou o navegador parou. O tempo do apagão não
-                entrou no foco; o relógio voltou pausado no último ponto salvo.
+              <p className="font-mono-num mt-1 text-xl font-semibold text-[var(--ink)]">
+                {formatFocusDuration(currentDay.seconds)}
               </p>
             </div>
+            <div className="surface p-4 shadow-xs">
+              <p className="text-[11px] font-semibold uppercase tracking-wider opacity-60">
+                Esta semana
+              </p>
+              <p className="font-mono-num mt-1 text-xl font-semibold text-[var(--ink)]">
+                {formatFocusDuration(currentWeekTotal)}
+              </p>
+            </div>
+            <div className="surface p-4 shadow-xs">
+              <p className="text-[11px] font-semibold uppercase tracking-wider opacity-60">
+                Este mês
+              </p>
+              <p className="font-mono-num mt-1 text-xl font-semibold text-[var(--ink)]">
+                {formatFocusDuration(currentMonthTotal)}
+              </p>
+            </div>
+          </section>
+        </div>
+
+        {/* Coluna Lateral de Ações e Avisos */}
+        <aside className="space-y-4">
+          <section className="surface p-4 sm:p-5 shadow-xs space-y-3">
+            <p className="text-xs font-semibold uppercase tracking-wider opacity-60">
+              Ações de Relatório
+            </p>
+
             <button
               type="button"
-              onClick={() => {
-                clearInterrupts();
-                setInterrupts([]);
-              }}
-              className="shrink-0 rounded-lg px-2.5 py-1 text-xs font-medium text-[var(--ink)] opacity-60 hover:bg-[var(--mist)] hover:opacity-100 transition-opacity"
+              className="btn btn-primary w-full justify-center"
+              disabled={downloadingReport}
+              onClick={() => void downloadReport()}
             >
-              Dispensar todos
+              <Download size={16} strokeWidth={2} />
+              {downloadingReport ? "Gerando PDF…" : REPORT_BUTTON_LABEL[range]}
             </button>
-          </div>
-          <ul className="mt-4 grid gap-3">
-            {interrupts.map((item) => (
-              <li
-                key={item.id}
-                className="flex items-center justify-between gap-3 rounded-[var(--radius-btn)] border border-[var(--line)] bg-[var(--mist)]/50 px-3.5 py-3"
+
+            <button
+              type="button"
+              className="btn w-full justify-center"
+              onClick={openAddTime}
+            >
+              <Plus size={16} strokeWidth={2} />
+              Adicionar tempo
+            </button>
+
+            {user ? (
+              <button
+                type="button"
+                className="btn w-full justify-center text-xs"
+                disabled={syncing}
+                onClick={() => {
+                  setSyncing(true);
+                  setSyncHint("Sincronizando com a nuvem…");
+                  void syncFocusLogWithCloud()
+                    .then((merged) => {
+                      setLog(merged);
+                      setSyncHint("Atualizado da nuvem");
+                    })
+                    .catch(() => {
+                      setSyncHint("Falha ao sincronizar");
+                    })
+                    .finally(() => setSyncing(false));
+                }}
               >
+                Atualizar da nuvem
+              </button>
+            ) : null}
+
+            <div className="pt-2 border-t border-[var(--line)]">
+              <button
+                type="button"
+                className="text-xs font-medium text-[var(--warn)] hover:underline opacity-80 hover:opacity-100 transition"
+                onClick={() => setConfirmReset(true)}
+              >
+                Resetar histórico de tempo
+              </button>
+            </div>
+          </section>
+
+          {interrupts.length > 0 ? (
+            <section className="surface p-4 sm:p-5 shadow-xs">
+              <div className="flex items-start justify-between gap-3">
                 <div>
-                  <p className="text-sm font-medium">{interruptSummary(item)}</p>
-                  <p className="mt-0.5 text-xs opacity-50">
-                    Último registro às {formatInterruptWhen(item)}
+                  <p className="text-xs font-semibold uppercase tracking-wider opacity-60">
+                    Sessão interrompida
+                  </p>
+                  <p className="mt-1 text-xs opacity-65 leading-relaxed">
+                    O computador desligou ou o navegador parou.
                   </p>
                 </div>
                 <button
                   type="button"
-                  title="Dispensar aviso"
-                  aria-label="Dispensar aviso"
                   onClick={() => {
-                    dismissInterrupt(item.id);
-                    setInterrupts(loadInterrupts());
+                    clearInterrupts();
+                    setInterrupts([]);
                   }}
-                  className="rounded p-1 text-xs opacity-50 hover:bg-[var(--surface)] hover:opacity-100 transition-opacity"
+                  className="shrink-0 rounded-lg px-2 py-0.5 text-[11px] font-medium text-[var(--ink)] opacity-60 hover:bg-[var(--mist)] hover:opacity-100 transition-opacity"
                 >
-                  <X size={16} strokeWidth={2} />
+                  Limpar
                 </button>
-              </li>
-            ))}
-          </ul>
-        </section>
-      ) : null}
-
-      <div className="mt-6 grid grid-cols-1 gap-2 sm:grid-cols-2">
-        <button
-          type="button"
-          className="btn w-full"
-          onClick={openAddTime}
-        >
-          <Plus size={16} strokeWidth={2} />
-          Adicionar tempo
-        </button>
-        <button
-          type="button"
-          className="btn btn-primary w-full"
-          disabled={downloadingReport}
-          onClick={() => void downloadReport()}
-        >
-          <Download size={16} strokeWidth={2} />
-          {downloadingReport ? "Gerando PDF…" : REPORT_BUTTON_LABEL[range]}
-        </button>
-        {user ? (
-          <button
-            type="button"
-            className="btn w-full"
-            disabled={syncing}
-            onClick={() => {
-              setSyncing(true);
-              setSyncHint("Sincronizando com a nuvem…");
-              void syncFocusLogWithCloud()
-                .then((merged) => {
-                  setLog(merged);
-                  setSyncHint("Atualizado da nuvem");
-                })
-                .catch(() => {
-                  setSyncHint("Falha ao sincronizar");
-                })
-                .finally(() => setSyncing(false));
-            }}
-          >
-            Atualizar da nuvem
-          </button>
-        ) : null}
-        <button
-          type="button"
-          className="btn w-full text-[var(--warn)]"
-          onClick={() => setConfirmReset(true)}
-        >
-          Resetar histórico de tempo
-        </button>
+              </div>
+              <ul className="mt-3 space-y-2">
+                {interrupts.map((item) => (
+                  <li
+                    key={item.id}
+                    className="flex items-center justify-between gap-2 rounded-lg border border-[var(--line)] bg-[var(--mist)]/50 p-2 text-xs"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate font-medium">{interruptSummary(item)}</p>
+                      <p className="text-[10px] opacity-50">
+                        {formatInterruptWhen(item)}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      title="Dispensar aviso"
+                      aria-label="Dispensar aviso"
+                      onClick={() => {
+                        dismissInterrupt(item.id);
+                        setInterrupts(loadInterrupts());
+                      }}
+                      className="rounded p-1 opacity-50 hover:bg-[var(--surface)] hover:opacity-100"
+                    >
+                      <X size={14} strokeWidth={2} />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ) : null}
+        </aside>
       </div>
     </div>
   );
