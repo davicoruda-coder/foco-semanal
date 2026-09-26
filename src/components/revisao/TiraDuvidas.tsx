@@ -267,35 +267,25 @@ export function TiraDuvidas() {
 
   return (
     <div className="mx-auto max-w-4xl space-y-4">
-      {/* Header Unificado & Status de IA */}
+      {/* Header Unificado */}
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-[var(--radius)] border border-[color-mix(in_srgb,var(--signal)_28%,var(--line))] bg-gradient-to-r from-[color-mix(in_srgb,var(--signal)_12%,var(--surface))] via-[var(--surface)] to-[color-mix(in_srgb,var(--signal)_5%,var(--surface))] p-4 sm:p-5 shadow-[var(--shadow-sm)]">
         <div className="flex items-center gap-3.5 min-w-0">
           <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-[var(--signal)] text-white shadow-sm">
             <MessageCircleQuestion size={22} />
           </div>
-          <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-2">
-              <h3 className="font-display text-base font-bold text-[var(--ink)] sm:text-lg">
-                Tira-Dúvidas com IA
-              </h3>
-              <span className="inline-flex items-center gap-1 rounded-full bg-[var(--signal-soft)] px-2.5 py-0.5 text-[11px] font-semibold text-[var(--signal)]">
-                Didática & Resolução
-              </span>
-            </div>
-            <p className="mt-0.5 text-xs text-[color-mix(in_srgb,var(--ink)_65%,transparent)]">
-              Análise didática de questões de prova, pegadinhas e teoria
-            </p>
+          <div className="flex flex-wrap items-center gap-2 min-w-0">
+            <h3 className="font-display text-base font-bold text-[var(--ink)] sm:text-lg">
+              Tira-Dúvidas com IA
+            </h3>
+            <span className="inline-flex items-center gap-1 rounded-full bg-[var(--signal-soft)] px-2.5 py-0.5 text-[11px] font-semibold text-[var(--signal)]">
+              Didática & Resolução
+            </span>
           </div>
         </div>
 
-        {/* Badges de Cota / Limite */}
-        <div className="flex items-center gap-2 shrink-0">
-          {isUnlimited ? (
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-[color-mix(in_srgb,var(--signal)_25%,transparent)] bg-[color-mix(in_srgb,var(--signal)_12%,var(--surface))] px-3 py-1 text-xs font-semibold text-[var(--signal)]">
-              <Sparkles size={12} />
-              {isMaster ? "Acesso Master · Ilimitado" : "Uso liberado · Ilimitado"}
-            </span>
-          ) : (
+        {/* Badge de limite apenas se houver cota restritiva */}
+        {!isUnlimited && (
+          <div className="flex items-center gap-2 shrink-0">
             <span
               className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold ${
                 canGenerate
@@ -308,8 +298,8 @@ export function TiraDuvidas() {
                 ? `${remaining} ${remaining === 1 ? "geração restante" : "gerações restantes"} hoje`
                 : "Limite diário atingido"}
             </span>
-          )}
-        </div>
+          </div>
+        )}
       </div>
 
       {/* Banner de IA não configurada */}
