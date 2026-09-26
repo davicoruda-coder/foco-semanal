@@ -20,18 +20,98 @@ export const BLOCK_COLORS = [
   "#EDE9FE", // violeta
 ];
 
-export const BLOCK_COLOR_PALETTE: Record<
-  string,
-  { bg: string; accent: string; text: string; border: string }
-> = {
-  "#E2E8F0": { bg: "#F1F5F9", accent: "#64748B", text: "#0F172A", border: "#CBD5E1" },
-  "#CCFBF1": { bg: "#F0FDFA", accent: "#0D9488", text: "#134E4A", border: "#99F6E4" },
-  "#FEF3C7": { bg: "#FFFBEB", accent: "#D97706", text: "#78350F", border: "#FDE68A" },
-  "#E7E5E4": { bg: "#F5F5F4", accent: "#78716C", text: "#1C1917", border: "#D6D3D1" },
-  "#FBCFE8": { bg: "#FDF2F8", accent: "#DB2777", text: "#831843", border: "#FBCFE8" },
-  "#DBEAFE": { bg: "#EFF6FF", accent: "#2563EB", text: "#1E3A8A", border: "#BFDBFE" },
-  "#FEE2E2": { bg: "#FEF2F2", accent: "#E11D48", text: "#881337", border: "#FECDD3" },
-  "#EDE9FE": { bg: "#F5F3FF", accent: "#7C3AED", text: "#4C1D95", border: "#DDD6FE" },
+export interface BlockPaletteEntry {
+  bg: string;
+  accent: string;
+  text: string;
+  border: string;
+  darkBg: string;
+  darkAccent: string;
+  darkText: string;
+  darkBorder: string;
+}
+
+export const BLOCK_COLOR_PALETTE: Record<string, BlockPaletteEntry> = {
+  "#E2E8F0": {
+    bg: "#F1F5F9",
+    accent: "#64748B",
+    text: "#1E293B",
+    border: "#CBD5E1",
+    darkBg: "color-mix(in srgb, #64748B 20%, #15161e)",
+    darkAccent: "#94A3B8",
+    darkText: "#F1F5F9",
+    darkBorder: "color-mix(in srgb, #94A3B8 28%, transparent)",
+  },
+  "#CCFBF1": {
+    bg: "#F0FDFA",
+    accent: "#0D9488",
+    text: "#134E4A",
+    border: "#99F6E4",
+    darkBg: "color-mix(in srgb, #0D9488 22%, #15161e)",
+    darkAccent: "#2DD4BF",
+    darkText: "#CCFBF1",
+    darkBorder: "color-mix(in srgb, #2DD4BF 30%, transparent)",
+  },
+  "#FEF3C7": {
+    bg: "#FFFBEB",
+    accent: "#D97706",
+    text: "#78350F",
+    border: "#FDE68A",
+    darkBg: "color-mix(in srgb, #D97706 20%, #15161e)",
+    darkAccent: "#FBBF24",
+    darkText: "#FEF3C7",
+    darkBorder: "color-mix(in srgb, #FBBF24 30%, transparent)",
+  },
+  "#E7E5E4": {
+    bg: "#F5F5F4",
+    accent: "#78716C",
+    text: "#1C1917",
+    border: "#D6D3D1",
+    darkBg: "color-mix(in srgb, #78716C 20%, #15161e)",
+    darkAccent: "#A8A29E",
+    darkText: "#F5F5F4",
+    darkBorder: "color-mix(in srgb, #A8A29E 28%, transparent)",
+  },
+  "#FBCFE8": {
+    bg: "#FDF2F8",
+    accent: "#DB2777",
+    text: "#831843",
+    border: "#FBCFE8",
+    darkBg: "color-mix(in srgb, #DB2777 20%, #15161e)",
+    darkAccent: "#F472B6",
+    darkText: "#FCE7F3",
+    darkBorder: "color-mix(in srgb, #F472B6 30%, transparent)",
+  },
+  "#DBEAFE": {
+    bg: "#EFF6FF",
+    accent: "#2563EB",
+    text: "#1E3A8A",
+    border: "#BFDBFE",
+    darkBg: "color-mix(in srgb, #2563EB 22%, #15161e)",
+    darkAccent: "#60A5FA",
+    darkText: "#DBEAFE",
+    darkBorder: "color-mix(in srgb, #60A5FA 30%, transparent)",
+  },
+  "#FEE2E2": {
+    bg: "#FEF2F2",
+    accent: "#E11D48",
+    text: "#881337",
+    border: "#FECDD3",
+    darkBg: "color-mix(in srgb, #E11D48 20%, #15161e)",
+    darkAccent: "#FB7185",
+    darkText: "#FFE4E6",
+    darkBorder: "color-mix(in srgb, #FB7185 30%, transparent)",
+  },
+  "#EDE9FE": {
+    bg: "#F5F3FF",
+    accent: "#7C3AED",
+    text: "#4C1D95",
+    border: "#DDD6FE",
+    darkBg: "color-mix(in srgb, #7C3AED 22%, #15161e)",
+    darkAccent: "#A78BFA",
+    darkText: "#EDE9FE",
+    darkBorder: "color-mix(in srgb, #A78BFA 30%, transparent)",
+  },
 };
 
 export function getBlockAccent(rawColor: string): string {
@@ -87,52 +167,57 @@ export function blockStyle(
     defaultBlockColor(block.type),
   );
   const upper = raw.toUpperCase();
-  const palette = BLOCK_COLOR_PALETTE[upper];
-
-  const bg = palette ? palette.bg : raw;
-  const accent = palette ? palette.accent : getBlockAccent(raw);
-  const text = palette ? palette.text : "#0f172a";
+  const palette = BLOCK_COLOR_PALETTE[upper] || {
+    bg: raw,
+    accent: getBlockAccent(raw),
+    text: "#1E293B",
+    border: `color-mix(in srgb, ${raw} 80%, black 20%)`,
+    darkBg: `color-mix(in srgb, ${getBlockAccent(raw)} 20%, #15161e)`,
+    darkAccent: getBlockAccent(raw),
+    darkText: "#F1F5F9",
+    darkBorder: `color-mix(in srgb, ${getBlockAccent(raw)} 30%, transparent)`,
+  };
 
   const isMuted = !!opts?.muted;
   const isPill = !!opts?.pill;
 
-  if (isMuted) {
-    return {
-      className: "agenda-block agenda-block-muted",
-      style: {
-        "--b-acc": accent,
-        "--b-bg-raw": bg,
-        "--b-fg-raw": text,
-        background: "var(--block-muted-bg)",
-        color: "var(--block-muted-fg)",
-        border: isPill ? "var(--block-pill-border)" : "var(--block-muted-border)",
-      },
-    };
-  }
+  let lightBg = palette.bg;
+  let lightText = palette.text;
+  let lightAccent = palette.accent;
+  let lightBorder = palette.border;
 
-  if (isPill) {
-    return {
-      className: "agenda-block agenda-block-pill",
-      style: {
-        "--b-acc": accent,
-        "--b-bg-raw": bg,
-        "--b-fg-raw": text,
-        background: "var(--block-bg)",
-        color: "var(--block-fg)",
-        border: "var(--block-pill-border)",
-      },
-    };
+  let darkBg = palette.darkBg;
+  let darkText = palette.darkText;
+  let darkAccent = palette.darkAccent;
+  let darkBorder = palette.darkBorder;
+
+  if (isMuted) {
+    lightBg = `color-mix(in srgb, ${palette.bg} 68%, var(--surface))`;
+    lightText = `color-mix(in srgb, ${palette.text} 75%, transparent)`;
+    lightAccent = `color-mix(in srgb, ${palette.accent} 45%, transparent)`;
+    lightBorder = `color-mix(in srgb, ${palette.border} 55%, transparent)`;
+
+    darkBg = `color-mix(in srgb, ${palette.darkBg} 55%, var(--surface))`;
+    darkText = `color-mix(in srgb, ${palette.darkText} 65%, transparent)`;
+    darkAccent = `color-mix(in srgb, ${palette.darkAccent} 40%, transparent)`;
+    darkBorder = `color-mix(in srgb, ${palette.darkBorder} 50%, transparent)`;
   }
 
   return {
-    className: "agenda-block agenda-block-active",
+    className: `agenda-block ${isMuted ? "agenda-block-muted" : "agenda-block-active"}${isPill ? " agenda-block-pill" : ""}`,
     style: {
-      "--b-acc": accent,
-      "--b-bg-raw": bg,
-      "--b-fg-raw": text,
-      background: "var(--block-bg)",
-      color: "var(--block-fg)",
-      border: "var(--block-border)",
+      "--b-bg": lightBg,
+      "--b-fg": lightText,
+      "--b-accent": lightAccent,
+      "--b-border": lightBorder,
+      "--b-dark-bg": darkBg,
+      "--b-dark-fg": darkText,
+      "--b-dark-accent": darkAccent,
+      "--b-dark-border": darkBorder,
+      background: "var(--b-bg)",
+      color: "var(--b-fg)",
+      border: `1px solid var(--b-border)`,
+      ...(isPill ? {} : { borderLeft: `3.5px solid var(--b-accent)` }),
     },
   };
 }
