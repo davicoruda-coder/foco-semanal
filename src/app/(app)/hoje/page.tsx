@@ -111,8 +111,6 @@ export default function HojePage() {
   const flow = useStudyFlow();
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [showFullCycle, setShowFullCycle] = useState(false);
-  /** null = padrão (só hoje); true = semana; false = só hoje forçado */
-  const [weekOverride, setWeekOverride] = useState<boolean | null>(null);
   const day = todayIndex();
 
   const exclusiveTodayList = useMemo(
@@ -220,16 +218,6 @@ export default function HojePage() {
     day,
   ]);
 
-  const todayBlocks = useMemo(
-    () =>
-      data.week_blocks
-        .filter((b) => b.day === day)
-        .sort((a, b) => a.sort_order - b.sort_order),
-    [data.week_blocks, day],
-  );
-
-  // Padrão: só o dia — libera espaço pro ciclo. Botão Semana expande.
-  const showFullWeek = weekOverride === true;
   const weekDays = DAYS.map((name, i) => ({ name, i }));
 
   const { visibleSubjects, hiddenDone, hiddenPending } = useMemo(() => {
@@ -282,7 +270,7 @@ export default function HojePage() {
       <div className="grid items-start gap-3 sm:gap-5 lg:grid-cols-[minmax(0,1fr)_300px] xl:grid-cols-[minmax(0,1fr)_320px]">
         <div className="min-w-0 space-y-3 sm:space-y-5">
 
-          {/* Agenda — só no desktop; no mobile fica na aba Agenda */}
+          {/* Agenda — fixa no desktop com grade semanal completa */}
           <section className="surface hidden overflow-hidden p-0 lg:block">
             <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--line)] bg-[var(--mist)] px-3.5 py-2.5 md:px-5 md:py-3">
               <button
@@ -298,127 +286,74 @@ export default function HojePage() {
                   month: "2-digit",
                 })}`}
               </button>
-              <div className="flex items-center gap-1.5 sm:gap-2">
-                <Link
-                  href="/semana"
-                  title="Editar blocos da semana (adicionar, mover, renomear)"
-                  className="inline-flex min-h-10 items-center gap-1.5 rounded-full border border-[var(--line)] bg-[var(--surface)] px-3 py-1.5 text-xs font-semibold text-[var(--ink)] shadow-xs transition hover:border-[var(--signal)] hover:text-[var(--signal)] active:scale-95 md:min-h-0 md:rounded-[var(--radius-tag)] md:px-2.5 md:py-1"
-                >
-                  <Pencil size={12} strokeWidth={2} />
-                  <span>Editar grade</span>
-                </Link>
-                <button
-                  type="button"
-                  title={showFullWeek ? "Mostrar apenas hoje" : "Mostrar grade da semana toda"}
-                  aria-label={
-                    showFullWeek ? "Mostrar apenas hoje" : "Mostrar grade da semana toda"
-                  }
-                  className="inline-flex min-h-10 items-center gap-1 rounded-full bg-[color-mix(in_srgb,var(--ink)_8%,transparent)] px-3.5 py-2 text-sm font-medium text-[color-mix(in_srgb,var(--ink)_70%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--ink)_12%,transparent)] hover:text-[var(--ink)] md:min-h-0 md:rounded-[var(--radius-tag)] md:px-2.5 md:py-1 md:text-xs"
-                  onClick={() => setWeekOverride(showFullWeek ? false : true)}
-                >
-                  {showFullWeek ? (
-                    <>
-                      <ChevronUp size={14} strokeWidth={2} /> Ocultar grade
-                    </>
-                  ) : (
-                    <>
-                      <ChevronDown size={14} strokeWidth={2} /> Grade semanal
-                    </>
-                  )}
-                </button>
-              </div>
+
+              <Link
+                href="/semana"
+                title="Editar grade semanal"
+                aria-label="Editar grade semanal"
+                className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--line)] bg-[var(--surface)] text-[color-mix(in_srgb,var(--ink)_75%,transparent)] shadow-xs transition hover:border-[var(--signal)] hover:text-[var(--signal)] active:scale-95"
+              >
+                <Pencil size={14} strokeWidth={1.8} />
+              </Link>
             </div>
 
-            {showFullWeek ? (
-              <div className="-mx-0 overflow-x-auto overscroll-x-contain">
-                <div className="grid min-w-[72rem] grid-cols-7 divide-x divide-[var(--line)] md:min-w-[46rem] lg:min-w-0">
-                  {weekDays.map(({ name, i }) => {
-                    const blocks = data.week_blocks
-                      .filter((b) => b.day === i)
-                      .sort((a, b) => a.sort_order - b.sort_order);
-                    const isToday = i === day;
-                    return (
+            <div className="-mx-0 overflow-x-auto overscroll-x-contain">
+              <div className="grid min-w-[72rem] grid-cols-7 divide-x divide-[var(--line)] md:min-w-[46rem] lg:min-w-0">
+                {weekDays.map(({ name, i }) => {
+                  const blocks = data.week_blocks
+                    .filter((b) => b.day === i)
+                    .sort((a, b) => a.sort_order - b.sort_order);
+                  const isToday = i === day;
+                  return (
+                    <div
+                      key={name}
+                      className={`min-h-36 min-w-0 md:min-h-40 ${
+                        isToday ? "bg-[var(--surface)]" : "bg-[var(--mist)]"
+                      }`}
+                    >
                       <div
-                        key={name}
-                        className={`min-h-36 min-w-0 md:min-h-40 ${
-                          isToday ? "bg-[var(--surface)]" : "bg-[var(--mist)]"
+                        className={`border-b px-2 py-2.5 text-center text-xs font-semibold uppercase tracking-wider md:px-2 md:py-2 ${
+                          isToday
+                            ? "relative z-[1] border-[color-mix(in_srgb,var(--signal)_18%,var(--line))] text-[var(--signal)]"
+                            : "border-[var(--line)] text-[color-mix(in_srgb,var(--ink)_72%,transparent)]"
                         }`}
+                        style={
+                          isToday
+                            ? {
+                                background:
+                                  "color-mix(in srgb, var(--signal) 10%, var(--surface))",
+                              }
+                            : undefined
+                        }
                       >
-                        <div
-                          className={`border-b px-2 py-2.5 text-center text-xs font-semibold uppercase tracking-wider md:px-2 md:py-2 ${
-                            isToday
-                              ? "relative z-[1] border-[color-mix(in_srgb,var(--signal)_18%,var(--line))] text-[var(--signal)]"
-                              : "border-[var(--line)] text-[color-mix(in_srgb,var(--ink)_72%,transparent)]"
-                          }`}
-                          style={
-                            isToday
-                              ? {
-                                  background:
-                                    "color-mix(in srgb, var(--signal) 10%, var(--surface))",
-                                }
-                              : undefined
-                          }
-                        >
-                          {name.slice(0, 3)}
-                        </div>
-                        <div className="space-y-2 p-2 md:space-y-1.5">
-                          {blocks.length === 0 && (
-                            <p className="px-1 text-sm opacity-40 md:text-xs">
-                              —
-                            </p>
-                          )}
-                          {blocks.map((b) => {
-                            const style = blockStyle(b, { muted: !isToday });
-                            return (
-                              <div
-                                key={b.id}
-                                title={b.label}
-                                className="rounded-[var(--radius-tag)] px-2.5 py-1.5 text-sm font-medium leading-snug break-words hyphens-auto tabular-nums md:text-xs lg:text-sm border border-black/[0.05] shadow-xs"
-                                style={style.style}
-                                lang="pt-BR"
-                              >
-                                {b.label}
-                              </div>
-                            );
-                          })}
-                        </div>
+                        {name.slice(0, 3)}
                       </div>
-                    );
-                  })}
-                </div>
-              </div>
-            ) : (
-              <div className="bg-[var(--surface)] px-3.5 py-2.5 md:px-5 md:py-3">
-                <div className="flex flex-wrap items-center gap-2">
-                  {todayBlocks.length === 0 && (
-                    <p className="text-sm text-[color-mix(in_srgb,var(--ink)_45%,transparent)]">
-                      Nenhum bloco hoje.
-                    </p>
-                  )}
-                  {todayBlocks.map((b, idx) => {
-                    const style = blockStyle(b, { pill: true });
-                    return (
-                      <div key={b.id} className="inline-flex items-center gap-2">
-                        {idx > 0 && (
-                          <ChevronRight
-                            size={14}
-                            strokeWidth={2.5}
-                            className="shrink-0 text-[color-mix(in_srgb,var(--ink)_35%,transparent)]"
-                            aria-hidden="true"
-                          />
+                      <div className="space-y-2 p-2 md:space-y-1.5">
+                        {blocks.length === 0 && (
+                          <p className="px-1 text-sm opacity-40 md:text-xs">
+                            —
+                          </p>
                         )}
-                        <div
-                          className="rounded-full px-3 py-1 text-sm font-medium tabular-nums shadow-xs"
-                          style={style.style}
-                        >
-                          {b.label}
-                        </div>
+                        {blocks.map((b) => {
+                          const style = blockStyle(b, { muted: !isToday });
+                          return (
+                            <div
+                              key={b.id}
+                              title={b.label}
+                              className="rounded-[var(--radius-tag)] px-2.5 py-1.5 text-sm font-medium leading-snug break-words hyphens-auto tabular-nums md:text-xs lg:text-sm border border-black/[0.05] shadow-xs"
+                              style={style.style}
+                              lang="pt-BR"
+                            >
+                              {b.label}
+                            </div>
+                          );
+                        })}
                       </div>
-                    );
-                  })}
-                </div>
+                    </div>
+                  );
+                })}
               </div>
-            )}
+            </div>
           </section>
 
           <section className="surface p-0 max-lg:overflow-visible lg:overflow-hidden">
