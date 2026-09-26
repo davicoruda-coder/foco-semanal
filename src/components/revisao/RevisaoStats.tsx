@@ -3,8 +3,7 @@
 import { useEffect } from "react";
 import {
   AlertTriangle,
-  Brain,
-  CheckCircle2,
+  BookMarked,
   HelpCircle,
   Layers,
   PieChart,
@@ -52,7 +51,7 @@ export function RevisaoStats() {
           </span>
           <div className="flex items-center justify-between">
             <span className="text-xl font-bold text-[var(--ink)]">{total}</span>
-            <Layers size={18} className="text-[var(--signal)] opacity-80" />
+            <BookMarked size={18} className="text-[var(--signal)] opacity-80" />
           </div>
         </div>
 
@@ -64,7 +63,7 @@ export function RevisaoStats() {
             <span className="text-xl font-bold text-[var(--signal)]">
               {stats.flashcardsPendentes}
             </span>
-            <Brain size={18} className="text-[var(--signal)] opacity-80" />
+            <Layers size={18} className="text-[var(--signal)] opacity-80" />
           </div>
         </div>
 
@@ -73,10 +72,10 @@ export function RevisaoStats() {
             Pegadinhas Mapeadas
           </span>
           <div className="flex items-center justify-between">
-            <span className="text-xl font-bold text-[#8b5cf6]">
+            <span className="text-xl font-bold text-[var(--signal)]">
               {stats.porResultado["pegadinha"] || 0}
             </span>
-            <AlertTriangle size={18} className="text-[#8b5cf6] opacity-80" />
+            <AlertTriangle size={18} className="text-[var(--signal)] opacity-80" />
           </div>
         </div>
 
@@ -85,10 +84,10 @@ export function RevisaoStats() {
             Acertos no Chute
           </span>
           <div className="flex items-center justify-between">
-            <span className="text-xl font-bold text-[#f59e0b]">
+            <span className="text-xl font-bold text-[var(--warn)]">
               {stats.porResultado["chute"] || 0}
             </span>
-            <HelpCircle size={18} className="text-[#f59e0b] opacity-80" />
+            <HelpCircle size={18} className="text-[var(--warn)] opacity-80" />
           </div>
         </div>
       </div>
@@ -110,9 +109,9 @@ export function RevisaoStats() {
             <div className="space-y-2.5">
               {(
                 [
-                  { key: "atencao", label: "Falta de Atenção", color: "#f59e0b" },
-                  { key: "teoria", label: "Teoria / Conceito", color: "#ef4444" },
-                  { key: "interpretacao", label: "Interpretação", color: "#3b82f6" },
+                  { key: "atencao", label: "Falta de Atenção", color: "var(--warn)" },
+                  { key: "teoria", label: "Teoria / Conceito", color: "var(--signal)" },
+                  { key: "interpretacao", label: "Interpretação", color: "var(--accent-2)" },
                 ] as const
               ).map(({ key, label, color }) => {
                 const count = stats.porCausa[key] || 0;
@@ -165,7 +164,7 @@ export function RevisaoStats() {
                         {disc}
                       </span>
                       <span className="text-[color-mix(in_srgb,var(--ink)_60%,transparent)]">
-                        {count} questões
+                        {count} {count === 1 ? "questão" : "questões"}
                       </span>
                     </div>
                     <div className="h-1.5 w-full overflow-hidden rounded-full bg-[var(--mist)]">
