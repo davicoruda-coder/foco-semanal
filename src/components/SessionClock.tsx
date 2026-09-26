@@ -663,67 +663,31 @@ export function SessionClock({
   return (
     <div className="surface overflow-hidden p-0 transition-all duration-200">
       <div
-        className={`flex flex-wrap items-center justify-between gap-2 ${
-          collapsed ? "" : "border-b border-[var(--line)]"
+        onClick={() => {
+          if (collapsed) toggleCollapsed();
+        }}
+        className={`flex items-center justify-between gap-2 ${
+          collapsed ? "cursor-pointer" : "border-b border-[var(--line)]"
         } ${stack ? "px-3 py-1.5" : "px-3 py-2.5 md:px-5"}`}
       >
         {livreOnly ? (
-          <div className="flex min-w-0 flex-1 items-center justify-between gap-1.5">
-            {livreTabs}
-            <div className="flex items-center gap-1 shrink-0">
-              {collapsed && (
-                <div
-                  className={`flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-mono font-medium transition ${
-                    (showStopwatch ? stopwatch.running : sidebarRunning)
-                      ? "bg-[color-mix(in_srgb,var(--signal)_14%,var(--surface))] text-[var(--signal)] ring-1 ring-[var(--signal)]/30 shadow-xs"
-                      : "bg-[var(--mist)] text-[color-mix(in_srgb,var(--ink)_75%,transparent)]"
-                  }`}
-                >
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (showStopwatch) {
-                        toggleStopwatch();
-                      } else {
-                        toggleSidebarTimer();
-                      }
-                    }}
-                    className="grid size-5 place-items-center rounded-full text-[var(--signal)] hover:bg-[var(--signal-soft)] transition active:scale-95"
-                    title={
-                      (showStopwatch ? stopwatch.running : sidebarRunning)
-                        ? "Pausar"
-                        : "Iniciar"
-                    }
-                    aria-label={
-                      (showStopwatch ? stopwatch.running : sidebarRunning)
-                        ? "Pausar"
-                        : "Iniciar"
-                    }
-                  >
-                    {(showStopwatch ? stopwatch.running : sidebarRunning) ? (
-                      <Pause size={10} fill="currentColor" />
-                    ) : (
-                      <Play size={10} fill="currentColor" className="ml-0.5" />
-                    )}
-                  </button>
-                  <span className="text-[11px] font-semibold tracking-tight">
-                    {formatTime(showStopwatch ? stopwatchSeconds : secondsForSidebar)}
-                  </span>
-                </div>
-              )}
+          <div className="flex w-full min-w-0 items-center justify-between gap-2">
+            <div onClick={(e) => e.stopPropagation()}>
+              {livreTabs}
+            </div>
+            <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
               {livreGear}
               <button
                 type="button"
                 onClick={toggleCollapsed}
                 title={collapsed ? "Expandir relógio" : "Recolher relógio"}
                 aria-label={collapsed ? "Expandir relógio" : "Recolher relógio"}
-                className="shrink-0 rounded-full p-1.5 text-[color-mix(in_srgb,var(--ink)_50%,transparent)] transition hover:bg-[var(--mist)] hover:text-[var(--ink)] active:scale-95"
+                className="shrink-0 rounded-full p-1.5 text-[color-mix(in_srgb,var(--ink)_60%,transparent)] transition hover:bg-[var(--mist)] hover:text-[var(--ink)] active:scale-95"
               >
                 {collapsed ? (
-                  <ChevronDown size={15} strokeWidth={2} />
+                  <ChevronDown size={16} strokeWidth={2} />
                 ) : (
-                  <ChevronUp size={15} strokeWidth={2} />
+                  <ChevronUp size={16} strokeWidth={2} />
                 )}
               </button>
             </div>
@@ -793,6 +757,47 @@ export function SessionClock({
           </>
         )}
       </div>
+
+      {collapsed && (sidebarRunning || stopwatch.running || sidebarPaused || swPaused) && (
+        <div className="flex items-center justify-between border-t border-[var(--line)]/60 bg-[color-mix(in_srgb,var(--signal)_8%,var(--surface))] px-3 py-1.5 text-xs animate-in fade-in duration-200">
+          <div className="flex items-center gap-1.5 font-medium text-[var(--signal)]">
+            <span className="relative flex size-2">
+              {(sidebarRunning || stopwatch.running) && (
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--signal)] opacity-75" />
+              )}
+              <span className="relative inline-flex size-2 rounded-full bg-[var(--signal)]" />
+            </span>
+            <span className="font-mono font-bold tracking-tight">
+              {formatTime(showStopwatch ? stopwatchSeconds : secondsForSidebar)}
+            </span>
+            <span className="text-[11px] text-[color-mix(in_srgb,var(--ink)_60%,transparent)]">
+              {showStopwatch ? "em andamento" : "restante"}
+            </span>
+          </div>
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={showStopwatch ? toggleStopwatch : toggleSidebarTimer}
+              className="grid size-6 place-items-center rounded-full bg-[var(--signal)] text-white hover:brightness-110 transition active:scale-95 shadow-xs"
+              title={(showStopwatch ? stopwatch.running : sidebarRunning) ? "Pausar" : "Continuar"}
+            >
+              {(showStopwatch ? stopwatch.running : sidebarRunning) ? (
+                <Pause size={10} fill="currentColor" />
+              ) : (
+                <Play size={10} fill="currentColor" className="ml-0.5" />
+              )}
+            </button>
+            <button
+              type="button"
+              onClick={showStopwatch ? resetStopwatch : resetSidebarTimer}
+              className="grid size-6 place-items-center rounded-full text-[color-mix(in_srgb,var(--ink)_50%,transparent)] hover:bg-[var(--mist)] hover:text-[var(--ink)] transition active:scale-95"
+              title="Reiniciar"
+            >
+              <RotateCcw size={11} />
+            </button>
+          </div>
+        </div>
+      )}
 
       {!collapsed && (
         <div key={mode} className="fade-in">
