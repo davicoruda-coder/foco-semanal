@@ -121,7 +121,7 @@ const TOPICS: TutorialTopic[] = [
 ];
 
 export function HelpTutorialSection() {
-  const [openId, setOpenId] = useState<string | null>("ciclo");
+  const [openId, setOpenId] = useState<string | null>(null);
 
   function toggle(id: string) {
     setOpenId((prev) => (prev === id ? null : id));
