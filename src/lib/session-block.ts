@@ -89,6 +89,8 @@ export function subjectMinutes(s: Pick<Subject, "study_minutes">) {
  * Agrupa as próximas matérias da fila até caber na faixa min–max,
  * preferindo parar perto da meta. Sempre inclui ao menos uma.
  * Matéria sozinha maior que o máximo entra sozinha.
+ * Garante alternância: nunca insere a mesma matéria consecutivamente se houver
+ * matérias diferentes disponíveis na fila.
  */
 export function packStudyBlock(
   queue: Subject[],
@@ -98,19 +100,54 @@ export function packStudyBlock(
 ): Subject[] {
   if (queue.length === 0) return [];
 
+  const distinctIds = new Set(queue.map((s) => s.id));
+  const hasMultipleSubjects = distinctIds.size > 1;
+
   const pack: Subject[] = [];
   let sum = 0;
+  const usedIndices = new Set<number>();
 
-  for (const s of queue) {
+  for (let i = 0; i < queue.length; i++) {
+    if (usedIndices.has(i)) continue;
+    const s = queue[i];
     const m = subjectMinutes(s);
+
     if (pack.length === 0) {
       pack.push(s);
+      usedIndices.add(i);
       sum = m;
       if (sum >= minMinutes) break;
       continue;
     }
+
+    // Se s for a mesma matéria que a anterior e houver matérias diferentes na fila:
+    if (hasMultipleSubjects && s.id === pack[pack.length - 1].id) {
+      let foundAlt = false;
+      for (let j = i + 1; j < queue.length; j++) {
+        if (usedIndices.has(j)) continue;
+        const alt = queue[j];
+        if (alt.id !== pack[pack.length - 1].id) {
+          const altM = subjectMinutes(alt);
+          if (sum + altM <= maxMinutes) {
+            pack.push(alt);
+            usedIndices.add(j);
+            sum += altM;
+            foundAlt = true;
+            break;
+          }
+        }
+      }
+      if (foundAlt) {
+        if (sum >= targetMinutes) break;
+        continue;
+      }
+      // Se não encontrou alternativa que caiba no limite de tempo, encerra o bloco
+      break;
+    }
+
     if (sum + m > maxMinutes) break;
     pack.push(s);
+    usedIndices.add(i);
     sum += m;
     if (sum >= targetMinutes) break;
   }

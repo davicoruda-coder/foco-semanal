@@ -80,12 +80,36 @@ type StudyFlowContextValue = {
 
 const StudyFlowContext = createContext<StudyFlowContextValue | null>(null);
 
+function rotateToAvoidAdjacent(list: Subject[], avoidId?: string | null): Subject[] {
+  if (!avoidId || list.length <= 1) return list;
+  if (list[0].id !== avoidId) return list;
+  const firstDifferentIdx = list.findIndex((s) => s.id !== avoidId);
+  if (firstDifferentIdx < 0) return list;
+  return [...list.slice(firstDifferentIdx), ...list.slice(0, firstDifferentIdx)];
+}
+
 function todayQueue(subjects: Subject[]): Subject[] {
   const day = todayIndex();
   const remaining = buildWeightedCycleQueue(subjects, day);
   const fullCycle = buildFullWeightedCycle(subjects, day);
-  // Pad the queue with the full cycle so blocks can wrap around seamlessly
-  return [...remaining, ...fullCycle, ...fullCycle];
+
+  if (fullCycle.length === 0) return remaining;
+
+  if (remaining.length === 0) {
+    const cycle1 = fullCycle;
+    const last1 = cycle1[cycle1.length - 1]?.id;
+    const cycle2 = rotateToAvoidAdjacent(fullCycle, last1);
+    const last2 = cycle2[cycle2.length - 1]?.id;
+    const cycle3 = rotateToAvoidAdjacent(fullCycle, last2);
+    return [...cycle1, ...cycle2, ...cycle3];
+  }
+
+  const lastRemId = remaining[remaining.length - 1]?.id;
+  const cycle1 = rotateToAvoidAdjacent(fullCycle, lastRemId);
+  const last1 = cycle1[cycle1.length - 1]?.id;
+  const cycle2 = rotateToAvoidAdjacent(fullCycle, last1);
+
+  return [...remaining, ...cycle1, ...cycle2];
 }
 
 export function StudyFlowProvider({ children }: { children: ReactNode }) {

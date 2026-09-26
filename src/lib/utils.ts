@@ -324,9 +324,83 @@ function statusOnDay(s: Subject, day: number, all: Subject[]): SubjectStatus {
 }
 
 /**
+ * Constrói uma sequência ponderada com intercalação inteligente (fair interleaving).
+ * Evita repetições consecutivas da mesma matéria distribuindo as matérias de maior peso
+ * proporcionalmente ao longo do ciclo.
+ */
+export function buildInterleavedWeightedSequence<T extends Subject>(
+  base: T[],
+  opts: {
+    remainingOnly?: boolean;
+    exclusive?: boolean;
+  } = {},
+): T[] {
+  if (base.length === 0) return [];
+  if (base.length === 1) {
+    const s = base[0];
+    const w = Math.max(1, s.weight ?? 1);
+    const done = Math.max(0, s.cycle_done ?? 0);
+    const isDone = opts.exclusive
+      ? s.exclusive_status === "ok"
+      : s.status === "ok" || done >= w;
+    const count = opts.remainingOnly ? (isDone ? 0 : Math.max(0, w - done)) : w;
+    return Array(count).fill(s);
+  }
+
+  const counts = new Map<string, number>();
+  let totalCount = 0;
+
+  for (const s of base) {
+    const w = Math.max(1, s.weight ?? 1);
+    const done = Math.max(0, s.cycle_done ?? 0);
+    const isDone = opts.exclusive
+      ? s.exclusive_status === "ok"
+      : s.status === "ok" || done >= w;
+    const count = opts.remainingOnly ? (isDone ? 0 : Math.max(0, w - done)) : w;
+    counts.set(s.id, count);
+    totalCount += count;
+  }
+
+  if (totalCount === 0) return [];
+
+  const result: T[] = [];
+  let lastId: string | null = null;
+
+  while (totalCount > 0) {
+    const available = base.filter((s) => (counts.get(s.id) ?? 0) > 0);
+    if (available.length === 0) break;
+
+    // Prioriza matérias diferentes da anterior para garantir alternância
+    const nonConsecutive = available.filter((s) => s.id !== lastId);
+    const candidates = nonConsecutive.length > 0 ? nonConsecutive : available;
+
+    // Escolhe a matéria com maior contagem restante para manter espaçamento uniforme;
+    // em caso de empate, mantém a ordem original da lista base
+    let best = candidates[0];
+    let bestCount = counts.get(best.id) ?? 0;
+
+    for (let i = 1; i < candidates.length; i++) {
+      const c = candidates[i];
+      const count = counts.get(c.id) ?? 0;
+      if (count > bestCount) {
+        best = c;
+        bestCount = count;
+      }
+    }
+
+    result.push(best);
+    counts.set(best.id, bestCount - 1);
+    totalCount--;
+    lastId = best.id;
+  }
+
+  return result;
+}
+
+/**
  * Retorna a fila intercalada de matérias para o ciclo do dia considerando os pesos e o que já foi cumprido.
  * Cada matéria entra 'weight' vezes (padrão 1).
- * Na rodada r (1..maxWeight), entram as matérias com weight >= r que ainda têm cycle_done < r.
+ * As matérias são intercaladas uniformemente, prevenindo repetições consecutivas.
  * O primeiro item da lista resultante é a próxima matéria exata a ser estudada.
  */
 export function buildWeightedCycleQueue<T extends Subject>(
@@ -336,28 +410,12 @@ export function buildWeightedCycleQueue<T extends Subject>(
   const rawBase = cycleSubjectsOnDay(subjects, day);
   if (rawBase.length === 0) return [];
   const base = rotateCycleBase(rawBase);
-
   const exclusive = isExclusiveCycleDay(subjects, day);
-  const maxWeight = Math.max(
-    ...base.map((s) => Math.max(1, s.weight ?? 1)),
-    1,
-  );
 
-  const queue: T[] = [];
-  for (let round = 1; round <= maxWeight; round++) {
-    for (const s of base) {
-      const w = Math.max(1, s.weight ?? 1);
-      const done = Math.max(0, s.cycle_done ?? 0);
-      const isDone = exclusive
-        ? s.exclusive_status === "ok"
-        : s.status === "ok" || done >= w;
-      if (w >= round && (!isDone && done < round)) {
-        queue.push(s);
-      }
-    }
-  }
-
-  return queue;
+  return buildInterleavedWeightedSequence(base, {
+    remainingOnly: true,
+    exclusive,
+  });
 }
 
 /**
@@ -372,22 +430,9 @@ export function buildFullWeightedCycle<T extends Subject>(
   if (rawBase.length === 0) return [];
   const base = rotateCycleBase(rawBase);
 
-  const maxWeight = Math.max(
-    ...base.map((s) => Math.max(1, s.weight ?? 1)),
-    1,
-  );
-
-  const queue: T[] = [];
-  for (let round = 1; round <= maxWeight; round++) {
-    for (const s of base) {
-      const w = Math.max(1, s.weight ?? 1);
-      if (w >= round) {
-        queue.push(s);
-      }
-    }
-  }
-
-  return queue;
+  return buildInterleavedWeightedSequence(base, {
+    remainingOnly: false,
+  });
 }
 
 /** Id da próxima matéria do ciclo de hoje (cabeça da fila intercalada). */
