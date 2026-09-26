@@ -58,18 +58,21 @@ const SETTINGS_TABS = [
   {
     id: "estudo",
     label: "Estudo & Rotina",
+    shortLabel: "Estudo",
     desc: "Módulos, blocos e timers",
     icon: GraduationCap,
   },
   {
     id: "aparencia",
     label: "Aparência & Som",
+    shortLabel: "Aparência",
     desc: "Tema e notificações sonoras",
     icon: Palette,
   },
   {
     id: "conta",
     label: "Conta & Segurança",
+    shortLabel: "Conta",
     desc: "Backup, nuvem e perfil",
     icon: ShieldCheck,
   },
@@ -319,23 +322,24 @@ export default function AjustesPage() {
               </Link>
             </div>
 
-            {/* Abas Horizontais no Mobile */}
-            <div className="flex w-full max-w-full items-center gap-1 overflow-x-auto scrollbar-none rounded-xl border border-[var(--line)] bg-[var(--mist)] p-1">
-              {SETTINGS_TABS.map(({ id, label, icon: Icon }) => {
+            {/* Abas Mobile (Segmented Control em 3 colunas perfeitas — sem scroll horizontal) */}
+            <div className="grid grid-cols-3 w-full items-center gap-1 rounded-xl border border-[var(--line)] bg-[var(--mist)] p-1">
+              {SETTINGS_TABS.map(({ id, label, shortLabel, icon: Icon }) => {
                 const active = activeTab === id;
                 return (
                   <button
                     key={id}
                     type="button"
                     onClick={() => handleTabChange(id)}
-                    className={`flex flex-1 shrink-0 items-center justify-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold transition ${
+                    className={`flex items-center justify-center gap-1.5 rounded-lg px-2 py-2 text-xs font-semibold transition ${
                       active
                         ? "bg-[var(--surface)] text-[var(--signal)] shadow-sm"
                         : "text-[color-mix(in_srgb,var(--ink)_65%,transparent)] hover:text-[var(--ink)]"
                     }`}
                   >
-                    <Icon size={16} strokeWidth={active ? 2.25 : 1.75} />
-                    <span className="whitespace-nowrap">{label}</span>
+                    <Icon size={16} strokeWidth={active ? 2.25 : 1.75} className="shrink-0" />
+                    <span className="sm:hidden truncate">{shortLabel}</span>
+                    <span className="hidden sm:inline whitespace-nowrap">{label}</span>
                   </button>
                 );
               })}
