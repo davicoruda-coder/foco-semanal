@@ -439,13 +439,13 @@ export function StudySessionChrome() {
         </p>
 
         {flow.cycleRoundCompleted != null && (
-          <div className="mt-3 flex items-start gap-2.5 rounded-[var(--radius-tag)] border border-emerald-500/25 bg-emerald-500/10 p-3 text-emerald-950 dark:text-emerald-200">
+          <div className="mt-3 flex items-start gap-3 rounded-[var(--radius-tag)] border border-emerald-500/30 bg-emerald-500/10 dark:bg-emerald-950/40 dark:border-emerald-500/30 p-3.5">
             <span className="text-lg leading-none select-none">🎉</span>
             <div className="min-w-0">
-              <p className="text-sm font-semibold leading-snug">
+              <p className="text-sm font-bold text-emerald-950 dark:text-emerald-200 leading-snug">
                 {flow.cycleRoundCompleted}ª volta do ciclo concluída!
               </p>
-              <p className="mt-0.5 text-xs text-emerald-800/80 dark:text-emerald-300/80 leading-relaxed">
+              <p className="mt-1 text-xs font-medium text-emerald-800 dark:text-emerald-300/90 leading-relaxed">
                 Continue assim — vamos entrar na próxima rodada do ciclo!
               </p>
             </div>
@@ -493,13 +493,13 @@ export function StudySessionChrome() {
         </p>
 
         {flow.cycleRoundCompleted != null && (
-          <div className="mt-3 flex items-start gap-2.5 rounded-[var(--radius-tag)] border border-emerald-500/25 bg-emerald-500/10 p-3 text-emerald-950 dark:text-emerald-200">
+          <div className="mt-3 flex items-start gap-3 rounded-[var(--radius-tag)] border border-emerald-500/30 bg-emerald-500/10 dark:bg-emerald-950/40 dark:border-emerald-500/30 p-3.5">
             <span className="text-lg leading-none select-none">🎉</span>
             <div className="min-w-0">
-              <p className="text-sm font-semibold leading-snug">
+              <p className="text-sm font-bold text-emerald-950 dark:text-emerald-200 leading-snug">
                 {flow.cycleRoundCompleted}ª volta do ciclo concluída!
               </p>
-              <p className="mt-0.5 text-xs text-emerald-800/80 dark:text-emerald-300/80 leading-relaxed">
+              <p className="mt-1 text-xs font-medium text-emerald-800 dark:text-emerald-300/90 leading-relaxed">
                 Excelente rendimento no bloco. Hora de fazer uma pausa ou seguir no ritmo!
               </p>
             </div>

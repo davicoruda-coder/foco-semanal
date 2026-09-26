@@ -77,6 +77,7 @@ function resolveTheme(pref: ThemePref): Theme {
 function applyTheme(theme: Theme) {
   if (typeof document === "undefined") return;
   document.documentElement.setAttribute("data-theme", theme);
+  document.documentElement.classList.toggle("dark", theme === "dark");
 }
 
 function getStoredPref(): ThemePref {

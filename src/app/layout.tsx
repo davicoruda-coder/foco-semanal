@@ -66,6 +66,7 @@ const THEME_INIT_SCRIPT = `
         : "light";
     }
     document.documentElement.setAttribute("data-theme", theme);
+    document.documentElement.classList.toggle("dark", theme === "dark");
   } catch (e) {}
 })();
 `;
