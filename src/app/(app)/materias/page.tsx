@@ -967,7 +967,7 @@ export default function MateriasPage() {
       {/* Cabeçalho */}
       <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
         <div>
-          <h1 className="font-display pb-0.5 text-2xl font-semibold leading-normal tracking-tight md:text-3xl">
+          <h1 className="font-display text-xl sm:text-2xl font-semibold tracking-tight text-[var(--ink)]">
             Matérias
           </h1>
           <p className="text-xs text-[color-mix(in_srgb,var(--ink)_55%,transparent)]">

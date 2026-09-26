@@ -518,7 +518,7 @@ export default function EstatisticasPage() {
         </div>
       </DialogFrame>
 
-      <h1 className="font-display pb-0.5 text-2xl font-semibold leading-normal tracking-tight md:text-3xl">
+      <h1 className="font-display text-xl sm:text-2xl font-semibold tracking-tight text-[var(--ink)]">
         Estatísticas
       </h1>
       <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">

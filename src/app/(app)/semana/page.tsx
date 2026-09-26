@@ -730,7 +730,7 @@ export default function SemanaPage() {
       >
         ← Agenda
       </Link>
-      <h1 className="font-display pb-0.5 text-2xl font-semibold leading-normal tracking-tight md:text-3xl">
+      <h1 className="font-display text-xl sm:text-2xl font-semibold tracking-tight text-[var(--ink)]">
         Semana
       </h1>
 

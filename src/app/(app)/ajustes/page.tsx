@@ -228,7 +228,7 @@ export default function AjustesPage() {
       />
 
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="font-display text-2xl font-bold tracking-tight md:text-3xl text-[var(--ink)]">
+        <h1 className="font-display text-xl sm:text-2xl font-semibold tracking-tight text-[var(--ink)]">
           Ajustes
         </h1>
         <Link

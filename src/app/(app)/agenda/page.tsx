@@ -54,7 +54,7 @@ export default function AgendaPage() {
       />
 
       <div className="flex flex-wrap items-center justify-between gap-2 px-0.5">
-        <h1 className="font-display text-2xl font-semibold tracking-tight md:text-3xl">
+        <h1 className="font-display text-xl sm:text-2xl font-semibold tracking-tight text-[var(--ink)]">
           Agenda
         </h1>
         <Link

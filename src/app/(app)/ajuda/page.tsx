@@ -11,7 +11,7 @@ export default function AjudaPage() {
     <div className="mx-auto max-w-4xl space-y-6 pb-16">
       {/* Cabeçalho da página fora dos blocos (padrão FocoHub / Ajustes) */}
       <div>
-        <h1 className="font-display text-2xl font-bold tracking-tight md:text-3xl text-[var(--ink)]">
+        <h1 className="font-display text-xl sm:text-2xl font-semibold tracking-tight text-[var(--ink)]">
           Guia Rápido & Tutorial
         </h1>
       </div>
