@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   ExternalLink,
   Filter,
@@ -12,6 +12,8 @@ import {
   Video,
   ChevronDown,
   ChevronUp,
+  ChevronLeft,
+  ChevronRight,
   Copy,
   Check,
   X,
@@ -19,7 +21,9 @@ import {
   Layers,
   Plus,
   Loader2,
+  BookOpen,
 } from "lucide-react";
+import { DialogFrame } from "@/components/DialogFrame";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { QuickCaptureForm } from "./QuickCaptureForm";
 import { FormattedRuleText } from "./FormattedRuleText";
@@ -43,7 +47,7 @@ export function CadernoList({
   const [disciplinaFiltro, setDisciplinaFiltro] = useState<string>("todas");
   const [causaFiltro, setCausaFiltro] = useState<string>("todas");
   const [resultadoFiltro, setResultadoFiltro] = useState<string>("todas");
-  const [itemExpandidoId, setItemExpandidoId] = useState<string | null>(null);
+  const [readingQuestao, setReadingQuestao] = useState<QuestaoCaderno | null>(null);
   const [deletandoId, setDeletandoId] = useState<string | null>(null);
   const [editingQuestao, setEditingQuestao] = useState<QuestaoCaderno | null>(null);
   const [pendingDeleteQuestao, setPendingDeleteQuestao] = useState<QuestaoCaderno | null>(null);
@@ -162,11 +166,43 @@ export function CadernoList({
     });
   }, [questoes, bancaFiltro, disciplinaFiltro, causaFiltro, resultadoFiltro, search]);
 
+  // Navegação no Modal de Leitura
+  const readingIndex = useMemo(() => {
+    if (!readingQuestao) return -1;
+    return questoesFiltradas.findIndex((q) => q.id === readingQuestao.id);
+  }, [readingQuestao, questoesFiltradas]);
+
+  const prevQuestao = readingIndex > 0 ? questoesFiltradas[readingIndex - 1] : null;
+  const nextQuestao =
+    readingIndex >= 0 && readingIndex < questoesFiltradas.length - 1
+      ? questoesFiltradas[readingIndex + 1]
+      : null;
+
+  // Atalhos de teclado (setas ← / →) para folhear fichas no modal de leitura
+  useEffect(() => {
+    if (!readingQuestao) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (["INPUT", "TEXTAREA"].includes((e.target as HTMLElement)?.tagName)) {
+        return;
+      }
+      if (e.key === "ArrowLeft" && prevQuestao) {
+        setReadingQuestao(prevQuestao);
+      } else if (e.key === "ArrowRight" && nextQuestao) {
+        setReadingQuestao(nextQuestao);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [readingQuestao, prevQuestao, nextQuestao]);
+
   const handleDeleteConfirm = async () => {
     if (!pendingDeleteQuestao) return;
     setDeletandoId(pendingDeleteQuestao.id);
     try {
       await deleteQuestao(pendingDeleteQuestao.id);
+      if (readingQuestao?.id === pendingDeleteQuestao.id) {
+        setReadingQuestao(null);
+      }
       setPendingDeleteQuestao(null);
     } finally {
       setDeletandoId(null);
@@ -250,7 +286,19 @@ export function CadernoList({
         </div>
       </div>
 
-      {/* Lista de Registros */}
+      {/* Contador e Dica de Uso */}
+      <div className="flex flex-wrap items-center justify-between gap-2 px-1 text-xs text-[color-mix(in_srgb,var(--ink)_55%,transparent)]">
+        <span>
+          {questoesFiltradas.length === 1
+            ? "1 anotação encontrada"
+            : `${questoesFiltradas.length} anotações encontradas`}
+        </span>
+        <span className="hidden sm:inline text-[11px] text-[color-mix(in_srgb,var(--ink)_45%,transparent)]">
+          Clique no card para abrir a ficha completa
+        </span>
+      </div>
+
+      {/* Lista de Registros Compactos */}
       {questoesLoading ? (
         <div className="py-12 text-center text-sm text-[color-mix(in_srgb,var(--ink)_50%,transparent)]">
           Carregando questões do caderno...
@@ -269,28 +317,38 @@ export function CadernoList({
           </p>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-2.5">
           {questoesFiltradas.map((q) => {
-            const isExpanded = itemExpandidoId === q.id;
+            const rawLines = (q.aprendizado_chave || "")
+              .split("\n")
+              .map((l) => l.trim())
+              .filter(Boolean);
+            const meaningfulLines = rawLines.filter(
+              (l) => !/^[=\-_*~#]{3,}$/.test(l),
+            );
+            const primaryLine = meaningfulLines[0] || "Anotação de revisão";
+            const secondarySnippet = meaningfulLines.slice(1).join(" ");
+            const cardsCount = cardsVinculados.get(q.id) || 0;
 
             return (
               <div
                 key={q.id}
-                className="overflow-hidden rounded-[var(--radius)] border border-[var(--line)] bg-[var(--surface)] transition hover:border-[color-mix(in_srgb,var(--signal)_40%,var(--line))]"
+                onClick={() => setReadingQuestao(q)}
+                className="group relative cursor-pointer rounded-[var(--radius)] border border-[var(--line)] bg-[var(--surface)] p-3.5 transition-all duration-150 hover:border-[var(--signal)] hover:shadow-xs active:scale-[0.999]"
               >
-                {/* Header do Card */}
-                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--line)] bg-[var(--mist)]/40 px-3.5 py-2 text-xs">
+                {/* Header do Card com Chips */}
+                <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
                   <div className="flex flex-wrap items-center gap-1.5 min-w-0 max-w-full">
                     {q.banca && (
-                      <span className="rounded-md bg-[var(--surface)] px-2 py-0.5 font-semibold text-[var(--ink)] border border-[var(--line)] shrink-0">
+                      <span className="rounded-md bg-[var(--mist)] px-2 py-0.5 font-semibold text-[var(--ink)] border border-[var(--line)] shrink-0 text-[11px]">
                         {q.banca}
                       </span>
                     )}
-                    <span className="font-semibold text-[var(--signal)]">
+                    <span className="font-semibold text-[var(--signal)] text-[12px]">
                       {q.disciplina}
                     </span>
                     {q.assunto && (
-                      <span className="text-[color-mix(in_srgb,var(--ink)_60%,transparent)]">
+                      <span className="text-[color-mix(in_srgb,var(--ink)_65%,transparent)] font-medium text-[12px] truncate max-w-[200px] sm:max-w-[340px]">
                         › {q.assunto}
                       </span>
                     )}
@@ -301,7 +359,7 @@ export function CadernoList({
                     )}
                   </div>
 
-                  <div className="flex flex-wrap items-center gap-1.5 shrink-0 max-w-full">
+                  <div className="flex items-center gap-1.5 shrink-0">
                     <span
                       className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
                         q.status_resultado === "erro"
@@ -314,161 +372,330 @@ export function CadernoList({
                       {STATUS_RESULTADO_LABEL[q.status_resultado]}
                     </span>
 
-                    <span
-                      className="rounded-full bg-[var(--mist)] px-2 py-0.5 text-[10px] font-medium text-[color-mix(in_srgb,var(--ink)_65%,transparent)]"
-                    >
+                    <span className="rounded-full bg-[var(--mist)] px-2 py-0.5 text-[10px] font-medium text-[color-mix(in_srgb,var(--ink)_65%,transparent)] hidden sm:inline-block">
                       {CAUSA_ERRO_LABEL[q.causa_erro]}
                     </span>
 
-                    {/* Indicador se possui flashcards */}
-                    {cardsVinculados.get(q.id) ? (
+                    {cardsCount > 0 ? (
                       <span
                         className="inline-flex items-center gap-1 rounded-full bg-[color-mix(in_srgb,var(--signal)_12%,var(--surface))] px-2 py-0.5 text-[10px] font-semibold text-[var(--signal)] border border-[color-mix(in_srgb,var(--signal)_25%,transparent)]"
-                        title={`${cardsVinculados.get(q.id)} flashcard(s) criado(s) a partir desta questão`}
+                        title={`${cardsCount} flashcard(s) criado(s)`}
                       >
                         <Layers size={10} />
-                        {cardsVinculados.get(q.id)} {cardsVinculados.get(q.id) === 1 ? "card" : "cards"}
+                        {cardsCount} {cardsCount === 1 ? "card" : "cards"}
                       </span>
-                    ) : (
-                      <span
-                        className="inline-flex items-center gap-1 rounded-full bg-[var(--mist)] px-2 py-0.5 text-[10px] font-medium text-[color-mix(in_srgb,var(--ink)_45%,transparent)]"
-                        title="Apenas registrado no caderno (sem flashcard criado ainda)"
-                      >
-                        Sem card
-                      </span>
-                    )}
+                    ) : null}
                   </div>
                 </div>
 
-                {/* Conteúdo Principal: Regra Aprendida */}
-                <div className="p-3.5">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0 flex-1 space-y-1.5">
-                      <p className="text-xs font-semibold uppercase tracking-wider text-[var(--signal)]">
-                        Regra Aprendida:
-                      </p>
-                      <FormattedRuleText text={q.aprendizado_chave} />
-                    </div>
+                {/* Conteúdo do Card: Título + Snippet */}
+                <div className="mt-2.5">
+                  <h3 className="text-sm font-semibold text-[var(--ink)] leading-snug group-hover:text-[var(--signal)] transition-colors line-clamp-1">
+                    {primaryLine}
+                  </h3>
+                  {secondarySnippet ? (
+                    <p className="mt-1 line-clamp-2 text-xs text-[color-mix(in_srgb,var(--ink)_70%,transparent)] leading-relaxed">
+                      {secondarySnippet}
+                    </p>
+                  ) : null}
+                </div>
 
+                {/* Rodapé do Card: Dica de clique + Ações Rápidas */}
+                <div className="mt-3 flex items-center justify-between pt-2 border-t border-[color-mix(in_srgb,var(--line)_50%,transparent)] text-xs text-[color-mix(in_srgb,var(--ink)_50%,transparent)]">
+                  <span className="inline-flex items-center gap-1.5 font-medium text-[11px] text-[var(--signal)] group-hover:underline">
+                    <BookOpen size={12} />
+                    Ver ficha completa
+                  </span>
+
+                  <div
+                    className="flex items-center gap-1"
+                    onClick={(e) => e.stopPropagation()}
+                  >
                     <button
                       type="button"
-                      onClick={() => setItemExpandidoId(isExpanded ? null : q.id)}
-                      className="shrink-0 rounded-lg p-1.5 text-[color-mix(in_srgb,var(--ink)_50%,transparent)] hover:bg-[var(--mist)] hover:text-[var(--ink)] transition active:scale-95"
-                      title={isExpanded ? "Recolher detalhes" : "Ver detalhes"}
-                      aria-label={isExpanded ? "Recolher detalhes" : "Ver detalhes"}
+                      onClick={() => handleCopy(q.id, q.aprendizado_chave)}
+                      className="rounded p-1 text-[color-mix(in_srgb,var(--ink)_50%,transparent)] hover:bg-[var(--mist)] hover:text-[var(--ink)] transition"
+                      title="Copiar regra"
+                      aria-label="Copiar regra"
                     >
-                      {isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+                      {copiedId === q.id ? (
+                        <Check size={14} className="text-[var(--ok)]" />
+                      ) : (
+                        <Copy size={14} />
+                      )}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleOpenManualCard(q)}
+                      className="rounded p-1 text-[color-mix(in_srgb,var(--ink)_50%,transparent)] hover:bg-[var(--mist)] hover:text-[var(--ink)] transition"
+                      title="Criar card manual"
+                      aria-label="Criar card manual"
+                    >
+                      <Plus size={14} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setEditingQuestao(q)}
+                      className="rounded p-1 text-[color-mix(in_srgb,var(--ink)_50%,transparent)] hover:bg-[var(--mist)] hover:text-[var(--ink)] transition"
+                      title="Editar questão"
+                      aria-label="Editar questão"
+                    >
+                      <Pencil size={14} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPendingDeleteQuestao(q)}
+                      className="rounded p-1 text-[color-mix(in_srgb,var(--ink)_50%,transparent)] hover:bg-[color-mix(in_srgb,#ef4444_12%,transparent)] hover:text-[#ef4444] transition"
+                      title="Excluir questão"
+                      aria-label="Excluir questão"
+                    >
+                      <Trash2 size={14} />
                     </button>
                   </div>
-
-                  {/* Seção expandida: Enunciado, Vídeo e Link */}
-                  {isExpanded && (
-                    <div className="mt-3 space-y-3 rounded-lg border border-[var(--line)] bg-[var(--mist)]/50 p-3 text-xs">
-                      {q.enunciado_texto && (
-                        <div>
-                          <p className="font-semibold text-[color-mix(in_srgb,var(--ink)_70%,transparent)] mb-1">
-                            Enunciado / Trecho:
-                          </p>
-                          <p className="whitespace-pre-wrap break-words [overflow-wrap:anywhere] text-[color-mix(in_srgb,var(--ink)_85%,transparent)] leading-normal bg-[var(--surface)] p-2.5 rounded border border-[var(--line)]">
-                            {q.enunciado_texto}
-                          </p>
-                        </div>
-                      )}
-
-                      <div className="flex flex-wrap items-center gap-2 pt-1">
-                        {q.link_questao && (
-                          <a
-                            href={q.link_questao}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 rounded-md bg-[var(--surface)] border border-[var(--line)] px-2.5 py-1 text-xs font-medium text-[var(--signal)] hover:bg-[var(--signal-soft)] transition"
-                          >
-                            <ExternalLink size={12} />
-                            Ver Questão no QC
-                          </a>
-                        )}
-
-                        {q.link_video && (
-                          <a
-                            href={q.link_video}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 rounded-md bg-[var(--surface)] border border-[var(--line)] px-2.5 py-1 text-xs font-medium text-[#ef4444] hover:bg-red-50 dark:hover:bg-red-950/30 transition"
-                          >
-                            <Video size={12} />
-                            Vídeo Resolução
-                          </a>
-                        )}
-
-                        <div className="ml-auto flex flex-wrap items-center gap-1.5">
-                          <button
-                            type="button"
-                            onClick={() => handleOpenManualCard(q)}
-                            className="inline-flex items-center gap-1 rounded-md bg-[var(--surface)] border border-[var(--line)] px-2.5 py-1 text-xs font-medium text-[var(--ink)] hover:border-[var(--signal)] hover:text-[var(--signal)] transition active:scale-95"
-                            title="Criar um flashcard manual para este aprendizado"
-                          >
-                            <Plus size={12} />
-                            + Card Manual
-                          </button>
-
-                          {onGenerateWithAI && (
-                            <button
-                              type="button"
-                              onClick={() => handleGenerateAIForQuestao(q)}
-                              className="inline-flex items-center gap-1 rounded-md bg-[color-mix(in_srgb,var(--signal)_12%,var(--surface))] text-[var(--signal)] border border-[color-mix(in_srgb,var(--signal)_30%,transparent)] px-2.5 py-1 text-xs font-semibold hover:brightness-110 transition active:scale-95"
-                              title="Gerar flashcards com IA a partir deste aprendizado"
-                            >
-                              <Sparkles size={12} />
-                              Gerar Cards IA
-                            </button>
-                          )}
-                          <button
-                            type="button"
-                            onClick={() => handleCopy(q.id, q.aprendizado_chave)}
-                            className="inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-medium text-[color-mix(in_srgb,var(--ink)_65%,transparent)] hover:bg-[var(--surface)] hover:text-[var(--signal)] transition"
-                            title="Copiar regra aprendida"
-                          >
-                            {copiedId === q.id ? (
-                              <>
-                                <Check size={12} className="text-[var(--ok,#16a34a)]" />
-                                <span className="text-[var(--ok,#16a34a)]">Copiado</span>
-                              </>
-                            ) : (
-                              <>
-                                <Copy size={12} />
-                                Copiar
-                              </>
-                            )}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setEditingQuestao(q)}
-                            className="inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-medium text-[color-mix(in_srgb,var(--ink)_65%,transparent)] hover:bg-[var(--surface)] hover:text-[var(--signal)] transition"
-                            title="Editar questão"
-                          >
-                            <Pencil size={12} />
-                            Editar
-                          </button>
-                          <button
-                            type="button"
-                            disabled={deletandoId === q.id}
-                            onClick={() => setPendingDeleteQuestao(q)}
-                            className="inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-medium text-[color-mix(in_srgb,var(--ink)_50%,transparent)] hover:bg-[color-mix(in_srgb,#ef4444_12%,transparent)] hover:text-[#ef4444] transition"
-                            title="Excluir questão"
-                          >
-                            <Trash2 size={12} />
-                            Excluir
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  )}
                 </div>
               </div>
             );
           })}
         </div>
       )}
+
+      {/* Modal de Leitura Focada da Ficha Completa */}
+      <DialogFrame
+        open={readingQuestao !== null}
+        onClose={() => setReadingQuestao(null)}
+        labelledBy="reading-dialog-title"
+        cardClassName="surface flex max-h-[90vh] w-full max-w-2xl sm:max-w-3xl flex-col overflow-hidden p-0 shadow-[var(--shadow-lg)] border border-[var(--line)] rounded-[var(--radius)]"
+      >
+        {readingQuestao && (
+          <div className="flex flex-col h-full max-h-[90vh] min-h-0">
+            {/* Top Bar com Navegação e Fechar */}
+            <div className="flex items-center justify-between border-b border-[var(--line)] bg-[var(--mist)]/40 px-4 py-2.5 sm:px-6">
+              <div className="flex items-center gap-2 text-xs">
+                <span className="font-mono text-[11px] text-[color-mix(in_srgb,var(--ink)_60%,transparent)] font-medium">
+                  {readingIndex >= 0
+                    ? `Ficha ${readingIndex + 1} de ${questoesFiltradas.length}`
+                    : "Ficha de Estudo"}
+                </span>
+                {questoesFiltradas.length > 1 && (
+                  <div className="flex items-center gap-1 border-l border-[var(--line)] pl-2">
+                    <button
+                      type="button"
+                      disabled={!prevQuestao}
+                      onClick={() => prevQuestao && setReadingQuestao(prevQuestao)}
+                      className="rounded p-1 text-[var(--ink)] hover:bg-[var(--surface)] disabled:opacity-30 disabled:hover:bg-transparent transition"
+                      title="Ficha anterior (←)"
+                      aria-label="Ficha anterior"
+                    >
+                      <ChevronLeft size={16} />
+                    </button>
+                    <button
+                      type="button"
+                      disabled={!nextQuestao}
+                      onClick={() => nextQuestao && setReadingQuestao(nextQuestao)}
+                      className="rounded p-1 text-[var(--ink)] hover:bg-[var(--surface)] disabled:opacity-30 disabled:hover:bg-transparent transition"
+                      title="Próxima ficha (→)"
+                      aria-label="Próxima ficha"
+                    >
+                      <ChevronRight size={16} />
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setReadingQuestao(null)}
+                className="rounded-full p-1.5 text-[color-mix(in_srgb,var(--ink)_50%,transparent)] hover:bg-[var(--mist)] hover:text-[var(--ink)] transition"
+                aria-label="Fechar"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Badges / Header Contextual */}
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--line)] bg-[var(--surface)] px-4 py-3 sm:px-6 text-xs">
+              <div className="flex flex-wrap items-center gap-1.5 min-w-0" id="reading-dialog-title">
+                {readingQuestao.banca && (
+                  <span className="rounded-md bg-[var(--mist)] px-2 py-0.5 font-semibold text-[var(--ink)] border border-[var(--line)] text-[11px]">
+                    {readingQuestao.banca}
+                  </span>
+                )}
+                <span className="font-semibold text-[var(--signal)] text-[13px]">
+                  {readingQuestao.disciplina}
+                </span>
+                {readingQuestao.assunto && (
+                  <span className="text-[color-mix(in_srgb,var(--ink)_65%,transparent)] font-medium text-[13px]">
+                    › {readingQuestao.assunto}
+                  </span>
+                )}
+                {readingQuestao.codigo_questao && (
+                  <span className="font-mono text-[11px] font-medium text-[color-mix(in_srgb,var(--ink)_50%,transparent)]">
+                    #{readingQuestao.codigo_questao}
+                  </span>
+                )}
+              </div>
+
+              <div className="flex flex-wrap items-center gap-1.5">
+                <span
+                  className={`rounded-full px-2.5 py-0.5 text-[10px] font-semibold ${
+                    readingQuestao.status_resultado === "erro"
+                      ? "bg-[color-mix(in_srgb,#ef4444_15%,transparent)] text-[#ef4444]"
+                      : readingQuestao.status_resultado === "chute"
+                      ? "bg-[color-mix(in_srgb,#f59e0b_15%,transparent)] text-[#f59e0b]"
+                      : "bg-[color-mix(in_srgb,#8b5cf6_15%,transparent)] text-[#8b5cf6]"
+                  }`}
+                >
+                  {STATUS_RESULTADO_LABEL[readingQuestao.status_resultado]}
+                </span>
+
+                <span className="rounded-full bg-[var(--mist)] px-2.5 py-0.5 text-[10px] font-medium text-[color-mix(in_srgb,var(--ink)_70%,transparent)]">
+                  {CAUSA_ERRO_LABEL[readingQuestao.causa_erro]}
+                </span>
+
+                {cardsVinculados.get(readingQuestao.id) ? (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-[color-mix(in_srgb,var(--signal)_12%,var(--surface))] px-2.5 py-0.5 text-[10px] font-semibold text-[var(--signal)] border border-[color-mix(in_srgb,var(--signal)_25%,transparent)]">
+                    <Layers size={11} />
+                    {cardsVinculados.get(readingQuestao.id)}{" "}
+                    {cardsVinculados.get(readingQuestao.id) === 1 ? "card" : "cards"}
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-[var(--mist)] px-2 py-0.5 text-[10px] font-medium text-[color-mix(in_srgb,var(--ink)_45%,transparent)]">
+                    Sem card
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* Conteúdo com Scroll */}
+            <div className="flex-1 overflow-y-auto px-4 py-5 sm:px-6 space-y-4">
+              <FormattedRuleText
+                text={readingQuestao.aprendizado_chave}
+                className="text-sm sm:text-[15px] font-normal text-[var(--ink)] leading-relaxed select-text"
+              />
+
+              {readingQuestao.enunciado_texto && (
+                <div className="mt-4 rounded-[var(--radius-btn)] border border-[var(--line)] bg-[var(--mist)]/40 p-3 sm:p-4 text-xs space-y-1.5">
+                  <p className="font-semibold uppercase tracking-wider text-[11px] text-[color-mix(in_srgb,var(--ink)_65%,transparent)]">
+                    Enunciado / Trecho da Questão:
+                  </p>
+                  <p className="whitespace-pre-wrap break-words [overflow-wrap:anywhere] text-[color-mix(in_srgb,var(--ink)_85%,transparent)] leading-relaxed bg-[var(--surface)] p-3 rounded border border-[var(--line)]">
+                    {readingQuestao.enunciado_texto}
+                  </p>
+                </div>
+              )}
+
+              {(readingQuestao.link_questao || readingQuestao.link_video) && (
+                <div className="flex flex-wrap items-center gap-2 pt-1">
+                  {readingQuestao.link_questao && (
+                    <a
+                      href={readingQuestao.link_questao}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 rounded-md bg-[var(--surface)] border border-[var(--line)] px-3 py-1.5 text-xs font-medium text-[var(--signal)] hover:bg-[var(--signal-soft)] transition"
+                    >
+                      <ExternalLink size={13} />
+                      Ver no Questões de Concursos
+                    </a>
+                  )}
+                  {readingQuestao.link_video && (
+                    <a
+                      href={readingQuestao.link_video}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 rounded-md bg-[var(--surface)] border border-[var(--line)] px-3 py-1.5 text-xs font-medium text-[#ef4444] hover:bg-red-50 dark:hover:bg-red-950/30 transition"
+                    >
+                      <Video size={13} />
+                      Vídeo Resolução
+                    </a>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Barra de Ações Fixa no Rodapé da Ficha */}
+            <div className="flex flex-wrap items-center justify-between gap-2 border-t border-[var(--line)] bg-[var(--surface)] px-4 py-3 sm:px-6">
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleCopy(readingQuestao.id, readingQuestao.aprendizado_chave)}
+                  className="inline-flex items-center gap-1.5 rounded-[var(--radius-btn)] border border-[var(--line)] bg-[var(--surface)] px-3 py-1.5 text-xs font-medium text-[var(--ink)] hover:border-[var(--signal)] hover:text-[var(--signal)] transition active:scale-95"
+                >
+                  {copiedId === readingQuestao.id ? (
+                    <>
+                      <Check size={13} className="text-[var(--ok)]" />
+                      <span className="text-[var(--ok)] font-semibold">Copiado!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy size={13} />
+                      <span>Copiar Regra</span>
+                    </>
+                  )}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    const q = readingQuestao;
+                    setReadingQuestao(null);
+                    handleOpenManualCard(q);
+                  }}
+                  className="inline-flex items-center gap-1.5 rounded-[var(--radius-btn)] border border-[var(--line)] bg-[var(--surface)] px-3 py-1.5 text-xs font-medium text-[var(--ink)] hover:border-[var(--signal)] hover:text-[var(--signal)] transition active:scale-95"
+                  title="Criar flashcard manual para este item"
+                >
+                  <Plus size={13} />
+                  <span>+ Card Manual</span>
+                </button>
+
+                {onGenerateWithAI && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const q = readingQuestao;
+                      setReadingQuestao(null);
+                      handleGenerateAIForQuestao(q);
+                    }}
+                    className="inline-flex items-center gap-1.5 rounded-[var(--radius-btn)] bg-[color-mix(in_srgb,var(--signal)_12%,var(--surface))] text-[var(--signal)] border border-[color-mix(in_srgb,var(--signal)_30%,transparent)] px-3 py-1.5 text-xs font-semibold hover:brightness-110 transition active:scale-95"
+                    title="Gerar flashcards com IA a partir deste aprendizado"
+                  >
+                    <Sparkles size={13} />
+                    <span>Gerar Cards IA</span>
+                  </button>
+                )}
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const q = readingQuestao;
+                    setReadingQuestao(null);
+                    setEditingQuestao(q);
+                  }}
+                  className="inline-flex items-center gap-1.5 rounded-[var(--radius-btn)] border border-[var(--line)] px-3 py-1.5 text-xs font-medium text-[color-mix(in_srgb,var(--ink)_75%,transparent)] hover:bg-[var(--mist)] hover:text-[var(--signal)] transition active:scale-95"
+                >
+                  <Pencil size={13} />
+                  <span>Editar</span>
+                </button>
+
+                <button
+                  type="button"
+                  disabled={deletandoId === readingQuestao.id}
+                  onClick={() => {
+                    const q = readingQuestao;
+                    setReadingQuestao(null);
+                    setPendingDeleteQuestao(q);
+                  }}
+                  className="inline-flex items-center gap-1.5 rounded-[var(--radius-btn)] border border-transparent px-3 py-1.5 text-xs font-medium text-[color-mix(in_srgb,var(--ink)_50%,transparent)] hover:bg-[color-mix(in_srgb,#ef4444_12%,transparent)] hover:text-[#ef4444] transition active:scale-95"
+                >
+                  <Trash2 size={13} />
+                  <span>Excluir</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </DialogFrame>
 
       {/* Modal de Edição */}
       {editingQuestao && (
