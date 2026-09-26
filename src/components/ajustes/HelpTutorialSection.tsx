@@ -83,8 +83,8 @@ const TOPICS: TutorialTopic[] = [
     steps: [
       "Na aba Fixar, clique em '+ Capturar Erro' logo após errar ou ter dúvida em uma questão de simulado ou prova.",
       "Preencha os dados essenciais: Disciplina, Assunto, Causa do Erro (Atenção, Teoria ou Interpretação) e a Regra Aprendida / O que não esquecer.",
-      "Flashcards com IA e Manuais: formule seus próprios cartões ou use o botão 'Gerar com IA' para criar flashcards objetivos de fixação a partir do erro registrado.",
-      "Repetição Espaçada & Notificações: o sistema calcula as próximas datas de estudo na curva de esquecimento. Quando houver flashcards para revisar hoje, um aviso visual na aba Fixar alerta você sobre as pendências.",
+      "Flashcards e Repetição Espaçada: formule seus próprios cartões ou gere com IA. O card entra no deck com repetição inicial em 24h para fixação imediata; ao acertar, os intervalos expandem automaticamente (4 a 7 dias, depois 15 a 30 dias).",
+      "Deck Global vs Treino Isolado: utilize o 'Deck Global do Dia' para revisar rapidamente todos os cards previstos para hoje pelo algoritmo, ou treine uma disciplina específica de forma isolada nos 'Decks por Matéria'.",
     ],
     tip: "Consulte a aba Diagnóstico em Fixar para ver o raio-X das causas dos seus erros e onde você mais precisa reforçar a teoria.",
   },

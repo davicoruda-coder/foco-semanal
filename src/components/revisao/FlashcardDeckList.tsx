@@ -4,8 +4,6 @@ import { useState } from "react";
 import {
   ArrowLeft,
   BookOpen,
-  Calendar,
-  Flame,
   Layers,
   Pencil,
   Plus,
@@ -102,32 +100,42 @@ export function FlashcardDeckList() {
   return (
     <div className="space-y-6">
       {/* Deck Principal Geral: Deck do Dia */}
-      <div className="rounded-[var(--radius)] border border-[color-mix(in_srgb,var(--signal)_30%,var(--line))] bg-gradient-to-br from-[color-mix(in_srgb,var(--signal)_10%,var(--surface))] via-[var(--surface)] to-[color-mix(in_srgb,var(--signal)_4%,var(--surface))] p-5 shadow-[var(--shadow-sm)]">
-        <div className="flex items-start justify-between gap-3">
-          <div className="space-y-1">
-            <div className="flex items-center gap-1.5 text-xs font-semibold text-[var(--signal)]">
-              <Sparkles size={16} />
-              Revisão Espaçada Geral
-            </div>
-            <h3 className="text-base font-bold text-[var(--ink)] sm:text-lg">
-              Deck Global do Dia
-            </h3>
-            <p className="text-xs sm:text-sm text-[color-mix(in_srgb,var(--ink)_65%,transparent)] leading-relaxed">
-              Todos os cartões de todas as matérias agendados para hoje pelo algoritmo.
-            </p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-[var(--radius)] border border-[color-mix(in_srgb,var(--signal)_28%,var(--line))] bg-gradient-to-r from-[color-mix(in_srgb,var(--signal)_12%,var(--surface))] via-[var(--surface)] to-[color-mix(in_srgb,var(--signal)_4%,var(--surface))] p-4 sm:p-5 shadow-[var(--shadow-sm)]">
+        <div className="flex items-center gap-3.5 min-w-0">
+          <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-[var(--signal)] text-white shadow-sm">
+            <Sparkles size={20} />
           </div>
-
-          <div className="flex flex-col items-end shrink-0">
-            <span className="text-2xl font-bold text-[var(--signal)] sm:text-3xl">
-              {flashcardsLoading ? "..." : flashcardsDoDia.length}
-            </span>
-            <span className="text-[10px] uppercase tracking-wider text-[color-mix(in_srgb,var(--ink)_50%,transparent)]">
-              Cards hoje
-            </span>
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <h3 className="font-display text-base font-bold text-[var(--ink)] sm:text-lg">
+                Deck Global do Dia
+              </h3>
+              <span className="inline-flex items-center gap-1 rounded-full bg-[var(--signal-soft)] px-2.5 py-0.5 text-[11px] font-semibold text-[var(--signal)]">
+                Revisão Espaçada
+              </span>
+            </div>
+            <div className="mt-0.5 flex items-center gap-2 text-xs text-[color-mix(in_srgb,var(--ink)_70%,transparent)]">
+              {flashcardsLoading ? (
+                <span>Carregando cartões...</span>
+              ) : flashcardsDoDia.length > 0 ? (
+                <span>
+                  <strong className="font-semibold text-[var(--ink)]">
+                    {flashcardsDoDia.length}
+                  </strong>{" "}
+                  {flashcardsDoDia.length === 1
+                    ? "cartão agendado para hoje"
+                    : "cartões agendados para hoje"}
+                </span>
+              ) : (
+                <span className="font-medium text-[var(--ok,#16a34a)]">
+                  ✓ Tudo revisado por hoje no Deck Geral
+                </span>
+              )}
+            </div>
           </div>
         </div>
 
-        <div className="mt-4 pt-3 border-t border-[var(--line)]/50">
+        <div className="flex items-center justify-end shrink-0">
           <button
             type="button"
             disabled={flashcardsLoading || flashcardsDoDia.length === 0}
@@ -138,12 +146,12 @@ export function FlashcardDeckList() {
                 cards: flashcardsDoDia,
               })
             }
-            className="flex w-full items-center justify-center gap-1.5 rounded-[var(--radius-btn)] bg-[var(--signal)] py-2.5 text-xs sm:text-sm font-semibold text-white shadow-sm transition hover:brightness-110 disabled:opacity-50"
+            className="flex w-full sm:w-auto items-center justify-center gap-2 rounded-[var(--radius-btn)] bg-[var(--signal)] px-4 py-2.5 text-xs sm:text-sm font-semibold text-white shadow-sm transition hover:brightness-110 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <BookOpen size={16} />
             {flashcardsDoDia.length > 0
-              ? `Iniciar Revisão Geral (${flashcardsDoDia.length} cards)`
-              : "Tudo revisado por hoje no Deck Geral!"}
+              ? `Iniciar Revisão (${flashcardsDoDia.length})`
+              : "Revisado"}
           </button>
         </div>
       </div>
@@ -151,14 +159,9 @@ export function FlashcardDeckList() {
       {/* SEÇÃO: MATÉRIAS & DECKS ESPECÍFICOS */}
       <section className="space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--line)] pb-3">
-          <div>
-            <h3 className="font-display text-base font-bold text-[var(--ink)] sm:text-lg">
-              Decks por Matéria
-            </h3>
-            <p className="text-xs sm:text-sm text-[color-mix(in_srgb,var(--ink)_65%,transparent)]">
-              Organize seus cards em matérias e treine cada disciplina de forma isolada.
-            </p>
-          </div>
+          <h3 className="font-display text-base font-bold text-[var(--ink)] sm:text-lg">
+            Decks por Matéria
+          </h3>
 
           {!showNewMateria && (
             <div className="flex items-center gap-2">
@@ -415,38 +418,7 @@ export function FlashcardDeckList() {
         )}
       </section>
 
-      {/* Informativo de Metodologia */}
-      <div className="grid gap-3 sm:grid-cols-3 pt-2">
-        <div className="surface rounded-[var(--radius)] border border-[var(--line)] p-3.5 space-y-1">
-          <div className="flex items-center gap-1.5 text-xs font-semibold text-[#ef4444]">
-            <Flame size={14} />
-            1. Erro ou Chute
-          </div>
-          <p className="text-[11px] text-[color-mix(in_srgb,var(--ink)_65%,transparent)] leading-relaxed">
-            Ao registrar no caderno, o flashcard entra no deck da matéria com repetição em 24h para fixação imediata.
-          </p>
-        </div>
 
-        <div className="surface rounded-[var(--radius)] border border-[var(--line)] p-3.5 space-y-1">
-          <div className="flex items-center gap-1.5 text-xs font-semibold text-[#f59e0b]">
-            <Calendar size={14} />
-            2. Espaçamento
-          </div>
-          <p className="text-[11px] text-[color-mix(in_srgb,var(--ink)_65%,transparent)] leading-relaxed">
-            Acertando os cards, os intervalos expandem automaticamente para 4 a 7 dias e depois 15 a 30 dias.
-          </p>
-        </div>
-
-        <div className="surface rounded-[var(--radius)] border border-[var(--line)] p-3.5 space-y-1">
-          <div className="flex items-center gap-1.5 text-xs font-semibold text-[var(--ok,#16a34a)]">
-            <Layers size={14} />
-            3. Treino Isolado
-          </div>
-          <p className="text-[11px] text-[color-mix(in_srgb,var(--ink)_65%,transparent)] leading-relaxed">
-            Treine uma disciplina específica antes da prova ou use o Deck Geral do Dia para fixar tudo junto.
-          </p>
-        </div>
-      </div>
       {/* Diálogo de confirmação de exclusão */}
       <ConfirmDialog
         open={pendingDeleteMateria !== null}
