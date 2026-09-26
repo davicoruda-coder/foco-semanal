@@ -820,8 +820,12 @@ export default function HojePage() {
           <div className="surface p-3">
             <ReminderBoard compact />
           </div>
-          <FocusTodayCard />
-          <SessionClock layout="stack" variant="livre" />
+          <div className="surface overflow-hidden p-0">
+            <FocusTodayCard embedded />
+            <div className="border-t border-[var(--line)]">
+              <SessionClock layout="stack" variant="livre" embedded />
+            </div>
+          </div>
         </aside>
       </div>
     </div>

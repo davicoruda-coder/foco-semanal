@@ -432,12 +432,15 @@ export function SessionClock({
   layout = "row",
   variant = "full",
   compact = false,
+  embedded = false,
 }: {
   layout?: ClockLayout;
   /** No Hoje: temporizador da lateral + cronômetro (sessão do ciclo fica no CTA). */
   variant?: "full" | "livre";
   /** Faixa horizontal densa (mobile). */
   compact?: boolean;
+  /** Se true, remove surface própria para ficar embutido em outro card. */
+  embedded?: boolean;
 }) {
   const { data } = useApp();
   const {
@@ -661,14 +664,20 @@ export function SessionClock({
   }
 
   return (
-    <div className="surface overflow-hidden p-0 transition-all duration-200">
+    <div
+      className={`${
+        embedded ? "" : "surface"
+      } overflow-hidden p-0 transition-all duration-200`}
+    >
       <div
         onClick={() => {
           if (collapsed) toggleCollapsed();
         }}
         className={`flex items-center justify-between gap-2 ${
-          collapsed ? "cursor-pointer" : "border-b border-[var(--line)]"
-        } ${stack ? "px-3 py-1.5" : "px-3 py-2.5 md:px-5"}`}
+          collapsed
+            ? "cursor-pointer hover:bg-[color-mix(in_srgb,var(--mist)_60%,transparent)]"
+            : "border-b border-[var(--line)]"
+        } ${stack ? "px-3 py-2" : "px-3 py-2.5 md:px-5"} transition-colors`}
       >
         {livreOnly ? (
           <div className="flex w-full min-w-0 items-center justify-between gap-2">
