@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import {
   Camera,
   FileText,
@@ -12,7 +11,6 @@ import {
   Settings,
   Shield,
   Sparkles,
-  Trash2,
   X,
   CircleHelp,
   ChartColumn,
@@ -20,7 +18,6 @@ import {
 } from "lucide-react";
 import { useApp } from "@/components/AppProvider";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
-import { DialogFrame } from "@/components/DialogFrame";
 
 function getInitials(name: string, email: string) {
   const clean = (name || "").trim();
@@ -76,7 +73,6 @@ function compressAvatar(file: File): Promise<string> {
 
 export function UserAccountMenu() {
   const { user, cloud, logout, updateUserAvatar } = useApp();
-  const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const [open, setOpen] = useState(false);
   const [role, setRole] = useState<"owner" | "member" | "guest">(() => {
@@ -87,10 +83,6 @@ export function UserAccountMenu() {
     return "member";
   });
   const [confirmLogout, setConfirmLogout] = useState(false);
-  const [confirmDelete, setConfirmDelete] = useState(false);
-  const [deletePassword, setDeletePassword] = useState("");
-  const [deleteBusy, setDeleteBusy] = useState(false);
-  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [avatarError, setAvatarError] = useState<string | null>(null);
@@ -227,44 +219,6 @@ export function UserAccountMenu() {
       setAvatarError("Não foi possível remover a foto.");
     } finally {
       setUploadingAvatar(false);
-    }
-  }
-
-  async function handleDeleteAccount() {
-    if (!deletePassword.trim()) {
-      setDeleteError("Digite sua senha para autorizar a exclusão.");
-      return;
-    }
-    setDeleteBusy(true);
-    setDeleteError(null);
-    try {
-      const res = await fetch("/api/account/delete", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password: deletePassword }),
-      });
-      const data = await res.json();
-      if (!res.ok || !data.ok) {
-        throw new Error(data.error || "Não foi possível excluir a conta.");
-      }
-      setConfirmDelete(false);
-      setDeletePassword("");
-      setOpen(false);
-      if (typeof window !== "undefined") {
-        try {
-          localStorage.clear();
-          sessionStorage.clear();
-        } catch {
-          // ignore
-        }
-      }
-      logout();
-      router.push("/login");
-    } catch (err) {
-      setDeleteError(
-        err instanceof Error ? err.message : "Erro ao excluir conta.",
-      );
-      setDeleteBusy(false);
     }
   }
 
@@ -420,8 +374,8 @@ export function UserAccountMenu() {
         </Link>
       </div>
 
-      {/* Ações de Segurança e Conta */}
-      <div className="border-t border-[var(--line)] pt-2 space-y-1">
+      {/* Ações de Conta */}
+      <div className="border-t border-[var(--line)] pt-2">
         <button
           type="button"
           onClick={() => {
@@ -432,20 +386,6 @@ export function UserAccountMenu() {
         >
           <LogOut size={15} strokeWidth={1.8} className="opacity-70" />
           <span>Sair da conta</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => {
-            setOpen(false);
-            setDeletePassword("");
-            setDeleteError(null);
-            setConfirmDelete(true);
-          }}
-          className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-xs font-medium text-[var(--warn)] transition hover:bg-[color-mix(in_srgb,var(--warn)_10%,transparent)]"
-        >
-          <Trash2 size={15} strokeWidth={1.8} />
-          <span>Excluir conta definitivamente</span>
         </button>
       </div>
     </>
@@ -544,99 +484,6 @@ export function UserAccountMenu() {
           logout();
         }}
       />
-
-      {/* Modal de Exclusão Definitiva com confirmação de senha */}
-      <DialogFrame
-        open={confirmDelete}
-        onClose={() => {
-          if (!deleteBusy) {
-            setConfirmDelete(false);
-            setDeletePassword("");
-            setDeleteError(null);
-          }
-        }}
-        labelledBy="delete-account-title"
-        cardClassName="surface w-full max-w-md p-6 shadow-[var(--shadow-lg)] border border-[var(--line)]"
-      >
-        <div className="flex items-center gap-3 text-[var(--warn)]">
-          <div className="flex size-10 items-center justify-center rounded-xl bg-[color-mix(in_srgb,var(--warn)_15%,transparent)]">
-            <Trash2 size={20} />
-          </div>
-          <div>
-            <h2
-              id="delete-account-title"
-              className="font-display text-lg font-bold text-[var(--ink)]"
-            >
-              Excluir conta permanentemente?
-            </h2>
-            <p className="text-xs text-[var(--warn)] font-medium">
-              Ação irreversível
-            </p>
-          </div>
-        </div>
-
-        <p className="mt-3 text-xs leading-relaxed text-[color-mix(in_srgb,var(--ink)_75%,transparent)]">
-          Todas as suas matérias, blocos de ciclo, registros de tempo, anotações
-          e lembretes serão <strong>apagados para sempre</strong> e sua conta
-          no FocoHub será encerrada.
-        </p>
-
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            handleDeleteAccount();
-          }}
-          className="mt-4 space-y-3"
-        >
-          <div>
-            <label
-              htmlFor="delete-account-password"
-              className="block text-xs font-semibold text-[var(--ink)] mb-1"
-            >
-              Confirme sua senha para autorizar:
-            </label>
-            <input
-              id="delete-account-password"
-              type="password"
-              autoComplete="current-password"
-              placeholder="Digite sua senha de acesso…"
-              value={deletePassword}
-              onChange={(e) => setDeletePassword(e.target.value)}
-              className="input w-full px-3 py-2 text-sm"
-              disabled={deleteBusy}
-              autoFocus
-            />
-          </div>
-
-          {deleteError && (
-            <p className="text-xs font-medium text-[var(--warn)]" role="alert">
-              {deleteError}
-            </p>
-          )}
-
-          <div className="mt-6 flex flex-wrap items-center justify-end gap-2 pt-2 border-t border-[var(--line)]">
-            <button
-              type="button"
-              className="btn"
-              disabled={deleteBusy}
-              onClick={() => {
-                setConfirmDelete(false);
-                setDeletePassword("");
-                setDeleteError(null);
-              }}
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              disabled={deleteBusy || deletePassword.trim().length === 0}
-              className="btn border-[var(--warn)] bg-[color-mix(in_srgb,var(--warn)_14%,var(--surface))] text-[var(--warn)] font-semibold hover:bg-[var(--warn)] hover:text-white disabled:opacity-40"
-            >
-              {deleteBusy ? "Excluindo…" : "Excluir permanentemente"}
-            </button>
-          </div>
-        </form>
-      </DialogFrame>
     </div>
   );
 }

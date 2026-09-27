@@ -109,7 +109,7 @@ export default function PrivacidadePage() {
               </p>
               <ul className="list-disc space-y-1 pl-5">
                 <li>
-                  <strong>Diretamente no aplicativo:</strong> Você pode excluir sua conta a qualquer momento tocando no seu avatar no cabeçalho e selecionando <em>"Excluir conta definitivamente"</em>, ou na aba de Ajustes.
+                  <strong>Diretamente no aplicativo:</strong> Você pode excluir sua conta a qualquer momento em <em>Ajustes &gt; Conta &amp; Segurança &gt; Excluir conta definitivamente</em>.
                 </li>
                 <li>
                   <strong>Pela Web / Suporte:</strong> Você também pode solicitar a exclusão total da conta enviando um e-mail para <code className="rounded bg-[var(--mist)] px-1.5 py-0.5 text-xs">davicoruda@gmail.com</code> a partir do endereço de e-mail cadastrado.

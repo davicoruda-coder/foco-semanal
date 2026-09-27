@@ -1,8 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import {
+  AlertTriangle,
   Bell,
   Calendar,
   ChevronRight,
@@ -16,6 +18,7 @@ import {
   Sparkles,
   Sun,
   SunMoon,
+  Trash2,
   Upload,
   Volume2,
 } from "lucide-react";
@@ -23,6 +26,7 @@ import { useApp } from "@/components/AppProvider";
 import { AccessManagement } from "@/components/AccessManagement";
 import { AIAccessSettings } from "@/components/AIAccessSettings";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { DialogFrame } from "@/components/DialogFrame";
 import { InstallPwaCard } from "@/components/InstallPwaCard";
 import { useStudyFlow } from "@/components/StudyFlowProvider";
 import {
@@ -92,6 +96,7 @@ export default function AjustesPage() {
     resetCloudData,
     logout,
   } = useApp();
+  const router = useRouter();
   const fileRef = useRef<HTMLInputElement>(null);
   const [activeTab, setActiveTab] = useState<SettingsTab>("estudo");
   const [backupMsg, setBackupMsg] = useState<string | null>(null);
@@ -99,6 +104,10 @@ export default function AjustesPage() {
   const [cloudWipeMsg, setCloudWipeMsg] = useState<string | null>(null);
   const [confirmLogout, setConfirmLogout] = useState(false);
   const [confirmCloudWipe, setConfirmCloudWipe] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deletePassword, setDeletePassword] = useState("");
+  const [deleteBusy, setDeleteBusy] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const [passwordFormOpen, setPasswordFormOpen] = useState(false);
   const [password, setPassword] = useState("");
   const [passwordConfirm, setPasswordConfirm] = useState("");
@@ -166,6 +175,43 @@ export default function AjustesPage() {
     } catch {
       setPasswordErr("Não foi possível salvar a senha.");
       setPasswordBusy(false);
+    }
+  }
+
+  async function handleDeleteAccount() {
+    if (!deletePassword.trim()) {
+      setDeleteError("Digite sua senha para autorizar a exclusão.");
+      return;
+    }
+    setDeleteBusy(true);
+    setDeleteError(null);
+    try {
+      const res = await fetch("/api/account/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password: deletePassword }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) {
+        throw new Error(data.error || "Não foi possível excluir a conta.");
+      }
+      setConfirmDelete(false);
+      setDeletePassword("");
+      if (typeof window !== "undefined") {
+        try {
+          localStorage.clear();
+          sessionStorage.clear();
+        } catch {
+          // ignore
+        }
+      }
+      logout();
+      router.push("/login");
+    } catch (err) {
+      setDeleteError(
+        err instanceof Error ? err.message : "Erro ao excluir conta.",
+      );
+      setDeleteBusy(false);
     }
   }
 
@@ -244,6 +290,99 @@ export default function AjustesPage() {
           })();
         }}
       />
+
+      {/* Modal de Exclusão Definitiva de Conta */}
+      <DialogFrame
+        open={confirmDelete}
+        onClose={() => {
+          if (!deleteBusy) {
+            setConfirmDelete(false);
+            setDeletePassword("");
+            setDeleteError(null);
+          }
+        }}
+        labelledBy="delete-account-title"
+        cardClassName="surface w-full max-w-md p-6 shadow-[var(--shadow-lg)] border border-[var(--line)]"
+      >
+        <div className="flex items-center gap-3 text-[var(--warn)]">
+          <div className="flex size-10 items-center justify-center rounded-xl bg-[color-mix(in_srgb,var(--warn)_15%,transparent)]">
+            <Trash2 size={20} />
+          </div>
+          <div>
+            <h2
+              id="delete-account-title"
+              className="font-display text-lg font-bold text-[var(--ink)]"
+            >
+              Excluir conta permanentemente?
+            </h2>
+            <p className="text-xs text-[var(--warn)] font-medium">
+              Ação irreversível
+            </p>
+          </div>
+        </div>
+
+        <p className="mt-3 text-xs leading-relaxed text-[color-mix(in_srgb,var(--ink)_75%,transparent)]">
+          Todas as suas matérias, blocos de ciclo, revisões, registros de tempo, anotações
+          e lembretes serão <strong>apagados para sempre</strong> e sua conta
+          no FocoHub será encerrada.
+        </p>
+
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            void handleDeleteAccount();
+          }}
+          className="mt-4 space-y-3"
+        >
+          <div>
+            <label
+              htmlFor="delete-account-password"
+              className="block text-xs font-semibold text-[var(--ink)] mb-1"
+            >
+              Confirme sua senha para autorizar:
+            </label>
+            <input
+              id="delete-account-password"
+              type="password"
+              autoComplete="current-password"
+              placeholder="Digite sua senha de acesso…"
+              value={deletePassword}
+              onChange={(e) => setDeletePassword(e.target.value)}
+              className="input w-full px-3 py-2 text-sm"
+              disabled={deleteBusy}
+              autoFocus
+            />
+          </div>
+
+          {deleteError && (
+            <p className="text-xs font-medium text-[var(--warn)]" role="alert">
+              {deleteError}
+            </p>
+          )}
+
+          <div className="mt-6 flex flex-wrap items-center justify-end gap-2 pt-2 border-t border-[var(--line)]">
+            <button
+              type="button"
+              className="btn"
+              disabled={deleteBusy}
+              onClick={() => {
+                setConfirmDelete(false);
+                setDeletePassword("");
+                setDeleteError(null);
+              }}
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              disabled={deleteBusy || deletePassword.trim().length === 0}
+              className="btn border-[var(--warn)] bg-[color-mix(in_srgb,var(--warn)_14%,var(--surface))] text-[var(--warn)] font-semibold hover:bg-[var(--warn)] hover:text-white disabled:opacity-40"
+            >
+              {deleteBusy ? "Excluindo…" : "Excluir permanentemente"}
+            </button>
+          </div>
+        </form>
+      </DialogFrame>
 
       {/* Grid Principal: Sidebar de Seções (Desktop) + Conteúdo (Direita) */}
       <div className="grid items-start gap-5 lg:grid-cols-[250px_minmax(0,1fr)] xl:grid-cols-[270px_minmax(0,1fr)]">
@@ -649,6 +788,43 @@ export default function AjustesPage() {
 
           <AccessManagement />
           <AIAccessSettings />
+
+          {/* Zona de Perigo: Exclusão Definitiva de Conta */}
+          {cloud && (
+            <section className="surface border border-[color-mix(in_srgb,var(--warn)_35%,transparent)] p-4 md:p-5">
+              <div className="flex items-center gap-2.5 text-[var(--warn)]">
+                <AlertTriangle size={18} strokeWidth={2} />
+                <h2 className="font-display text-base font-semibold tracking-tight md:text-lg">
+                  Zona de Perigo
+                </h2>
+              </div>
+              <p className="mt-2 text-xs sm:text-sm text-[color-mix(in_srgb,var(--ink)_75%,transparent)] leading-relaxed">
+                A exclusão definitiva da conta é permanente e irreversível. Todos os seus dados, matérias, anotações, ciclos de estudo, revisões e sessões serão apagados definitivamente de nossos servidores.
+              </p>
+              <div className="mt-4 pt-3 border-t border-[var(--line)] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div>
+                  <p className="text-xs font-medium text-[var(--ink)]">
+                    Excluir minha conta no FocoHub
+                  </p>
+                  <p className="text-[11px] text-[color-mix(in_srgb,var(--ink)_60%,transparent)]">
+                    Será exigida a sua senha para confirmar a exclusão.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDeletePassword("");
+                    setDeleteError(null);
+                    setConfirmDelete(true);
+                  }}
+                  className="btn shrink-0 border-[color-mix(in_srgb,var(--warn)_40%,transparent)] bg-[color-mix(in_srgb,var(--warn)_8%,transparent)] text-[var(--warn)] hover:bg-[var(--warn)] hover:text-white transition-colors"
+                >
+                  <Trash2 size={15} strokeWidth={1.8} />
+                  <span>Excluir conta definitivamente</span>
+                </button>
+              </div>
+            </section>
+          )}
         </div>
       )}
         </div>
