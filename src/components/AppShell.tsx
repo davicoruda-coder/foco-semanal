@@ -8,7 +8,6 @@ import {
   CalendarDays,
   CircleHelp,
   Ellipsis,
-  Home,
   Settings,
   Sparkles,
   StickyNote,
@@ -22,7 +21,7 @@ import { useOpenTransition } from "@/lib/use-open-transition";
 
 /** Desktop: navegação central de trabalho (workflow diário). */
 const DESKTOP_PRIMARY_TABS = [
-  { href: "/hoje", label: "Hoje", icon: Home },
+  { href: "/hoje", label: "Estudo", icon: BookMarked },
   { href: "/revisao", label: "Fixar", icon: Sparkles },
 ];
 
@@ -291,7 +290,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           {cloudSync.message}
         </div>
       ) : null}
-      <header className="sticky top-0 z-20 border-b border-[var(--line)] bg-[var(--surface)]/95 pt-[env(safe-area-inset-top,0px)] backdrop-blur-md lg:hidden">
+      <header className="sticky top-0 z-20 border-b border-[color-mix(in_srgb,var(--line)_80%,transparent)] bg-[color-mix(in_srgb,var(--surface)_90%,var(--paper))]/90 pt-[env(safe-area-inset-top,0px)] backdrop-blur-md lg:hidden transition-colors">
         <div className="mx-auto flex h-12 max-w-lg items-center justify-between px-3">
           <Link
             href="/hoje"
@@ -307,7 +306,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       </header>
 
-      <header className="sticky top-0 z-20 hidden border-b border-[var(--line)] bg-[var(--surface)]/90 backdrop-blur-md lg:block">
+      <header className="sticky top-0 z-20 hidden border-b border-[color-mix(in_srgb,var(--line)_80%,transparent)] bg-[color-mix(in_srgb,var(--surface)_88%,var(--paper))]/85 backdrop-blur-md lg:block transition-colors">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-5 md:px-8">
           {/* Logo / Marca */}
           <Link
@@ -321,10 +320,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </span>
           </Link>
 
-          {/* Controle Central Segmentado (Hoje | Semana | Revisão) */}
+          {/* Controle Central Segmentado (Estudo | Fixar) */}
           <nav
             aria-label="Modos de trabalho"
-            className="flex items-center rounded-xl bg-[color-mix(in_srgb,var(--ink)_4%,transparent)] p-1 shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)]"
+            className="flex items-center rounded-xl border border-[color-mix(in_srgb,var(--line)_70%,transparent)] bg-[var(--mist)]/90 p-1 shadow-2xs backdrop-blur-xs"
           >
             {desktopPrimary.map(({ href, label, icon: Icon }) => {
               const active = desktopNavActive(pathname, href);
@@ -335,22 +334,26 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   title={label}
                   aria-label={label}
                   aria-current={active ? "page" : undefined}
-                  className={`relative inline-flex h-9.5 items-center gap-2 rounded-lg px-4 text-sm font-semibold transition-all duration-200 ${
+                  className={`group relative inline-flex h-9 items-center gap-2 rounded-lg px-4 text-sm font-semibold transition-all duration-200 ${
                     active
-                      ? "bg-[var(--surface)] text-[var(--ink)] shadow-[0_1px_4px_rgba(0,0,0,0.08)]"
-                      : "text-[color-mix(in_srgb,var(--ink)_55%,transparent)] hover:text-[color-mix(in_srgb,var(--ink)_85%,transparent)] hover:bg-black/[0.02]"
+                      ? "bg-[var(--surface)] text-[var(--ink)] shadow-xs ring-1 ring-black/[0.04] dark:ring-white/[0.06]"
+                      : "text-[color-mix(in_srgb,var(--ink)_60%,transparent)] hover:text-[var(--ink)] hover:bg-[var(--surface)]/50"
                   }`}
                 >
                   <Icon
-                    size={17}
+                    size={16}
                     strokeWidth={active ? 2.25 : 1.85}
-                    className={active ? "text-[var(--signal)]" : "opacity-60"}
+                    className={
+                      active
+                        ? "text-[var(--signal)]"
+                        : "text-[color-mix(in_srgb,var(--ink)_50%,transparent)] transition-colors group-hover:text-[var(--signal)]"
+                    }
                   />
                   <span>{label}</span>
                   {href === "/revisao" && pendingFlashcardsCount > 0 && (
                     <span
                       title={`${pendingFlashcardsCount} flashcard${pendingFlashcardsCount > 1 ? "s" : ""} para revisar hoje`}
-                      className="rounded-full bg-[var(--signal)] px-1.5 py-0.5 text-[10px] font-bold text-white leading-none shadow-xs"
+                      className="rounded-full bg-[var(--signal)] px-1.5 py-0.5 text-[10px] font-bold text-white leading-none shadow-2xs"
                     >
                       {pendingFlashcardsCount > 99 ? "99+" : pendingFlashcardsCount}
                     </span>
