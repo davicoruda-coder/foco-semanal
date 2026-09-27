@@ -7,6 +7,7 @@ import {
   Circle,
   MoreHorizontal,
   Plus,
+  StickyNote,
   Trash2,
   X,
 } from "lucide-react";
@@ -18,7 +19,7 @@ import type { Reminder } from "@/lib/types";
 import { sanitizeCssColor } from "@/lib/utils";
 
 /** Altura mínima do campo; a nota cresce com o texto (sem barra de rolagem). */
-const NOTE_TEXT_MIN_PX = { compact: 40, full: 60 } as const;
+const NOTE_TEXT_MIN_PX = { compact: 40, full: 44 } as const;
 
 /** 0 = tamanho atual (máximo); 1–2 = um pouco menores. Valores em px p/ transição suave. */
 const NOTE_FONT_PX = {
@@ -297,7 +298,7 @@ function NoteCard({
   return (
     <article
       className={`note-card note-enter relative flex flex-col rounded-[var(--radius-tag)] shadow-xs transition-colors ${
-        compact ? "min-h-0 p-2.5 pb-2" : "min-h-[128px] p-3"
+        compact ? "min-h-0 p-2.5 pb-2" : "min-h-[76px] p-3 sm:min-h-[110px] sm:p-3.5"
       }`}
       style={{
         "--note-light-bg": palette.lightBg,
@@ -610,7 +611,7 @@ export function ReminderBoard({ compact }: { compact?: boolean }) {
     : "";
 
   return (
-    <div className={compact ? "" : "mx-auto max-w-3xl"}>
+    <div className={compact ? "" : "mx-auto w-full max-w-4xl flex-1 flex flex-col"}>
       <ConfirmDialog
         open={Boolean(pendingDelete)}
         title="Excluir lembrete?"
@@ -626,41 +627,56 @@ export function ReminderBoard({ compact }: { compact?: boolean }) {
         }}
       />
 
-      <div className="mb-2 flex items-center justify-between gap-2">
-        <h2
-          className={
-            compact
-              ? "text-xs font-semibold uppercase tracking-[0.14em] text-[color-mix(in_srgb,var(--ink)_55%,transparent)]"
-              : "font-display text-xl sm:text-2xl font-semibold tracking-tight text-[var(--ink)]"
-          }
-        >
-          Lembretes
-        </h2>
+      <div
+        className={
+          compact
+            ? "mb-2 flex items-center justify-between gap-2"
+            : "mb-3.5 flex items-center justify-between gap-3 sm:mb-5"
+        }
+      >
+        <div className="flex items-center gap-2">
+          <h2
+            className={
+              compact
+                ? "text-xs font-semibold uppercase tracking-[0.14em] text-[color-mix(in_srgb,var(--ink)_55%,transparent)]"
+                : "font-display text-xl font-bold tracking-tight text-[var(--ink)] sm:text-2xl"
+            }
+          >
+            Lembretes
+          </h2>
+          {!compact && list.length > 0 && (
+            <span className="rounded-full bg-[var(--mist)] px-2 py-0.5 text-[11px] font-semibold text-[color-mix(in_srgb,var(--ink)_60%,transparent)]">
+              {list.length}
+            </span>
+          )}
+        </div>
         <button
           type="button"
           className={
             compact
-              ? "inline-flex items-center gap-1 rounded-[var(--radius-tag)] bg-[var(--surface)]/70 px-2 py-1 text-xs font-medium text-[var(--signal)]"
-              : "btn btn-primary"
+              ? "inline-flex items-center gap-1 rounded-[var(--radius-tag)] bg-[var(--surface)]/70 px-2 py-1 text-xs font-medium text-[var(--signal)] hover:bg-[var(--surface)]"
+              : "inline-flex items-center gap-1.5 rounded-xl bg-[var(--signal)] px-3 py-1.5 text-xs font-semibold text-white shadow-xs transition-all hover:opacity-95 active:scale-95 sm:px-4 sm:py-2 sm:text-sm"
           }
           onClick={() => setPickingColor((v) => !v)}
         >
-          <Plus size={14} strokeWidth={2} />
+          <Plus size={compact ? 14 : 16} strokeWidth={2.25} />
           {compact ? "Nota" : "Nova nota"}
         </button>
       </div>
 
       {pickingColor && (
-        <div className="panel-in mb-2 rounded-[var(--radius-tag)] border border-[var(--line)] bg-[var(--surface)]/80 p-2">
-          <p className="mb-1.5 text-[11px] opacity-60">Escolha a cor</p>
+        <div className="panel-in mb-3 rounded-[var(--radius-tag)] border border-[var(--line)] bg-[var(--surface)]/90 p-2.5 sm:p-3 shadow-xs">
+          <p className="mb-2 text-xs font-medium text-[var(--ink)] opacity-70">
+            Escolha a cor da nova nota
+          </p>
           <div className="flex flex-wrap items-center gap-2">
             {NOTE_COLORS.map((c) => (
               <button
                 key={c}
                 type="button"
-                className={`h-9 w-9 rounded-full border-2 transition sm:h-7 sm:w-7 ${
+                className={`h-8 w-8 rounded-full border-2 transition active:scale-95 sm:h-7 sm:w-7 ${
                   draftColor === c
-                    ? "border-[var(--ink)] scale-110"
+                    ? "border-[var(--ink)] scale-110 shadow-xs"
                     : "border-transparent"
                 }`}
                 style={{ background: c }}
@@ -668,34 +684,58 @@ export function ReminderBoard({ compact }: { compact?: boolean }) {
                 onClick={() => setDraftColor(c)}
               />
             ))}
-            <button
-              type="button"
-              className="ml-auto rounded bg-[var(--signal)] px-3 py-2 text-xs font-medium text-white sm:px-2 sm:py-1 sm:text-[11px]"
-              onClick={createNote}
-            >
-              Criar
-            </button>
-            <button
-              type="button"
-              className="rounded px-3 py-2 text-xs opacity-60 sm:px-2 sm:py-1 sm:text-[11px]"
-              onClick={() => setPickingColor(false)}
-            >
-              Cancelar
-            </button>
+            <div className="ml-auto flex items-center gap-1.5">
+              <button
+                type="button"
+                className="rounded-lg px-2.5 py-1.5 text-xs text-[color-mix(in_srgb,var(--ink)_65%,transparent)] transition hover:bg-[var(--mist)] hover:text-[var(--ink)]"
+                onClick={() => setPickingColor(false)}
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                className="rounded-lg bg-[var(--signal)] px-3 py-1.5 text-xs font-semibold text-white shadow-xs transition hover:opacity-90 active:scale-95"
+                onClick={createNote}
+              >
+                Criar nota
+              </button>
+            </div>
           </div>
         </div>
       )}
 
       {list.length === 0 && !pickingColor ? (
-        <p className={`text-xs opacity-55 ${compact ? "" : "mt-4"}`}>
-          Nenhuma nota ainda.
-        </p>
+        <div
+          className={`flex flex-col items-center justify-center text-center ${
+            compact ? "py-6" : "my-auto py-12"
+          }`}
+        >
+          <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--mist)] text-[color-mix(in_srgb,var(--ink)_40%,transparent)]">
+            <StickyNote size={24} strokeWidth={1.5} />
+          </div>
+          <p className="text-sm font-semibold text-[var(--ink)]">
+            Nenhuma nota ainda
+          </p>
+          <p className="mt-1 max-w-xs text-xs text-[color-mix(in_srgb,var(--ink)_55%,transparent)]">
+            Guarde lembretes rápidos, anotações de estudo e recados do dia a dia.
+          </p>
+          {!compact && (
+            <button
+              type="button"
+              className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-[var(--signal)] px-3.5 py-2 text-xs font-semibold text-white shadow-xs transition hover:opacity-95 active:scale-95"
+              onClick={() => setPickingColor(true)}
+            >
+              <Plus size={15} strokeWidth={2.25} />
+              Criar primeira nota
+            </button>
+          )}
+        </div>
       ) : (
         <div
           className={
             compact
               ? "grid max-h-[22rem] grid-cols-1 gap-2 overflow-y-auto pe-1 scrollbar-subtle"
-              : "mt-4 grid gap-2 sm:grid-cols-3 md:grid-cols-4"
+              : "mt-3 grid gap-2.5 sm:mt-5 sm:grid-cols-3 md:grid-cols-4"
           }
         >
           {list.map((r) => (
@@ -707,6 +747,18 @@ export function ReminderBoard({ compact }: { compact?: boolean }) {
             />
           ))}
         </div>
+      )}
+
+      {!compact && (
+        <button
+          type="button"
+          onClick={() => setPickingColor((v) => !v)}
+          className="fixed bottom-24 right-4 z-30 flex h-12 w-12 items-center justify-center rounded-full bg-[var(--signal)] text-white shadow-lg shadow-[var(--signal)]/35 transition-all hover:scale-105 active:scale-95 sm:hidden"
+          aria-label="Criar nova nota"
+          title="Nova nota"
+        >
+          <Plus size={24} strokeWidth={2.5} />
+        </button>
       )}
     </div>
   );
