@@ -203,21 +203,22 @@ function NoteCard({
     );
   }
 
-  // Notas de estudo: cor misturada no mist — suave ("Mesa do Ciclo"), sem post-it gritante, legível em claro/escuro.
-  const colorWeight = compact ? "18%" : "34%";
-  const cardBg = `color-mix(in srgb, ${currentColor} ${colorWeight}, var(--mist))`;
+  // Notas de estudo: fundo neutro e limpo ("Mesa do Ciclo"), com indicador de cor refinado na lateral.
+  const cardBg = "var(--mist)";
   const cardInk = "var(--ink)";
-  const cardBorder = `1px solid color-mix(in srgb, ${currentColor} ${compact ? "20%" : "28%"}, var(--line))`;
+  const cardBorder = `1px solid color-mix(in srgb, ${currentColor} 24%, var(--line))`;
+  const cardBorderLeft = `3.5px solid ${currentColor}`;
 
   return (
     <article
-      className={`note-enter relative flex flex-col rounded-[var(--radius-tag)] shadow-sm ${
+      className={`note-enter relative flex flex-col rounded-[var(--radius-tag)] shadow-xs transition-colors ${
         compact ? "min-h-0 p-2.5 pb-2" : "min-h-[128px] p-3"
       }`}
       style={{
         background: cardBg,
         color: cardInk,
         border: cardBorder,
+        borderLeft: cardBorderLeft,
       }}
     >
       <textarea
