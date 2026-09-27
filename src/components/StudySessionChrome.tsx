@@ -1,7 +1,18 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Clock, Pause, Play, RotateCcw, SkipForward, X } from "lucide-react";
+import {
+  ArrowRight,
+  CheckCircle2,
+  Clock,
+  FileText,
+  Pause,
+  Play,
+  RotateCcw,
+  SkipForward,
+  Sparkles,
+  X,
+} from "lucide-react";
 import { DialogFrame } from "@/components/DialogFrame";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { AutoGrowTextarea } from "@/components/AutoGrowTextarea";
@@ -39,28 +50,33 @@ function NotesBlock({
   onChangeRecursos: (recursos: SubjectResource[]) => void;
 }) {
   return (
-    <div className="mt-5 rounded-[var(--radius-tag)] border border-[var(--line)] bg-[var(--mist)]/60 p-3.5">
-      <p className="text-[11px] font-semibold uppercase tracking-wider text-[color-mix(in_srgb,var(--ink)_50%,transparent)]">
-        Anotações
-      </p>
-      <p className="mt-1 text-sm font-semibold text-[var(--ink)]">
-        {subject.name}
-        {rotationItem ? (
-          <span className="text-[var(--signal)]"> · {rotationItem.name}</span>
-        ) : null}
-      </p>
-      <p className="mt-0.5 text-xs text-[color-mix(in_srgb,var(--ink)_50%,transparent)]">
-        Edite se quiser — grava ao continuar. Não conta no tempo de estudo.
-      </p>
+    <div className="mt-4 rounded-[var(--radius-tag)] border border-[var(--line)] bg-[var(--mist)]/75 dark:bg-[var(--mist)]/50 p-4 transition-colors">
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2 min-w-0">
+          <div className="grid size-6 shrink-0 place-items-center rounded-md bg-[var(--signal-soft)] text-[var(--signal)]">
+            <FileText size={13} strokeWidth={2.2} />
+          </div>
+          <span className="truncate text-sm font-semibold text-[var(--ink)]">
+            {subject.name}
+            {rotationItem ? (
+              <span className="text-[var(--signal)] font-medium"> · {rotationItem.name}</span>
+            ) : null}
+          </span>
+        </div>
+        <span className="shrink-0 rounded-full bg-[var(--surface)] px-2 py-0.5 text-[10px] font-medium text-[color-mix(in_srgb,var(--ink)_55%,transparent)] border border-[color-mix(in_srgb,var(--line)_80%,transparent)] shadow-2xs">
+          Salva ao avançar
+        </span>
+      </div>
+
       <AutoGrowTextarea
-        className="mt-2.5 w-full rounded-[10px] border border-[var(--line)] bg-[var(--surface)] px-3 py-2.5 text-sm leading-snug text-[var(--ink)] focus:border-[var(--signal)]"
+        className="mt-3 w-full rounded-[10px] border border-[color-mix(in_srgb,var(--line)_80%,transparent)] bg-[var(--surface)] px-3 py-2.5 text-sm leading-snug text-[var(--ink)] placeholder:text-[color-mix(in_srgb,var(--ink)_38%,transparent)] transition-all focus:border-[var(--signal)] focus:ring-2 focus:ring-[var(--signal)]/15 focus:outline-none"
         value={draft}
         onChange={onChange}
-        placeholder="Ex.: vídeo 12, próximo passo…"
+        placeholder="Onde parou? (ex: aula 2.3, pág 45, próximo passo…)"
         minPx={72}
         maxPx={140}
       />
-      <div className="mt-2">
+      <div className="mt-2.5">
         <SubjectResources
           compact
           recursos={rotationItem ? rotationItem.recursos : subject.recursos}
@@ -79,14 +95,14 @@ function ExtraTimePrompt({
   onExtend: (mins: number) => void;
 }) {
   return (
-    <div className="mt-4 rounded-[var(--radius-tag)] border border-[color-mix(in_srgb,var(--signal)_25%,var(--line))] bg-[color-mix(in_srgb,var(--signal)_6%,var(--surface))] p-3">
+    <div className="mt-4 rounded-[var(--radius-tag)] border border-[color-mix(in_srgb,var(--signal)_28%,var(--line))] bg-[color-mix(in_srgb,var(--signal)_6%,var(--surface))] p-3.5">
       <div className="flex items-center justify-between gap-2">
         <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--ink)]">
-          <Clock size={13.5} className="text-[var(--signal)]" />
+          <Clock size={14} className="text-[var(--signal)]" />
           Precisa de mais tempo{subjectName ? ` em ${subjectName}` : ""}?
         </span>
-        <span className="text-[11px] text-[color-mix(in_srgb,var(--ink)_50%,transparent)]">
-          Estender estudo
+        <span className="text-[11px] font-semibold text-[var(--signal)]">
+          Estender foco
         </span>
       </div>
       <div className="mt-2.5 grid grid-cols-3 gap-2">
@@ -95,7 +111,7 @@ function ExtraTimePrompt({
             key={mins}
             type="button"
             onClick={() => onExtend(mins)}
-            className="inline-flex items-center justify-center gap-1 rounded-lg border border-[color-mix(in_srgb,var(--signal)_35%,var(--line))] bg-[var(--surface)] py-1.5 text-xs font-semibold text-[var(--ink)] shadow-xs transition hover:border-[var(--signal)] hover:bg-[var(--signal-soft)] hover:text-[var(--signal)] active:scale-95 cursor-pointer"
+            className="inline-flex items-center justify-center gap-1 rounded-full border border-[color-mix(in_srgb,var(--signal)_35%,var(--line))] bg-[var(--surface)] py-1.5 text-xs font-semibold text-[var(--ink)] shadow-2xs transition hover:border-[var(--signal)] hover:bg-[var(--signal)] hover:text-white active:scale-95 cursor-pointer"
           >
             +{mins} min
           </button>
@@ -428,24 +444,38 @@ export function StudySessionChrome() {
         labelledBy="subject-notes-title"
         cardClassName="surface w-full max-w-md p-6 shadow-[var(--shadow-lg)]"
       >
-        <h2
-          id="subject-notes-title"
-          className="font-display text-xl font-semibold"
-        >
-          Matéria concluída
-        </h2>
-        <p className="mt-2 text-sm text-[color-mix(in_srgb,var(--ink)_70%,transparent)]">
-          Anote onde parou antes da próxima. O tempo fica pausado.
-        </p>
+        <div className="flex items-start gap-3.5">
+          <div className="grid size-11 shrink-0 place-items-center rounded-2xl bg-emerald-500/12 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400 ring-1 ring-emerald-500/25 shadow-2xs">
+            <CheckCircle2 size={22} strokeWidth={2.2} />
+          </div>
+          <div className="min-w-0 flex-1 pt-0.5">
+            <div className="flex items-center justify-between gap-2">
+              <h2
+                id="subject-notes-title"
+                className="font-display text-xl font-bold tracking-tight text-[var(--ink)]"
+              >
+                Matéria concluída
+              </h2>
+              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 dark:text-emerald-300 ring-1 ring-emerald-500/20">
+                Feito ✓
+              </span>
+            </div>
+            <p className="mt-1 text-xs text-[color-mix(in_srgb,var(--ink)_65%,transparent)] leading-relaxed">
+              Anote onde parou antes da próxima. <strong className="font-medium text-[var(--ink)]">O tempo está pausado</strong> — respire à vontade.
+            </p>
+          </div>
+        </div>
 
         {flow.cycleRoundCompleted != null && (
-          <div className="mt-3 flex items-start gap-3 rounded-[var(--radius-tag)] border border-emerald-500/30 bg-emerald-500/10 dark:bg-emerald-950/40 dark:border-emerald-500/30 p-3.5">
-            <span className="text-lg leading-none select-none">🎉</span>
+          <div className="mt-3.5 flex items-start gap-3 rounded-[var(--radius-tag)] border border-emerald-500/30 bg-emerald-500/10 dark:bg-emerald-950/40 dark:border-emerald-500/30 p-3.5">
+            <span className="grid size-7 shrink-0 place-items-center rounded-lg bg-emerald-500/20 text-emerald-700 dark:text-emerald-300">
+              <Sparkles size={16} strokeWidth={2.2} />
+            </span>
             <div className="min-w-0">
               <p className="text-sm font-bold text-emerald-950 dark:text-emerald-200 leading-snug">
                 {flow.cycleRoundCompleted}ª volta do ciclo concluída!
               </p>
-              <p className="mt-1 text-xs font-medium text-emerald-800 dark:text-emerald-300/90 leading-relaxed">
+              <p className="mt-0.5 text-xs font-medium text-emerald-800 dark:text-emerald-300/90 leading-relaxed">
                 Continue assim — vamos entrar na próxima rodada do ciclo!
               </p>
             </div>
@@ -472,10 +502,11 @@ export function StudySessionChrome() {
 
         <button
           type="button"
-          className="btn mt-4 w-full bg-[var(--signal)] text-white"
+          className="btn btn-primary mt-5 w-full py-3 text-sm font-semibold tracking-wide flex items-center justify-center gap-2 group cursor-pointer"
           onClick={() => afterNotesThen(flow.continueToNextSubject)}
         >
-          Continuar para a próxima
+          <span>Continuar para a próxima</span>
+          <ArrowRight size={16} className="transition-transform group-hover:translate-x-1" />
         </button>
       </DialogFrame>
 
@@ -485,21 +516,30 @@ export function StudySessionChrome() {
         labelledBy="block-done-title"
         cardClassName="surface w-full max-w-md p-6 shadow-[var(--shadow-lg)]"
       >
-        <h2 id="block-done-title" className="font-display text-xl font-semibold">
-          Bloco concluído
-        </h2>
-        <p className="mt-2 text-sm text-[color-mix(in_srgb,var(--ink)_70%,transparent)]">
-          {flow.blockSummary}. O que deseja fazer?
-        </p>
+        <div className="flex items-start gap-3.5">
+          <div className="grid size-11 shrink-0 place-items-center rounded-2xl bg-[var(--signal-soft)] text-[var(--signal)] ring-1 ring-[var(--signal)]/25 shadow-2xs">
+            <Sparkles size={22} strokeWidth={2.2} />
+          </div>
+          <div className="min-w-0 flex-1 pt-0.5">
+            <h2 id="block-done-title" className="font-display text-xl font-bold tracking-tight text-[var(--ink)]">
+              Bloco concluído
+            </h2>
+            <p className="mt-1 text-xs text-[color-mix(in_srgb,var(--ink)_65%,transparent)] leading-relaxed">
+              {flow.blockSummary}. Excelente rendimento! O que deseja fazer agora?
+            </p>
+          </div>
+        </div>
 
         {flow.cycleRoundCompleted != null && (
-          <div className="mt-3 flex items-start gap-3 rounded-[var(--radius-tag)] border border-emerald-500/30 bg-emerald-500/10 dark:bg-emerald-950/40 dark:border-emerald-500/30 p-3.5">
-            <span className="text-lg leading-none select-none">🎉</span>
+          <div className="mt-3.5 flex items-start gap-3 rounded-[var(--radius-tag)] border border-emerald-500/30 bg-emerald-500/10 dark:bg-emerald-950/40 dark:border-emerald-500/30 p-3.5">
+            <span className="grid size-7 shrink-0 place-items-center rounded-lg bg-emerald-500/20 text-emerald-700 dark:text-emerald-300">
+              <Sparkles size={16} strokeWidth={2.2} />
+            </span>
             <div className="min-w-0">
               <p className="text-sm font-bold text-emerald-950 dark:text-emerald-200 leading-snug">
                 {flow.cycleRoundCompleted}ª volta do ciclo concluída!
               </p>
-              <p className="mt-1 text-xs font-medium text-emerald-800 dark:text-emerald-300/90 leading-relaxed">
+              <p className="mt-0.5 text-xs font-medium text-emerald-800 dark:text-emerald-300/90 leading-relaxed">
                 Excelente rendimento no bloco. Hora de fazer uma pausa ou seguir no ritmo!
               </p>
             </div>
@@ -524,24 +564,24 @@ export function StudySessionChrome() {
           }}
         />
 
-        <div className="mt-4 flex flex-col gap-2">
+        <div className="mt-5 flex flex-col gap-2.5">
           <button
             type="button"
-            className="btn bg-[var(--signal)] text-white"
+            className="btn btn-primary py-3 text-sm font-semibold tracking-wide flex items-center justify-center gap-2 cursor-pointer"
             onClick={() => afterNotesThen(flow.chooseRest)}
           >
-            Descansar ({flow.settings.restMinutes} min)
+            <span>Descansar ({flow.settings.restMinutes} min)</span>
           </button>
           <button
             type="button"
-            className="btn"
+            className="btn py-2.5 text-sm font-medium hover:border-[var(--signal)] hover:text-[var(--signal)] cursor-pointer"
             onClick={() => afterNotesThen(flow.chooseContinue)}
           >
             Continuar estudando
           </button>
           <button
             type="button"
-            className="btn border-transparent bg-transparent text-[color-mix(in_srgb,var(--ink)_60%,transparent)]"
+            className="btn border-transparent bg-transparent py-2 text-xs font-medium text-[color-mix(in_srgb,var(--ink)_55%,transparent)] hover:text-rose-500 hover:bg-rose-500/10 cursor-pointer"
             onClick={() => afterNotesThen(flow.chooseFinish)}
           >
             Finalizar estudos
