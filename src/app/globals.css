@@ -93,6 +93,19 @@
   border-left-width: 1px;
 }
 
+/* Lembretes Note Cards — fundo colorido balanceado e adaptativo */
+.note-card {
+  background: var(--note-light-bg);
+  border: 1px solid var(--note-light-border);
+  border-left: 3.5px solid var(--note-light-acc);
+}
+
+:root[data-theme="dark"] .note-card {
+  background: var(--note-dark-bg) !important;
+  border-color: var(--note-dark-border) !important;
+  border-left-color: var(--note-dark-acc) !important;
+}
+
 @theme inline {
   --color-ink: var(--ink);
   --color-paper: var(--paper);

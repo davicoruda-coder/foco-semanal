@@ -31,14 +31,102 @@ function clampFontSize(value: number | undefined): 0 | 1 | 2 {
   return 0;
 }
 
-const NOTE_COLORS = [
-  "#FBBF24", // Âmbar dourado
-  "#34D399", // Esmeralda fresco
+export const NOTE_COLORS = [
   "#38BDF8", // Azul celeste
+  "#34D399", // Esmeralda fresco
+  "#FBBF24", // Âmbar dourado
+  "#A78BFA", // Violeta signal
   "#FB7185", // Rosa coral
   "#FB923C", // Laranja tangerina
-  "#A78BFA", // Violeta signal
 ];
+
+export interface NoteColorEntry {
+  dot: string;
+  lightBg: string;
+  lightBorder: string;
+  lightAccent: string;
+  darkBg: string;
+  darkBorder: string;
+  darkAccent: string;
+}
+
+export const NOTE_COLOR_PALETTE: Record<string, NoteColorEntry> = {
+  // Âmbar dourado (quente, nota clássica)
+  "#FBBF24": {
+    dot: "#F59E0B",
+    lightBg: "color-mix(in srgb, #FEF3C7 62%, var(--surface))",
+    lightBorder: "color-mix(in srgb, #D97706 24%, var(--line))",
+    lightAccent: "#D97706",
+    darkBg: "color-mix(in srgb, #D97706 18%, #15161e)",
+    darkBorder: "color-mix(in srgb, #FBBF24 24%, transparent)",
+    darkAccent: "#FBBF24",
+  },
+  // Esmeralda / Menta (fresco, listas e tarefas)
+  "#34D399": {
+    dot: "#10B981",
+    lightBg: "color-mix(in srgb, #CCFBF1 62%, var(--surface))",
+    lightBorder: "color-mix(in srgb, #0D9488 24%, var(--line))",
+    lightAccent: "#0D9488",
+    darkBg: "color-mix(in srgb, #0D9488 18%, #15161e)",
+    darkBorder: "color-mix(in srgb, #34D399 24%, transparent)",
+    darkAccent: "#34D399",
+  },
+  // Azul celeste (foco, estudos e matérias)
+  "#38BDF8": {
+    dot: "#0EA5E9",
+    lightBg: "color-mix(in srgb, #DBEAFE 62%, var(--surface))",
+    lightBorder: "color-mix(in srgb, #2563EB 24%, var(--line))",
+    lightAccent: "#2563EB",
+    darkBg: "color-mix(in srgb, #2563EB 18%, #15161e)",
+    darkBorder: "color-mix(in srgb, #38BDF8 24%, transparent)",
+    darkAccent: "#38BDF8",
+  },
+  // Rosa coral (suave, afazeres e pessoal)
+  "#FB7185": {
+    dot: "#F43F5E",
+    lightBg: "color-mix(in srgb, #FBCFE8 62%, var(--surface))",
+    lightBorder: "color-mix(in srgb, #DB2777 24%, var(--line))",
+    lightAccent: "#DB2777",
+    darkBg: "color-mix(in srgb, #DB2777 18%, #15161e)",
+    darkBorder: "color-mix(in srgb, #FB7185 24%, transparent)",
+    darkAccent: "#FB7185",
+  },
+  // Laranja tangerina (atenção, prazos e lembretes)
+  "#FB923C": {
+    dot: "#F97316",
+    lightBg: "color-mix(in srgb, #FFEDD5 62%, var(--surface))",
+    lightBorder: "color-mix(in srgb, #EA580C 24%, var(--line))",
+    lightAccent: "#EA580C",
+    darkBg: "color-mix(in srgb, #EA580C 18%, #15161e)",
+    darkBorder: "color-mix(in srgb, #FB923C 24%, transparent)",
+    darkAccent: "#FB923C",
+  },
+  // Violeta signal (revisão e temas da marca)
+  "#A78BFA": {
+    dot: "#8B5CF6",
+    lightBg: "color-mix(in srgb, #EDE9FE 62%, var(--surface))",
+    lightBorder: "color-mix(in srgb, #7C3AED 24%, var(--line))",
+    lightAccent: "#7C3AED",
+    darkBg: "color-mix(in srgb, #7C3AED 18%, #15161e)",
+    darkBorder: "color-mix(in srgb, #A78BFA 24%, transparent)",
+    darkAccent: "#A78BFA",
+  },
+};
+
+function getNotePalette(color: string): NoteColorEntry {
+  const upper = (color || "").toUpperCase();
+  if (NOTE_COLOR_PALETTE[upper]) return NOTE_COLOR_PALETTE[upper];
+  const safe = sanitizeCssColor(color, "#FBBF24");
+  return {
+    dot: safe,
+    lightBg: `color-mix(in srgb, ${safe} 16%, var(--surface))`,
+    lightBorder: `color-mix(in srgb, ${safe} 24%, var(--line))`,
+    lightAccent: safe,
+    darkBg: `color-mix(in srgb, ${safe} 18%, #15161e)`,
+    darkBorder: `color-mix(in srgb, ${safe} 24%, transparent)`,
+    darkAccent: safe,
+  };
+}
 
 function toLocalInput(iso: string) {
   const d = new Date(iso);
@@ -203,23 +291,26 @@ function NoteCard({
     );
   }
 
-  // Notas de estudo: fundo neutro e limpo ("Mesa do Ciclo"), com indicador de cor refinado na lateral.
-  const cardBg = "var(--mist)";
-  const cardInk = "var(--ink)";
-  const cardBorder = `1px solid color-mix(in srgb, ${currentColor} 24%, var(--line))`;
-  const cardBorderLeft = `3.5px solid ${currentColor}`;
+  // Notas de estudo: fundo com a cor escolhida de forma suave e balanceada, com suporte a modo claro e escuro.
+  const palette = getNotePalette(currentColor);
 
   return (
     <article
-      className={`note-enter relative flex flex-col rounded-[var(--radius-tag)] shadow-xs transition-colors ${
+      className={`note-card note-enter relative flex flex-col rounded-[var(--radius-tag)] shadow-xs transition-colors ${
         compact ? "min-h-0 p-2.5 pb-2" : "min-h-[128px] p-3"
       }`}
       style={{
-        background: cardBg,
-        color: cardInk,
-        border: cardBorder,
-        borderLeft: cardBorderLeft,
-      }}
+        "--note-light-bg": palette.lightBg,
+        "--note-light-border": palette.lightBorder,
+        "--note-light-acc": palette.lightAccent,
+        "--note-dark-bg": palette.darkBg,
+        "--note-dark-border": palette.darkBorder,
+        "--note-dark-acc": palette.darkAccent,
+        background: "var(--note-light-bg)",
+        color: "var(--ink)",
+        border: "1px solid var(--note-light-border)",
+        borderLeft: "3.5px solid var(--note-light-acc)",
+      } as React.CSSProperties}
     >
       <textarea
         ref={textRef}
