@@ -96,7 +96,7 @@ function RevisaoContent() {
             className="inline-flex items-center gap-1.5 rounded-[var(--radius-btn)] bg-[var(--signal)] px-3.5 py-2 text-xs sm:text-sm font-semibold text-white shadow-sm transition hover:brightness-110 active:scale-95"
           >
             <Plus size={16} />
-            Capturar Erro
+            Anotar no Caderno
           </button>
         </div>
       </div>
@@ -189,10 +189,10 @@ function RevisaoContent() {
           <div className="flex items-center justify-between border-b border-[var(--line)] bg-[var(--mist)]/40 px-5 py-3.5 shrink-0">
             <div className="min-w-0 pr-2">
               <h3 id="capture-modal-title" className="font-display text-base font-bold text-[var(--ink)] truncate">
-                Captura Rápida de Questão
+                Anotar no Caderno
               </h3>
               <p className="text-xs text-[color-mix(in_srgb,var(--ink)_60%,transparent)] truncate">
-                Registre o erro no caderno e decida se quer criar flashcards
+                Registre seu erro, chute ou dúvida e decida se quer criar flashcards
               </p>
             </div>
             <button

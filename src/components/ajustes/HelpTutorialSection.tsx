@@ -81,7 +81,7 @@ const TOPICS: TutorialTopic[] = [
     concept:
       "O estudo reverso direciona seu tempo cirurgicamente para as suas reais deficiências em provas e questões de concurso.",
     steps: [
-      "Na aba Fixar, clique em '+ Capturar Erro' logo após errar ou ter dúvida em uma questão de simulado ou prova.",
+      "Na aba Fixar, clique em '+ Anotar no Caderno' logo após errar ou ter dúvida em uma questão de simulado ou prova.",
       "Preencha os dados essenciais: Disciplina, Assunto, Causa do Erro (Atenção, Teoria ou Interpretação) e a Regra Aprendida / O que não esquecer.",
       "Flashcards e Repetição Espaçada: formule seus próprios cartões ou gere com IA. O card entra no deck com repetição inicial em 24h para fixação imediata; ao acertar, os intervalos expandem automaticamente (4 a 7 dias, depois 15 a 30 dias).",
       "Deck Global vs Treino Isolado: utilize o 'Deck Global do Dia' para revisar rapidamente todos os cards previstos para hoje pelo algoritmo, ou treine uma disciplina específica de forma isolada nos 'Decks por Matéria'.",

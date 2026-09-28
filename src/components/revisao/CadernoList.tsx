@@ -451,7 +451,7 @@ export function CadernoList({
             Nenhuma questão encontrada
           </p>
           <p className="mt-1 text-xs text-[color-mix(in_srgb,var(--ink)_50%,transparent)]">
-            Use o botão de Captura Rápida acima para registrar seus erros de simulados ou baterias.
+            Use o botão &apos;+ Anotar no Caderno&apos; acima para registrar seus erros ou dúvidas de simulados e baterias.
           </p>
         </div>
       ) : (
