@@ -17,6 +17,7 @@ import {
   Sparkles,
   Target,
   TriangleAlert,
+  Type,
   X,
   Zap,
 } from "lucide-react";
@@ -54,28 +55,28 @@ function ResponseSection({
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className={`w-full flex items-center gap-2 px-3.5 py-2.5 text-left transition-colors ${
+        className={`w-full flex items-center gap-2 px-3.5 py-2.5 sm:px-4 sm:py-3 text-left transition-colors ${
           open
             ? `bg-[color-mix(in_srgb,${color}_8%,var(--surface))]`
             : "bg-[var(--surface)] hover:bg-[var(--mist)]"
         }`}
       >
         <Icon
-          size={15}
+          size={16}
           className="shrink-0"
           style={{ color }}
         />
-        <span className="flex-1 text-xs font-semibold text-[var(--ink)]">
+        <span className="flex-1 text-xs sm:text-sm font-semibold text-[var(--ink)]">
           {title}
         </span>
         {open ? (
-          <ChevronUp size={14} className="text-[var(--ink-soft,color-mix(in_srgb,var(--ink)_40%,transparent))]" />
+          <ChevronUp size={15} className="text-[var(--ink-soft,color-mix(in_srgb,var(--ink)_40%,transparent))]" />
         ) : (
-          <ChevronDown size={14} className="text-[var(--ink-soft,color-mix(in_srgb,var(--ink)_40%,transparent))]" />
+          <ChevronDown size={15} className="text-[var(--ink-soft,color-mix(in_srgb,var(--ink)_40%,transparent))]" />
         )}
       </button>
       {open && (
-        <div className="px-3.5 py-3 border-t border-[var(--line)]/50 bg-[var(--surface)]">
+        <div className="px-3.5 py-3 sm:px-4 sm:py-3.5 border-t border-[var(--line)]/50 bg-[var(--surface)]">
           {children}
         </div>
       )}
@@ -100,11 +101,11 @@ function CopyButton({ text }: { text: string }) {
     <button
       type="button"
       onClick={handleCopy}
-      className="inline-flex items-center gap-1 text-[10px] font-medium text-[color-mix(in_srgb,var(--ink)_45%,transparent)] hover:text-[var(--signal)] transition-colors"
+      className="inline-flex items-center gap-1.5 text-xs font-medium text-[color-mix(in_srgb,var(--ink)_50%,transparent)] hover:text-[var(--signal)] transition-colors px-2 py-1 rounded-md hover:bg-[var(--mist)]"
       title="Copiar texto"
     >
-      {copied ? <CheckCircle size={11} /> : <Copy size={11} />}
-      {copied ? "Copiado!" : "Copiar"}
+      {copied ? <CheckCircle size={13} className="text-[var(--ok)]" /> : <Copy size={13} />}
+      <span>{copied ? "Copiado!" : "Copiar"}</span>
     </button>
   );
 }
@@ -152,6 +153,43 @@ export function TiraDuvidas() {
   const [savingFlashcard, setSavingFlashcard] = useState(false);
   const [cadernoSaved, setCadernoSaved] = useState(false);
   const [savingCaderno, setSavingCaderno] = useState(false);
+
+  /* Tamanho da fonte de resposta (sm: 14px, base: 16px [padrão], lg: 18px) */
+  const [textSize, setTextSize] = useState<"sm" | "base" | "lg">("base");
+
+  // Carregar preferência salva
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("focohub_tira_duvidas_font_size");
+      if (saved === "sm" || saved === "base" || saved === "lg") {
+        setTextSize(saved);
+      }
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
+  const handleSetTextSize = useCallback((size: "sm" | "base" | "lg") => {
+    setTextSize(size);
+    try {
+      localStorage.setItem("focohub_tira_duvidas_font_size", size);
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
+  // Classes de texto e entrelinha para leitura didática
+  const contentTextClass = useMemo(() => {
+    switch (textSize) {
+      case "sm":
+        return "text-sm leading-relaxed";
+      case "lg":
+        return "text-base sm:text-lg leading-relaxed sm:leading-8";
+      case "base":
+      default:
+        return "text-[15px] sm:text-base leading-relaxed sm:leading-7";
+    }
+  }, [textSize]);
 
   /* Derived */
   const isMaster = Boolean(aiConfig?.isMaster);
@@ -447,7 +485,7 @@ export function TiraDuvidas() {
               placeholder="Cole aqui o texto da questão, a alternativa que gerou dúvida, ou descreva sua dúvida teórica..."
               rows={5}
               maxLength={MAX_TEXT_LENGTH}
-              className="w-full min-h-[120px] resize-y rounded-[var(--radius-btn)] border border-[var(--line)] bg-[var(--surface)] p-3 text-sm text-[var(--ink)] outline-none transition placeholder:text-[color-mix(in_srgb,var(--ink)_35%,transparent)] focus:border-[var(--signal)] focus:ring-2 focus:ring-[var(--signal-soft)] leading-relaxed"
+              className="w-full min-h-[120px] resize-y rounded-[var(--radius-btn)] border border-[var(--line)] bg-[var(--surface)] p-3 text-sm sm:text-base text-[var(--ink)] outline-none transition placeholder:text-[color-mix(in_srgb,var(--ink)_35%,transparent)] focus:border-[var(--signal)] focus:ring-2 focus:ring-[var(--signal-soft)] leading-relaxed"
             />
           </div>
 
@@ -491,15 +529,90 @@ export function TiraDuvidas() {
       {/* ---- Response Mode ---- */}
       {resposta && (
         <div className="space-y-3 animate-in fade-in duration-300">
+          {/* Barra de Ajuste de Leitura (Tamanho da Fonte) */}
+          <div className="flex flex-wrap items-center justify-between gap-2.5 rounded-xl border border-[var(--line)]/70 bg-[var(--surface)] px-3.5 py-2 shadow-xs">
+            <div className="flex items-center gap-2">
+              <span className="grid size-7 place-items-center rounded-lg bg-[var(--signal-soft)] text-[var(--signal)]">
+                <Type size={15} />
+              </span>
+              <div className="leading-tight">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs font-bold text-[var(--ink)]">
+                    Modo Leitura
+                  </span>
+                  <span className="hidden sm:inline-block rounded-full bg-[var(--mist)] px-2 py-0.5 text-[10px] font-semibold text-[color-mix(in_srgb,var(--ink)_60%,transparent)]">
+                    Salva automaticamente
+                  </span>
+                </div>
+                <p className="text-[11px] text-[color-mix(in_srgb,var(--ink)_55%,transparent)] hidden sm:block">
+                  Ajuste o tamanho do texto para maior conforto visual no seu monitor
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-1.5 ml-auto">
+              <span className="text-[11px] font-semibold text-[color-mix(in_srgb,var(--ink)_55%,transparent)] mr-1">
+                Tamanho da letra:
+              </span>
+              <div
+                className="inline-flex items-center rounded-lg border border-[var(--line)] bg-[color-mix(in_srgb,var(--ink)_4%,var(--surface))] p-0.5"
+                role="group"
+                aria-label="Tamanho da fonte"
+              >
+                <button
+                  type="button"
+                  onClick={() => handleSetTextSize("sm")}
+                  title="Pequeno (14px) - Compacto"
+                  className={`inline-flex items-center gap-1 px-2.5 py-1 text-xs font-bold rounded-md transition-all ${
+                    textSize === "sm"
+                      ? "bg-[var(--signal)] text-white shadow-xs"
+                      : "text-[color-mix(in_srgb,var(--ink)_70%,transparent)] hover:text-[var(--ink)] hover:bg-[var(--surface)]"
+                  }`}
+                >
+                  <span>A-</span>
+                  <span className="text-[10px] opacity-75 font-normal">P</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleSetTextSize("base")}
+                  title="Padrão Confortável (16px) - Recomendado para PC"
+                  className={`inline-flex items-center gap-1 px-2.5 py-1 text-xs font-bold rounded-md transition-all ${
+                    textSize === "base"
+                      ? "bg-[var(--signal)] text-white shadow-xs"
+                      : "text-[color-mix(in_srgb,var(--ink)_70%,transparent)] hover:text-[var(--ink)] hover:bg-[var(--surface)]"
+                  }`}
+                >
+                  <span>A</span>
+                  <span className="text-[10px] opacity-75 font-normal">M</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleSetTextSize("lg")}
+                  title="Ampliado (18px) - Leitura relaxada"
+                  className={`inline-flex items-center gap-1 px-2.5 py-1 text-xs font-bold rounded-md transition-all ${
+                    textSize === "lg"
+                      ? "bg-[var(--signal)] text-white shadow-xs"
+                      : "text-[color-mix(in_srgb,var(--ink)_70%,transparent)] hover:text-[var(--ink)] hover:bg-[var(--surface)]"
+                  }`}
+                >
+                  <span>A+</span>
+                  <span className="text-[10px] opacity-75 font-normal">G</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
           {/* Conceito-chave badge */}
           {resposta.conceito_chave && (
-            <div className="flex items-center gap-2 rounded-xl bg-[color-mix(in_srgb,var(--signal)_8%,var(--surface))] border border-[var(--signal)]/20 px-3 py-2">
-              <Target size={14} className="shrink-0 text-[var(--signal)]" />
+            <div className="flex items-center gap-2.5 rounded-xl bg-[color-mix(in_srgb,var(--signal)_8%,var(--surface))] border border-[var(--signal)]/20 px-3.5 py-2.5">
+              <Target size={15} className="shrink-0 text-[var(--signal)]" />
               <div>
                 <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--signal)]">
                   Conceito-Chave
                 </span>
-                <p className="text-xs font-medium text-[var(--ink)]">
+                <p className={`font-medium text-[var(--ink)] ${
+                  textSize === "lg" ? "text-sm sm:text-base" : textSize === "sm" ? "text-xs" : "text-xs sm:text-sm"
+                }`}>
                   {resposta.conceito_chave}
                 </p>
               </div>
@@ -508,16 +621,22 @@ export function TiraDuvidas() {
 
           {/* Resposta Correta (destaque) */}
           {resposta.resposta_certa && (
-            <div className="flex items-start gap-2 rounded-xl bg-[color-mix(in_srgb,var(--ok)_10%,var(--surface))] border border-[var(--ok)]/25 px-3.5 py-3">
+            <div className="flex items-start gap-2.5 rounded-xl bg-[color-mix(in_srgb,var(--ok)_10%,var(--surface))] border border-[var(--ok)]/25 px-3.5 py-3 sm:px-4">
               <CheckCircle
-                size={16}
+                size={18}
                 className="mt-0.5 shrink-0 text-[var(--ok)]"
               />
               <div className="flex-1 min-w-0">
                 <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--ok)]">
                   Resposta Correta
                 </span>
-                <p className="text-sm text-[var(--ink)] leading-relaxed mt-0.5 break-words [overflow-wrap:anywhere]">
+                <p className={`text-[var(--ink)] break-words [overflow-wrap:anywhere] mt-0.5 ${
+                  textSize === "lg"
+                    ? "text-base sm:text-lg font-semibold sm:leading-relaxed"
+                    : textSize === "sm"
+                    ? "text-sm leading-relaxed"
+                    : "text-sm sm:text-base font-semibold leading-relaxed"
+                }`}>
                   {resposta.resposta_certa}
                 </p>
               </div>
@@ -532,10 +651,10 @@ export function TiraDuvidas() {
             color="var(--signal)"
             defaultOpen
           >
-            <p className="text-sm text-[var(--ink)] leading-relaxed whitespace-pre-line break-words [overflow-wrap:anywhere]">
+            <p className={`text-[var(--ink)] whitespace-pre-line break-words [overflow-wrap:anywhere] ${contentTextClass}`}>
               {resposta.explicacao}
             </p>
-            <div className="mt-2">
+            <div className="mt-2.5">
               <CopyButton text={resposta.explicacao} />
             </div>
           </ResponseSection>
@@ -548,7 +667,7 @@ export function TiraDuvidas() {
               color="var(--warn)"
               defaultOpen
             >
-              <p className="text-sm text-[var(--ink)] leading-relaxed break-words [overflow-wrap:anywhere]">
+              <p className={`text-[var(--ink)] break-words [overflow-wrap:anywhere] ${contentTextClass}`}>
                 {resposta.pegadinha}
               </p>
             </ResponseSection>
@@ -561,13 +680,13 @@ export function TiraDuvidas() {
               title="Passo a Passo da Resolução"
               color="var(--accent-2)"
             >
-              <ol className="space-y-2">
+              <ol className="space-y-2.5">
                 {resposta.passo_a_passo.map((passo, idx) => (
                   <li key={idx} className="flex gap-2.5">
-                    <span className="shrink-0 grid size-5 place-items-center rounded-full bg-[color-mix(in_srgb,var(--accent-2)_15%,var(--surface))] text-[10px] font-bold text-[var(--accent-2)]">
+                    <span className="shrink-0 grid size-5 sm:size-6 place-items-center rounded-full bg-[color-mix(in_srgb,var(--accent-2)_15%,var(--surface))] text-[10px] sm:text-xs font-bold text-[var(--accent-2)]">
                       {idx + 1}
                     </span>
-                    <p className="flex-1 text-sm text-[var(--ink)] leading-relaxed break-words [overflow-wrap:anywhere]">
+                    <p className={`flex-1 text-[var(--ink)] break-words [overflow-wrap:anywhere] ${contentTextClass}`}>
                       {passo.replace(/^(Passo\s*\d+\s*:\s*)/i, "")}
                     </p>
                   </li>
