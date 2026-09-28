@@ -39,6 +39,55 @@ import {
 } from "@/lib/revisao/types";
 import { useRevisao } from "./RevisaoProvider";
 
+function getCardContent(q: QuestaoCaderno) {
+  const rawLines = (q.aprendizado_chave || "")
+    .split("\n")
+    .map((l) => l.trim())
+    .filter(Boolean);
+  const meaningfulLines = rawLines.filter((l) => !/^[=\-_*~#]{3,}$/.test(l));
+
+  const cleanPrefixes = (text: string) =>
+    text
+      .replace(
+        /^(Pegadinha\s*(\/|e)\s*Regra\s*:\s*|Pegadinha\s*:\s*|Regra\s*:\s*|Atenção\s*:\s*|Dica\s*:\s*|Conceito-Chave\s*:\s*)/i,
+        "",
+      )
+      .trim();
+
+  const firstLine = meaningfulLines[0] || "";
+  const isHeaderLine = /^(FICHA RESUMO|RESUMO|MAPA|REGRA CHAVE|CONCEITO CHAVE)[\s:–-]/i.test(firstLine);
+
+  let title = (q.assunto || "").trim();
+  let summary = "";
+
+  // Se tem assunto definido
+  if (title) {
+    if (isHeaderLine && meaningfulLines.length > 1) {
+      summary = meaningfulLines.slice(1).map(cleanPrefixes).join(" ");
+    } else {
+      summary = meaningfulLines.map(cleanPrefixes).join(" ");
+    }
+  } else if (isHeaderLine) {
+    title = firstLine.replace(/^(FICHA RESUMO|RESUMO|MAPA|REGRA CHAVE|CONCEITO CHAVE)[\s:–-]+\s*/i, "").trim() || firstLine;
+    summary = meaningfulLines.slice(1).map(cleanPrefixes).join(" ");
+  } else {
+    // Se não tem assunto explícito, usa a primeira frase/termo como título
+    const firstClean = cleanPrefixes(firstLine);
+    const titleMatch = firstClean.split(/[.:;–—]/)[0]?.trim();
+    title = titleMatch && titleMatch.length <= 65 ? titleMatch : firstClean.slice(0, 60);
+    summary = meaningfulLines.slice(1).map(cleanPrefixes).join(" ") || firstClean;
+  }
+
+  if (!summary) {
+    summary = cleanPrefixes(firstLine) || "Clique para ver a ficha completa com detalhes e resolução.";
+  }
+
+  return {
+    title: title || "Anotação de Estudo",
+    summary,
+  };
+}
+
 export function CadernoList({
   onGenerateWithAI,
 }: {
@@ -415,15 +464,7 @@ export function CadernoList({
           }
         >
           {questoesFiltradas.map((q) => {
-            const rawLines = (q.aprendizado_chave || "")
-              .split("\n")
-              .map((l) => l.trim())
-              .filter(Boolean);
-            const meaningfulLines = rawLines.filter(
-              (l) => !/^[=\-_*~#]{3,}$/.test(l),
-            );
-            const primaryLine = meaningfulLines[0] || "Anotação de revisão";
-            const secondarySnippet = meaningfulLines.slice(1).join(" ");
+            const { title: cardTitle, summary: cardSummary } = getCardContent(q);
             const cardsCount = cardsVinculados.get(q.id) || 0;
 
             return (
@@ -434,84 +475,81 @@ export function CadernoList({
                   viewMode === "grid" ? "flex flex-col justify-between" : ""
                 }`}
               >
-                {/* Header do Card com Chips */}
-                <div className="flex flex-wrap items-start justify-between gap-1.5 text-xs">
-                  <div className="flex flex-wrap items-center gap-1.5 min-w-0 max-w-full">
-                    {q.banca && (
-                      <span className="rounded-md bg-[var(--mist)] px-2 py-0.5 font-semibold text-[var(--ink)] border border-[var(--line)] shrink-0 text-[11px]">
-                        {q.banca}
+                <div>
+                  {/* Topo do Card: Matéria em Destaque + Chips Contextuais */}
+                  <div className="flex flex-wrap items-center justify-between gap-1.5 text-xs pb-2.5 border-b border-[var(--line)]/50">
+                    <div className="flex flex-wrap items-center gap-1.5 min-w-0 max-w-full">
+                      <span
+                        className="font-bold text-[var(--signal)] text-[12px] sm:text-[13px] truncate max-w-[150px] sm:max-w-[200px]"
+                        title={q.disciplina}
+                      >
+                        {q.disciplina}
                       </span>
-                    )}
-                    <span className="font-semibold text-[var(--signal)] text-[12px] truncate max-w-[140px] sm:max-w-[180px]">
-                      {q.disciplina}
-                    </span>
-                    {q.codigo_questao && (
-                      <span className="font-mono text-[11px] font-medium text-[color-mix(in_srgb,var(--ink)_50%,transparent)] shrink-0">
-                        #{q.codigo_questao}
+                      {q.banca && (
+                        <span className="rounded-md bg-[var(--mist)] px-2 py-0.5 font-medium text-[color-mix(in_srgb,var(--ink)_75%,transparent)] border border-[var(--line)] shrink-0 text-[10px] sm:text-[11px]">
+                          {q.banca}
+                        </span>
+                      )}
+                      {q.codigo_questao && (
+                        <span className="font-mono text-[10px] sm:text-[11px] font-medium text-[color-mix(in_srgb,var(--ink)_50%,transparent)] shrink-0">
+                          #{q.codigo_questao}
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <span
+                        className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                          q.status_resultado === "erro"
+                            ? "bg-[color-mix(in_srgb,#ef4444_15%,transparent)] text-[#ef4444]"
+                            : q.status_resultado === "chute"
+                            ? "bg-[color-mix(in_srgb,#f59e0b_15%,transparent)] text-[#f59e0b]"
+                            : "bg-[color-mix(in_srgb,#8b5cf6_15%,transparent)] text-[#8b5cf6]"
+                        }`}
+                      >
+                        {STATUS_RESULTADO_LABEL[q.status_resultado]}
                       </span>
-                    )}
+
+                      {viewMode === "list" && (
+                        <span className="rounded-full bg-[var(--mist)] px-2 py-0.5 text-[10px] font-medium text-[color-mix(in_srgb,var(--ink)_65%,transparent)] hidden sm:inline-block">
+                          {CAUSA_ERRO_LABEL[q.causa_erro]}
+                        </span>
+                      )}
+
+                      {cardsCount > 0 ? (
+                        <span
+                          className="inline-flex items-center gap-1 rounded-full bg-[color-mix(in_srgb,var(--signal)_12%,var(--surface))] px-2 py-0.5 text-[10px] font-semibold text-[var(--signal)] border border-[color-mix(in_srgb,var(--signal)_25%,transparent)]"
+                          title={`${cardsCount} flashcard(s) criado(s)`}
+                        >
+                          <Layers size={10} />
+                          {cardsCount} {cardsCount === 1 ? "card" : "cards"}
+                        </span>
+                      ) : null}
+                    </div>
                   </div>
 
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    <span
-                      className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
-                        q.status_resultado === "erro"
-                          ? "bg-[color-mix(in_srgb,#ef4444_15%,transparent)] text-[#ef4444]"
-                          : q.status_resultado === "chute"
-                          ? "bg-[color-mix(in_srgb,#f59e0b_15%,transparent)] text-[#f59e0b]"
-                          : "bg-[color-mix(in_srgb,#8b5cf6_15%,transparent)] text-[#8b5cf6]"
+                  {/* Conteúdo do Card: Assunto (Título destacado) + Resumo objetivo */}
+                  <div className="mt-2.5 flex-1">
+                    <h3
+                      className={`font-bold text-[var(--ink)] leading-snug group-hover:text-[var(--signal)] transition-colors ${
+                        viewMode === "grid"
+                          ? "text-sm sm:text-[15px] line-clamp-2"
+                          : "text-sm sm:text-base line-clamp-1"
                       }`}
                     >
-                      {STATUS_RESULTADO_LABEL[q.status_resultado]}
-                    </span>
+                      {cardTitle}
+                    </h3>
 
-                    {viewMode === "list" && (
-                      <span className="rounded-full bg-[var(--mist)] px-2 py-0.5 text-[10px] font-medium text-[color-mix(in_srgb,var(--ink)_65%,transparent)] hidden sm:inline-block">
-                        {CAUSA_ERRO_LABEL[q.causa_erro]}
-                      </span>
-                    )}
-
-                    {cardsCount > 0 ? (
-                      <span
-                        className="inline-flex items-center gap-1 rounded-full bg-[color-mix(in_srgb,var(--signal)_12%,var(--surface))] px-2 py-0.5 text-[10px] font-semibold text-[var(--signal)] border border-[color-mix(in_srgb,var(--signal)_25%,transparent)]"
-                        title={`${cardsCount} flashcard(s) criado(s)`}
-                      >
-                        <Layers size={10} />
-                        {cardsCount} {cardsCount === 1 ? "card" : "cards"}
-                      </span>
-                    ) : null}
-                  </div>
-                </div>
-
-                {q.assunto && (
-                  <p className="mt-1 text-[11px] text-[color-mix(in_srgb,var(--ink)_60%,transparent)] font-medium truncate flex items-center gap-1">
-                    <ChevronRight size={11} className="shrink-0 opacity-50 text-[var(--signal)]" />
-                    <span className="truncate">{q.assunto}</span>
-                  </p>
-                )}
-
-                {/* Conteúdo do Card: Título + Snippet */}
-                <div className="mt-2.5 flex-1">
-                  <h3
-                    className={`font-semibold text-[var(--ink)] leading-snug group-hover:text-[var(--signal)] transition-colors ${
-                      viewMode === "grid"
-                        ? "text-sm line-clamp-2"
-                        : "text-sm line-clamp-1"
-                    }`}
-                  >
-                    {primaryLine}
-                  </h3>
-                  {secondarySnippet ? (
                     <p
-                      className={`mt-1.5 text-xs text-[color-mix(in_srgb,var(--ink)_70%,transparent)] leading-relaxed ${
+                      className={`mt-1.5 text-xs sm:text-[12.5px] text-[color-mix(in_srgb,var(--ink)_75%,transparent)] leading-relaxed ${
                         viewMode === "grid"
                           ? "line-clamp-3"
                           : "line-clamp-2"
                       }`}
                     >
-                      {secondarySnippet}
+                      {cardSummary}
                     </p>
-                  ) : null}
+                  </div>
                 </div>
 
                 {/* Rodapé do Card: Dica de clique + Ações Rápidas */}
@@ -683,6 +721,17 @@ export function CadernoList({
 
             {/* Conteúdo com Scroll */}
             <div className="flex-1 overflow-y-auto px-4 py-5 sm:px-6 space-y-4">
+              {readingQuestao.assunto && (
+                <div className="pb-2.5 border-b border-[var(--line)]/60">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--signal)]">
+                    Assunto / Tópico
+                  </span>
+                  <h2 className="text-base sm:text-lg font-bold text-[var(--ink)] mt-0.5">
+                    {readingQuestao.assunto}
+                  </h2>
+                </div>
+              )}
+
               <FormattedRuleText
                 text={readingQuestao.aprendizado_chave}
                 className="text-sm sm:text-[15px] font-normal text-[var(--ink)] leading-relaxed select-text"
