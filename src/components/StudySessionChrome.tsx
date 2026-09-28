@@ -440,7 +440,7 @@ export function StudySessionChrome() {
     <>
       <DialogFrame
         open={flow.phase === "subject_notes"}
-        onClose={() => afterNotesThen(flow.continueToNextSubject)}
+        onClose={() => afterNotesThen(flow.chooseFinish)}
         labelledBy="subject-notes-title"
         cardClassName="surface w-full max-w-md p-6 shadow-[var(--shadow-lg)]"
       >
@@ -456,9 +456,20 @@ export function StudySessionChrome() {
               >
                 Matéria concluída
               </h2>
-              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 dark:text-emerald-300 ring-1 ring-emerald-500/20">
-                Feito ✓
-              </span>
+              <div className="flex items-center gap-1.5">
+                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 dark:text-emerald-300 ring-1 ring-emerald-500/20">
+                  Feito ✓
+                </span>
+                <button
+                  type="button"
+                  onClick={() => afterNotesThen(flow.chooseFinish)}
+                  className="rounded-full p-1 text-[color-mix(in_srgb,var(--ink)_40%,transparent)] hover:bg-[var(--mist)] hover:text-[var(--ink)] transition -mr-1"
+                  title="Finalizar por agora"
+                  aria-label="Finalizar por agora"
+                >
+                  <X size={18} />
+                </button>
+              </div>
             </div>
             <p className="mt-1 text-xs text-[color-mix(in_srgb,var(--ink)_65%,transparent)] leading-relaxed">
               Anote onde parou antes da próxima. <strong className="font-medium text-[var(--ink)]">O tempo está pausado</strong> — respire à vontade.
@@ -500,14 +511,24 @@ export function StudySessionChrome() {
           }}
         />
 
-        <button
-          type="button"
-          className="btn btn-primary mt-5 w-full py-3 text-sm font-semibold tracking-wide flex items-center justify-center gap-2 group cursor-pointer"
-          onClick={() => afterNotesThen(flow.continueToNextSubject)}
-        >
-          <span>Continuar para a próxima</span>
-          <ArrowRight size={16} className="transition-transform group-hover:translate-x-1" />
-        </button>
+        <div className="mt-5 flex flex-col gap-2">
+          <button
+            type="button"
+            className="btn btn-primary w-full py-3 text-sm font-semibold tracking-wide flex items-center justify-center gap-2 group cursor-pointer"
+            onClick={() => afterNotesThen(flow.continueToNextSubject)}
+          >
+            <span>Continuar para a próxima</span>
+            <ArrowRight size={16} className="transition-transform group-hover:translate-x-1" />
+          </button>
+
+          <button
+            type="button"
+            className="w-full py-2.5 text-xs sm:text-sm font-medium text-[color-mix(in_srgb,var(--ink)_60%,transparent)] hover:text-[var(--ink)] hover:bg-[var(--mist)] rounded-[var(--radius-btn)] transition flex items-center justify-center gap-1.5 cursor-pointer"
+            onClick={() => afterNotesThen(flow.chooseFinish)}
+          >
+            <span>Finalizar por agora</span>
+          </button>
+        </div>
       </DialogFrame>
 
       <DialogFrame
