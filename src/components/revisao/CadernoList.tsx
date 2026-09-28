@@ -500,56 +500,24 @@ export function CadernoList({
                 </div>
 
                 <div className="flex-1 flex flex-col justify-between min-w-0">
-                  {/* Topo do Card: Matéria em Destaque + Chips Contextuais (Linha Única Alinhada) */}
+                  {/* Topo do Card: Apenas o Nome da Matéria em Destaque (Visual Limpo e Arejado) */}
                   <div className="flex items-center justify-between gap-2 text-xs pb-2.5 border-b border-[var(--line)]/50 min-w-0">
-                    <div className="flex items-center gap-1.5 min-w-0 flex-1 overflow-hidden">
+                    <span
+                      className="font-bold text-[var(--signal)] text-[13px] sm:text-[14px] truncate min-w-0"
+                      title={q.disciplina}
+                    >
+                      {q.disciplina}
+                    </span>
+
+                    {cardsCount > 0 && (
                       <span
-                        className="font-bold text-[var(--signal)] text-[12px] sm:text-[13px] truncate shrink min-w-0"
-                        title={q.disciplina}
+                        className="inline-flex items-center gap-1 rounded-full bg-[color-mix(in_srgb,var(--signal)_12%,var(--surface))] px-2 py-0.5 text-[10px] font-semibold text-[var(--signal)] border border-[color-mix(in_srgb,var(--signal)_25%,transparent)] shrink-0 whitespace-nowrap ml-auto"
+                        title={`${cardsCount} flashcard(s) criado(s)`}
                       >
-                        {q.disciplina}
+                        <Layers size={10} />
+                        {cardsCount}
                       </span>
-                      {q.banca && (
-                        <span className="rounded-md bg-[var(--mist)] px-1.5 py-0.5 font-medium text-[color-mix(in_srgb,var(--ink)_75%,transparent)] border border-[var(--line)] shrink-0 text-[10px] sm:text-[11px] whitespace-nowrap">
-                          {q.banca}
-                        </span>
-                      )}
-                      {q.codigo_questao && (
-                        <span className="font-mono text-[10px] sm:text-[11px] font-medium text-[color-mix(in_srgb,var(--ink)_50%,transparent)] shrink-0 hidden sm:inline-block">
-                          #{q.codigo_questao}
-                        </span>
-                      )}
-                    </div>
-
-                    <div className="flex items-center gap-1.5 shrink-0 ml-auto">
-                      <span
-                        className={`rounded-full px-2 py-0.5 text-[10px] font-semibold shrink-0 whitespace-nowrap ${
-                          q.status_resultado === "erro"
-                            ? "bg-[color-mix(in_srgb,#ef4444_15%,transparent)] text-[#ef4444]"
-                            : q.status_resultado === "chute"
-                            ? "bg-[color-mix(in_srgb,#f59e0b_15%,transparent)] text-[#f59e0b]"
-                            : "bg-[color-mix(in_srgb,#8b5cf6_15%,transparent)] text-[#8b5cf6]"
-                        }`}
-                      >
-                        {STATUS_RESULTADO_LABEL[q.status_resultado]}
-                      </span>
-
-                      {viewMode === "list" && (
-                        <span className="rounded-full bg-[var(--mist)] px-2 py-0.5 text-[10px] font-medium text-[color-mix(in_srgb,var(--ink)_65%,transparent)] hidden sm:inline-block whitespace-nowrap">
-                          {CAUSA_ERRO_LABEL[q.causa_erro]}
-                        </span>
-                      )}
-
-                      {cardsCount > 0 ? (
-                        <span
-                          className="inline-flex items-center gap-1 rounded-full bg-[color-mix(in_srgb,var(--signal)_12%,var(--surface))] px-2 py-0.5 text-[10px] font-semibold text-[var(--signal)] border border-[color-mix(in_srgb,var(--signal)_25%,transparent)] shrink-0 whitespace-nowrap"
-                          title={`${cardsCount} flashcard(s) criado(s)`}
-                        >
-                          <Layers size={10} />
-                          {cardsCount}
-                        </span>
-                      ) : null}
-                    </div>
+                    )}
                   </div>
 
                   {/* Miolo do Caderno: Assunto em Destaque Central Arejado */}
