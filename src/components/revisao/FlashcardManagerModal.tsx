@@ -129,7 +129,7 @@ export function FlashcardManagerModal({
         <div className="flex items-center justify-between border-b border-[var(--line)] p-4 sm:px-6">
           <div className="flex items-center gap-2.5 min-w-0">
             <div className="grid size-9 place-items-center rounded-xl bg-[var(--signal-soft)] text-[var(--signal)] shrink-0">
-              <BookOpen size={18} />
+              <Layers size={18} />
             </div>
             <div className="min-w-0">
               <h3 className="font-display text-base sm:text-lg font-bold text-[var(--ink)] truncate">

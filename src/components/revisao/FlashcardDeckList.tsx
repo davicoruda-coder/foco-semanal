@@ -3,9 +3,9 @@
 import { useState } from "react";
 import {
   ArrowLeft,
-  BookOpen,
   Layers,
   Pencil,
+  Play,
   Plus,
   SlidersHorizontal,
   Sparkles,
@@ -157,7 +157,7 @@ export function FlashcardDeckList() {
             }
             className="flex w-full sm:w-auto items-center justify-center gap-2 rounded-[var(--radius-btn)] bg-[var(--signal)] px-4 py-2.5 text-xs sm:text-sm font-semibold text-white shadow-sm transition hover:brightness-110 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <BookOpen size={16} />
+            <Play size={15} className="fill-current" />
             {flashcardsDoDia.length > 0
               ? `Iniciar Revisão (${flashcardsDoDia.length})`
               : "Revisado"}
@@ -318,7 +318,7 @@ export function FlashcardDeckList() {
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex items-center gap-2.5">
                         <div className="grid size-9 shrink-0 place-items-center rounded-xl bg-[var(--signal-soft)] text-[var(--signal)]">
-                          <BookOpen size={18} />
+                          <Layers size={18} />
                         </div>
                         <h4 className="font-display font-semibold text-base text-[var(--ink)] truncate max-w-[170px] sm:max-w-[200px]" title={materia.nome}>
                           {materia.nome}
