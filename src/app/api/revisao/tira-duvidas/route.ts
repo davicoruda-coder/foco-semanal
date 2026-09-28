@@ -31,7 +31,8 @@ Responda APENAS com JSON válido no seguinte formato:
   "resposta_certa": "A resposta correta, se for uma questão. Se for apenas um assunto/conceito, deixe vazio.",
   "pegadinha": "Onde está a pegadinha ou armadilha mais comum sobre este tema. Se não houver, explique o erro mais frequente dos alunos.",
   "passo_a_passo": ["Passo 1: ...", "Passo 2: ...", "Passo 3: ..."],
-  "conceito_chave": "O conceito central envolvido em uma frase curta.",
+  "topico_assunto": "Título curto e conciso do assunto/tema em 2 a 5 palavras (ex.: Tipagem Dinâmica e Forte, Crase Obrigatória, Atos Administrativos). NUNCA escreva frases longas ou explicações aqui.",
+  "conceito_chave": "O conceito ou definição central em uma frase curta e completa.",
   "disciplina_sugerida": "Nome da matéria ou disciplina principal identificada na questão (ex.: Direito Constitucional, Português, Raciocínio Lógico, Informática, etc.)",
   "flashcard_sugerido": {
     "frente": "Pergunta objetiva para memorização",
@@ -52,6 +53,7 @@ interface TiraDuvidasResponse {
   resposta_certa: string;
   pegadinha: string;
   passo_a_passo: string[];
+  topico_assunto?: string;
   conceito_chave: string;
   disciplina_sugerida?: string;
   flashcard_sugerido?: { frente: string; verso: string };
@@ -84,6 +86,10 @@ function parseAIResponse(raw: string): TiraDuvidasResponse | null {
               .filter((s: unknown) => typeof s === "string" && s.trim())
               .map((s: string) => s.trim())
           : [],
+        topico_assunto:
+          typeof parsed.topico_assunto === "string" && parsed.topico_assunto.trim()
+            ? parsed.topico_assunto.trim().replace(/^[,;:.›\-\s]+/, "").slice(0, 60)
+            : undefined,
         conceito_chave:
           typeof parsed.conceito_chave === "string"
             ? parsed.conceito_chave.trim()

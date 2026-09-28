@@ -118,6 +118,7 @@ interface TiraDuvidasResponse {
   resposta_certa: string;
   pegadinha: string;
   passo_a_passo: string[];
+  topico_assunto?: string;
   conceito_chave: string;
   disciplina_sugerida?: string;
   flashcard_sugerido?: { frente: string; verso: string };
@@ -264,11 +265,21 @@ export function TiraDuvidas() {
         await reloadMaterias();
       }
 
+      // Obtém um assunto conciso (máximo 60 caracteres), sem frases cortadas
+      let cleanAssunto = (resposta?.topico_assunto || "").trim();
+      if (!cleanAssunto && resposta?.conceito_chave) {
+        // Se cair no fallback de conceito_chave, pega apenas a primeira frase/termo
+        const firstSegment = resposta.conceito_chave.split(/[.,;–—]/)[0]?.trim();
+        cleanAssunto = firstSegment || resposta.conceito_chave.slice(0, 50).trim();
+      }
+      if (!cleanAssunto) cleanAssunto = "Dúvida de Fixação";
+      cleanAssunto = cleanAssunto.replace(/^[,;:.›\-\s]+/, "").slice(0, 60).trim();
+
       const ok = await addQuestao({
         enunciado_texto: pergunta.trim() || "Questão analisada pelo Tira-Dúvidas com IA",
         banca: "IA / Dúvida",
         disciplina: disc,
-        assunto: resposta?.conceito_chave || "Dúvida de Fixação",
+        assunto: cleanAssunto,
         status_resultado: resposta?.pegadinha ? "pegadinha" : "erro",
         causa_erro: "teoria",
         aprendizado_chave: resposta?.pegadinha

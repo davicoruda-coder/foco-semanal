@@ -484,8 +484,9 @@ export function CadernoList({
                 </div>
 
                 {q.assunto && (
-                  <p className="mt-1 text-[11px] text-[color-mix(in_srgb,var(--ink)_60%,transparent)] font-medium truncate">
-                    › {q.assunto}
+                  <p className="mt-1 text-[11px] text-[color-mix(in_srgb,var(--ink)_60%,transparent)] font-medium truncate flex items-center gap-1">
+                    <ChevronRight size={11} className="shrink-0 opacity-50 text-[var(--signal)]" />
+                    <span className="truncate">{q.assunto}</span>
                   </p>
                 )}
 
@@ -637,8 +638,9 @@ export function CadernoList({
                   {readingQuestao.disciplina}
                 </span>
                 {readingQuestao.assunto && (
-                  <span className="text-[color-mix(in_srgb,var(--ink)_65%,transparent)] font-medium text-[13px]">
-                    › {readingQuestao.assunto}
+                  <span className="text-[color-mix(in_srgb,var(--ink)_65%,transparent)] font-medium text-[13px] inline-flex items-center gap-1">
+                    <ChevronRight size={12} className="shrink-0 opacity-50 text-[var(--signal)]" />
+                    <span>{readingQuestao.assunto}</span>
                   </span>
                 )}
                 {readingQuestao.codigo_questao && (
@@ -874,8 +876,9 @@ export function CadernoList({
                 </span>
               )}
               {manualCardQuestao.assunto && (
-                <span className="text-[color-mix(in_srgb,var(--ink)_65%,transparent)]">
-                  › {manualCardQuestao.assunto}
+                <span className="text-[color-mix(in_srgb,var(--ink)_65%,transparent)] inline-flex items-center gap-1">
+                  <ChevronRight size={12} className="shrink-0 opacity-50 text-[var(--signal)]" />
+                  <span>{manualCardQuestao.assunto}</span>
                 </span>
               )}
             </div>
