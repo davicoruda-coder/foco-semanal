@@ -5,12 +5,12 @@ import {
   ArrowLeft,
   Layers,
   Pencil,
-  Play,
   Plus,
   SlidersHorizontal,
   Sparkles,
   Trash2,
   X,
+  Zap,
 } from "lucide-react";
 import type { Flashcard, MateriaRevisao } from "@/lib/revisao/types";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
@@ -157,7 +157,7 @@ export function FlashcardDeckList() {
             }
             className="flex w-full sm:w-auto items-center justify-center gap-2 rounded-[var(--radius-btn)] bg-[var(--signal)] px-4 py-2.5 text-xs sm:text-sm font-semibold text-white shadow-sm transition hover:brightness-110 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <Play size={15} className="fill-current" />
+            <Zap size={15} className="fill-current" />
             {flashcardsDoDia.length > 0
               ? `Iniciar Revisão (${flashcardsDoDia.length})`
               : "Revisado"}
@@ -366,8 +366,9 @@ export function FlashcardDeckList() {
                               cards: cardsHoje,
                             })
                           }
-                          className="flex-1 rounded-[var(--radius-btn)] bg-[var(--signal)] py-2 text-xs sm:text-sm font-semibold text-white shadow-sm transition hover:brightness-110 active:scale-95"
+                          className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-[var(--radius-btn)] bg-[var(--signal)] py-2 text-xs sm:text-sm font-semibold text-white shadow-sm transition hover:brightness-110 active:scale-95"
                         >
+                          <Zap size={13} className="fill-current" />
                           Treinar Hoje ({cardsHoje.length})
                         </button>
                         <button

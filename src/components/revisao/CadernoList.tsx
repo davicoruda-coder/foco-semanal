@@ -6,7 +6,6 @@ import {
   Filter,
   GraduationCap,
   Pencil,
-  Play,
   Search,
   Trash2,
   Video,
