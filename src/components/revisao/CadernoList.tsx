@@ -471,11 +471,22 @@ export function CadernoList({
               <div
                 key={q.id}
                 onClick={() => setReadingQuestao(q)}
-                className={`group relative cursor-pointer rounded-[var(--radius)] border border-[var(--line)] bg-[var(--surface)] p-3.5 sm:p-4 transition-all duration-150 hover:border-[var(--signal)] hover:shadow-xs active:scale-[0.999] ${
-                  viewMode === "grid" ? "flex flex-col justify-between" : ""
+                className={`group relative cursor-pointer border border-[var(--line)] bg-[var(--surface)] transition-all duration-200 hover:border-[var(--signal)] hover:shadow-md hover:-translate-y-0.5 active:scale-[0.995] overflow-hidden ${
+                  viewMode === "grid"
+                    ? "flex flex-col justify-between min-h-[160px] sm:min-h-[175px] rounded-l-md rounded-r-2xl sm:rounded-r-3xl p-3.5 pl-6 sm:p-4 sm:pl-7 shadow-xs"
+                    : "flex items-center justify-between rounded-l-md rounded-r-xl p-3 pl-6 sm:pl-7"
                 }`}
               >
-                <div>
+                {/* Lombada Tátil de Caderno (Spine Binding com Vinco) */}
+                <div
+                  className="absolute left-0 top-0 bottom-0 w-2.5 sm:w-3 bg-gradient-to-b from-[var(--signal)] via-[color-mix(in_srgb,var(--signal)_80%,var(--surface))] to-[var(--signal)] opacity-90 transition-all duration-200 group-hover:opacity-100 group-hover:w-3.5"
+                  title={`Caderno: ${q.disciplina}`}
+                >
+                  {/* Vinco de dobra da capa */}
+                  <div className="absolute right-0 top-0 bottom-0 w-[1.5px] bg-black/20 dark:bg-white/15" />
+                </div>
+
+                <div className="flex-1 flex flex-col justify-between min-w-0">
                   {/* Topo do Card: Matéria em Destaque + Chips Contextuais (Linha Única Alinhada) */}
                   <div className="flex items-center justify-between gap-2 text-xs pb-2.5 border-b border-[var(--line)]/50 min-w-0">
                     <div className="flex items-center gap-1.5 min-w-0 flex-1 overflow-hidden">
@@ -528,23 +539,22 @@ export function CadernoList({
                     </div>
                   </div>
 
-                  {/* Conteúdo do Card: Assunto em Destaque */}
-                  <div className="mt-2.5 sm:mt-3 flex-1 min-h-[38px] flex items-center">
+                  {/* Miolo do Caderno: Assunto em Destaque Central Arejado */}
+                  <div className="my-auto py-3 min-h-[56px] flex items-center">
                     <h3
-                      className="font-bold text-[var(--ink)] leading-snug group-hover:text-[var(--signal)] transition-colors text-sm sm:text-[15px] line-clamp-2"
+                      className="font-bold text-[var(--ink)] leading-snug group-hover:text-[var(--signal)] transition-colors text-sm sm:text-base line-clamp-3"
                       title={cardTitle}
                     >
                       {cardTitle}
                     </h3>
                   </div>
-                </div>
 
-                {/* Rodapé do Card: Dica de clique + Ações Rápidas */}
-                <div className="mt-3 flex items-center justify-between pt-2.5 border-t border-[color-mix(in_srgb,var(--line)_50%,transparent)] text-xs text-[color-mix(in_srgb,var(--ink)_50%,transparent)]">
-                  <span className="inline-flex items-center gap-1.5 font-medium text-[11px] text-[var(--signal)] group-hover:underline">
-                    <BookOpen size={12} />
-                    Ver ficha completa
-                  </span>
+                  {/* Rodapé do Caderno: Dica de clique + Ações Rápidas */}
+                  <div className="flex items-center justify-between pt-2.5 border-t border-[color-mix(in_srgb,var(--line)_50%,transparent)] text-xs text-[color-mix(in_srgb,var(--ink)_50%,transparent)]">
+                    <span className="inline-flex items-center gap-1.5 font-medium text-[11px] text-[var(--signal)] group-hover:underline">
+                      <BookOpen size={12} />
+                      Ver ficha completa
+                    </span>
 
                   <div
                     className="flex items-center gap-1"
@@ -593,6 +603,7 @@ export function CadernoList({
                   </div>
                 </div>
               </div>
+            </div>
             );
           })}
         </div>
