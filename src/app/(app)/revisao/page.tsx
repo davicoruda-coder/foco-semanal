@@ -13,6 +13,7 @@ import {
   X,
 } from "lucide-react";
 import { FlashcardsIcon } from "@/components/FlashcardsIcon";
+import { DialogFrame } from "@/components/DialogFrame";
 import { RevisaoProvider, useRevisao } from "@/components/revisao/RevisaoProvider";
 import { CadernoList } from "@/components/revisao/CadernoList";
 import { QuickCaptureForm } from "@/components/revisao/QuickCaptureForm";
@@ -174,33 +175,36 @@ function RevisaoContent() {
       {activeTab === "tira-duvidas" && <TiraDuvidas />}
       {activeTab === "estatisticas" && <RevisaoStats />}
 
-      {/* Modal de Captura Rápida */}
-      {showCaptureModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4">
-          <div
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity"
-            onClick={() => setShowCaptureModal(false)}
-          />
-
-          <div className="relative max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-[var(--radius)] border border-[var(--line)] bg-[var(--surface)] p-5 shadow-[var(--shadow-lg)]">
-            <div className="mb-4 flex items-center justify-between border-b border-[var(--line)] pb-3">
-              <div>
-                <h3 className="text-sm font-bold text-[var(--ink)]">
-                  Captura Rápida de Questão
-                </h3>
-                <p className="text-[11px] text-[color-mix(in_srgb,var(--ink)_55%,transparent)]">
-                  Registre o erro no caderno e decida se quer criar flashcards agora ou depois
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowCaptureModal(false)}
-                className="rounded-lg p-1.5 text-[color-mix(in_srgb,var(--ink)_50%,transparent)] hover:bg-[var(--mist)] hover:text-[var(--ink)]"
-              >
-                <X size={16} />
-              </button>
+      {/* Modal de Captura Rápida com DialogFrame e Header Fixo */}
+      <DialogFrame
+        open={showCaptureModal}
+        onClose={() => setShowCaptureModal(false)}
+        labelledBy="capture-modal-title"
+        cardClassName="surface flex max-h-[85vh] sm:max-h-[88vh] w-full max-w-xl flex-col overflow-hidden p-0 shadow-[var(--shadow-lg)] border border-[var(--line)] rounded-[var(--radius)]"
+      >
+        <div className="flex flex-col h-full max-h-[85vh] sm:max-h-[88vh] min-h-0">
+          {/* Header Fixo (Nunca corta nem some com o scroll) */}
+          <div className="flex items-center justify-between border-b border-[var(--line)] bg-[var(--mist)]/40 px-5 py-3.5 shrink-0">
+            <div className="min-w-0 pr-2">
+              <h3 id="capture-modal-title" className="font-display text-base font-bold text-[var(--ink)] truncate">
+                Captura Rápida de Questão
+              </h3>
+              <p className="text-xs text-[color-mix(in_srgb,var(--ink)_60%,transparent)] truncate">
+                Registre o erro no caderno e decida se quer criar flashcards
+              </p>
             </div>
+            <button
+              type="button"
+              onClick={() => setShowCaptureModal(false)}
+              className="rounded-full p-1.5 text-[color-mix(in_srgb,var(--ink)_50%,transparent)] hover:bg-[var(--mist)] hover:text-[var(--ink)] transition"
+              aria-label="Fechar"
+            >
+              <X size={18} />
+            </button>
+          </div>
 
+          {/* Conteúdo com Scroll interno perfeito */}
+          <div className="flex-1 overflow-y-auto p-4 sm:p-5 min-h-0">
             <QuickCaptureForm
               onSuccess={() => {
                 setShowCaptureModal(false);
@@ -215,17 +219,36 @@ function RevisaoContent() {
             />
           </div>
         </div>
-      )}
+      </DialogFrame>
 
-      {/* Modal de Geração com IA */}
-      {showAIModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4">
-          <div
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
-            onClick={() => setShowAIModal(false)}
-          />
+      {/* Modal de Geração com IA com DialogFrame e Header Fixo */}
+      <DialogFrame
+        open={showAIModal}
+        onClose={() => setShowAIModal(false)}
+        labelledBy="ai-generator-dialog-title"
+        cardClassName="surface flex max-h-[85vh] sm:max-h-[88vh] w-full max-w-2xl flex-col overflow-hidden p-0 shadow-[var(--shadow-lg)] border border-[var(--line)] rounded-[var(--radius)]"
+      >
+        <div className="flex flex-col h-full max-h-[85vh] sm:max-h-[88vh] min-h-0">
+          <div className="flex items-center justify-between border-b border-[var(--line)] bg-[var(--mist)]/40 px-5 py-3.5 shrink-0">
+            <div className="min-w-0 pr-2">
+              <h3 id="ai-generator-dialog-title" className="font-display text-base font-bold text-[var(--ink)] truncate">
+                Gerador de Flashcards com IA
+              </h3>
+              <p className="text-xs text-[color-mix(in_srgb,var(--ink)_60%,transparent)] truncate">
+                Cole seu resumo ou teoria para gerar perguntas e respostas automaticamente
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowAIModal(false)}
+              className="rounded-full p-1.5 text-[color-mix(in_srgb,var(--ink)_50%,transparent)] hover:bg-[var(--mist)] hover:text-[var(--ink)] transition"
+              aria-label="Fechar"
+            >
+              <X size={18} />
+            </button>
+          </div>
 
-          <div className="relative max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-[var(--radius)] border border-[var(--line)] bg-[var(--surface)] p-5 shadow-[var(--shadow-lg)]">
+          <div className="flex-1 overflow-y-auto p-4 sm:p-5 min-h-0">
             <AIFlashcardGenerator
               initialText={aiInitialData.text}
               initialDisciplina={aiInitialData.disciplina}
@@ -236,7 +259,7 @@ function RevisaoContent() {
             />
           </div>
         </div>
-      )}
+      </DialogFrame>
     </div>
   );
 }

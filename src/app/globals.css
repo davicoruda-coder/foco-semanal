@@ -528,6 +528,7 @@ textarea:focus-visible {
   align-items: center;
   justify-content: center;
   padding: 1rem;
+  overflow-y: auto;
   background: color-mix(in srgb, var(--ink) 42%, transparent);
   animation: dialog-overlay-in 180ms ease-out both;
 }
@@ -537,6 +538,7 @@ textarea:focus-visible {
 }
 
 .dialog-card {
+  margin: auto;
   animation: dialog-card-in 200ms ease-out both;
 }
 
