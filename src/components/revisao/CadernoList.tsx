@@ -476,30 +476,30 @@ export function CadernoList({
                 }`}
               >
                 <div>
-                  {/* Topo do Card: Matéria em Destaque + Chips Contextuais */}
-                  <div className="flex flex-wrap items-center justify-between gap-1.5 text-xs pb-2.5 border-b border-[var(--line)]/50">
-                    <div className="flex flex-wrap items-center gap-1.5 min-w-0 max-w-full">
+                  {/* Topo do Card: Matéria em Destaque + Chips Contextuais (Linha Única Alinhada) */}
+                  <div className="flex items-center justify-between gap-2 text-xs pb-2.5 border-b border-[var(--line)]/50 min-w-0">
+                    <div className="flex items-center gap-1.5 min-w-0 flex-1 overflow-hidden">
                       <span
-                        className="font-bold text-[var(--signal)] text-[12px] sm:text-[13px] truncate max-w-[150px] sm:max-w-[200px]"
+                        className="font-bold text-[var(--signal)] text-[12px] sm:text-[13px] truncate shrink min-w-0"
                         title={q.disciplina}
                       >
                         {q.disciplina}
                       </span>
                       {q.banca && (
-                        <span className="rounded-md bg-[var(--mist)] px-2 py-0.5 font-medium text-[color-mix(in_srgb,var(--ink)_75%,transparent)] border border-[var(--line)] shrink-0 text-[10px] sm:text-[11px]">
+                        <span className="rounded-md bg-[var(--mist)] px-1.5 py-0.5 font-medium text-[color-mix(in_srgb,var(--ink)_75%,transparent)] border border-[var(--line)] shrink-0 text-[10px] sm:text-[11px] whitespace-nowrap">
                           {q.banca}
                         </span>
                       )}
                       {q.codigo_questao && (
-                        <span className="font-mono text-[10px] sm:text-[11px] font-medium text-[color-mix(in_srgb,var(--ink)_50%,transparent)] shrink-0">
+                        <span className="font-mono text-[10px] sm:text-[11px] font-medium text-[color-mix(in_srgb,var(--ink)_50%,transparent)] shrink-0 hidden sm:inline-block">
                           #{q.codigo_questao}
                         </span>
                       )}
                     </div>
 
-                    <div className="flex items-center gap-1.5 shrink-0">
+                    <div className="flex items-center gap-1.5 shrink-0 ml-auto">
                       <span
-                        className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                        className={`rounded-full px-2 py-0.5 text-[10px] font-semibold shrink-0 whitespace-nowrap ${
                           q.status_resultado === "erro"
                             ? "bg-[color-mix(in_srgb,#ef4444_15%,transparent)] text-[#ef4444]"
                             : q.status_resultado === "chute"
@@ -511,18 +511,18 @@ export function CadernoList({
                       </span>
 
                       {viewMode === "list" && (
-                        <span className="rounded-full bg-[var(--mist)] px-2 py-0.5 text-[10px] font-medium text-[color-mix(in_srgb,var(--ink)_65%,transparent)] hidden sm:inline-block">
+                        <span className="rounded-full bg-[var(--mist)] px-2 py-0.5 text-[10px] font-medium text-[color-mix(in_srgb,var(--ink)_65%,transparent)] hidden sm:inline-block whitespace-nowrap">
                           {CAUSA_ERRO_LABEL[q.causa_erro]}
                         </span>
                       )}
 
                       {cardsCount > 0 ? (
                         <span
-                          className="inline-flex items-center gap-1 rounded-full bg-[color-mix(in_srgb,var(--signal)_12%,var(--surface))] px-2 py-0.5 text-[10px] font-semibold text-[var(--signal)] border border-[color-mix(in_srgb,var(--signal)_25%,transparent)]"
+                          className="inline-flex items-center gap-1 rounded-full bg-[color-mix(in_srgb,var(--signal)_12%,var(--surface))] px-2 py-0.5 text-[10px] font-semibold text-[var(--signal)] border border-[color-mix(in_srgb,var(--signal)_25%,transparent)] shrink-0 whitespace-nowrap"
                           title={`${cardsCount} flashcard(s) criado(s)`}
                         >
                           <Layers size={10} />
-                          {cardsCount} {cardsCount === 1 ? "card" : "cards"}
+                          {cardsCount}
                         </span>
                       ) : null}
                     </div>
