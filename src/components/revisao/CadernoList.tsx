@@ -528,32 +528,19 @@ export function CadernoList({
                     </div>
                   </div>
 
-                  {/* Conteúdo do Card: Assunto (Título destacado) + Resumo objetivo */}
-                  <div className="mt-2.5 flex-1">
+                  {/* Conteúdo do Card: Assunto em Destaque */}
+                  <div className="mt-2.5 sm:mt-3 flex-1 min-h-[38px] flex items-center">
                     <h3
-                      className={`font-bold text-[var(--ink)] leading-snug group-hover:text-[var(--signal)] transition-colors ${
-                        viewMode === "grid"
-                          ? "text-sm sm:text-[15px] line-clamp-2"
-                          : "text-sm sm:text-base line-clamp-1"
-                      }`}
+                      className="font-bold text-[var(--ink)] leading-snug group-hover:text-[var(--signal)] transition-colors text-sm sm:text-[15px] line-clamp-2"
+                      title={cardTitle}
                     >
                       {cardTitle}
                     </h3>
-
-                    <p
-                      className={`mt-1.5 text-xs sm:text-[12.5px] text-[color-mix(in_srgb,var(--ink)_75%,transparent)] leading-relaxed ${
-                        viewMode === "grid"
-                          ? "line-clamp-3"
-                          : "line-clamp-2"
-                      }`}
-                    >
-                      {cardSummary}
-                    </p>
                   </div>
                 </div>
 
                 {/* Rodapé do Card: Dica de clique + Ações Rápidas */}
-                <div className="mt-3.5 flex items-center justify-between pt-2.5 border-t border-[color-mix(in_srgb,var(--line)_50%,transparent)] text-xs text-[color-mix(in_srgb,var(--ink)_50%,transparent)]">
+                <div className="mt-3 flex items-center justify-between pt-2.5 border-t border-[color-mix(in_srgb,var(--line)_50%,transparent)] text-xs text-[color-mix(in_srgb,var(--ink)_50%,transparent)]">
                   <span className="inline-flex items-center gap-1.5 font-medium text-[11px] text-[var(--signal)] group-hover:underline">
                     <BookOpen size={12} />
                     Ver ficha completa
