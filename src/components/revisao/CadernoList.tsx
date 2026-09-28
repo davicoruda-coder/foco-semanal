@@ -471,19 +471,33 @@ export function CadernoList({
               <div
                 key={q.id}
                 onClick={() => setReadingQuestao(q)}
-                className={`group relative cursor-pointer border border-[var(--line)] bg-[var(--surface)] transition-all duration-200 hover:border-[var(--signal)] hover:shadow-md hover:-translate-y-0.5 active:scale-[0.995] overflow-hidden ${
+                className={`group relative cursor-pointer border border-[var(--line)] bg-[var(--surface)] transition-all duration-200 hover:border-[var(--signal)] hover:shadow-md hover:-translate-y-0.5 active:scale-[0.995] overflow-hidden border-l-[3.5px] border-l-[var(--signal)] ${
                   viewMode === "grid"
-                    ? "flex flex-col justify-between min-h-[160px] sm:min-h-[175px] rounded-l-md rounded-r-2xl sm:rounded-r-3xl p-3.5 pl-6 sm:p-4 sm:pl-7 shadow-xs"
-                    : "flex items-center justify-between rounded-l-md rounded-r-xl p-3 pl-6 sm:pl-7"
+                    ? "flex flex-col justify-between min-h-[165px] sm:min-h-[175px] rounded-l-sm rounded-r-2xl sm:rounded-r-3xl p-3.5 pl-9 sm:p-4 sm:pl-10 shadow-xs"
+                    : "flex items-center justify-between rounded-l-sm rounded-r-xl p-3 pl-9 sm:pl-10"
                 }`}
               >
-                {/* Lombada Tátil de Caderno (Spine Binding com Vinco) */}
+                {/* Coluna de Espiral Wire-o do Caderno (Micro-anéis metálicos acetinados e furos vazados) */}
                 <div
-                  className="absolute left-0 top-0 bottom-0 w-2.5 sm:w-3 bg-gradient-to-b from-[var(--signal)] via-[color-mix(in_srgb,var(--signal)_80%,var(--surface))] to-[var(--signal)] opacity-90 transition-all duration-200 group-hover:opacity-100 group-hover:w-3.5"
+                  className="absolute left-0 top-0 bottom-0 w-7 sm:w-7.5 bg-[color-mix(in_srgb,var(--mist)_70%,var(--surface))] dark:bg-[color-mix(in_srgb,var(--mist)_35%,var(--surface))] flex flex-col justify-around items-center py-3.5 sm:py-4 border-r border-dashed border-[var(--line)]/80 select-none pointer-events-none z-10"
+                  aria-hidden="true"
                   title={`Caderno: ${q.disciplina}`}
                 >
-                  {/* Vinco de dobra da capa */}
-                  <div className="absolute right-0 top-0 bottom-0 w-[1.5px] bg-black/20 dark:bg-white/15" />
+                  {Array.from({ length: viewMode === "grid" ? 5 : 3 }).map((_, ringIdx) => (
+                    <div
+                      key={ringIdx}
+                      className="relative flex items-center justify-center w-full"
+                    >
+                      {/* Sombra suave de contato sob o arame */}
+                      <div className="absolute left-0.5 w-3.5 h-1.5 bg-black/15 dark:bg-black/45 rounded-full blur-[0.5px]" />
+
+                      {/* Anel de metal acetinado Wire-o (Loop metálico entrando no furo) */}
+                      <div className="absolute -left-1 sm:-left-0.5 w-4 sm:w-4.5 h-1.5 sm:h-2 rounded-full border border-slate-300 dark:border-zinc-500 bg-gradient-to-r from-slate-200 via-white to-slate-300 dark:from-zinc-600 dark:via-zinc-200 dark:to-zinc-500 shadow-[0_1px_2px_rgba(0,0,0,0.25)] z-10" />
+
+                      {/* Furo vazado com efeito de perfuração profunda */}
+                      <div className="w-2.5 h-2.5 sm:w-2.5 sm:h-2.5 rounded-full bg-black/25 dark:bg-black/75 shadow-[inset_0_1.5px_2px_rgba(0,0,0,0.65)] border border-black/10 dark:border-white/10" />
+                    </div>
+                  ))}
                 </div>
 
                 <div className="flex-1 flex flex-col justify-between min-w-0">
