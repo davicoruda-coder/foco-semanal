@@ -10,6 +10,7 @@ export interface AISettingsPayload {
   model: string;
   limitEnabled: boolean;
   dailyLimit: number;
+  customPrompt?: string;
 }
 
 const DEFAULT_MODEL = "google/gemini-2.5-flash";
@@ -62,12 +63,14 @@ export async function GET() {
   const model = DEPRECATED_MODEL_MAP[rawModel] || rawModel;
   const limitEnabled = typeof dbConfig?.limit_enabled === "boolean" ? dbConfig.limit_enabled : true;
   const dailyLimit = typeof dbConfig?.daily_limit === "number" ? dbConfig.daily_limit : DEFAULT_LIMIT;
+  const customPrompt = typeof dbConfig?.custom_prompt === "string" ? dbConfig.custom_prompt : "";
 
   return NextResponse.json({
     apiKey,
     model,
     limitEnabled,
     dailyLimit,
+    customPrompt,
     source: row?.value ? "database" : envKey ? "env" : "none",
     isEnvConfigured: Boolean(envKey),
   });
@@ -99,6 +102,7 @@ export async function POST(request: Request) {
     model?: unknown;
     limitEnabled?: unknown;
     dailyLimit?: unknown;
+    customPrompt?: unknown;
     testOnly?: unknown;
   } | null;
 
@@ -106,6 +110,7 @@ export async function POST(request: Request) {
   const rawModel = typeof body?.model === "string" ? body.model.trim() : DEFAULT_MODEL;
   const limitEnabled = typeof body?.limitEnabled === "boolean" ? body.limitEnabled : true;
   const dailyLimit = typeof body?.dailyLimit === "number" ? Math.max(1, Math.min(100, body.dailyLimit)) : DEFAULT_LIMIT;
+  const rawCustomPrompt = typeof body?.customPrompt === "string" ? body.customPrompt.trim().slice(0, 2000) : "";
   const isTest = Boolean(body?.testOnly);
 
   if (!rawKey) {
@@ -177,6 +182,7 @@ export async function POST(request: Request) {
     model: finalModel,
     limit_enabled: limitEnabled,
     daily_limit: dailyLimit,
+    custom_prompt: rawCustomPrompt,
   };
 
   const { error: saveError } = await supabase
@@ -203,6 +209,7 @@ export async function POST(request: Request) {
       model: rawModel || DEFAULT_MODEL,
       limitEnabled,
       dailyLimit,
+      customPrompt: rawCustomPrompt,
     },
   });
 }

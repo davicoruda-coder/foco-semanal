@@ -167,6 +167,10 @@ export async function POST(request: Request) {
     typeof dbConfig?.daily_limit === "number"
       ? dbConfig.daily_limit
       : DEFAULT_LIMIT;
+  const customPrompt =
+    typeof dbConfig?.custom_prompt === "string"
+      ? dbConfig.custom_prompt.trim()
+      : "";
 
   if (!apiKey) {
     return NextResponse.json(
@@ -287,6 +291,10 @@ export async function POST(request: Request) {
   let tokensUsed = 0;
 
   try {
+    const effectiveSystemPrompt = customPrompt
+      ? `${SYSTEM_PROMPT}\n\nDIRETRIZES E COMPORTAMENTO ADICIONAIS DO PROFESSOR (DEFINIDAS PELO ADMINISTRADOR):\n${customPrompt}\n\nIMPORTANTE: Lembre-se que, independentemente das diretrizes acima, você DEVE SEMPRE responder ESTRITAMENTE em formato JSON válido com todos os campos solicitados.`
+      : SYSTEM_PROMPT;
+
     const orResponse = await fetch(
       "https://openrouter.ai/api/v1/chat/completions",
       {
@@ -302,7 +310,7 @@ export async function POST(request: Request) {
           temperature: 0.2,
           max_tokens: 4096,
           messages: [
-            { role: "system", content: SYSTEM_PROMPT },
+            { role: "system", content: effectiveSystemPrompt },
             { role: "user", content: userContent },
           ],
         }),

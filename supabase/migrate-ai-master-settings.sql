@@ -49,7 +49,8 @@ BEGIN
       'api_key', COALESCE(v_config ->> 'api_key', ''),
       'model', COALESCE(v_config ->> 'model', 'google/gemini-2.5-flash'),
       'limit_enabled', COALESCE((v_config ->> 'limit_enabled')::boolean, true),
-      'daily_limit', COALESCE((v_config ->> 'daily_limit')::int, 15)
+      'daily_limit', COALESCE((v_config ->> 'daily_limit')::int, 15),
+      'custom_prompt', COALESCE(v_config ->> 'custom_prompt', '')
     );
   END IF;
 
@@ -59,7 +60,8 @@ BEGIN
     'configured', (v_config ->> 'api_key') IS NOT NULL AND (v_config ->> 'api_key') != '',
     'model', COALESCE(v_config ->> 'model', 'google/gemini-2.5-flash'),
     'limit_enabled', COALESCE((v_config ->> 'limit_enabled')::boolean, true),
-    'daily_limit', COALESCE((v_config ->> 'daily_limit')::int, 15)
+    'daily_limit', COALESCE((v_config ->> 'daily_limit')::int, 15),
+    'custom_prompt', COALESCE(v_config ->> 'custom_prompt', '')
   );
 END;
 $$;

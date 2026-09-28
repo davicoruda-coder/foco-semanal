@@ -80,6 +80,7 @@ export function AIAccessSettings() {
   const [customModel, setCustomModel] = useState("");
   const [limitEnabled, setLimitEnabled] = useState(true);
   const [dailyLimit, setDailyLimit] = useState(15);
+  const [customPrompt, setCustomPrompt] = useState("");
 
   // Status state
   const [testing, setTesting] = useState(false);
@@ -120,6 +121,7 @@ export function AIAccessSettings() {
         setApiKey(data.apiKey || "");
         setLimitEnabled(data.limitEnabled ?? true);
         setDailyLimit(data.dailyLimit || 15);
+        setCustomPrompt(data.customPrompt || "");
 
         let loadedModel = data.model || "google/gemini-2.5-flash";
         // Migração de modelos descontinuados
@@ -214,6 +216,7 @@ export function AIAccessSettings() {
           model: finalModel,
           limitEnabled,
           dailyLimit: Number(dailyLimit) || 15,
+          customPrompt: customPrompt.trim(),
           testOnly: false,
         }),
       });
@@ -433,6 +436,37 @@ export function AIAccessSettings() {
               </p>
             </div>
           )}
+        </div>
+
+        {/* Diretrizes & Comportamento Personalizado da IA */}
+        <div className="rounded-xl border border-[var(--line)] bg-[var(--surface-soft)] p-3.5 space-y-2">
+          <div className="flex items-center justify-between">
+            <label className="text-xs font-semibold text-[var(--ink)] flex items-center gap-1.5">
+              <Bot size={15} className="text-[var(--signal)]" />
+              Diretrizes & Comportamento da IA (Opcional)
+            </label>
+            <span className="text-[10px] font-mono text-[color-mix(in_srgb,var(--ink)_50%,transparent)]">
+              {customPrompt.length}/2000
+            </span>
+          </div>
+
+          <p className="text-[11px] text-[color-mix(in_srgb,var(--ink)_65%,transparent)] leading-relaxed">
+            Instruções pedagógicas adicionais sobre como a IA deve responder dúvidas e gerar flashcards (ex: focar em bancas como FGV/Cebraspe, tom didático ou instruções caso o usuário envie assuntos fora do escopo de estudos).
+          </p>
+
+          <textarea
+            rows={4}
+            maxLength={2000}
+            placeholder="Ex: Priorize explicações didáticas com foco em concursos da banca FGV. Se o aluno enviar uma dúvida que não tenha relação com matérias de estudo ou concursos, alerte educadamente no campo de explicação que este assistente é restrito a dúvidas de estudo."
+            value={customPrompt}
+            onChange={(e) => setCustomPrompt(e.target.value)}
+            className="input w-full text-xs sm:text-sm py-2 leading-relaxed resize-y font-normal"
+          />
+
+          <p className="text-[10px] text-[var(--signal)] flex items-center gap-1">
+            <Sparkles size={11} className="shrink-0" />
+            <span>As regras estruturais de segurança e formatação JSON continuam garantidas no sistema.</span>
+          </p>
         </div>
 
         {/* Limite Diário */}

@@ -196,6 +196,13 @@ export async function POST(request: Request) {
   let tokensUsed = 0;
 
   try {
+    const customPrompt =
+      typeof dbConfig?.custom_prompt === "string" ? dbConfig.custom_prompt.trim() : "";
+
+    const effectiveSystemPrompt = customPrompt
+      ? `${SYSTEM_PROMPT}\n\nDIRETRIZES E COMPORTAMENTO ADICIONAIS (DEFINIDAS PELO ADMINISTRADOR):\n${customPrompt}\n\nIMPORTANTE: Lembre-se que você DEVE SEMPRE responder APENAS no formato JSON {"cards": [{"frente": "...", "verso": "..."}]}.`
+      : SYSTEM_PROMPT;
+
     const orResponse = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -209,7 +216,7 @@ export async function POST(request: Request) {
         temperature: 0.1,
         max_tokens: 4096,
         messages: [
-          { role: "system", content: SYSTEM_PROMPT },
+          { role: "system", content: effectiveSystemPrompt },
           { role: "user", content: texto.slice(0, MAX_TEXT_LENGTH) },
         ],
       }),
