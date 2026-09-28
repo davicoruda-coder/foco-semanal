@@ -88,6 +88,15 @@ export function FlashcardDeckList() {
 
         <FlashcardPlayer
           cards={activeDeck.cards}
+          onCardDeleted={(deletedId) => {
+            setActiveDeck((prev) => {
+              if (!prev) return null;
+              return {
+                ...prev,
+                cards: prev.cards.filter((c) => c.id !== deletedId),
+              };
+            });
+          }}
           onFinish={() => {
             setActiveDeck(null);
             reloadFlashcards();

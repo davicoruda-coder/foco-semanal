@@ -1,37 +1,46 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
-  CheckCircle2,
-  ExternalLink,
   RotateCw,
   Sparkles,
-  Video,
-  Volume2,
+  Trash2,
 } from "lucide-react";
 import type { Flashcard } from "@/lib/revisao/types";
 import {
-  RESPOSTA_LABEL,
   type RespostaRevisao,
   corNivelDominio,
 } from "@/lib/revisao/spaced-repetition";
 import { useRevisao } from "./RevisaoProvider";
 import { FormattedRuleText } from "./FormattedRuleText";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 
 export function FlashcardPlayer({
   cards,
   onFinish,
+  onCardDeleted,
 }: {
   cards?: Flashcard[];
   onFinish?: () => void;
+  onCardDeleted?: (cardId: string) => void;
 }) {
-  const { flashcardsDoDia, responderFlashcard } = useRevisao();
-  const deck = cards || flashcardsDoDia;
-
+  const { flashcardsDoDia, responderFlashcard, deleteFlashcard } = useRevisao();
+  const [sessionDeck, setSessionDeck] = useState<Flashcard[]>(cards || flashcardsDoDia);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
+  useEffect(() => {
+    if (cards) {
+      setSessionDeck(cards);
+    } else {
+      setSessionDeck(flashcardsDoDia);
+    }
+  }, [cards, flashcardsDoDia]);
+
+  const deck = sessionDeck;
   const currentCard = deck[currentIndex];
 
   if (!deck || deck.length === 0 || currentIndex >= deck.length) {
@@ -75,19 +84,50 @@ export function FlashcardPlayer({
     }
   };
 
+  const handleDeleteCard = async () => {
+    if (!currentCard || deleting) return;
+    setDeleting(true);
+    try {
+      const cardId = currentCard.id;
+      const ok = await deleteFlashcard(cardId);
+      if (ok) {
+        setSessionDeck((prev) => prev.filter((c) => c.id !== cardId));
+        onCardDeleted?.(cardId);
+        setIsFlipped(false);
+        setShowDeleteConfirm(false);
+      }
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   return (
     <div className="mx-auto max-w-xl space-y-4 pb-8">
-      {/* Indicador de Progresso */}
+      {/* Indicador de Progresso e Ações */}
       <div className="flex items-center justify-between text-xs text-[color-mix(in_srgb,var(--ink)_60%,transparent)]">
-        <span>
+        <span className="font-medium">
           Card {currentIndex + 1} de {deck.length}
         </span>
-        <span
-          className="rounded-full px-2 py-0.5 text-[10px] font-semibold text-white"
-          style={{ backgroundColor: corNivelDominio(currentCard.nivel_dominio) }}
-        >
-          Nível {currentCard.nivel_dominio}
-        </span>
+        <div className="flex items-center gap-2">
+          <span
+            className="rounded-full px-2 py-0.5 text-[10px] font-semibold text-white shadow-xs"
+            style={{ backgroundColor: corNivelDominio(currentCard.nivel_dominio) }}
+          >
+            Nível {currentCard.nivel_dominio}
+          </span>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowDeleteConfirm(true);
+            }}
+            title="Excluir flashcard"
+            className="inline-flex items-center gap-1 rounded-md border border-[color-mix(in_srgb,var(--line)_80%,transparent)] bg-[var(--surface)] px-2 py-0.5 text-[11px] font-medium text-[color-mix(in_srgb,var(--ink)_60%,transparent)] transition hover:border-rose-300 hover:bg-rose-50 hover:text-rose-600 dark:hover:border-rose-900/50 dark:hover:bg-rose-950/40 dark:hover:text-rose-400 active:scale-95"
+          >
+            <Trash2 size={12} />
+            <span>Excluir</span>
+          </button>
+        </div>
       </div>
 
       {/* Barra de Progresso */}
@@ -190,6 +230,20 @@ export function FlashcardPlayer({
           Mostrar Resposta (Espaço / Clique)
         </button>
       )}
+
+      {/* Confirmação de exclusão do flashcard */}
+      <ConfirmDialog
+        open={showDeleteConfirm}
+        title="Excluir Flashcard"
+        message="Conseguiu entender e fixar o conceito? Deseja prosseguir com a exclusão definitiva deste flashcard?"
+        confirmLabel={deleting ? "Excluindo..." : "Sim, excluir"}
+        cancelLabel="Cancelar"
+        confirmVariant="danger"
+        onConfirm={handleDeleteCard}
+        onCancel={() => {
+          if (!deleting) setShowDeleteConfirm(false);
+        }}
+      />
     </div>
   );
 }
