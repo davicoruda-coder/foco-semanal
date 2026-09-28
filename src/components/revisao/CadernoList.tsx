@@ -849,16 +849,22 @@ export function CadernoList({
       </DialogFrame>
 
       {/* Modal de Edição */}
-      {editingQuestao && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-fade-in overflow-y-auto">
-          <div className="relative w-full max-w-lg rounded-[var(--radius)] border border-[var(--line)] bg-[var(--surface)] p-5 shadow-2xl my-8">
-            <div className="flex items-center justify-between border-b border-[var(--line)] pb-3 mb-4">
+      <DialogFrame
+        open={editingQuestao !== null}
+        onClose={() => setEditingQuestao(null)}
+        labelledBy="edit-dialog-title"
+        cardClassName="surface flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden p-0 shadow-[var(--shadow-lg)] border border-[var(--line)] rounded-[var(--radius)]"
+      >
+        {editingQuestao && (
+          <div className="flex flex-col h-full max-h-[90vh] min-h-0">
+            {/* Header fixo do Modal */}
+            <div className="flex items-center justify-between border-b border-[var(--line)] bg-[var(--mist)]/40 px-5 py-3.5 shrink-0">
               <div>
-                <h2 className="text-base font-semibold text-[var(--ink)]">
-                  Editar Questão
+                <h2 id="edit-dialog-title" className="text-base font-bold text-[var(--ink)]">
+                  Editar Anotação do Caderno
                 </h2>
                 <p className="text-xs text-[color-mix(in_srgb,var(--ink)_60%,transparent)]">
-                  Atualize os dados e a regra aprendida
+                  Atualize os dados, assunto ou a regra aprendida
                 </p>
               </div>
               <button
@@ -870,22 +876,31 @@ export function CadernoList({
                 <X size={18} />
               </button>
             </div>
-            <QuickCaptureForm
-              initialData={editingQuestao}
-              onCancel={() => setEditingQuestao(null)}
-              onSuccess={() => setEditingQuestao(null)}
-            />
+
+            {/* Conteúdo com Scroll interno perfeito */}
+            <div className="flex-1 overflow-y-auto p-4 sm:p-5">
+              <QuickCaptureForm
+                initialData={editingQuestao}
+                onCancel={() => setEditingQuestao(null)}
+                onSuccess={() => setEditingQuestao(null)}
+              />
+            </div>
           </div>
-        </div>
-      )}
+        )}
+      </DialogFrame>
 
       {/* Modal de Criação de Card Manual a partir do Caderno */}
-      {manualCardQuestao && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-fade-in overflow-y-auto">
-          <div className="relative w-full max-w-lg rounded-[var(--radius)] border border-[var(--line)] bg-[var(--surface)] p-5 shadow-2xl my-8 space-y-4">
-            <div className="flex items-center justify-between border-b border-[var(--line)] pb-3">
+      <DialogFrame
+        open={manualCardQuestao !== null}
+        onClose={() => setManualCardQuestao(null)}
+        labelledBy="manual-card-dialog-title"
+        cardClassName="surface flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden p-0 shadow-[var(--shadow-lg)] border border-[var(--line)] rounded-[var(--radius)]"
+      >
+        {manualCardQuestao && (
+          <div className="flex flex-col h-full max-h-[90vh] min-h-0">
+            <div className="flex items-center justify-between border-b border-[var(--line)] bg-[var(--mist)]/40 px-5 py-3.5 shrink-0">
               <div>
-                <h2 className="text-base font-semibold text-[var(--ink)] flex items-center gap-2">
+                <h2 id="manual-card-dialog-title" className="text-base font-bold text-[var(--ink)] flex items-center gap-2">
                   <Layers size={18} className="text-[var(--signal)]" />
                   Criar Flashcard Manual
                 </h2>
@@ -903,58 +918,60 @@ export function CadernoList({
               </button>
             </div>
 
-            {/* Contexto da questão */}
-            <div className="flex flex-wrap items-center gap-1.5 rounded-lg bg-[var(--mist)] p-2 text-xs">
-              <span className="font-semibold text-[var(--signal)]">{manualCardQuestao.disciplina}</span>
-              {manualCardQuestao.banca && (
-                <span className="rounded bg-[var(--surface)] px-1.5 py-0.5 border border-[var(--line)] text-[var(--ink)]">
-                  {manualCardQuestao.banca}
-                </span>
+            <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4">
+              {/* Contexto da questão */}
+              <div className="flex flex-wrap items-center gap-1.5 rounded-lg bg-[var(--mist)] p-2 text-xs">
+                <span className="font-semibold text-[var(--signal)]">{manualCardQuestao.disciplina}</span>
+                {manualCardQuestao.banca && (
+                  <span className="rounded bg-[var(--surface)] px-1.5 py-0.5 border border-[var(--line)] text-[var(--ink)]">
+                    {manualCardQuestao.banca}
+                  </span>
+                )}
+                {manualCardQuestao.assunto && (
+                  <span className="text-[color-mix(in_srgb,var(--ink)_65%,transparent)] inline-flex items-center gap-1">
+                    <ChevronRight size={12} className="shrink-0 opacity-50 text-[var(--signal)]" />
+                    <span>{manualCardQuestao.assunto}</span>
+                  </span>
+                )}
+              </div>
+
+              {manualCardFeedback && (
+                <div className="rounded-[var(--radius-btn)] bg-[color-mix(in_srgb,var(--ok)_12%,var(--surface))] p-2.5 text-xs font-semibold text-[var(--ok)] flex items-center gap-1.5">
+                  <Check size={14} />
+                  {manualCardFeedback}
+                </div>
               )}
-              {manualCardQuestao.assunto && (
-                <span className="text-[color-mix(in_srgb,var(--ink)_65%,transparent)] inline-flex items-center gap-1">
-                  <ChevronRight size={12} className="shrink-0 opacity-50 text-[var(--signal)]" />
-                  <span>{manualCardQuestao.assunto}</span>
-                </span>
-              )}
+
+              <div className="space-y-3">
+                <div>
+                  <label className="mb-1 block text-xs font-medium uppercase tracking-wider text-[color-mix(in_srgb,var(--ink)_55%,transparent)]">
+                    Frente (Pergunta ou Contexto) *
+                  </label>
+                  <textarea
+                    value={cardFrente}
+                    onChange={(e) => setCardFrente(e.target.value)}
+                    rows={3}
+                    className="w-full resize-none rounded-[var(--radius-btn)] border border-[var(--line)] bg-[var(--surface)] px-3 py-2.5 text-sm text-[var(--ink)] outline-none transition focus:border-[var(--signal)] focus:ring-2 focus:ring-[var(--signal-soft)] leading-relaxed"
+                    placeholder="Ex: Qual é a regra sobre..."
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-1 block text-xs font-medium uppercase tracking-wider text-[color-mix(in_srgb,var(--ink)_55%,transparent)]">
+                    Verso (Resposta ou Regra) *
+                  </label>
+                  <textarea
+                    value={cardVerso}
+                    onChange={(e) => setCardVerso(e.target.value)}
+                    rows={3}
+                    className="w-full resize-none rounded-[var(--radius-btn)] border border-[var(--line)] bg-[var(--surface)] px-3 py-2.5 text-sm text-[var(--ink)] outline-none transition focus:border-[var(--signal)] focus:ring-2 focus:ring-[var(--signal-soft)] leading-relaxed"
+                    placeholder="Ex: Não ocorre crase..."
+                  />
+                </div>
+              </div>
             </div>
 
-            {manualCardFeedback && (
-              <div className="rounded-[var(--radius-btn)] bg-[color-mix(in_srgb,var(--ok)_12%,var(--surface))] p-2.5 text-xs font-semibold text-[var(--ok)] flex items-center gap-1.5">
-                <Check size={14} />
-                {manualCardFeedback}
-              </div>
-            )}
-
-            <div className="space-y-3">
-              <div>
-                <label className="mb-1 block text-xs font-medium uppercase tracking-wider text-[color-mix(in_srgb,var(--ink)_55%,transparent)]">
-                  Frente (Pergunta ou Contexto) *
-                </label>
-                <textarea
-                  value={cardFrente}
-                  onChange={(e) => setCardFrente(e.target.value)}
-                  rows={3}
-                  className="w-full resize-none rounded-[var(--radius-btn)] border border-[var(--line)] bg-[var(--surface)] px-3 py-2.5 text-sm text-[var(--ink)] outline-none transition focus:border-[var(--signal)] focus:ring-2 focus:ring-[var(--signal-soft)] leading-relaxed"
-                  placeholder="Ex: Qual é a regra sobre..."
-                />
-              </div>
-
-              <div>
-                <label className="mb-1 block text-xs font-medium uppercase tracking-wider text-[color-mix(in_srgb,var(--ink)_55%,transparent)]">
-                  Verso (Resposta ou Regra) *
-                </label>
-                <textarea
-                  value={cardVerso}
-                  onChange={(e) => setCardVerso(e.target.value)}
-                  rows={3}
-                  className="w-full resize-none rounded-[var(--radius-btn)] border border-[var(--line)] bg-[var(--surface)] px-3 py-2.5 text-sm text-[var(--ink)] outline-none transition focus:border-[var(--signal)] focus:ring-2 focus:ring-[var(--signal-soft)] leading-relaxed"
-                  placeholder="Ex: Não ocorre crase..."
-                />
-              </div>
-            </div>
-
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-[var(--line)]">
+            <div className="flex items-center justify-end gap-2 p-3 sm:px-5 border-t border-[var(--line)] bg-[var(--surface)] shrink-0">
               <button
                 type="button"
                 onClick={() => setManualCardQuestao(null)}
@@ -977,8 +994,8 @@ export function CadernoList({
               </button>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </DialogFrame>
 
       {/* Confirmação de Exclusão */}
       <ConfirmDialog
