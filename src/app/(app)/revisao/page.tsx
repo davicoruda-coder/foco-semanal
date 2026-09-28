@@ -85,7 +85,9 @@ function RevisaoContent() {
             title="Criar flashcards automaticamente a partir de texto com IA"
           >
             <Sparkles size={16} />
-            Gerar com IA
+            <span>
+              Gerar Flashcards <span className="hidden sm:inline">com IA</span>
+            </span>
           </button>
 
           <button
