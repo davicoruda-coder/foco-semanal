@@ -10,7 +10,7 @@ import {
   Play,
   RotateCcw,
   SkipForward,
-  Sparkles,
+  Trophy,
   X,
 } from "lucide-react";
 import { DialogFrame } from "@/components/DialogFrame";
@@ -477,7 +477,7 @@ export function StudySessionChrome() {
         {flow.cycleRoundCompleted != null && (
           <div className="mt-3.5 flex items-start gap-3 rounded-[var(--radius-tag)] border border-emerald-500/30 bg-emerald-500/10 dark:bg-emerald-950/40 dark:border-emerald-500/30 p-3.5">
             <span className="grid size-7 shrink-0 place-items-center rounded-lg bg-emerald-500/20 text-emerald-700 dark:text-emerald-300">
-              <Sparkles size={16} strokeWidth={2.2} />
+              <Trophy size={16} strokeWidth={2.2} />
             </span>
             <div className="min-w-0">
               <p className="text-sm font-bold text-emerald-950 dark:text-emerald-200 leading-snug">
@@ -536,7 +536,7 @@ export function StudySessionChrome() {
       >
         <div className="flex items-start gap-3.5">
           <div className="grid size-11 shrink-0 place-items-center rounded-2xl bg-[var(--signal-soft)] text-[var(--signal)] ring-1 ring-[var(--signal)]/25 shadow-2xs">
-            <Sparkles size={22} strokeWidth={2.2} />
+            <Trophy size={22} strokeWidth={2.2} />
           </div>
           <div className="min-w-0 flex-1 pt-0.5">
             <h2 id="block-done-title" className="font-display text-xl font-bold tracking-tight text-[var(--ink)]">
@@ -551,7 +551,7 @@ export function StudySessionChrome() {
         {flow.cycleRoundCompleted != null && (
           <div className="mt-3.5 flex items-start gap-3 rounded-[var(--radius-tag)] border border-emerald-500/30 bg-emerald-500/10 dark:bg-emerald-950/40 dark:border-emerald-500/30 p-3.5">
             <span className="grid size-7 shrink-0 place-items-center rounded-lg bg-emerald-500/20 text-emerald-700 dark:text-emerald-300">
-              <Sparkles size={16} strokeWidth={2.2} />
+              <Trophy size={16} strokeWidth={2.2} />
             </span>
             <div className="min-w-0">
               <p className="text-sm font-bold text-emerald-950 dark:text-emerald-200 leading-snug">
