@@ -444,11 +444,11 @@ export function StudySessionChrome() {
         labelledBy="subject-notes-title"
         cardClassName="surface w-full max-w-md p-6 shadow-[var(--shadow-lg)]"
       >
-        <div className="flex items-start gap-3.5">
+        <div className="flex items-center gap-3.5">
           <div className="grid size-11 shrink-0 place-items-center rounded-2xl bg-emerald-500/12 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400 ring-1 ring-emerald-500/25 shadow-2xs">
             <CheckCircle2 size={22} strokeWidth={2.2} />
           </div>
-          <div className="min-w-0 flex-1 pt-0.5">
+          <div className="min-w-0 flex-1">
             <div className="flex items-center justify-between gap-2">
               <h2
                 id="subject-notes-title"
@@ -471,9 +471,6 @@ export function StudySessionChrome() {
                 </button>
               </div>
             </div>
-            <p className="mt-1 text-xs text-[color-mix(in_srgb,var(--ink)_65%,transparent)] leading-relaxed">
-              Anote onde parou antes da próxima. <strong className="font-medium text-[var(--ink)]">O tempo está pausado</strong> — respire à vontade.
-            </p>
           </div>
         </div>
 
