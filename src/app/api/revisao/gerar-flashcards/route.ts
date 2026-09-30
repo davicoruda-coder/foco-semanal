@@ -24,7 +24,7 @@ export function resolveAIModel(rawModel?: string | null): string {
   return DEPRECATED_MODEL_MAP[trimmed] || trimmed;
 }
 
-const SYSTEM_PROMPT = `Você é um gerador de flashcards para estudo de concursos públicos. Dado o texto abaixo, extraia os conceitos-chave e crie flashcards no formato pergunta/resposta.
+const SYSTEM_PROMPT = `Você é um gerador de flashcards didático para aprendizado ativo e estudos em geral (como faculdade, certificações, provas e concursos). Dado o texto abaixo, extraia os conceitos-chave e crie flashcards no formato pergunta/resposta.
 
 REGRAS:
 - Crie entre 5 e 30 flashcards dependendo da extensão do texto

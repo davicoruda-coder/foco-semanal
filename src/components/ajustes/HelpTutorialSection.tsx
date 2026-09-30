@@ -39,7 +39,7 @@ const TOPICS: TutorialTopic[] = [
       "Acompanhe o indicador (ex.: 0/2, 1/2): ao concluir cada passagem, o contador sobe. Quando atingir a meta (2/2), a matéria fica verde e aguarda as demais terminarem para reiniciar o ciclo completo.",
       "Concluir antecipadamente: se terminar antes do timer acabar, basta clicar no botão de avançar (⏭) na barra de sessão para passar imediatamente para a próxima matéria.",
     ],
-    tip: "Dê peso 2x ou 3x para matérias que você mais erra em simulados ou que têm maior peso no seu edital.",
+    tip: "Dê peso 2x ou 3x para matérias com maior grau de dificuldade, que você mais erra em exercícios ou que têm maior relevância nos seus objetivos (como provas, exames ou editais).",
   },
   {
     id: "sessao",
@@ -55,7 +55,7 @@ const TOPICS: TutorialTopic[] = [
       "Finalizar matéria em play: clique no ícone de avançar (⏭) na barra de sessão para salvar o foco, registrar anotações e passar imediatamente para a próxima.",
       "Descanso entre sessões: ao concluir as matérias do bloco, o sistema inicia automaticamente a pausa configurada por você em Ajustes (ex.: 5 a 15 min), com alarme sonoro suave antes da próxima sessão.",
     ],
-    tip: "Você pode personalizar a duração de foco de cada matéria, o descanso e as matérias por sessão em Ajustes. O temporizador/cronômetro da barra lateral no PC funciona como relógio livre para tarefas avulsas (redações, simulados) e não avança o ciclo automaticamente.",
+    tip: "Você pode personalizar a duração de foco de cada matéria, o descanso e as matérias por sessão em Ajustes. O temporizador/cronômetro da barra lateral no PC funciona como relógio livre para tarefas avulsas (redações, exercícios, simulados) e não avança o ciclo automaticamente.",
   },
   {
     id: "rodizio",
@@ -64,10 +64,10 @@ const TOPICS: TutorialTopic[] = [
     badge: "Organização",
     summary: "Reveze vários tópicos ou disciplinas dentro de uma única matéria.",
     concept:
-      "Ideal para matérias amplas ou blocos de revisão (ex.: 'Revisão Geral' que precisa passar por Constitucional, Administrativo e Português em dias alternados).",
+      "Ideal para matérias amplas ou blocos de revisão (ex.: alternar entre Teoria, Exercícios e Resumos, ou revezar tópicos complementares dentro da mesma área).",
     steps: [
       "No card da matéria em Matérias, clique em 'Ativar rodízio de disciplinas'.",
-      "Cadastre as disciplinas daquele rodízio (ex.: Teoria, Exercícios, Jurisprudência).",
+      "Cadastre as disciplinas daquele rodízio (ex.: Teoria, Exercícios, Resumos).",
       "A cada passagem concluída no ciclo, o rodízio avança para a próxima disciplina da lista e resgata suas anotações daquele tema específico.",
     ],
     tip: "A anotação de 'onde parei' fica salva individualmente para cada disciplina do rodízio.",
@@ -79,9 +79,9 @@ const TOPICS: TutorialTopic[] = [
     badge: "Estudo Reverso",
     summary: "Aprenda com as questões erradas e retenha com repetição espaçada.",
     concept:
-      "O estudo reverso direciona seu tempo cirurgicamente para as suas reais deficiências em provas e questões de concurso.",
+      "O estudo reverso direciona seu tempo cirurgicamente para as suas reais deficiências em exercícios, provas e simulados (seja para faculdade, certificações ou concursos).",
     steps: [
-      "Na aba Fixar, clique em '+ Anotar no Caderno' logo após errar ou ter dúvida em uma questão de simulado ou prova.",
+      "Na aba Fixar, clique em '+ Anotar no Caderno' logo após errar ou ter dúvida em uma questão, exercício ou prova.",
       "Preencha os dados essenciais: Disciplina, Assunto, Causa do Erro (Atenção, Teoria ou Interpretação) e a Regra Aprendida / O que não esquecer.",
       "Flashcards e Repetição Espaçada: formule seus próprios cartões ou gere com IA. O card entra no deck com repetição inicial em 24h para fixação imediata; ao acertar, os intervalos expandem automaticamente (4 a 7 dias, depois 15 a 30 dias).",
       "Deck Global vs Treino Isolado: utilize o 'Deck Global do Dia' para revisar rapidamente todos os cards previstos para hoje pelo algoritmo, ou treine uma disciplina específica de forma isolada nos 'Decks por Matéria'.",
@@ -110,7 +110,7 @@ const TOPICS: TutorialTopic[] = [
     badge: "Dia Especial",
     summary: "Dias exclusivos para matérias específicas e alarmes sonoros.",
     concept:
-      "Recursos para dias de imersão e para não perder prazos ou simulados agendados.",
+      "Recursos para dias de imersão e para não perder prazos de trabalhos, provas ou simulados agendados.",
     steps: [
       "Foco do Dia: em Matérias, defina dias da semana para 'Foco do dia' em disciplinas específicas. Nesses dias, elas assumem prioridade no ciclo.",
       "Lembretes & Alarmes: crie lembretes com data, hora e alerta sonoro/notificação. Acesse facilmente pela barra lateral no computador ou pela aba dedicada 'Lembretes' no menu inferior do celular.",

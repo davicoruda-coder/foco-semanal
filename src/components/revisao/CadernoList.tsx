@@ -451,7 +451,7 @@ export function CadernoList({
             Nenhuma questão encontrada
           </p>
           <p className="mt-1 text-xs text-[color-mix(in_srgb,var(--ink)_50%,transparent)]">
-            Use o botão &apos;+ Anotar no Caderno&apos; acima para registrar seus erros ou dúvidas de simulados e baterias.
+            Use o botão &apos;+ Anotar no Caderno&apos; acima para registrar seus erros ou dúvidas de exercícios, simulados e provas.
           </p>
         </div>
       ) : (
@@ -737,7 +737,9 @@ export function CadernoList({
                       className="inline-flex items-center gap-1.5 rounded-md bg-[var(--surface)] border border-[var(--line)] px-3 py-1.5 text-xs font-medium text-[var(--signal)] hover:bg-[var(--signal-soft)] transition"
                     >
                       <ExternalLink size={13} />
-                      Ver no Questões de Concursos
+                      {readingQuestao.link_questao.includes("qconcursos")
+                        ? "Ver no QConcursos"
+                        : "Abrir link da questão"}
                     </a>
                   )}
                   {readingQuestao.link_video && (

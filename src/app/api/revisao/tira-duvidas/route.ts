@@ -14,7 +14,7 @@ const MAX_TEXT_LENGTH = 12000;
 /** Tamanho máximo de imagem base64: ~4MB (encoded). */
 const MAX_IMAGE_SIZE = 4 * 1024 * 1024;
 
-const SYSTEM_PROMPT = `Você é um professor-tutor de concursos públicos e estudos. O aluno vai enviar um texto ou print de uma questão/assunto e você deve explicar de forma didática e completa.
+const SYSTEM_PROMPT = `Você é um professor-tutor especialista em estudos, exames e aprendizado ativo (como faculdade, certificações, provas e concursos). O aluno vai enviar um texto ou print de uma questão/assunto e você deve explicar de forma didática e completa.
 
 REGRAS:
 - Explique o conceito de forma clara, usando linguagem acessível

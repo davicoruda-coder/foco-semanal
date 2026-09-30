@@ -35,7 +35,7 @@ export const MODEL_OPTIONS = [
   },
   {
     id: "deepseek/deepseek-chat",
-    label: "DeepSeek V3 (Excelente para provas e concursos em português)",
+    label: "DeepSeek V3 (Excelente para provas, exames e estudos em português)",
     badge: "Alta Qualidade",
   },
   {

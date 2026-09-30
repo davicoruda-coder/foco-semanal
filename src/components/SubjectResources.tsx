@@ -102,7 +102,7 @@ export function SubjectResources({ recursos = [], onChange, compact }: Props) {
             <input
               ref={inputRef}
               type="text"
-              placeholder="URL (ex: qconcursos.com)"
+              placeholder="URL (ex: drive.google.com, notion.so)"
               value={url}
               onChange={(e) => setUrl(e.target.value)}
               onKeyDown={(e) => {
