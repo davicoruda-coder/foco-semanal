@@ -27,10 +27,12 @@ export function AIFlashcardGenerator({
   onClose,
   initialText = "",
   initialDisciplina = "",
+  showHeader = true,
 }: {
   onClose?: () => void;
   initialText?: string;
   initialDisciplina?: string;
+  showHeader?: boolean;
 }) {
   const {
     materias,
@@ -140,31 +142,33 @@ export function AIFlashcardGenerator({
   return (
     <div className="space-y-5">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2.5">
-          <div className="grid size-9 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-[color-mix(in_srgb,var(--signal)_20%,var(--surface))] to-[color-mix(in_srgb,#a855f7_15%,var(--surface))] text-[var(--signal)]">
-            <Sparkles size={18} />
+      {showHeader && (
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="grid size-9 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-[color-mix(in_srgb,var(--signal)_20%,var(--surface))] to-[color-mix(in_srgb,#a855f7_15%,var(--surface))] text-[var(--signal)]">
+              <Sparkles size={18} />
+            </div>
+            <div>
+              <h3 className="font-display font-semibold text-base text-[var(--ink)]">
+                Gerar Flashcards com IA
+              </h3>
+              <p className="text-[11px] text-[color-mix(in_srgb,var(--ink)_50%,transparent)]">
+                Cole um texto e a IA extrai os conceitos em cards
+              </p>
+            </div>
           </div>
-          <div>
-            <h3 className="font-display font-semibold text-base text-[var(--ink)]">
-              Gerar Flashcards com IA
-            </h3>
-            <p className="text-[11px] text-[color-mix(in_srgb,var(--ink)_50%,transparent)]">
-              Cole um texto e a IA extrai os conceitos em cards
-            </p>
-          </div>
+          {onClose && (
+            <button
+              type="button"
+              onClick={onClose}
+              className="p-1.5 text-[color-mix(in_srgb,var(--ink)_40%,transparent)] hover:text-[var(--ink)] transition rounded-lg hover:bg-[var(--mist)]"
+              title="Fechar"
+            >
+              <X size={18} />
+            </button>
+          )}
         </div>
-        {onClose && (
-          <button
-            type="button"
-            onClick={onClose}
-            className="p-1.5 text-[color-mix(in_srgb,var(--ink)_40%,transparent)] hover:text-[var(--ink)] transition rounded-lg hover:bg-[var(--mist)]"
-            title="Fechar"
-          >
-            <X size={18} />
-          </button>
-        )}
-      </div>
+      )}
 
       {/* Banner de IA não configurada (se houver) */}
       {aiConfig && !aiConfig.configured && (

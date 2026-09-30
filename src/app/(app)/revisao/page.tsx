@@ -186,19 +186,19 @@ function RevisaoContent() {
       >
         <div className="flex flex-col h-full max-h-[85vh] sm:max-h-[88vh] min-h-0">
           {/* Header Fixo (Nunca corta nem some com o scroll) */}
-          <div className="flex items-center justify-between border-b border-[var(--line)] bg-[var(--mist)]/40 px-5 py-3.5 shrink-0">
+          <div className="flex items-center justify-between border-b border-[var(--line)] bg-[var(--mist)]/40 px-4 sm:px-5 py-3 sm:py-3.5 shrink-0">
             <div className="min-w-0 pr-2">
-              <h3 id="capture-modal-title" className="font-display text-base font-bold text-[var(--ink)] truncate">
+              <h3 id="capture-modal-title" className="font-display text-sm sm:text-base font-bold text-[var(--ink)] truncate">
                 Anotar no Caderno
               </h3>
-              <p className="text-xs text-[color-mix(in_srgb,var(--ink)_60%,transparent)] truncate">
+              <p className="text-[11px] sm:text-xs text-[color-mix(in_srgb,var(--ink)_60%,transparent)] truncate">
                 Registre seu erro, chute ou dúvida e decida se quer criar flashcards
               </p>
             </div>
             <button
               type="button"
               onClick={() => setShowCaptureModal(false)}
-              className="rounded-full p-1.5 text-[color-mix(in_srgb,var(--ink)_50%,transparent)] hover:bg-[var(--mist)] hover:text-[var(--ink)] transition"
+              className="rounded-full p-1.5 text-[color-mix(in_srgb,var(--ink)_50%,transparent)] hover:bg-[var(--mist)] hover:text-[var(--ink)] transition shrink-0"
               aria-label="Fechar"
             >
               <X size={18} />
@@ -231,19 +231,24 @@ function RevisaoContent() {
         cardClassName="surface flex max-h-[85vh] sm:max-h-[88vh] w-full max-w-2xl flex-col overflow-hidden p-0 shadow-[var(--shadow-lg)] border border-[var(--line)] rounded-[var(--radius)]"
       >
         <div className="flex flex-col h-full max-h-[85vh] sm:max-h-[88vh] min-h-0">
-          <div className="flex items-center justify-between border-b border-[var(--line)] bg-[var(--mist)]/40 px-5 py-3.5 shrink-0">
-            <div className="min-w-0 pr-2">
-              <h3 id="ai-generator-dialog-title" className="font-display text-base font-bold text-[var(--ink)] truncate">
-                Gerador de Flashcards com IA
-              </h3>
-              <p className="text-xs text-[color-mix(in_srgb,var(--ink)_60%,transparent)] truncate">
-                Cole seu resumo ou teoria para gerar perguntas e respostas automaticamente
-              </p>
+          <div className="flex items-center justify-between border-b border-[var(--line)] bg-[var(--mist)]/40 px-4 sm:px-5 py-3 sm:py-3.5 shrink-0">
+            <div className="flex items-center gap-2.5 min-w-0 pr-2">
+              <div className="grid size-8 sm:size-9 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-[color-mix(in_srgb,var(--signal)_20%,var(--surface))] to-[color-mix(in_srgb,#a855f7_15%,var(--surface))] text-[var(--signal)]">
+                <Sparkles size={18} />
+              </div>
+              <div className="min-w-0">
+                <h3 id="ai-generator-dialog-title" className="font-display text-sm sm:text-base font-bold text-[var(--ink)] truncate">
+                  Gerar Flashcards com IA
+                </h3>
+                <p className="text-[11px] sm:text-xs text-[color-mix(in_srgb,var(--ink)_60%,transparent)] truncate">
+                  Cole seu resumo ou teoria para gerar perguntas e respostas automaticamente
+                </p>
+              </div>
             </div>
             <button
               type="button"
               onClick={() => setShowAIModal(false)}
-              className="rounded-full p-1.5 text-[color-mix(in_srgb,var(--ink)_50%,transparent)] hover:bg-[var(--mist)] hover:text-[var(--ink)] transition"
+              className="rounded-full p-1.5 text-[color-mix(in_srgb,var(--ink)_50%,transparent)] hover:bg-[var(--mist)] hover:text-[var(--ink)] transition shrink-0"
               aria-label="Fechar"
             >
               <X size={18} />
@@ -254,6 +259,7 @@ function RevisaoContent() {
             <AIFlashcardGenerator
               initialText={aiInitialData.text}
               initialDisciplina={aiInitialData.disciplina}
+              showHeader={false}
               onClose={() => {
                 setShowAIModal(false);
                 reloadFlashcards();
