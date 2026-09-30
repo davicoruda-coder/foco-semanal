@@ -3,6 +3,7 @@
 import { useState } from "react";
 import {
   ArrowLeft,
+  Bot,
   Layers,
   Pencil,
   Plus,
@@ -183,7 +184,7 @@ export function FlashcardDeckList() {
                     : "border-[var(--line)] bg-[var(--surface)] text-[color-mix(in_srgb,#a855f7_70%,var(--ink))] hover:border-[color-mix(in_srgb,#a855f7_40%,var(--line))]"
                 }`}
               >
-                <Sparkles size={14} />
+                <Bot size={14} />
                 Gerar com IA
               </button>
               <button

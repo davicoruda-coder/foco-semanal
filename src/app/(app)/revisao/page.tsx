@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   BookMarked,
+  Bot,
   ChevronRight,
   Layers,
   MessageCircleQuestion,
@@ -84,7 +85,7 @@ function RevisaoContent() {
             className="inline-flex items-center gap-1.5 rounded-[var(--radius-btn)] border border-[color-mix(in_srgb,var(--signal)_35%,var(--line))] bg-[var(--surface)] px-3.5 py-2 text-xs sm:text-sm font-semibold text-[var(--signal)] shadow-xs transition hover:bg-[var(--signal-soft)] active:scale-95"
             title="Criar flashcards automaticamente a partir de texto com IA"
           >
-            <Sparkles size={16} />
+            <Bot size={16} />
             <span>
               Gerar Flashcards <span className="hidden sm:inline">com IA</span>
             </span>
@@ -234,7 +235,7 @@ function RevisaoContent() {
           <div className="flex items-center justify-between border-b border-[var(--line)] bg-[var(--mist)]/40 px-4 sm:px-5 py-3 sm:py-3.5 shrink-0">
             <div className="flex items-center gap-2.5 min-w-0 pr-2">
               <div className="grid size-8 sm:size-9 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-[color-mix(in_srgb,var(--signal)_20%,var(--surface))] to-[color-mix(in_srgb,#a855f7_15%,var(--surface))] text-[var(--signal)]">
-                <Sparkles size={18} />
+                <Bot size={18} />
               </div>
               <div className="min-w-0">
                 <h3 id="ai-generator-dialog-title" className="font-display text-sm sm:text-base font-bold text-[var(--ink)] truncate">

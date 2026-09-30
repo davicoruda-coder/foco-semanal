@@ -3,6 +3,7 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import {
   AlertCircle,
+  Bot,
   CheckCircle,
   ChevronDown,
   ChevronUp,
@@ -365,7 +366,7 @@ export function QuickCaptureForm({
       {!isEditing && onSwitchToAI && (
         <div className="flex items-center justify-between rounded-lg bg-purple-500/10 border border-purple-500/20 p-2.5 text-xs text-purple-600 dark:text-purple-400">
           <div className="flex items-center gap-1.5 font-medium">
-            <Sparkles size={14} className="shrink-0" />
+            <Bot size={14} className="shrink-0" />
             <span>Quer criar flashcards colando um texto de resumo?</span>
           </div>
           <button

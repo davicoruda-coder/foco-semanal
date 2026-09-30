@@ -146,7 +146,7 @@ export function AIFlashcardGenerator({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <div className="grid size-9 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-[color-mix(in_srgb,var(--signal)_20%,var(--surface))] to-[color-mix(in_srgb,#a855f7_15%,var(--surface))] text-[var(--signal)]">
-              <Sparkles size={18} />
+              <Bot size={18} />
             </div>
             <div>
               <h3 className="font-display font-semibold text-base text-[var(--ink)]">
@@ -325,7 +325,7 @@ export function AIFlashcardGenerator({
               </>
             ) : (
               <>
-                <Sparkles size={16} />
+                <Bot size={16} />
                 Gerar Flashcards com IA
               </>
             )}
@@ -345,7 +345,7 @@ export function AIFlashcardGenerator({
               onClick={handleReset}
               className="flex items-center gap-1 text-xs font-medium text-[var(--signal)] hover:underline"
             >
-              <Sparkles size={12} />
+              <Bot size={12} />
               Gerar mais
             </button>
           </div>
