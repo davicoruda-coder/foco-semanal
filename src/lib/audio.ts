@@ -8,6 +8,7 @@ export type AlarmPrefs = {
   /** 0–1 */
   volume: number;
   tone: AlarmToneId;
+  repeats: number;
 };
 
 export const ALARM_TONES: { id: AlarmToneId; label: string }[] = [
@@ -16,7 +17,13 @@ export const ALARM_TONES: { id: AlarmToneId; label: string }[] = [
   { id: "campainha", label: "Campainha" },
 ];
 
-const DEFAULT_PREFS: AlarmPrefs = { volume: 0.7, tone: "acorde" };
+export const ALARM_REPEATS: { value: number; label: string }[] = [
+  { value: 1, label: "1x" },
+  { value: 2, label: "2x" },
+  { value: 3, label: "3x" },
+];
+
+const DEFAULT_PREFS: AlarmPrefs = { volume: 0.7, tone: "acorde", repeats: 3 };
 
 export function loadAlarmPrefs(): AlarmPrefs {
   if (typeof window === "undefined") return { ...DEFAULT_PREFS };
@@ -34,7 +41,11 @@ export function loadAlarmPrefs(): AlarmPrefs {
       parsed.tone === "campainha"
         ? parsed.tone
         : DEFAULT_PREFS.tone;
-    return { volume, tone };
+    const repeats =
+      typeof parsed.repeats === "number" && (parsed.repeats === 1 || parsed.repeats === 2 || parsed.repeats === 3)
+        ? parsed.repeats
+        : DEFAULT_PREFS.repeats;
+    return { volume, tone, repeats };
   } catch {
     return { ...DEFAULT_PREFS };
   }
@@ -48,6 +59,7 @@ export function saveAlarmPrefs(prefs: AlarmPrefs) {
       JSON.stringify({
         volume: Math.min(1, Math.max(0, prefs.volume)),
         tone: prefs.tone,
+        repeats: [1, 2, 3].includes(prefs.repeats) ? prefs.repeats : DEFAULT_PREFS.repeats,
       }),
     );
   } catch {
@@ -77,17 +89,14 @@ function scheduleNotes(
   ctx: AudioContext,
   master: GainNode,
   notes: Note[],
-  volume: number,
+  timeOffset: number = 0,
 ) {
-  const vol = Math.max(0, Math.min(1, volume));
-  master.gain.setValueAtTime(vol, ctx.currentTime);
-
   for (const n of notes) {
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
     osc.type = n.type ?? "sine";
     osc.frequency.value = n.freq;
-    const t0 = ctx.currentTime + n.start;
+    const t0 = ctx.currentTime + timeOffset + n.start;
     const peak = n.peak ?? 0.5;
     gain.gain.setValueAtTime(0.0001, t0);
     gain.gain.exponentialRampToValueAtTime(Math.max(0.0002, peak), t0 + 0.02);
@@ -123,36 +132,57 @@ function notesForTone(tone: AlarmToneId): Note[] {
   }
 }
 
-function durationForTone(tone: AlarmToneId): number {
-  if (tone === "duplo") return 800;
-  if (tone === "campainha") return 1200;
-  return 1500;
+function toneCycleDuration(tone: AlarmToneId): number {
+  if (tone === "duplo") return 0.75;
+  if (tone === "campainha") return 1.35;
+  return 1.15;
 }
 
-/** Toca o alarme com prefs salvas (ou opts). */
+function durationForTone(tone: AlarmToneId, repeats: number = 1): number {
+  const cycle = toneCycleDuration(tone);
+  const tail = tone === "campainha" ? 1200 : tone === "duplo" ? 800 : 1000;
+  return Math.ceil((repeats - 1) * cycle * 1000 + tail + 200);
+}
+
+/** Toca o alarme com prefs salvas (ou opts). Repete conforme prefs (padrão 3x). */
 export function playAlarmTone(opts?: Partial<AlarmPrefs>) {
   try {
     const prefs = { ...loadAlarmPrefs(), ...opts };
     if (prefs.volume <= 0) return;
 
+    const repeats = Math.max(1, Math.min(5, prefs.repeats ?? 3));
+    const cycleDur = toneCycleDuration(prefs.tone);
+
     const ctx = new AudioContext();
     const master = ctx.createGain();
+    const vol = Math.max(0, Math.min(1, prefs.volume));
+    master.gain.setValueAtTime(vol, ctx.currentTime);
+
     const limiter = createLimiter(ctx);
     master.connect(limiter);
     limiter.connect(ctx.destination);
-    scheduleNotes(ctx, master, notesForTone(prefs.tone), prefs.volume);
+
+    for (let r = 0; r < repeats; r++) {
+      scheduleNotes(
+        ctx,
+        master,
+        notesForTone(prefs.tone),
+        r * cycleDur,
+      );
+    }
+
     window.setTimeout(
       () => void ctx.close(),
-      durationForTone(prefs.tone),
+      durationForTone(prefs.tone, repeats),
     );
   } catch {
     /* ignore */
   }
 }
 
-/** Prévia com toque/volume explícitos (botão Ouvir). */
-export function previewAlarmTone(tone: AlarmToneId, volume: number) {
-  playAlarmTone({ tone, volume });
+/** Prévia com toque/volume/repetições explícitos (botão Ouvir). */
+export function previewAlarmTone(tone: AlarmToneId, volume: number, repeats?: number) {
+  playAlarmTone({ tone, volume, repeats });
 }
 
 export async function ensureNotificationPermission() {

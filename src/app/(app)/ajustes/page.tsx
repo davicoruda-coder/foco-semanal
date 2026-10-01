@@ -30,6 +30,7 @@ import { DialogFrame } from "@/components/DialogFrame";
 import { InstallPwaCard } from "@/components/InstallPwaCard";
 import { useStudyFlow } from "@/components/StudyFlowProvider";
 import {
+  ALARM_REPEATS,
   ALARM_TONES,
   ensureNotificationPermission,
   loadAlarmPrefs,
@@ -1017,6 +1018,7 @@ function AlarmSettings() {
   const [alarm, setAlarm] = useState<AlarmPrefs>({
     volume: 0.7,
     tone: "acorde",
+    repeats: 3,
   });
 
   useEffect(() => {
@@ -1034,7 +1036,7 @@ function AlarmSettings() {
         Alarme
       </h2>
       <p className="mt-1 text-xs text-[color-mix(in_srgb,var(--ink)_75%,transparent)] sm:text-sm leading-relaxed">
-        Vale para o fim das matérias na sessão e lembretes com sino neste
+        Vale para o fim das matérias na sessão, blocos, descanso e lembretes com sino neste
         aparelho.
       </p>
 
@@ -1080,10 +1082,31 @@ function AlarmSettings() {
         })}
       </div>
 
+      <p className="mt-4 text-sm font-medium opacity-70">Repetições</p>
+      <div className="mt-2 flex flex-wrap gap-1.5">
+        {ALARM_REPEATS.map(({ value, label }) => {
+          const active = (alarm.repeats ?? 3) === value;
+          return (
+            <button
+              key={value}
+              type="button"
+              onClick={() => updateAlarm({ ...alarm, repeats: value })}
+              className={`rounded-full px-3.5 py-1.5 text-sm font-medium transition ${
+                active
+                  ? "bg-[var(--signal-soft)] text-[var(--signal)] ring-1 ring-[color-mix(in_srgb,var(--signal)_40%,transparent)]"
+                  : "bg-[color-mix(in_srgb,var(--ink)_6%,transparent)] text-[color-mix(in_srgb,var(--ink)_55%,transparent)] hover:text-[var(--ink)]"
+              }`}
+            >
+              {label}
+            </button>
+          );
+        })}
+      </div>
+
       <button
         type="button"
         className="btn mt-4"
-        onClick={() => previewAlarmTone(alarm.tone, alarm.volume)}
+        onClick={() => previewAlarmTone(alarm.tone, alarm.volume, alarm.repeats)}
       >
         Ouvir
       </button>

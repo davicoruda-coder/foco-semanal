@@ -443,7 +443,7 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
 
   const chooseRest = useCallback(() => {
     setCycleRoundCompleted(null);
-    playAlarmTone();
+    playAlarmTone({ repeats: 1 });
     const ends = Date.now() + settings.restMinutes * 60 * 1000;
     setRestEndsAt(ends);
     setPhase("resting");
