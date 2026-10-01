@@ -789,7 +789,7 @@ export function CadernoList({
                   title="Criar flashcard manual para este item"
                 >
                   <Plus size={13} />
-                  <span>+ Flashcard</span>
+                  <span>Criar Flashcard</span>
                 </button>
 
                 {onGenerateWithAI && (
