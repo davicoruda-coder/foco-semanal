@@ -16,7 +16,7 @@ import {
   Copy,
   Check,
   X,
-  Sparkles,
+  Bot,
   Layers,
   Plus,
   Loader2,
@@ -558,8 +558,8 @@ export function CadernoList({
                       type="button"
                       onClick={() => handleOpenManualCard(q)}
                       className="rounded p-1 text-[color-mix(in_srgb,var(--ink)_50%,transparent)] hover:bg-[var(--mist)] hover:text-[var(--ink)] transition"
-                      title="Criar card manual"
-                      aria-label="Criar card manual"
+                      title="Criar flashcard manual"
+                      aria-label="Criar flashcard manual"
                     >
                       <Plus size={14} />
                     </button>
@@ -789,7 +789,7 @@ export function CadernoList({
                   title="Criar flashcard manual para este item"
                 >
                   <Plus size={13} />
-                  <span>+ Card Manual</span>
+                  <span>+ Flashcard</span>
                 </button>
 
                 {onGenerateWithAI && (
@@ -803,8 +803,10 @@ export function CadernoList({
                     className="inline-flex items-center gap-1.5 rounded-[var(--radius-btn)] bg-[color-mix(in_srgb,var(--signal)_12%,var(--surface))] text-[var(--signal)] border border-[color-mix(in_srgb,var(--signal)_30%,transparent)] px-3 py-1.5 text-xs font-semibold hover:brightness-110 transition active:scale-95"
                     title="Gerar flashcards com IA a partir deste aprendizado"
                   >
-                    <Sparkles size={13} />
-                    <span>Gerar Cards IA</span>
+                    <Bot size={13} />
+                    <span>
+                      Gerar Flashcards <span className="hidden sm:inline">com IA</span>
+                    </span>
                   </button>
                 )}
               </div>
