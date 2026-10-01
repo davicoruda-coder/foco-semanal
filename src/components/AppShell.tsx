@@ -307,23 +307,25 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </header>
 
       <header className="sticky top-0 z-20 hidden border-b border-[color-mix(in_srgb,var(--line)_80%,transparent)] bg-[color-mix(in_srgb,var(--surface)_88%,var(--paper))]/85 backdrop-blur-md lg:block transition-colors">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-5 md:px-8">
+        <div className="mx-auto grid h-16 max-w-7xl grid-cols-[1fr_auto_1fr] items-center gap-4 px-5 md:px-8">
           {/* Logo / Marca */}
-          <Link
-            href="/hoje"
-            className="flex min-w-0 shrink-0 items-center gap-2.5 transition hover:opacity-90"
-            title="FocoHub"
-          >
-            <BrandIcon size={32} />
-            <span className="font-display truncate text-[17px] font-bold tracking-tight text-[var(--ink)]">
-              FocoHub
-            </span>
-          </Link>
+          <div className="flex items-center justify-start min-w-0">
+            <Link
+              href="/hoje"
+              className="flex min-w-0 shrink-0 items-center gap-2.5 transition hover:opacity-90"
+              title="FocoHub"
+            >
+              <BrandIcon size={32} />
+              <span className="font-display truncate text-[17px] font-bold tracking-tight text-[var(--ink)]">
+                FocoHub
+              </span>
+            </Link>
+          </div>
 
           {/* Controle Central Segmentado (Estudo | Fixar) */}
           <nav
             aria-label="Modos de trabalho"
-            className="flex items-center rounded-xl border border-[color-mix(in_srgb,var(--line)_70%,transparent)] bg-[var(--mist)]/90 p-1 shadow-2xs backdrop-blur-xs"
+            className="flex items-center justify-self-center rounded-xl border border-[color-mix(in_srgb,var(--line)_70%,transparent)] bg-[var(--mist)]/90 p-1 shadow-2xs backdrop-blur-xs"
           >
             {desktopPrimary.map(({ href, label, icon: Icon }) => {
               const active = desktopNavActive(pathname, href);
@@ -334,7 +336,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   title={label}
                   aria-label={label}
                   aria-current={active ? "page" : undefined}
-                  className={`group relative inline-flex h-9 items-center gap-2 rounded-lg px-4 text-sm font-semibold transition-all duration-200 ${
+                  className={`group relative inline-flex h-9 min-w-[100px] items-center justify-center gap-2 rounded-lg px-4 text-sm font-semibold transition-all duration-200 ${
                     active
                       ? "bg-[var(--surface)] text-[var(--ink)] shadow-xs ring-1 ring-black/[0.04] dark:ring-white/[0.06]"
                       : "text-[color-mix(in_srgb,var(--ink)_60%,transparent)] hover:text-[var(--ink)] hover:bg-[var(--surface)]/50"
@@ -364,7 +366,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </nav>
 
           {/* Perfil e Conta do Usuário */}
-          <div className="flex items-center">
+          <div className="flex items-center justify-end min-w-0">
             <UserAccountMenu />
           </div>
         </div>
