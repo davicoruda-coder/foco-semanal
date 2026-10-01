@@ -9,11 +9,14 @@ import {
   CheckCircle,
   ChevronDown,
   ChevronUp,
+  CornerDownLeft,
   Copy,
   Lightbulb,
   Loader2,
   MessageCircleQuestion,
+  MessageSquare,
   Plus,
+  Send,
   Sparkles,
   Target,
   TriangleAlert,
@@ -125,6 +128,32 @@ interface TiraDuvidasResponse {
   flashcard_sugerido?: { frente: string; verso: string };
 }
 
+interface FollowUpItem {
+  id: string;
+  pergunta: string;
+  resposta: {
+    explicacao: string;
+    ponto_chave?: string;
+    exemplo_adicional?: string;
+  };
+  timestamp: string;
+}
+
+const QUICK_PROMPTS = [
+  {
+    label: "💡 Exemplo Prático",
+    prompt: "Poderia dar outro exemplo prático e realista do cotidiano sobre isso?",
+  },
+  {
+    label: "👶 Mais Simples",
+    prompt: "Poderia explicar esse raciocínio de uma forma mais simples e intuitiva?",
+  },
+  {
+    label: "❌ Por que não as outras?",
+    prompt: "Por que as outras alternativas ou interpretações comuns estão incorretas?",
+  },
+];
+
 export function TiraDuvidas() {
   const {
     materias,
@@ -153,6 +182,12 @@ export function TiraDuvidas() {
   const [savingFlashcard, setSavingFlashcard] = useState(false);
   const [cadernoSaved, setCadernoSaved] = useState(false);
   const [savingCaderno, setSavingCaderno] = useState(false);
+
+  /* Desdobramento contextual / Dúvidas sobre a explicação */
+  const [followUps, setFollowUps] = useState<FollowUpItem[]>([]);
+  const [duvidaTexto, setDuvidaTexto] = useState("");
+  const [loadingFollowUp, setLoadingFollowUp] = useState(false);
+  const [followUpError, setFollowUpError] = useState<string | null>(null);
 
   /* Tamanho da fonte de resposta (sm: 14px, base: 16px [padrão], lg: 18px) */
   const [textSize, setTextSize] = useState<"sm" | "base" | "lg">("base");
@@ -336,6 +371,89 @@ export function TiraDuvidas() {
     }
   }, [cadernoSaved, savingCaderno, saveDisciplina, materias, addMateria, reloadMaterias, addQuestao, pergunta, resposta, reloadQuestoes]);
 
+  /* Enviar dúvida de desdobramento sobre a explicação */
+  const handleSendFollowUp = useCallback(
+    async (perguntaDireta?: string) => {
+      const texto = (perguntaDireta ?? duvidaTexto).trim();
+      if (
+        !texto ||
+        texto.length < 3 ||
+        loadingFollowUp ||
+        !canGenerate ||
+        !resposta
+      ) {
+        return;
+      }
+
+      setLoadingFollowUp(true);
+      setFollowUpError(null);
+
+      try {
+        const res = await fetch("/api/revisao/tira-duvidas", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            isFollowUp: true,
+            pergunta: texto,
+            perguntaOriginal: pergunta.trim(),
+            disciplina: saveDisciplina || resposta.disciplina_sugerida,
+            contextoAnterior: {
+              conceito_chave: resposta.conceito_chave,
+              resposta_certa: resposta.resposta_certa,
+              explicacao: resposta.explicacao,
+              passo_a_passo: resposta.passo_a_passo,
+              pegadinha: resposta.pegadinha,
+            },
+            historicoAnterior: followUps.map((f) => ({
+              pergunta: f.pergunta,
+              resposta: f.resposta.explicacao,
+            })),
+          }),
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          setFollowUpError(data.error || "Não foi possível obter resposta do tutor.");
+          return;
+        }
+
+        if (data.followUp) {
+          const novoItem: FollowUpItem = {
+            id:
+              typeof crypto !== "undefined" && crypto.randomUUID
+                ? crypto.randomUUID()
+                : `fup-${Date.now()}`,
+            pergunta: texto,
+            resposta: data.followUp,
+            timestamp: new Date().toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit",
+            }),
+          };
+          setFollowUps((prev) => [...prev, novoItem]);
+          setDuvidaTexto("");
+        }
+
+        void reloadAIConfig();
+      } catch {
+        setFollowUpError("Falha de conexão com a IA. Tente novamente.");
+      } finally {
+        setLoadingFollowUp(false);
+      }
+    },
+    [
+      duvidaTexto,
+      loadingFollowUp,
+      canGenerate,
+      resposta,
+      pergunta,
+      saveDisciplina,
+      followUps,
+      reloadAIConfig,
+    ],
+  );
+
   /* Reset */
   const handleReset = useCallback(() => {
     setPergunta("");
@@ -345,6 +463,9 @@ export function TiraDuvidas() {
     setFlashcardSaved(false);
     setCadernoSaved(false);
     setSaveDisciplina("");
+    setFollowUps([]);
+    setDuvidaTexto("");
+    setFollowUpError(null);
   }, []);
 
   /* Global paste listener for images */
@@ -851,16 +972,197 @@ export function TiraDuvidas() {
             </div>
           </div>
 
-          {/* Ações */}
-          <div className="flex items-center justify-between gap-3 pt-2">
+          {/* Card Interativo: Desdobramento e Dúvidas com o Tutor */}
+          <div className="rounded-xl border border-[color-mix(in_srgb,var(--signal)_25%,var(--line))] bg-gradient-to-b from-[color-mix(in_srgb,var(--signal)_3%,var(--surface))] to-[var(--surface)] p-4 sm:p-5 shadow-[var(--shadow-sm)] space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[var(--line)]/60 pb-3">
+              <div className="flex items-center gap-2.5">
+                <span className="grid size-8 place-items-center rounded-lg bg-[var(--signal-soft)] text-[var(--signal)] shrink-0">
+                  <MessageSquare size={17} />
+                </span>
+                <div>
+                  <h4 className="text-sm font-bold text-[var(--ink)] flex items-center gap-1.5">
+                    Ficou com dúvida na explicação?
+                    <span className="rounded-full bg-[var(--signal-soft)] px-2 py-0.5 text-[10px] font-semibold text-[var(--signal)]">
+                      Tutor IA
+                    </span>
+                  </h4>
+                  <p className="text-[11px] text-[color-mix(in_srgb,var(--ink)_60%,transparent)]">
+                    Pergunte o que não ficou claro, conteste alternativas ou peça novos exemplos sem perder o contexto.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Lista de dúvidas já respondidas nesta conversa (Thread) */}
+            {followUps.length > 0 && (
+              <div className="space-y-3.5 pt-1">
+                {followUps.map((item, idx) => (
+                  <div
+                    key={item.id || idx}
+                    className="space-y-2.5 rounded-xl border border-[var(--line)]/70 bg-[color-mix(in_srgb,var(--ink)_2%,var(--surface))] p-3.5 sm:p-4"
+                  >
+                    {/* Pergunta do Aluno */}
+                    <div className="flex items-start gap-2.5">
+                      <span className="grid size-6 shrink-0 place-items-center rounded-full bg-[var(--signal-soft)] text-[10px] font-bold text-[var(--signal)] mt-0.5">
+                        Você
+                      </span>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-[11px] font-semibold text-[color-mix(in_srgb,var(--ink)_60%,transparent)]">
+                            Sua dúvida
+                          </span>
+                          <span className="text-[10px] text-[color-mix(in_srgb,var(--ink)_40%,transparent)]">
+                            {item.timestamp}
+                          </span>
+                        </div>
+                        <p className="text-xs sm:text-sm font-medium text-[var(--ink)] mt-0.5 whitespace-pre-line break-words">
+                          {item.pergunta}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Resposta do Tutor */}
+                    <div className="mt-2.5 rounded-lg border border-[color-mix(in_srgb,var(--signal)_25%,var(--line))] bg-[var(--surface)] p-3.5 sm:p-4 space-y-2.5">
+                      <div className="flex items-center justify-between gap-2 text-xs font-bold text-[var(--signal)]">
+                        <span className="flex items-center gap-1.5">
+                          <Sparkles size={14} />
+                          Esclarecimento do Tutor
+                        </span>
+                        <CopyButton text={item.resposta.explicacao} />
+                      </div>
+
+                      <p
+                        className={`text-[var(--ink)] whitespace-pre-line break-words [overflow-wrap:anywhere] ${contentTextClass}`}
+                      >
+                        {item.resposta.explicacao}
+                      </p>
+
+                      {item.resposta.exemplo_adicional && (
+                        <div className="mt-2.5 rounded-md bg-[color-mix(in_srgb,var(--accent-2)_10%,var(--surface))] border border-[var(--accent-2)]/25 p-3 text-xs text-[var(--ink)] space-y-1">
+                          <span className="font-semibold text-[var(--accent-2)] block">
+                            💡 Exemplo Prático Adicional:
+                          </span>
+                          <p className={`whitespace-pre-line ${contentTextClass}`}>
+                            {item.resposta.exemplo_adicional}
+                          </p>
+                        </div>
+                      )}
+
+                      {item.resposta.ponto_chave && (
+                        <div className="mt-2 flex items-start gap-2 rounded-lg bg-[color-mix(in_srgb,var(--signal)_8%,var(--surface))] border border-[var(--signal)]/20 px-3 py-2 text-xs font-medium text-[var(--ink)]">
+                          <Target size={14} className="shrink-0 text-[var(--signal)] mt-0.5" />
+                          <span>
+                            <strong className="text-[var(--signal)] mr-1">Em resumo:</strong>
+                            {item.resposta.ponto_chave}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Feedback de erro no follow-up */}
+            {followUpError && (
+              <div className="flex items-center gap-2 rounded-lg bg-[color-mix(in_srgb,var(--warn)_12%,var(--surface))] border border-[var(--warn)]/30 px-3 py-2 text-xs font-semibold text-[var(--warn)]">
+                <AlertCircle size={14} className="shrink-0" />
+                <span>{followUpError}</span>
+              </div>
+            )}
+
+            {/* Input e Sugestões para nova dúvida */}
+            <div className="space-y-2.5 pt-1">
+              {/* Sugestões Rápidas */}
+              <div className="flex flex-wrap items-center gap-1.5">
+                <span className="text-[11px] font-semibold text-[color-mix(in_srgb,var(--ink)_50%,transparent)] mr-1">
+                  Atalhos rápidos:
+                </span>
+                {QUICK_PROMPTS.map((qp, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => {
+                      setDuvidaTexto(qp.prompt);
+                    }}
+                    disabled={loadingFollowUp || !canGenerate}
+                    className="inline-flex items-center rounded-full border border-[var(--line)] bg-[var(--surface)] hover:border-[var(--signal)] hover:text-[var(--signal)] hover:bg-[var(--signal-soft)] px-2.5 py-1 text-[11px] font-medium text-[var(--ink)] transition disabled:opacity-50"
+                  >
+                    {qp.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Caixa de Texto Livre do Aluno */}
+              <div className="relative">
+                <textarea
+                  value={duvidaTexto}
+                  onChange={(e) => setDuvidaTexto(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      void handleSendFollowUp();
+                    }
+                  }}
+                  placeholder="Ex: Não entendi quando você disse que a estrutura é falha... / Por que a letra B não pode ser? / O que significa o termo..."
+                  rows={2}
+                  disabled={loadingFollowUp || !canGenerate}
+                  className="w-full resize-y min-h-[76px] rounded-[var(--radius-btn)] border border-[var(--line)] bg-[var(--surface)] p-3 pr-28 text-xs sm:text-sm text-[var(--ink)] outline-none transition focus:border-[var(--signal)] focus:ring-2 focus:ring-[var(--signal-soft)] placeholder:text-[color-mix(in_srgb,var(--ink)_35%,transparent)] leading-relaxed disabled:opacity-60"
+                />
+
+                <div className="absolute right-2.5 bottom-2.5 flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => void handleSendFollowUp()}
+                    disabled={
+                      duvidaTexto.trim().length < 3 ||
+                      loadingFollowUp ||
+                      !canGenerate
+                    }
+                    className="inline-flex items-center gap-1.5 rounded-[var(--radius-tag)] bg-[var(--signal)] px-3 py-1.5 text-xs font-semibold text-white shadow-xs transition hover:brightness-110 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
+                    title="Enviar dúvida (Enter)"
+                  >
+                    {loadingFollowUp ? (
+                      <>
+                        <Loader2 size={13} className="animate-spin" />
+                        <span>Enviando...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Send size={13} />
+                        <span>Perguntar</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center justify-between gap-1 text-[10px] text-[color-mix(in_srgb,var(--ink)_45%,transparent)] px-1">
+                <span>
+                  Pressione <b>Enter</b> para enviar ou <b>Shift+Enter</b> para nova linha
+                </span>
+                {!isUnlimited && (
+                  <span>
+                    {remaining} {remaining === 1 ? "geração restante" : "gerações restantes"} hoje
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Ações Finais: Nova Pergunta */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-[var(--line)]/50">
             <button
               type="button"
               onClick={handleReset}
               className="inline-flex items-center justify-center gap-1.5 rounded-[var(--radius-btn)] border border-[var(--line)] bg-[var(--surface)] px-4 py-2.5 text-xs sm:text-sm font-semibold text-[var(--ink)] transition hover:bg-[var(--mist)] active:scale-[0.98]"
             >
-              <MessageCircleQuestion size={14} />
-              Fazer Nova Pergunta
+              <MessageCircleQuestion size={15} />
+              Fazer Nova Pergunta (Trocar de Assunto)
             </button>
+            <p className="text-[11px] text-[color-mix(in_srgb,var(--ink)_50%,transparent)]">
+              Quer analisar outra questão ou print? Clique acima para limpar e começar uma nova consulta.
+            </p>
           </div>
         </div>
       )}

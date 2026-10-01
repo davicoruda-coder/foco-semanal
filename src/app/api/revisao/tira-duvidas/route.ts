@@ -59,6 +59,63 @@ interface TiraDuvidasResponse {
   flashcard_sugerido?: { frente: string; verso: string };
 }
 
+export interface FollowUpResponse {
+  explicacao: string;
+  ponto_chave?: string;
+  exemplo_adicional?: string;
+}
+
+const FOLLOW_UP_SYSTEM_PROMPT = `Você é um professor-tutor especialista em estudos, concursos e aprendizado ativo em uma sessão tira-dúvidas interativa.
+O aluno já recebeu uma explicação detalhada sobre uma questão ou conceito e agora está tirando uma dúvida específica sobre a sua explicação ou sobre a resolução.
+
+DIRETRIZES:
+- Responda diretamente e com máxima clareza à dúvida do aluno.
+- Seja didático, paciente, empático e acolhedor.
+- Use linguagem acessível, analogias do cotidiano ou novos exemplos práticos sempre que isso facilitar o entendimento.
+- Se o aluno perguntar "por que a alternativa X não é a certa", aponte com precisão o erro daquela alternativa comparando com a correta.
+- Se o aluno disser "não entendi quando você disse X", explique novamente aquele raciocínio sob um outro ângulo mais intuitivo.
+- Mantenha parágrafos confortáveis para leitura.
+
+Responda APENAS com JSON válido no seguinte formato:
+{
+  "explicacao": "Sua resposta didática e completa sanando a dúvida do aluno com acolhimento e clareza. Use quebras de linha e parágrafos bem espaçados.",
+  "ponto_chave": "Frase curta de fixação do esclarecimento (opcional, máximo 1 linha)",
+  "exemplo_adicional": "Exemplo prático do cotidiano ou contextualizado para ilustrar (opcional, ou deixe vazio)"
+}
+
+- Sem markdown fora do JSON, sem textos adicionais fora do JSON.`;
+
+function parseFollowUpResponse(raw: string): FollowUpResponse {
+  let cleaned = raw.trim();
+  const jsonBlockMatch = cleaned.match(/```(?:json)?\s*([\s\S]*?)```/);
+  if (jsonBlockMatch) {
+    cleaned = jsonBlockMatch[1].trim();
+  }
+
+  try {
+    const parsed = JSON.parse(cleaned);
+    if (parsed && typeof parsed.explicacao === "string" && parsed.explicacao.trim()) {
+      return {
+        explicacao: parsed.explicacao.trim(),
+        ponto_chave:
+          typeof parsed.ponto_chave === "string" && parsed.ponto_chave.trim()
+            ? parsed.ponto_chave.trim()
+            : undefined,
+        exemplo_adicional:
+          typeof parsed.exemplo_adicional === "string" && parsed.exemplo_adicional.trim()
+            ? parsed.exemplo_adicional.trim()
+            : undefined,
+      };
+    }
+  } catch {
+    // fallback se a IA respondeu em texto livre
+  }
+
+  return {
+    explicacao: cleaned.replace(/^```json/i, "").replace(/```$/i, "").trim() || raw.trim(),
+  };
+}
+
 function parseAIResponse(raw: string): TiraDuvidasResponse | null {
   let cleaned = raw.trim();
   const jsonBlockMatch = cleaned.match(/```(?:json)?\s*([\s\S]*?)```/);
@@ -193,41 +250,70 @@ export async function POST(request: Request) {
     pergunta?: unknown;
     imagem?: unknown;
     disciplina?: unknown;
+    isFollowUp?: unknown;
+    perguntaOriginal?: unknown;
+    contextoAnterior?: {
+      conceito_chave?: string;
+      resposta_certa?: string;
+      explicacao?: string;
+      passo_a_passo?: string[];
+      pegadinha?: string;
+    };
+    historicoAnterior?: Array<{
+      pergunta: string;
+      resposta: string;
+    }>;
   } | null;
 
+  const isFollowUp = Boolean(body?.isFollowUp);
   const pergunta =
     typeof body?.pergunta === "string" ? body.pergunta.trim() : "";
   const imagem = typeof body?.imagem === "string" ? body.imagem.trim() : "";
   const disciplina =
     typeof body?.disciplina === "string" ? body.disciplina.trim() : "";
 
-  if (!pergunta && !imagem) {
-    return NextResponse.json(
-      { error: "Envie uma pergunta ou cole uma imagem." },
-      { status: 400 },
-    );
-  }
-  if (pergunta && pergunta.length < MIN_TEXT_LENGTH) {
-    return NextResponse.json(
-      {
-        error: `O texto precisa ter pelo menos ${MIN_TEXT_LENGTH} caracteres.`,
-      },
-      { status: 400 },
-    );
-  }
-  if (pergunta && pergunta.length > MAX_TEXT_LENGTH) {
-    return NextResponse.json(
-      {
-        error: `O texto não pode ter mais de ${MAX_TEXT_LENGTH} caracteres.`,
-      },
-      { status: 400 },
-    );
-  }
-  if (imagem && imagem.length > MAX_IMAGE_SIZE) {
-    return NextResponse.json(
-      { error: "A imagem é muito grande. Tente com uma imagem menor (até 4MB)." },
-      { status: 400 },
-    );
+  if (isFollowUp) {
+    if (!pergunta || pergunta.length < 3) {
+      return NextResponse.json(
+        { error: "Digite sua dúvida sobre a explicação (mínimo 3 caracteres)." },
+        { status: 400 },
+      );
+    }
+    if (pergunta.length > MAX_TEXT_LENGTH) {
+      return NextResponse.json(
+        { error: `O texto não pode ter mais de ${MAX_TEXT_LENGTH} caracteres.` },
+        { status: 400 },
+      );
+    }
+  } else {
+    if (!pergunta && !imagem) {
+      return NextResponse.json(
+        { error: "Envie uma pergunta ou cole uma imagem." },
+        { status: 400 },
+      );
+    }
+    if (pergunta && pergunta.length < MIN_TEXT_LENGTH) {
+      return NextResponse.json(
+        {
+          error: `O texto precisa ter pelo menos ${MIN_TEXT_LENGTH} caracteres.`,
+        },
+        { status: 400 },
+      );
+    }
+    if (pergunta && pergunta.length > MAX_TEXT_LENGTH) {
+      return NextResponse.json(
+        {
+          error: `O texto não pode ter mais de ${MAX_TEXT_LENGTH} caracteres.`,
+        },
+        { status: 400 },
+      );
+    }
+    if (imagem && imagem.length > MAX_IMAGE_SIZE) {
+      return NextResponse.json(
+        { error: "A imagem é muito grande. Tente com uma imagem menor (até 4MB)." },
+        { status: 400 },
+      );
+    }
   }
 
   // 5. Rate limiting (Master tem uso ilimitado; se limitEnabled for falso, todos têm)
@@ -259,37 +345,136 @@ export async function POST(request: Request) {
     );
   }
 
-  // 6. Montar messages para OpenRouter (com suporte multimodal)
-  const userContent: Array<
-    | { type: "text"; text: string }
-    | { type: "image_url"; image_url: { url: string } }
-  > = [];
+  // 6. Montar messages para OpenRouter
+  let messagesPayload: Array<{
+    role: "system" | "user" | "assistant";
+    content:
+      | string
+      | Array<
+          | { type: "text"; text: string }
+          | { type: "image_url"; image_url: { url: string } }
+        >;
+  }> = [];
 
-  const contextPrefix = disciplina
-    ? `[Matéria/Assunto: ${disciplina}]\n\n`
-    : "";
+  let effectiveSystemPrompt: string;
 
-  if (pergunta) {
-    userContent.push({
-      type: "text",
-      text: `${contextPrefix}${pergunta.slice(0, MAX_TEXT_LENGTH)}`,
-    });
-  } else if (disciplina) {
-    userContent.push({
-      type: "text",
-      text: `${contextPrefix}Analise e explique a questão/conteúdo da imagem abaixo.`,
-    });
-  }
+  if (isFollowUp) {
+    effectiveSystemPrompt = customPrompt
+      ? `${FOLLOW_UP_SYSTEM_PROMPT}\n\nDIRETRIZES ADICIONAIS DO PROFESSOR:\n${customPrompt}\n\nIMPORTANTE: Responda ESTRITAMENTE em formato JSON válido.`
+      : FOLLOW_UP_SYSTEM_PROMPT;
 
-  if (imagem) {
-    // Garantir prefixo data URI
-    const imageUrl = imagem.startsWith("data:")
-      ? imagem
-      : `data:image/png;base64,${imagem}`;
-    userContent.push({
-      type: "image_url",
-      image_url: { url: imageUrl },
+    messagesPayload.push({
+      role: "system",
+      content: effectiveSystemPrompt,
     });
+
+    const perguntaOrig =
+      typeof body?.perguntaOriginal === "string"
+        ? body.perguntaOriginal.trim()
+        : "";
+    const ctx = body?.contextoAnterior;
+
+    let originalContextText = "";
+    if (disciplina) originalContextText += `[Disciplina/Matéria: ${disciplina}]\n`;
+    if (perguntaOrig) {
+      originalContextText += `[Enunciado original ou dúvida inicial do aluno]:\n${perguntaOrig}\n\n`;
+    }
+
+    let assistantOriginalText = "";
+    if (ctx) {
+      if (ctx.resposta_certa) {
+        assistantOriginalText += `Gabarito/Resposta Certa: ${ctx.resposta_certa}\n\n`;
+      }
+      if (ctx.conceito_chave) {
+        assistantOriginalText += `Conceito-Chave: ${ctx.conceito_chave}\n\n`;
+      }
+      if (ctx.explicacao) {
+        assistantOriginalText += `Explicação didática que dei ao aluno:\n${ctx.explicacao}\n\n`;
+      }
+      if (ctx.pegadinha) {
+        assistantOriginalText += `Pegadinha/Armadilha apontada:\n${ctx.pegadinha}\n\n`;
+      }
+      if (Array.isArray(ctx.passo_a_passo) && ctx.passo_a_passo.length > 0) {
+        assistantOriginalText += `Passo a passo fornecido:\n${ctx.passo_a_passo.join("\n")}\n\n`;
+      }
+    }
+
+    if (originalContextText || assistantOriginalText) {
+      messagesPayload.push({
+        role: "user",
+        content:
+          originalContextText ||
+          "Analise a questão e a explicação fornecidas.",
+      });
+      messagesPayload.push({
+        role: "assistant",
+        content:
+          assistantOriginalText ||
+          "Aqui está a explicação que forneci anteriormente.",
+      });
+    }
+
+    // Histórico de réplicas anteriores se houver
+    if (Array.isArray(body?.historicoAnterior)) {
+      for (const h of body.historicoAnterior) {
+        if (typeof h?.pergunta === "string" && h.pergunta.trim()) {
+          messagesPayload.push({ role: "user", content: h.pergunta.trim() });
+        }
+        if (typeof h?.resposta === "string" && h.resposta.trim()) {
+          messagesPayload.push({
+            role: "assistant",
+            content: h.resposta.trim(),
+          });
+        }
+      }
+    }
+
+    // Nova réplica / dúvida
+    messagesPayload.push({
+      role: "user",
+      content: `Dúvida do aluno sobre a explicação anterior:\n"${pergunta}"`,
+    });
+  } else {
+    effectiveSystemPrompt = customPrompt
+      ? `${SYSTEM_PROMPT}\n\nDIRETRIZES E COMPORTAMENTO ADICIONAIS DO PROFESSOR (DEFINIDAS PELO ADMINISTRADOR):\n${customPrompt}\n\nIMPORTANTE: Lembre-se que, independentemente das diretrizes acima, você DEVE SEMPRE responder ESTRITAMENTE em formato JSON válido com todos os campos solicitados.`
+      : SYSTEM_PROMPT;
+
+    const userContent: Array<
+      | { type: "text"; text: string }
+      | { type: "image_url"; image_url: { url: string } }
+    > = [];
+
+    const contextPrefix = disciplina
+      ? `[Matéria/Assunto: ${disciplina}]\n\n`
+      : "";
+
+    if (pergunta) {
+      userContent.push({
+        type: "text",
+        text: `${contextPrefix}${pergunta.slice(0, MAX_TEXT_LENGTH)}`,
+      });
+    } else if (disciplina) {
+      userContent.push({
+        type: "text",
+        text: `${contextPrefix}Analise e explique a questão/conteúdo da imagem abaixo.`,
+      });
+    }
+
+    if (imagem) {
+      // Garantir prefixo data URI
+      const imageUrl = imagem.startsWith("data:")
+        ? imagem
+        : `data:image/png;base64,${imagem}`;
+      userContent.push({
+        type: "image_url",
+        image_url: { url: imageUrl },
+      });
+    }
+
+    messagesPayload = [
+      { role: "system", content: effectiveSystemPrompt },
+      { role: "user", content: userContent },
+    ];
   }
 
   // 7. Call OpenRouter
@@ -297,10 +482,6 @@ export async function POST(request: Request) {
   let tokensUsed = 0;
 
   try {
-    const effectiveSystemPrompt = customPrompt
-      ? `${SYSTEM_PROMPT}\n\nDIRETRIZES E COMPORTAMENTO ADICIONAIS DO PROFESSOR (DEFINIDAS PELO ADMINISTRADOR):\n${customPrompt}\n\nIMPORTANTE: Lembre-se que, independentemente das diretrizes acima, você DEVE SEMPRE responder ESTRITAMENTE em formato JSON válido com todos os campos solicitados.`
-      : SYSTEM_PROMPT;
-
     const orResponse = await fetch(
       "https://openrouter.ai/api/v1/chat/completions",
       {
@@ -315,10 +496,7 @@ export async function POST(request: Request) {
           model,
           temperature: 0.2,
           max_tokens: 4096,
-          messages: [
-            { role: "system", content: effectiveSystemPrompt },
-            { role: "user", content: userContent },
-          ],
+          messages: messagesPayload,
         }),
       },
     );
@@ -356,19 +534,26 @@ export async function POST(request: Request) {
   }
 
   // 8. Parse AI response
-  const resposta = parseAIResponse(aiResponseText);
-  if (!resposta) {
-    console.warn(
-      "[tira-duvidas] invalid AI response:",
-      aiResponseText.slice(0, 500),
-    );
-    return NextResponse.json(
-      {
-        error:
-          "A IA não retornou uma resposta válida. Tente reformular a pergunta.",
-      },
-      { status: 422 },
-    );
+  let parsedResposta: TiraDuvidasResponse | null = null;
+  let parsedFollowUp: FollowUpResponse | null = null;
+
+  if (isFollowUp) {
+    parsedFollowUp = parseFollowUpResponse(aiResponseText);
+  } else {
+    parsedResposta = parseAIResponse(aiResponseText);
+    if (!parsedResposta) {
+      console.warn(
+        "[tira-duvidas] invalid AI response:",
+        aiResponseText.slice(0, 500),
+      );
+      return NextResponse.json(
+        {
+          error:
+            "A IA não retornou uma resposta válida. Tente reformular a pergunta.",
+        },
+        { status: 422 },
+      );
+    }
   }
 
   // 9. Log generation (mesma tabela do flashcard — cota unificada)
@@ -385,7 +570,8 @@ export async function POST(request: Request) {
 
   return NextResponse.json({
     ok: true,
-    resposta,
+    resposta: parsedResposta,
+    followUp: parsedFollowUp,
     remaining,
     limitEnabled: !isExempt,
     dailyLimit,
