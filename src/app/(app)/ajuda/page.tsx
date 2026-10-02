@@ -4,6 +4,7 @@ import Link from "next/link";
 import {
   CheckCircle2,
   ChevronRight,
+  Keyboard,
   Sparkles,
   Zap,
 } from "lucide-react";
@@ -84,6 +85,43 @@ export default function AjudaPage() {
                   </p>
                 </div>
               ))}
+            </div>
+          </section>
+
+          {/* Card de Atalhos no Teclado (PC) */}
+          <section className="surface p-4 shadow-xs space-y-2.5">
+            <div className="flex items-center gap-2">
+              <div className="grid size-7 place-items-center rounded-lg bg-[var(--signal-soft)] text-[var(--signal)] shrink-0">
+                <Keyboard size={15} />
+              </div>
+              <h2 className="text-xs font-semibold text-[var(--ink)]">
+                Atalhos Rápidos (PC)
+              </h2>
+            </div>
+            <div className="space-y-1.5 text-[11px] text-[color-mix(in_srgb,var(--ink)_80%,transparent)]">
+              <div className="flex items-center justify-between rounded-md border border-[var(--line)]/50 bg-[var(--mist)]/40 px-2 py-1">
+                <span>Virar Flashcard</span>
+                <kbd className="rounded border border-[var(--line)] bg-[var(--surface)] px-1.5 py-0.5 font-mono text-[10px] font-semibold text-[var(--ink)]">
+                  Espaço
+                </kbd>
+              </div>
+              <div className="flex items-center justify-between rounded-md border border-[var(--line)]/50 bg-[var(--mist)]/40 px-2 py-1">
+                <span>Avaliar Recordação</span>
+                <span className="flex items-center gap-1 font-mono text-[10px] font-semibold">
+                  <kbd className="rounded border border-[var(--line)] bg-[var(--surface)] px-1.5 py-0.5 text-[var(--ink)]" title="Errei">
+                    1
+                  </kbd>
+                  <kbd className="rounded border border-[var(--line)] bg-[var(--surface)] px-1.5 py-0.5 text-[var(--ink)]" title="Difícil">
+                    2
+                  </kbd>
+                  <kbd className="rounded border border-[var(--line)] bg-[var(--surface)] px-1.5 py-0.5 text-[var(--ink)]" title="Bom">
+                    3
+                  </kbd>
+                  <kbd className="rounded border border-[var(--line)] bg-[var(--surface)] px-1.5 py-0.5 text-[var(--ink)]" title="Fácil">
+                    4
+                  </kbd>
+                </span>
+              </div>
             </div>
           </section>
 

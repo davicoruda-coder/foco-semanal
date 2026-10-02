@@ -86,7 +86,7 @@ const TOPICS: TutorialTopic[] = [
       "Flashcards e Repetição Espaçada: formule seus próprios cartões ou gere com IA. O card entra no deck com repetição inicial em 24h para fixação imediata; ao acertar, os intervalos expandem automaticamente (4 a 7 dias, depois 15 a 30 dias).",
       "Deck Global vs Treino Isolado: utilize o 'Deck Global do Dia' para revisar rapidamente todos os cards previstos para hoje pelo algoritmo, ou treine uma disciplina específica de forma isolada nos 'Decks por Matéria'.",
     ],
-    tip: "Consulte a aba Diagnóstico em Fixar para ver o raio-X das causas dos seus erros e onde você mais precisa reforçar a teoria.",
+    tip: "Atalhos rápidos no PC: ao revisar flashcards no computador, use a barra de Espaço para virar o cartão/mostrar a resposta e as teclas 1 a 4 para classificar sua recordação (1: Errei, 2: Difícil, 3: Bom, 4: Fácil). No celular, basta tocar no cartão e botões. Consulte também a aba Diagnóstico para ver onde reforçar a teoria.",
   },
   {
     id: "agenda",

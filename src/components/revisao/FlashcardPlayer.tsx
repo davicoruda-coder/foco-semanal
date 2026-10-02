@@ -101,6 +101,40 @@ export function FlashcardPlayer({
     }
   };
 
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (
+        showDeleteConfirm ||
+        e.target instanceof HTMLInputElement ||
+        e.target instanceof HTMLTextAreaElement
+      ) {
+        return;
+      }
+
+      if (e.code === "Space") {
+        e.preventDefault();
+        setIsFlipped((prev) => !prev);
+      } else if (isFlipped && !submitting) {
+        if (e.key === "1") {
+          e.preventDefault();
+          void handleResponse("errei");
+        } else if (e.key === "2") {
+          e.preventDefault();
+          void handleResponse("dificil");
+        } else if (e.key === "3") {
+          e.preventDefault();
+          void handleResponse("bom");
+        } else if (e.key === "4") {
+          e.preventDefault();
+          void handleResponse("facil");
+        }
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isFlipped, submitting, showDeleteConfirm, currentCard]);
+
   return (
     <div className="mx-auto max-w-xl space-y-4 pb-8">
       {/* Indicador de Progresso e Ações */}
@@ -147,7 +181,7 @@ export function FlashcardPlayer({
       >
         <div className="absolute right-3.5 top-3.5 flex items-center gap-1 text-[10px] font-medium text-[color-mix(in_srgb,var(--ink)_45%,transparent)] group-hover:text-[var(--signal)]">
           <RotateCw size={12} />
-          {isFlipped ? "Ver Frente" : "Clique para Virar"}
+          {isFlipped ? "Ver Frente" : "Virar card"}
         </div>
 
         {!isFlipped ? (
@@ -224,10 +258,10 @@ export function FlashcardPlayer({
         <button
           type="button"
           onClick={() => setIsFlipped(true)}
-          className="flex w-full items-center justify-center gap-1.5 rounded-[var(--radius-btn)] bg-[var(--signal)] py-2.5 text-xs font-semibold text-white shadow-sm hover:brightness-110"
+          className="flex w-full items-center justify-center gap-1.5 rounded-[var(--radius-btn)] bg-[var(--signal)] py-2.5 text-xs font-semibold text-white shadow-sm hover:brightness-110 active:scale-[0.99] transition cursor-pointer"
         >
           <RotateCw size={14} />
-          Mostrar Resposta (Espaço / Clique)
+          Mostrar Resposta
         </button>
       )}
 
