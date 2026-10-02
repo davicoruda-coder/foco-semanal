@@ -102,34 +102,36 @@ function RevisaoContent() {
         </div>
       </div>
 
-      {/* Navegação de Abas do Módulo com scroll horizontal seguro */}
-      <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto scrollbar-none border-b border-[var(--line)] pb-1 max-w-full -mx-0.5 px-0.5">
+      {/* Navegação de Abas do Módulo (Segmented Control em 4 colunas — 100% visível sem cortes no celular) */}
+      <div className="grid grid-cols-4 w-full items-center gap-1 rounded-xl border border-[var(--line)] bg-[var(--mist)] p-1">
         <button
           type="button"
           onClick={() => setActiveTab("caderno")}
-          className={`shrink-0 whitespace-nowrap relative flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold transition ${
+          className={`flex items-center justify-center gap-1 sm:gap-1.5 rounded-lg px-1 sm:px-3 py-2 text-[11px] sm:text-xs font-semibold transition ${
             activeTab === "caderno"
-              ? "bg-[var(--surface)] text-[var(--signal)] shadow-sm"
+              ? "bg-[var(--surface)] text-[var(--signal)] shadow-xs"
               : "text-[color-mix(in_srgb,var(--ink)_60%,transparent)] hover:text-[var(--ink)]"
           }`}
         >
-          <BookMarked size={14} />
-          Caderno de Erros
+          <BookMarked size={14} className="shrink-0" />
+          <span className="sm:hidden truncate">Caderno</span>
+          <span className="hidden sm:inline whitespace-nowrap">Caderno de Erros</span>
         </button>
 
         <button
           type="button"
           onClick={() => setActiveTab("flashcards")}
-          className={`shrink-0 whitespace-nowrap relative flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold transition ${
+          className={`flex items-center justify-center gap-1 sm:gap-1.5 rounded-lg px-1 sm:px-3 py-2 text-[11px] sm:text-xs font-semibold transition ${
             activeTab === "flashcards"
-              ? "bg-[var(--surface)] text-[var(--signal)] shadow-sm"
+              ? "bg-[var(--surface)] text-[var(--signal)] shadow-xs"
               : "text-[color-mix(in_srgb,var(--ink)_60%,transparent)] hover:text-[var(--ink)]"
           }`}
         >
-          <Layers size={14} />
-          Flashcards
+          <Layers size={14} className="shrink-0" />
+          <span className="sm:hidden truncate">Cards</span>
+          <span className="hidden sm:inline whitespace-nowrap">Flashcards</span>
           {flashcardsDoDia.length > 0 && (
-            <span className="grid size-4 place-items-center rounded-full bg-[var(--signal)] text-[9px] font-bold text-white">
+            <span className="grid size-4 shrink-0 place-items-center rounded-full bg-[var(--signal)] text-[9px] font-bold text-white">
               {flashcardsDoDia.length}
             </span>
           )}
@@ -138,15 +140,16 @@ function RevisaoContent() {
         <button
           type="button"
           onClick={() => setActiveTab("tira-duvidas")}
-          className={`shrink-0 whitespace-nowrap relative flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold transition ${
+          className={`flex items-center justify-center gap-1 sm:gap-1.5 rounded-lg px-1 sm:px-3 py-2 text-[11px] sm:text-xs font-semibold transition ${
             activeTab === "tira-duvidas"
-              ? "bg-[var(--surface)] text-[var(--signal)] shadow-sm"
+              ? "bg-[var(--surface)] text-[var(--signal)] shadow-xs"
               : "text-[color-mix(in_srgb,var(--ink)_60%,transparent)] hover:text-[var(--ink)]"
           }`}
         >
-          <MessageCircleQuestion size={14} />
-          Tira-Dúvidas
-          <span className="rounded-full bg-gradient-to-r from-[var(--signal)] to-[color-mix(in_srgb,#f59e0b_50%,var(--signal))] px-1.5 py-px text-[9px] font-bold text-white leading-none">
+          <MessageCircleQuestion size={14} className="shrink-0" />
+          <span className="sm:hidden truncate">Dúvidas</span>
+          <span className="hidden sm:inline whitespace-nowrap">Tira-Dúvidas</span>
+          <span className="shrink-0 rounded-full bg-gradient-to-r from-[var(--signal)] to-[color-mix(in_srgb,#f59e0b_50%,var(--signal))] px-1 py-px text-[9px] font-bold text-white leading-none">
             IA
           </span>
         </button>
@@ -154,14 +157,14 @@ function RevisaoContent() {
         <button
           type="button"
           onClick={() => setActiveTab("estatisticas")}
-          className={`shrink-0 whitespace-nowrap relative flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold transition ${
+          className={`flex items-center justify-center gap-1 sm:gap-1.5 rounded-lg px-1 sm:px-3 py-2 text-[11px] sm:text-xs font-semibold transition ${
             activeTab === "estatisticas"
-              ? "bg-[var(--surface)] text-[var(--signal)] shadow-sm"
+              ? "bg-[var(--surface)] text-[var(--signal)] shadow-xs"
               : "text-[color-mix(in_srgb,var(--ink)_60%,transparent)] hover:text-[var(--ink)]"
           }`}
         >
-          <PieChart size={14} />
-          Diagnóstico
+          <PieChart size={14} className="shrink-0" />
+          <span className="truncate">Diagnóstico</span>
         </button>
       </div>
 
