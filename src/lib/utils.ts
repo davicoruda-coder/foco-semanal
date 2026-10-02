@@ -449,13 +449,38 @@ export function buildInterleavedWeightedSequence<T extends Subject>(
   } = {},
 ): T[] {
   if (base.length === 0) return [];
+
+  // Para a fila restante, consome da sequência intercalada completa da volta
+  // os blocos que já foram cumpridos (cycle_done/ok), preservando a ordem exata de alternância.
+  if (opts.remainingOnly) {
+    const fullSequence = buildInterleavedWeightedSequence(base, {
+      remainingOnly: false,
+      exclusive: opts.exclusive,
+    });
+    const doneCounts = new Map<string, number>();
+    for (const s of base) {
+      const isDone = isSubjectDoneToday(s, opts.exclusive);
+      const w = Math.max(1, s.weight ?? 1);
+      const done = isDone ? w : Math.min(w, Math.max(0, s.cycle_done ?? 0));
+      doneCounts.set(s.id, done);
+    }
+
+    const remaining: T[] = [];
+    for (const item of fullSequence) {
+      const done = doneCounts.get(item.id) ?? 0;
+      if (done > 0) {
+        doneCounts.set(item.id, done - 1);
+      } else {
+        remaining.push(item);
+      }
+    }
+    return remaining;
+  }
+
   if (base.length === 1) {
     const s = base[0];
     const w = Math.max(1, s.weight ?? 1);
-    const done = Math.max(0, s.cycle_done ?? 0);
-    const isDone = isSubjectDoneToday(s, opts.exclusive);
-    const count = opts.remainingOnly ? (isDone ? 0 : Math.max(0, w - done)) : w;
-    return Array(count).fill(s);
+    return Array(w).fill(s);
   }
 
   const counts = new Map<string, number>();
@@ -463,11 +488,8 @@ export function buildInterleavedWeightedSequence<T extends Subject>(
 
   for (const s of base) {
     const w = Math.max(1, s.weight ?? 1);
-    const done = Math.max(0, s.cycle_done ?? 0);
-    const isDone = isSubjectDoneToday(s, opts.exclusive);
-    const count = opts.remainingOnly ? (isDone ? 0 : Math.max(0, w - done)) : w;
-    counts.set(s.id, count);
-    totalCount += count;
+    counts.set(s.id, w);
+    totalCount += w;
   }
 
   if (totalCount === 0) return [];
@@ -746,8 +768,10 @@ export function todayDateStr(): string {
 }
 
 /**
- * Resets every subject's status and cycle_done when a new calendar day starts.
- * Returns the (possibly mutated) subjects array and whether a reset occurred.
+ * Trata o ciclo na virada do dia:
+ * - Se o ciclo já estava 100% concluído para as matérias ativas, reseta os status para iniciar uma nova rodada limpa.
+ * - Se o ciclo estiver em andamento (matérias pendentes), preserva os status e cycle_done
+ *   para manter o ciclo contínuo entre dias (não joga o estudante de volta ao início).
  */
 export function resetDailyStatusIfNeeded<T extends Subject>(
   subjects: T[],
@@ -759,17 +783,25 @@ export function resetDailyStatusIfNeeded<T extends Subject>(
 
   if (stored === today) return { subjects, didReset: false };
 
-  // New day → reset all statuses
-  const resetted = subjects.map((s) => ({
-    ...s,
-    status: "prox" as const,
-    exclusive_status: "prox" as const,
-    cycle_done: 0,
-  }));
-
   localStorage.setItem(CYCLE_DATE_KEY, today);
-  localStorage.removeItem(CYCLE_ROUNDS_KEY);
-  return { subjects: resetted as T[], didReset: true };
+
+  const activeSubjects = subjects.filter((s) => s.active);
+  const allDone =
+    activeSubjects.length > 0 &&
+    activeSubjects.every((s) => isSubjectDoneToday(s));
+
+  if (allDone) {
+    const resetted = subjects.map((s) => ({
+      ...s,
+      status: "prox" as const,
+      exclusive_status: "prox" as const,
+      cycle_done: 0,
+    }));
+    localStorage.removeItem(CYCLE_ROUNDS_KEY);
+    return { subjects: resetted as T[], didReset: true };
+  }
+
+  return { subjects, didReset: false };
 }
 
 const CYCLE_ROUNDS_KEY = "foco_semanal_cycle_rounds_v1";
