@@ -420,6 +420,23 @@ function statusOnDay(s: Subject, day: number, all: Subject[]): SubjectStatus {
 }
 
 /**
+ * Verifica se a matéria concluiu todas as rodadas necessárias no ciclo de hoje.
+ * Se tiver peso > 1, só é considerada concluída quando cycle_done >= weight.
+ */
+export function isSubjectDoneToday(
+  s: Subject,
+  exclusiveCycle: boolean = false,
+): boolean {
+  const w = Math.max(1, s.weight ?? 1);
+  const done = Math.max(0, s.cycle_done ?? 0);
+  if (w > 1) {
+    return done >= w;
+  }
+  const st = exclusiveCycle ? (s.exclusive_status ?? "prox") : s.status;
+  return st === "ok" || done >= 1;
+}
+
+/**
  * Constrói uma sequência ponderada com intercalação inteligente (fair interleaving).
  * Evita repetições consecutivas da mesma matéria distribuindo as matérias de maior peso
  * proporcionalmente ao longo do ciclo.
@@ -436,9 +453,7 @@ export function buildInterleavedWeightedSequence<T extends Subject>(
     const s = base[0];
     const w = Math.max(1, s.weight ?? 1);
     const done = Math.max(0, s.cycle_done ?? 0);
-    const isDone = opts.exclusive
-      ? s.exclusive_status === "ok"
-      : s.status === "ok" || done >= w;
+    const isDone = isSubjectDoneToday(s, opts.exclusive);
     const count = opts.remainingOnly ? (isDone ? 0 : Math.max(0, w - done)) : w;
     return Array(count).fill(s);
   }
@@ -449,9 +464,7 @@ export function buildInterleavedWeightedSequence<T extends Subject>(
   for (const s of base) {
     const w = Math.max(1, s.weight ?? 1);
     const done = Math.max(0, s.cycle_done ?? 0);
-    const isDone = opts.exclusive
-      ? s.exclusive_status === "ok"
-      : s.status === "ok" || done >= w;
+    const isDone = isSubjectDoneToday(s, opts.exclusive);
     const count = opts.remainingOnly ? (isDone ? 0 : Math.max(0, w - done)) : w;
     counts.set(s.id, count);
     totalCount += count;

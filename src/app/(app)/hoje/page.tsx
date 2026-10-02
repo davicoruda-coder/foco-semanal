@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import { useApp } from "@/components/AppProvider";
 import { useStudyFlow } from "@/components/StudyFlowProvider";
-import { DAYS, ProgressTracker, RotationItem, Subject, SubjectRotation } from "@/lib/types";
+import { DAYS, ProgressTracker, RotationItem, Subject, SubjectRotation, SubjectStatus } from "@/lib/types";
 import {
   blockStyle,
   cycleStatusPresentation,
@@ -22,6 +22,7 @@ import {
   isExclusiveSoloDay,
   freeRowClass,
   formatSubjectFocusList,
+  isSubjectDoneToday,
   normalizeRotation,
   rotationJustStudied,
   buildWeightedCycleQueue,
@@ -142,15 +143,18 @@ export default function HojePage() {
       const inBlockA = activeBlockIds.indexOf(a.id);
       const inBlockB = activeBlockIds.indexOf(b.id);
 
-      const isDoneA = (exclusiveCycleToday ? a.exclusive_status : a.status) === "ok";
-      const isDoneB = (exclusiveCycleToday ? b.exclusive_status : b.status) === "ok";
+      const inSessionA = inBlockA !== -1;
+      const inSessionB = inBlockB !== -1;
 
-      // 0: Matérias do bloco em execução (em ordem do bloco: atual primeiro, depois as seguintes)
+      const isDoneA = isSubjectDoneToday(a, exclusiveCycleToday);
+      const isDoneB = isSubjectDoneToday(b, exclusiveCycleToday);
+
+      // 0: Matérias do bloco em execução ou preview (em ordem do bloco: atual primeiro, depois as seguintes)
       // 1: Demais matérias pendentes na fila geral
       // 2: Matérias livres standalone
       // 3: Matérias já concluídas
       const groupA =
-        !isDoneA && inBlockA !== -1
+        inSessionA
           ? 0
           : !isDoneA && queue.some((q) => q.id === a.id)
             ? 1
@@ -158,7 +162,7 @@ export default function HojePage() {
               ? 2
               : 3;
       const groupB =
-        !isDoneB && inBlockB !== -1
+        inSessionB
           ? 0
           : !isDoneB && queue.some((q) => q.id === b.id)
             ? 1
@@ -236,8 +240,8 @@ export default function HojePage() {
     let hd = 0;
     let hp = 0;
     hidden.forEach((s) => {
-      const displayStatus = exclusiveCycleToday ? (s.exclusive_status ?? "prox") : s.status;
-      if (displayStatus === "ok") hd++;
+      const isDone = isSubjectDoneToday(s, exclusiveCycleToday);
+      if (isDone) hd++;
       else hp++;
     });
 
@@ -410,12 +414,14 @@ export default function HojePage() {
                 const free = subjectTreatAsFree(s, day, data.subjects);
                 const libreInCycle = Boolean(s.is_free) && !free;
                 const rot = normalizeRotation(s.rotation);
-                const displayStatus = exclusiveCycleToday
-                  ? (s.exclusive_status ?? "prox")
-                  : s.status;
+                const inSessionOrPreview = flow.sessionActive
+                  ? flow.block.slice(flow.currentIndex).some((b) => b.id === s.id)
+                  : flow.previewBlock.some((p) => p.id === s.id);
                 const isCurrentSession =
                   flow.sessionActive && s.id === flow.currentSubjectId;
-                const isDone = displayStatus === "ok" && !isCurrentSession;
+                const isDoneToday = isSubjectDoneToday(s, exclusiveCycleToday);
+                const isDone = isDoneToday && !inSessionOrPreview;
+                const displayStatus: SubjectStatus = isDone ? "ok" : "prox";
                 const rotItem = rot
                   ? (isDone ? rotationJustStudied(rot) : rot.items[rot.index])
                   : null;
@@ -577,12 +583,14 @@ export default function HojePage() {
                     const free = subjectTreatAsFree(s, day, data.subjects);
                     const libreInCycle = Boolean(s.is_free) && !free;
                     const rot = normalizeRotation(s.rotation);
-                    const displayStatus = exclusiveCycleToday
-                      ? (s.exclusive_status ?? "prox")
-                      : s.status;
+                    const inSessionOrPreview = flow.sessionActive
+                      ? flow.block.slice(flow.currentIndex).some((b) => b.id === s.id)
+                      : flow.previewBlock.some((p) => p.id === s.id);
                     const isCurrentSession =
                       flow.sessionActive && s.id === flow.currentSubjectId;
-                    const isDone = displayStatus === "ok" && !isCurrentSession;
+                    const isDoneToday = isSubjectDoneToday(s, exclusiveCycleToday);
+                    const isDone = isDoneToday && !inSessionOrPreview;
+                    const displayStatus: SubjectStatus = isDone ? "ok" : "prox";
                     const rotItem = rot
                       ? (isDone ? rotationJustStudied(rot) : rot.items[rot.index])
                       : null;

@@ -90,6 +90,7 @@ export async function loadCloudData(
   dbHasWeight?: boolean;
   dbHasCycleDone?: boolean;
   didDailyReset?: boolean;
+  didSanitizeStatus?: boolean;
 }> {
   const [
     profileRes,
@@ -159,32 +160,53 @@ export async function loadCloudData(
 
   const defaults = createDefaultData();
 
-  const subjectsRaw: Subject[] = (subjectsRes.data ?? []).map((s) => ({
-    id: s.id,
-    name: s.name,
-    status: s.status === "ok" ? "ok" : "prox",
-    notes: s.notes ?? "",
-    cycle_order: s.cycle_order ?? 0,
-    active: s.active ?? true,
-    study_days: normalizeStudyDays(s.study_days as number[] | null | undefined),
-    exclusive_days: normalizeExclusiveDays(
-      s.exclusive_days as number[] | null | undefined,
-    ),
-    exclusive_status: s.exclusive_status === "ok" ? "ok" : "prox",
-    study_minutes: normalizeStudyMinutes(s.study_minutes, 25),
-    is_free: Boolean(s.is_free),
-    rotation: normalizeRotation(s.rotation),
-    icon: parseSubjectIcon(s.icon),
-    recursos: normalizeRecursos(s.recursos),
-    weight:
+  let didSanitizeStatus = false;
+  for (const s of (subjectsRes.data ?? []) as Record<string, unknown>[]) {
+    const w = typeof s.weight === "number" && s.weight >= 1 ? Math.floor(s.weight) : 1;
+    const cd = typeof s.cycle_done === "number" && s.cycle_done >= 0 ? Math.floor(s.cycle_done) : 0;
+    if (w > 1 && cd < w && (s.status === "ok" || s.exclusive_status === "ok")) {
+      didSanitizeStatus = true;
+      break;
+    }
+  }
+
+  const subjectsRaw: Subject[] = (subjectsRes.data ?? []).map((s) => {
+    const weight =
       typeof s.weight === "number" && s.weight >= 1
         ? Math.min(10, Math.floor(s.weight))
-        : 1,
-    cycle_done:
+        : 1;
+    const cycle_done =
       typeof s.cycle_done === "number" && s.cycle_done >= 0
         ? Math.floor(s.cycle_done)
-        : 0,
-  }));
+        : 0;
+    const rawStatus = s.status === "ok" ? "ok" : "prox";
+    const rawExclusiveStatus = s.exclusive_status === "ok" ? "ok" : "prox";
+    // Matéria com peso > 1 que não cumpriu todos os ciclos não pode estar Concluída
+    const status = weight > 1 && cycle_done < weight ? "prox" : rawStatus;
+    const exclusive_status =
+      weight > 1 && cycle_done < weight ? "prox" : rawExclusiveStatus;
+
+    return {
+      id: s.id,
+      name: s.name,
+      status,
+      notes: s.notes ?? "",
+      cycle_order: s.cycle_order ?? 0,
+      active: s.active ?? true,
+      study_days: normalizeStudyDays(s.study_days as number[] | null | undefined),
+      exclusive_days: normalizeExclusiveDays(
+        s.exclusive_days as number[] | null | undefined,
+      ),
+      exclusive_status,
+      study_minutes: normalizeStudyMinutes(s.study_minutes, 25),
+      is_free: Boolean(s.is_free),
+      rotation: normalizeRotation(s.rotation),
+      icon: parseSubjectIcon(s.icon),
+      recursos: normalizeRecursos(s.recursos),
+      weight,
+      cycle_done,
+    };
+  });
   const sorted: Subject[] = [...subjectsRaw]
     .sort((a, b) => {
       const byOrder = a.cycle_order - b.cycle_order;
@@ -289,6 +311,7 @@ export async function loadCloudData(
     dbHasWeight,
     dbHasCycleDone,
     didDailyReset,
+    didSanitizeStatus,
   };
 }
 

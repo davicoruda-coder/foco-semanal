@@ -84,35 +84,45 @@ export function loadDemoData(): AppData {
     const data = JSON.parse(raw) as AppData;
     // Migra status antigo "aguard" → "prox"; study_days ausente = todos os dias;
     // reindexa cycle_order para corrigir duplicatas legadas.
-    const subjectsRaw = (data.subjects ?? []).map((s) => ({
-      ...s,
-      status: (s.status === "ok" ? "ok" : "prox") as typeof s.status,
-      study_days: Array.isArray(s.study_days)
-        ? s.study_days.filter((d): d is number => typeof d === "number")
-        : null,
-      exclusive_days: normalizeExclusiveDays(
-        Array.isArray(s.exclusive_days)
-          ? s.exclusive_days.filter((d): d is number => typeof d === "number")
-          : null,
-      ),
-      exclusive_status: (s.exclusive_status === "ok" ? "ok" : "prox") as typeof s.status,
-      study_minutes:
-        typeof s.study_minutes === "number" && s.study_minutes >= 1
-          ? Math.min(999, Math.floor(s.study_minutes))
-          : 25,
-      is_free: Boolean(s.is_free),
-      rotation: normalizeRotation(s.rotation),
-      icon: parseSubjectIcon(s.icon),
-      recursos: normalizeRecursos(s.recursos),
-      weight:
+    const subjectsRaw = (data.subjects ?? []).map((s) => {
+      const weight =
         typeof s.weight === "number" && s.weight >= 1
           ? Math.min(10, Math.floor(s.weight))
-          : 1,
-      cycle_done:
+          : 1;
+      const cycle_done =
         typeof s.cycle_done === "number" && s.cycle_done >= 0
           ? Math.floor(s.cycle_done)
-          : 0,
-    }));
+          : 0;
+      const rawStatus = s.status === "ok" ? "ok" : "prox";
+      const rawExclusiveStatus = s.exclusive_status === "ok" ? "ok" : "prox";
+      const status = weight > 1 && cycle_done < weight ? "prox" : rawStatus;
+      const exclusive_status =
+        weight > 1 && cycle_done < weight ? "prox" : rawExclusiveStatus;
+
+      return {
+        ...s,
+        status: status as typeof s.status,
+        study_days: Array.isArray(s.study_days)
+          ? s.study_days.filter((d): d is number => typeof d === "number")
+          : null,
+        exclusive_days: normalizeExclusiveDays(
+          Array.isArray(s.exclusive_days)
+            ? s.exclusive_days.filter((d): d is number => typeof d === "number")
+            : null,
+        ),
+        exclusive_status: exclusive_status as typeof s.status,
+        study_minutes:
+          typeof s.study_minutes === "number" && s.study_minutes >= 1
+            ? Math.min(999, Math.floor(s.study_minutes))
+            : 25,
+        is_free: Boolean(s.is_free),
+        rotation: normalizeRotation(s.rotation),
+        icon: parseSubjectIcon(s.icon),
+        recursos: normalizeRecursos(s.recursos),
+        weight,
+        cycle_done,
+      };
+    });
     const sorted = [...subjectsRaw]
       .sort((a, b) => {
         const byOrder = (a.cycle_order ?? 0) - (b.cycle_order ?? 0);

@@ -43,6 +43,7 @@ import {
   normalizeRecursos,
   normalizeProgress,
   resetDailyStatusIfNeeded,
+  isSubjectDoneToday,
   incrementCycleRoundsToday,
   clearLastCycleCompletedSubjectId,
 } from "@/lib/utils";
@@ -311,8 +312,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setThemeState(resolveTheme(theme));
       applyTheme(resolveTheme(theme));
       localStorage.setItem(THEME_KEY, theme);
-      // Persist the daily reset or auto theme back to the cloud
-      const needsCloudSave = loaded.didDailyReset || (theme === "auto" && loaded.theme !== "auto");
+      // Persist the daily reset, sanitized status or auto theme back to the cloud
+      const needsCloudSave =
+        loaded.didDailyReset ||
+        loaded.didSanitizeStatus ||
+        (theme === "auto" && loaded.theme !== "auto");
       if (needsCloudSave) {
         void saveCloudData(supabase, uid, loaded.data, theme).catch(() => {});
       }
@@ -746,16 +750,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
             delete (patch as { exclusive_status?: SubjectStatus }).exclusive_status;
             return {
               ...prev,
-              subjects: prev.subjects.map((s) =>
-                s.id === subject.id
-                  ? {
-                      ...s,
-                      ...patch,
-                      status: s.status,
-                      exclusive_status: s.exclusive_status,
-                    }
-                  : s,
-              ),
+              subjects: prev.subjects.map((s) => {
+                if (s.id !== subject.id) return s;
+                const merged = { ...s, ...patch };
+                const w = Math.max(1, merged.weight ?? 1);
+                const cd = Math.max(0, merged.cycle_done ?? 0);
+                const fixStatus = w > 1 && cd < w && s.status === "ok";
+                const fixExclusive = w > 1 && cd < w && s.exclusive_status === "ok";
+                return {
+                  ...merged,
+                  status: fixStatus ? "prox" : s.status,
+                  exclusive_status: fixExclusive ? "prox" : s.exclusive_status,
+                };
+              }),
             };
           }
           const row: Subject = {
@@ -868,13 +875,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           const todayAfter = cycleSubjectsOnDay(updatedSubjects, day);
           const allCycleCompleted =
             todayAfter.length > 0 &&
-            todayAfter.every((s) => {
-              const w = Math.max(1, s.weight ?? 1);
-              const d = Math.max(0, s.cycle_done ?? 0);
-              return exclusiveCycle
-                ? s.exclusive_status === "ok"
-                : s.status === "ok" || d >= w;
-            });
+            todayAfter.every((s) => isSubjectDoneToday(s, exclusiveCycle));
 
           if (allCycleCompleted) {
             const nextRound = incrementCycleRoundsToday(id);
