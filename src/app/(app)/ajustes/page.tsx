@@ -1041,11 +1041,13 @@ function AlarmSettings() {
     startRepeats: 1,
     playOnTransition: true,
     transitionTone: "passo",
+    transitionRepeats: 1,
     playOnSessionEnd: true,
     sessionEndTone: "acorde",
     sessionEndRepeats: 2,
     playOnCycleEnd: true,
     cycleEndTone: "triunfo",
+    cycleEndRepeats: 1,
   });
 
   useEffect(() => {
@@ -1173,15 +1175,15 @@ function AlarmSettings() {
                   Repetições
                 </span>
                 <div className="mt-1 flex gap-1.5">
-                  {[1, 2].map((r) => {
-                    const active = (alarm.startRepeats ?? 1) === r;
+                  {REPEAT_OPTIONS.map(({ value, label }) => {
+                    const active = (alarm.startRepeats ?? 1) === value;
                     return (
                       <button
-                        key={r}
+                        key={value}
                         type="button"
                         onClick={() => {
-                          updateAlarm({ ...alarm, startRepeats: r as 1 | 2 });
-                          previewSessionStartTone(alarm.startTone, alarm.volume, r as 1 | 2);
+                          updateAlarm({ ...alarm, startRepeats: value as 1 | 2 | 3 });
+                          previewSessionStartTone(alarm.startTone, alarm.volume, value as 1 | 2 | 3);
                         }}
                         className={`rounded-full px-2.5 py-1 text-xs font-medium transition cursor-pointer ${
                           active
@@ -1189,7 +1191,7 @@ function AlarmSettings() {
                             : "bg-[color-mix(in_srgb,var(--ink)_6%,transparent)] text-[color-mix(in_srgb,var(--ink)_60%,transparent)] hover:text-[var(--ink)]"
                         }`}
                       >
-                        {r}x
+                        {label}
                       </button>
                     );
                   })}
@@ -1219,7 +1221,13 @@ function AlarmSettings() {
             <div className="flex items-center gap-2.5 shrink-0 self-end sm:self-center">
               <button
                 type="button"
-                onClick={() => previewTransitionTone(alarm.transitionTone, alarm.volume)}
+                onClick={() =>
+                  previewTransitionTone(
+                    alarm.transitionTone,
+                    alarm.volume,
+                    alarm.transitionRepeats,
+                  )
+                }
                 className="rounded-lg border border-[var(--line)] bg-[var(--surface)] px-2.5 py-1 text-xs font-medium text-[var(--ink)] hover:bg-[var(--mist)] transition cursor-pointer"
                 title="Ouvir toque de transição"
               >
@@ -1240,31 +1248,69 @@ function AlarmSettings() {
           </div>
 
           {(alarm.playOnTransition ?? true) && (
-            <div className="mt-3 pt-3 border-t border-[color-mix(in_srgb,var(--line)_55%,transparent)]">
-              <span className="text-xs font-medium text-[color-mix(in_srgb,var(--ink)_65%,transparent)]">
-                Toque
-              </span>
-              <div className="mt-1 flex flex-wrap gap-1.5">
-                {TRANSITION_TONES.map(({ id, label }) => {
-                  const active = (alarm.transitionTone ?? "passo") === id;
-                  return (
-                    <button
-                      key={id}
-                      type="button"
-                      onClick={() => {
-                        updateAlarm({ ...alarm, transitionTone: id });
-                        previewTransitionTone(id, alarm.volume);
-                      }}
-                      className={`rounded-full px-3 py-1 text-xs font-medium transition cursor-pointer ${
-                        active
-                          ? "bg-sky-500/15 text-sky-700 dark:text-sky-300 ring-1 ring-sky-500/30"
-                          : "bg-[color-mix(in_srgb,var(--ink)_6%,transparent)] text-[color-mix(in_srgb,var(--ink)_60%,transparent)] hover:text-[var(--ink)]"
-                      }`}
-                    >
-                      {label}
-                    </button>
-                  );
-                })}
+            <div className="mt-3 pt-3 border-t border-[color-mix(in_srgb,var(--line)_55%,transparent)] flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <span className="text-xs font-medium text-[color-mix(in_srgb,var(--ink)_65%,transparent)]">
+                  Toque
+                </span>
+                <div className="mt-1 flex flex-wrap gap-1.5">
+                  {TRANSITION_TONES.map(({ id, label }) => {
+                    const active = (alarm.transitionTone ?? "passo") === id;
+                    return (
+                      <button
+                        key={id}
+                        type="button"
+                        onClick={() => {
+                          updateAlarm({ ...alarm, transitionTone: id });
+                          previewTransitionTone(
+                            id,
+                            alarm.volume,
+                            alarm.transitionRepeats,
+                          );
+                        }}
+                        className={`rounded-full px-3 py-1 text-xs font-medium transition cursor-pointer ${
+                          active
+                            ? "bg-sky-500/15 text-sky-700 dark:text-sky-300 ring-1 ring-sky-500/30"
+                            : "bg-[color-mix(in_srgb,var(--ink)_6%,transparent)] text-[color-mix(in_srgb,var(--ink)_60%,transparent)] hover:text-[var(--ink)]"
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div>
+                <span className="text-xs font-medium text-[color-mix(in_srgb,var(--ink)_65%,transparent)]">
+                  Repetições
+                </span>
+                <div className="mt-1 flex gap-1.5">
+                  {REPEAT_OPTIONS.map(({ value, label }) => {
+                    const active = (alarm.transitionRepeats ?? 1) === value;
+                    return (
+                      <button
+                        key={value}
+                        type="button"
+                        onClick={() => {
+                          updateAlarm({ ...alarm, transitionRepeats: value as 1 | 2 | 3 });
+                          previewTransitionTone(
+                            alarm.transitionTone,
+                            alarm.volume,
+                            value as 1 | 2 | 3,
+                          );
+                        }}
+                        className={`rounded-full px-2.5 py-1 text-xs font-medium transition cursor-pointer ${
+                          active
+                            ? "bg-sky-500/15 text-sky-700 dark:text-sky-300 ring-1 ring-sky-500/30"
+                            : "bg-[color-mix(in_srgb,var(--ink)_6%,transparent)] text-[color-mix(in_srgb,var(--ink)_60%,transparent)] hover:text-[var(--ink)]"
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             </div>
           )}
@@ -1401,7 +1447,13 @@ function AlarmSettings() {
             <div className="flex items-center gap-2.5 shrink-0 self-end sm:self-center">
               <button
                 type="button"
-                onClick={() => previewCycleEndTone(alarm.cycleEndTone, alarm.volume)}
+                onClick={() =>
+                  previewCycleEndTone(
+                    alarm.cycleEndTone,
+                    alarm.volume,
+                    alarm.cycleEndRepeats,
+                  )
+                }
                 className="rounded-lg border border-[var(--line)] bg-[var(--surface)] px-2.5 py-1 text-xs font-medium text-[var(--ink)] hover:bg-[var(--mist)] transition cursor-pointer"
                 title="Ouvir celebração do ciclo"
               >
@@ -1422,31 +1474,69 @@ function AlarmSettings() {
           </div>
 
           {(alarm.playOnCycleEnd ?? true) && (
-            <div className="mt-3 pt-3 border-t border-[color-mix(in_srgb,var(--line)_55%,transparent)]">
-              <span className="text-xs font-medium text-[color-mix(in_srgb,var(--ink)_65%,transparent)]">
-                Toque de Celebração
-              </span>
-              <div className="mt-1 flex flex-wrap gap-1.5">
-                {CYCLE_END_TONES.map(({ id, label }) => {
-                  const active = (alarm.cycleEndTone ?? "triunfo") === id;
-                  return (
-                    <button
-                      key={id}
-                      type="button"
-                      onClick={() => {
-                        updateAlarm({ ...alarm, cycleEndTone: id });
-                        previewCycleEndTone(id, alarm.volume);
-                      }}
-                      className={`rounded-full px-3 py-1 text-xs font-medium transition cursor-pointer ${
-                        active
-                          ? "bg-amber-500/15 text-amber-700 dark:text-amber-300 ring-1 ring-amber-500/30"
-                          : "bg-[color-mix(in_srgb,var(--ink)_6%,transparent)] text-[color-mix(in_srgb,var(--ink)_60%,transparent)] hover:text-[var(--ink)]"
-                      }`}
-                    >
-                      {label}
-                    </button>
-                  );
-                })}
+            <div className="mt-3 pt-3 border-t border-[color-mix(in_srgb,var(--line)_55%,transparent)] flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <span className="text-xs font-medium text-[color-mix(in_srgb,var(--ink)_65%,transparent)]">
+                  Toque de Celebração
+                </span>
+                <div className="mt-1 flex flex-wrap gap-1.5">
+                  {CYCLE_END_TONES.map(({ id, label }) => {
+                    const active = (alarm.cycleEndTone ?? "triunfo") === id;
+                    return (
+                      <button
+                        key={id}
+                        type="button"
+                        onClick={() => {
+                          updateAlarm({ ...alarm, cycleEndTone: id });
+                          previewCycleEndTone(
+                            id,
+                            alarm.volume,
+                            alarm.cycleEndRepeats,
+                          );
+                        }}
+                        className={`rounded-full px-3 py-1 text-xs font-medium transition cursor-pointer ${
+                          active
+                            ? "bg-amber-500/15 text-amber-700 dark:text-amber-300 ring-1 ring-amber-500/30"
+                            : "bg-[color-mix(in_srgb,var(--ink)_6%,transparent)] text-[color-mix(in_srgb,var(--ink)_60%,transparent)] hover:text-[var(--ink)]"
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div>
+                <span className="text-xs font-medium text-[color-mix(in_srgb,var(--ink)_65%,transparent)]">
+                  Repetições
+                </span>
+                <div className="mt-1 flex gap-1.5">
+                  {REPEAT_OPTIONS.map(({ value, label }) => {
+                    const active = (alarm.cycleEndRepeats ?? 1) === value;
+                    return (
+                      <button
+                        key={value}
+                        type="button"
+                        onClick={() => {
+                          updateAlarm({ ...alarm, cycleEndRepeats: value as 1 | 2 | 3 });
+                          previewCycleEndTone(
+                            alarm.cycleEndTone,
+                            alarm.volume,
+                            value as 1 | 2 | 3,
+                          );
+                        }}
+                        className={`rounded-full px-2.5 py-1 text-xs font-medium transition cursor-pointer ${
+                          active
+                            ? "bg-amber-500/15 text-amber-700 dark:text-amber-300 ring-1 ring-amber-500/30"
+                            : "bg-[color-mix(in_srgb,var(--ink)_6%,transparent)] text-[color-mix(in_srgb,var(--ink)_60%,transparent)] hover:text-[var(--ink)]"
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             </div>
           )}

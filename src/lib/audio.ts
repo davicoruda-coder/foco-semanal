@@ -18,11 +18,12 @@ export type AlarmPrefs = {
   /** 1. Início da Sessão (Play) */
   playOnStart?: boolean;
   startTone?: StartToneId;
-  startRepeats?: 1 | 2;
+  startRepeats?: 1 | 2 | 3;
 
   /** 2. Transição de Matéria (de uma para outra) */
   playOnTransition?: boolean;
   transitionTone?: TransitionToneId;
+  transitionRepeats?: 1 | 2 | 3;
 
   /** 3. Fim da Sessão (Bloco concluído) */
   playOnSessionEnd?: boolean;
@@ -32,6 +33,7 @@ export type AlarmPrefs = {
   /** 4. Fim do Ciclo (100% concluído) */
   playOnCycleEnd?: boolean;
   cycleEndTone?: CycleEndToneId;
+  cycleEndRepeats?: 1 | 2 | 3;
 };
 
 export const ALARM_TONES: { id: AlarmToneId; label: string }[] = [
@@ -83,6 +85,7 @@ const DEFAULT_PREFS: AlarmPrefs = {
 
   playOnTransition: true,
   transitionTone: "passo",
+  transitionRepeats: 1,
 
   playOnSessionEnd: true,
   sessionEndTone: "acorde",
@@ -90,6 +93,7 @@ const DEFAULT_PREFS: AlarmPrefs = {
 
   playOnCycleEnd: true,
   cycleEndTone: "triunfo",
+  cycleEndRepeats: 1,
 };
 
 export function loadAlarmPrefs(): AlarmPrefs {
@@ -119,7 +123,9 @@ export function loadAlarmPrefs(): AlarmPrefs {
         ? parsed.startTone
         : DEFAULT_PREFS.startTone;
     const startRepeats =
-      parsed.startRepeats === 1 || parsed.startRepeats === 2 ? parsed.startRepeats : DEFAULT_PREFS.startRepeats;
+      parsed.startRepeats === 1 || parsed.startRepeats === 2 || parsed.startRepeats === 3
+        ? parsed.startRepeats
+        : DEFAULT_PREFS.startRepeats;
 
     const playOnTransition =
       typeof parsed.playOnTransition === "boolean" ? parsed.playOnTransition : DEFAULT_PREFS.playOnTransition;
@@ -127,6 +133,10 @@ export function loadAlarmPrefs(): AlarmPrefs {
       parsed.transitionTone === "passo" || parsed.transitionTone === "chime" || parsed.transitionTone === "sutil"
         ? parsed.transitionTone
         : DEFAULT_PREFS.transitionTone;
+    const transitionRepeats =
+      parsed.transitionRepeats === 1 || parsed.transitionRepeats === 2 || parsed.transitionRepeats === 3
+        ? parsed.transitionRepeats
+        : DEFAULT_PREFS.transitionRepeats;
 
     const playOnSessionEnd =
       typeof parsed.playOnSessionEnd === "boolean" ? parsed.playOnSessionEnd : DEFAULT_PREFS.playOnSessionEnd;
@@ -145,6 +155,10 @@ export function loadAlarmPrefs(): AlarmPrefs {
       parsed.cycleEndTone === "triunfo" || parsed.cycleEndTone === "celebracao" || parsed.cycleEndTone === "fanfarra"
         ? parsed.cycleEndTone
         : DEFAULT_PREFS.cycleEndTone;
+    const cycleEndRepeats =
+      parsed.cycleEndRepeats === 1 || parsed.cycleEndRepeats === 2 || parsed.cycleEndRepeats === 3
+        ? parsed.cycleEndRepeats
+        : DEFAULT_PREFS.cycleEndRepeats;
 
     return {
       volume,
@@ -155,11 +169,13 @@ export function loadAlarmPrefs(): AlarmPrefs {
       startRepeats,
       playOnTransition,
       transitionTone,
+      transitionRepeats,
       playOnSessionEnd,
       sessionEndTone,
       sessionEndRepeats,
       playOnCycleEnd,
       cycleEndTone,
+      cycleEndRepeats,
     };
   } catch {
     return { ...DEFAULT_PREFS };
@@ -437,18 +453,21 @@ export function playTransitionTone(opts?: Partial<AlarmPrefs>) {
   if (prefs.playOnTransition === false) return;
   const tone = prefs.transitionTone ?? "passo";
   const notes = notesForTransitionTone(tone);
-  playSynthSound(notes, 1, 0.5, prefs.volume * 0.85);
+  const reps = prefs.transitionRepeats ?? 1;
+  playSynthSound(notes, reps, 0.65, prefs.volume * 0.85);
 }
 
 export function previewTransitionTone(
   tone?: TransitionToneId,
   volume?: number,
+  repeats?: number,
 ) {
   const prefs = loadAlarmPrefs();
   const t = tone ?? prefs.transitionTone ?? "passo";
   const v = volume !== undefined ? volume : prefs.volume;
+  const r = repeats ?? prefs.transitionRepeats ?? 1;
   const notes = notesForTransitionTone(t);
-  playSynthSound(notes, 1, 0.5, v * 0.85);
+  playSynthSound(notes, r, 0.65, v * 0.85);
 }
 
 /** 3. Toca o som ao finalizar a sessão de estudos (bloco concluído) */
@@ -480,18 +499,21 @@ export function playCycleEndTone(opts?: Partial<AlarmPrefs>) {
   if (prefs.playOnCycleEnd === false) return;
   const tone = prefs.cycleEndTone ?? "triunfo";
   const notes = notesForCycleEndTone(tone);
-  playSynthSound(notes, 1, 1.4, prefs.volume * 0.95);
+  const reps = prefs.cycleEndRepeats ?? 1;
+  playSynthSound(notes, reps, 1.4, prefs.volume * 0.95);
 }
 
 export function previewCycleEndTone(
   tone?: CycleEndToneId,
   volume?: number,
+  repeats?: number,
 ) {
   const prefs = loadAlarmPrefs();
   const t = tone ?? prefs.cycleEndTone ?? "triunfo";
   const v = volume !== undefined ? volume : prefs.volume;
+  const r = repeats ?? prefs.cycleEndRepeats ?? 1;
   const notes = notesForCycleEndTone(t);
-  playSynthSound(notes, 1, 1.4, v * 0.95);
+  playSynthSound(notes, r, 1.4, v * 0.95);
 }
 
 /** Alarme genérico de temporizadores e lembretes */
