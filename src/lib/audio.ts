@@ -198,8 +198,8 @@ export function previewAlarmTone(tone: AlarmToneId, volume: number, repeats?: nu
 }
 
 /**
- * Toca um chime suave e relaxante ao iniciar/retomar a sessão de estudos.
- * Harmonioso, acolhedor e com decaimento suave.
+ * Toca um chime suave, limpo e harmonioso ao iniciar/retomar a sessão de estudos.
+ * Acolhedor, relaxante e audível com clareza.
  */
 export function playSessionStartTone(opts?: Partial<AlarmPrefs>) {
   if (typeof window === "undefined") return;
@@ -214,35 +214,44 @@ export function playSessionStartTone(opts?: Partial<AlarmPrefs>) {
     if (!AudioContextClass) return;
 
     const ctx = new AudioContextClass();
-    if (ctx.state === "suspended") {
-      void ctx.resume();
-    }
 
-    const master = ctx.createGain();
-    // Chime suave: volume escalado para ~45% do alarme principal para ser sereno e não assustar
-    const vol = Math.max(0, Math.min(1, prefs.volume)) * 0.45;
-    master.gain.setValueAtTime(vol, ctx.currentTime);
-
-    const limiter = createLimiter(ctx);
-    master.connect(limiter);
-    limiter.connect(ctx.destination);
-
-    // Acorde aberto e meditativo (A4 -> E5 -> B5), com envelope macio
-    const notes: Note[] = [
-      { freq: 440.0, start: 0, dur: 0.28, peak: 0.24, type: "sine" },
-      { freq: 659.25, start: 0.08, dur: 0.34, peak: 0.28, type: "sine" },
-      { freq: 987.77, start: 0.16, dur: 0.48, peak: 0.3, type: "sine" },
-    ];
-
-    scheduleNotes(ctx, master, notes, 0);
-
-    window.setTimeout(() => {
+    const play = () => {
       try {
-        void ctx.close();
+        const master = ctx.createGain();
+        // Volume equilibrado: audível, nítido e sereno (escala de acordo com o volume configurado)
+        const vol = Math.max(0.05, Math.min(1, prefs.volume)) * 0.85;
+        master.gain.setValueAtTime(vol, ctx.currentTime);
+
+        const limiter = createLimiter(ctx);
+        master.connect(limiter);
+        limiter.connect(ctx.destination);
+
+        // Chime meditativo e harmônico em tríade luminosa (A4 -> E5 -> B5) com envelope suave
+        const notes: Note[] = [
+          { freq: 440.0, start: 0, dur: 0.35, peak: 0.55, type: "sine" },
+          { freq: 659.25, start: 0.08, dur: 0.42, peak: 0.58, type: "sine" },
+          { freq: 987.77, start: 0.16, dur: 0.60, peak: 0.60, type: "sine" },
+        ];
+
+        scheduleNotes(ctx, master, notes, 0);
+
+        window.setTimeout(() => {
+          try {
+            void ctx.close();
+          } catch {
+            /* ignore */
+          }
+        }, 1200);
       } catch {
         /* ignore */
       }
-    }, 750);
+    };
+
+    if (ctx.state === "suspended") {
+      ctx.resume().then(play).catch(play);
+    } else {
+      play();
+    }
   } catch {
     /* ignore */
   }

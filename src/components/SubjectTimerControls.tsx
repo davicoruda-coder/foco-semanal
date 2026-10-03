@@ -3,6 +3,7 @@
 import { Pause, Play, RotateCcw } from "lucide-react";
 import { useStudyFlow } from "@/components/StudyFlowProvider";
 import { useTimerRuntime } from "@/components/TimerRuntimeProvider";
+import { playSessionStartTone } from "@/lib/audio";
 
 function formatTime(totalSeconds: number) {
   const m = Math.floor(totalSeconds / 60);
@@ -76,6 +77,9 @@ export function SubjectTimerControls({
         disabled={!playAllowed}
         onClick={() => {
           if (!playAllowed) return;
+          if (!running) {
+            playSessionStartTone();
+          }
           toggleSubjectTimer(subjectId);
         }}
         title={
