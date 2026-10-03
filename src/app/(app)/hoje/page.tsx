@@ -451,32 +451,32 @@ export default function HojePage() {
                     }`}
                   >
                     <div className="flex items-start justify-between gap-2.5">
-                      <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2.5 gap-y-1.5">
-                        <span className="inline-flex min-w-0 items-center gap-2.5">
-                          <SubjectIcon name={s.name} icon={s.icon} size={32} />
+                      <div className="flex min-w-0 flex-1 items-start gap-2.5">
+                        <SubjectIcon name={s.name} icon={s.icon} size={32} />
+                        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2.5 gap-y-1">
                           <p className="min-w-0 text-base font-semibold leading-snug">
                             {s.name}
                           </p>
-                        </span>
-                        {(s.weight ?? 1) > 1 && (
-                          <span
-                            className="rounded-full border border-[color-mix(in_srgb,var(--signal)_35%,transparent)] bg-[color-mix(in_srgb,var(--signal)_12%,transparent)] px-2 py-0.5 text-[11px] font-semibold text-[var(--signal)]"
-                            title={`Ciclo ponderado: ${Math.min(s.cycle_done ?? 0, s.weight ?? 1)} de ${s.weight} concluídos`}
-                          >
-                            {Math.min(s.cycle_done ?? 0, s.weight ?? 1)}/{s.weight}
-                          </span>
-                        )}
-                        {libreInCycle && (
-                          <span className="rounded-full bg-[var(--signal-soft)] px-2 py-0.5 text-[11px] font-medium text-[var(--signal)]">
-                            Livre
-                          </span>
-                        )}
-                        {rotItem && (
-                          <span className="rounded-full bg-[var(--signal-soft)] px-2.5 py-1 text-xs font-medium text-[var(--signal)]">
-                            {rotItem.name}
-                          </span>
-                        )}
-                        <SessionSubjectClock subjectId={s.id} compact />
+                          <SessionSubjectClock subjectId={s.id} compact />
+                          {(s.weight ?? 1) > 1 && (
+                            <span
+                              className="rounded-full border border-[color-mix(in_srgb,var(--signal)_35%,transparent)] bg-[color-mix(in_srgb,var(--signal)_12%,transparent)] px-2 py-0.5 text-[11px] font-semibold text-[var(--signal)]"
+                              title={`Ciclo ponderado: ${Math.min(s.cycle_done ?? 0, s.weight ?? 1)} de ${s.weight} concluídos`}
+                            >
+                              {Math.min(s.cycle_done ?? 0, s.weight ?? 1)}/{s.weight}
+                            </span>
+                          )}
+                          {libreInCycle && (
+                            <span className="rounded-full bg-[var(--signal-soft)] px-2 py-0.5 text-[11px] font-medium text-[var(--signal)]">
+                              Livre
+                            </span>
+                          )}
+                          {rotItem && (
+                            <span className="rounded-full bg-[var(--signal-soft)] px-2.5 py-1 text-xs font-medium text-[var(--signal)]">
+                              {rotItem.name}
+                            </span>
+                          )}
+                        </div>
                       </div>
                       {!free && statusUi && (
                         <span
@@ -561,7 +561,7 @@ export default function HojePage() {
             <div className="hidden lg:block">
               <table className="w-full table-fixed border-separate border-spacing-0 text-left">
                 <colgroup>
-                  <col className="w-[30%]" />
+                  <col className="w-[38%]" />
                   <col className="w-[7.25rem]" />
                   <col />
                 </colgroup>
@@ -626,30 +626,30 @@ export default function HojePage() {
                         <td
                           className={`break-words px-4 py-3.5 align-middle text-base font-medium leading-snug ${rowBorder}`}
                         >
-                          <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
-                            <span className="inline-flex min-w-0 items-center gap-3">
-                              <SubjectIcon name={s.name} icon={s.icon} size={32} />
+                          <div className="flex items-center gap-3">
+                            <SubjectIcon name={s.name} icon={s.icon} size={32} />
+                            <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2.5 gap-y-1">
                               <span className="min-w-0">{s.name}</span>
-                            </span>
-                            {(s.weight ?? 1) > 1 && (
-                              <span
-                                className="rounded-full border border-[color-mix(in_srgb,var(--signal)_35%,transparent)] bg-[color-mix(in_srgb,var(--signal)_12%,transparent)] px-2 py-0.5 text-[11px] font-semibold text-[var(--signal)]"
-                                title={`Ciclo ponderado: ${Math.min(s.cycle_done ?? 0, s.weight ?? 1)} de ${s.weight} concluídos`}
-                              >
-                                {Math.min(s.cycle_done ?? 0, s.weight ?? 1)}/{s.weight}
-                              </span>
-                            )}
-                            {libreInCycle && (
-                              <span className="rounded-full bg-[var(--signal-soft)] px-2 py-0.5 text-[11px] font-medium text-[var(--signal)]">
-                                Livre
-                              </span>
-                            )}
-                            {rotItem && (
-                              <span className="rounded-full bg-[var(--signal-soft)] px-2 py-0.5 text-[11px] font-medium text-[var(--signal)]">
-                                {rotItem.name}
-                              </span>
-                            )}
-                            <SessionSubjectClock subjectId={s.id} />
+                              <SessionSubjectClock subjectId={s.id} />
+                              {(s.weight ?? 1) > 1 && (
+                                <span
+                                  className="rounded-full border border-[color-mix(in_srgb,var(--signal)_35%,transparent)] bg-[color-mix(in_srgb,var(--signal)_12%,transparent)] px-2 py-0.5 text-[11px] font-semibold text-[var(--signal)]"
+                                  title={`Ciclo ponderado: ${Math.min(s.cycle_done ?? 0, s.weight ?? 1)} de ${s.weight} concluídos`}
+                                >
+                                  {Math.min(s.cycle_done ?? 0, s.weight ?? 1)}/{s.weight}
+                                </span>
+                              )}
+                              {libreInCycle && (
+                                <span className="rounded-full bg-[var(--signal-soft)] px-2 py-0.5 text-[11px] font-medium text-[var(--signal)]">
+                                  Livre
+                                </span>
+                              )}
+                              {rotItem && (
+                                <span className="rounded-full bg-[var(--signal-soft)] px-2 py-0.5 text-[11px] font-medium text-[var(--signal)]">
+                                  {rotItem.name}
+                                </span>
+                              )}
+                            </div>
                           </div>
                         </td>
                         <td
