@@ -12,7 +12,14 @@ import {
 } from "react";
 import { useApp } from "@/components/AppProvider";
 import { useTimerRuntime } from "@/components/TimerRuntimeProvider";
-import { notify, playAlarmTone, playSessionStartTone } from "@/lib/audio";
+import {
+  notify,
+  playAlarmTone,
+  playCycleEndTone,
+  playSessionEndTone,
+  playSessionStartTone,
+  playTransitionTone,
+} from "@/lib/audio";
 import {
   blockTotalMinutes,
   formatBlockSummary,
@@ -491,12 +498,12 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
     advancingRef.current = true;
     const nextIdx = idx + 1;
     if (nextIdx < subjects.length) {
-      playAlarmTone();
+      playTransitionTone();
       notify("FocoHub", `${current.name} concluída — anote se quiser`);
       setPhase("subject_notes");
       advancingRef.current = false;
     } else {
-      playAlarmTone();
+      playSessionEndTone();
       notify(
         "FocoHub",
         `Bloco concluído · ${blockTotalMinutes(subjects)} min`,
@@ -581,6 +588,7 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
       const detail = (ev as CustomEvent<{ round: number }>).detail;
       const round = detail?.round ?? 1;
       setCycleRoundCompleted(round);
+      playCycleEndTone();
     }
 
     window.addEventListener(SUBJECT_COMPLETE_EVENT, onComplete);
