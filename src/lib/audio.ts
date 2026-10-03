@@ -9,6 +9,8 @@ export type AlarmPrefs = {
   volume: number;
   tone: AlarmToneId;
   repeats: number;
+  /** Toca um som suave ao iniciar/retomar a sessão de estudos */
+  playOnStart?: boolean;
 };
 
 export const ALARM_TONES: { id: AlarmToneId; label: string }[] = [
@@ -23,7 +25,12 @@ export const ALARM_REPEATS: { value: number; label: string }[] = [
   { value: 3, label: "3x" },
 ];
 
-const DEFAULT_PREFS: AlarmPrefs = { volume: 0.7, tone: "acorde", repeats: 3 };
+const DEFAULT_PREFS: AlarmPrefs = {
+  volume: 0.7,
+  tone: "acorde",
+  repeats: 3,
+  playOnStart: true,
+};
 
 export function loadAlarmPrefs(): AlarmPrefs {
   if (typeof window === "undefined") return { ...DEFAULT_PREFS };
@@ -45,7 +52,11 @@ export function loadAlarmPrefs(): AlarmPrefs {
       typeof parsed.repeats === "number" && (parsed.repeats === 1 || parsed.repeats === 2 || parsed.repeats === 3)
         ? parsed.repeats
         : DEFAULT_PREFS.repeats;
-    return { volume, tone, repeats };
+    const playOnStart =
+      typeof parsed.playOnStart === "boolean"
+        ? parsed.playOnStart
+        : DEFAULT_PREFS.playOnStart;
+    return { volume, tone, repeats, playOnStart };
   } catch {
     return { ...DEFAULT_PREFS };
   }
@@ -60,6 +71,7 @@ export function saveAlarmPrefs(prefs: AlarmPrefs) {
         volume: Math.min(1, Math.max(0, prefs.volume)),
         tone: prefs.tone,
         repeats: [1, 2, 3].includes(prefs.repeats) ? prefs.repeats : DEFAULT_PREFS.repeats,
+        playOnStart: prefs.playOnStart !== false,
       }),
     );
   } catch {
@@ -183,6 +195,65 @@ export function playAlarmTone(opts?: Partial<AlarmPrefs>) {
 /** Prévia com toque/volume/repetições explícitos (botão Ouvir). */
 export function previewAlarmTone(tone: AlarmToneId, volume: number, repeats?: number) {
   playAlarmTone({ tone, volume, repeats });
+}
+
+/**
+ * Toca um chime suave e relaxante ao iniciar/retomar a sessão de estudos.
+ * Harmonioso, acolhedor e com decaimento suave.
+ */
+export function playSessionStartTone(opts?: Partial<AlarmPrefs>) {
+  if (typeof window === "undefined") return;
+  try {
+    const prefs = { ...loadAlarmPrefs(), ...opts };
+    if (prefs.playOnStart === false) return;
+    if (prefs.volume <= 0) return;
+
+    const AudioContextClass =
+      window.AudioContext ||
+      (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+    if (!AudioContextClass) return;
+
+    const ctx = new AudioContextClass();
+    if (ctx.state === "suspended") {
+      void ctx.resume();
+    }
+
+    const master = ctx.createGain();
+    // Chime suave: volume escalado para ~45% do alarme principal para ser sereno e não assustar
+    const vol = Math.max(0, Math.min(1, prefs.volume)) * 0.45;
+    master.gain.setValueAtTime(vol, ctx.currentTime);
+
+    const limiter = createLimiter(ctx);
+    master.connect(limiter);
+    limiter.connect(ctx.destination);
+
+    // Acorde aberto e meditativo (A4 -> E5 -> B5), com envelope macio
+    const notes: Note[] = [
+      { freq: 440.0, start: 0, dur: 0.28, peak: 0.24, type: "sine" },
+      { freq: 659.25, start: 0.08, dur: 0.34, peak: 0.28, type: "sine" },
+      { freq: 987.77, start: 0.16, dur: 0.48, peak: 0.3, type: "sine" },
+    ];
+
+    scheduleNotes(ctx, master, notes, 0);
+
+    window.setTimeout(() => {
+      try {
+        void ctx.close();
+      } catch {
+        /* ignore */
+      }
+    }, 750);
+  } catch {
+    /* ignore */
+  }
+}
+
+/** Prévia explícita do som suave de início de sessão. */
+export function previewSessionStartTone(volume?: number) {
+  playSessionStartTone({
+    playOnStart: true,
+    volume: volume !== undefined ? volume : loadAlarmPrefs().volume,
+  });
 }
 
 export async function ensureNotificationPermission() {

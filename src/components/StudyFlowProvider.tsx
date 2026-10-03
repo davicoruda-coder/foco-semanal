@@ -12,7 +12,7 @@ import {
 } from "react";
 import { useApp } from "@/components/AppProvider";
 import { useTimerRuntime } from "@/components/TimerRuntimeProvider";
-import { notify, playAlarmTone } from "@/lib/audio";
+import { notify, playAlarmTone, playSessionStartTone } from "@/lib/audio";
 import {
   blockTotalMinutes,
   formatBlockSummary,
@@ -383,6 +383,7 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
     setPhase("running");
     setRestEndsAt(null);
     startSubjectAt(0, packed);
+    playSessionStartTone();
   }, [data.subjects, settings, startSubjectAt, resetCycleToday, setSubjectStatus]);
 
   const pauseSession = useCallback(() => {
@@ -401,6 +402,7 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
     if (current && !isClockRunning(current.id, current.is_free)) {
       toggleSubjectTimer(current.id);
     }
+    playSessionStartTone();
   }, [isClockRunning, toggleSubjectTimer]);
 
   const resetSession = useCallback(() => {
@@ -429,6 +431,7 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
     if (wasRunning) {
       setPhase("running");
       window.setTimeout(() => startSubjectAt(0, subjects), 80);
+      playSessionStartTone();
     } else {
       setPhase("paused");
     }
@@ -532,6 +535,7 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
       advancingRef.current = false;
       addSubjectTimerSeconds(current.id, seconds);
       setPhase("running");
+      playSessionStartTone();
     },
     [reopenSubjectForExtraTime, addSubjectTimerSeconds],
   );
@@ -550,6 +554,7 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
     setCurrentIndex(nextIdx);
     setPhase("running");
     startSubjectAt(nextIdx, subjects);
+    playSessionStartTone();
   }, [startSubjectAt]);
 
   const endRestEarly = useCallback(() => {

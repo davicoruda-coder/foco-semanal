@@ -35,6 +35,7 @@ import {
   ensureNotificationPermission,
   loadAlarmPrefs,
   previewAlarmTone,
+  previewSessionStartTone,
   saveAlarmPrefs,
   type AlarmPrefs,
   type AlarmToneId,
@@ -1019,6 +1020,7 @@ function AlarmSettings() {
     volume: 0.7,
     tone: "acorde",
     repeats: 3,
+    playOnStart: true,
   });
 
   useEffect(() => {
@@ -1033,12 +1035,45 @@ function AlarmSettings() {
   return (
     <section className="surface mt-4 p-4 md:p-5">
       <h2 className="font-display text-base font-semibold tracking-tight md:text-lg">
-        Alarme
+        Sons e Alarme
       </h2>
       <p className="mt-1 text-xs text-[color-mix(in_srgb,var(--ink)_75%,transparent)] sm:text-sm leading-relaxed">
-        Vale para o fim das matérias na sessão, blocos, descanso e lembretes com sino neste
-        aparelho.
+        Vale para o início e término das matérias na sessão, blocos, descanso e lembretes com sino neste aparelho.
       </p>
+
+      {/* Som ao iniciar / retomar sessão */}
+      <div className="mt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-xl border border-[color-mix(in_srgb,var(--line)_70%,transparent)] bg-[var(--mist)]/40 p-3.5">
+        <div className="min-w-0 pr-2">
+          <span className="text-sm font-medium text-[var(--ink)]">
+            Som suave ao iniciar sessão
+          </span>
+          <p className="mt-0.5 text-xs text-[color-mix(in_srgb,var(--ink)_65%,transparent)] leading-relaxed">
+            Toca um toque sereno quando você dá play ou retoma a sessão, confirmando o início da contagem.
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2.5 shrink-0 self-end sm:self-center">
+          <button
+            type="button"
+            onClick={() => previewSessionStartTone(alarm.volume)}
+            className="rounded-lg border border-[var(--line)] bg-[var(--surface)] px-2.5 py-1 text-xs font-medium text-[var(--ink)] hover:bg-[var(--mist)] transition cursor-pointer"
+            title="Ouvir som suave de início"
+          >
+            Testar
+          </button>
+          <label className="relative inline-flex cursor-pointer items-center shrink-0">
+            <input
+              type="checkbox"
+              checked={alarm.playOnStart ?? true}
+              onChange={(e) =>
+                updateAlarm({ ...alarm, playOnStart: e.target.checked })
+              }
+              className="peer sr-only"
+            />
+            <div className="peer h-6 w-11 rounded-full bg-[var(--line)] after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-[var(--signal)] peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none" />
+          </label>
+        </div>
+      </div>
 
       <label className="mt-4 flex items-center gap-3">
         <Volume2 size={18} strokeWidth={1.75} className="shrink-0 opacity-60" />
@@ -1061,7 +1096,7 @@ function AlarmSettings() {
         </span>
       </label>
 
-      <p className="mt-4 text-sm font-medium opacity-70">Toque</p>
+      <p className="mt-4 text-sm font-medium opacity-70">Toque do alarme</p>
       <div className="mt-2 flex flex-wrap gap-1.5">
         {ALARM_TONES.map(({ id, label }) => {
           const active = alarm.tone === id;
@@ -1082,7 +1117,7 @@ function AlarmSettings() {
         })}
       </div>
 
-      <p className="mt-4 text-sm font-medium opacity-70">Repetições</p>
+      <p className="mt-4 text-sm font-medium opacity-70">Repetições do alarme</p>
       <div className="mt-2 flex flex-wrap gap-1.5">
         {ALARM_REPEATS.map(({ value, label }) => {
           const active = (alarm.repeats ?? 3) === value;
@@ -1105,10 +1140,10 @@ function AlarmSettings() {
 
       <button
         type="button"
-        className="btn mt-4"
+        className="btn mt-4 cursor-pointer"
         onClick={() => previewAlarmTone(alarm.tone, alarm.volume, alarm.repeats)}
       >
-        Ouvir
+        Ouvir alarme
       </button>
     </section>
   );
