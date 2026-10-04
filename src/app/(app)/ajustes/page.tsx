@@ -88,7 +88,7 @@ const SETTINGS_TABS = [
   {
     id: "aparencia",
     label: "Aparência & Som",
-    shortLabel: "Aparência",
+    shortLabel: "Aparência & Som",
     desc: "Tema e notificações sonoras",
     icon: Palette,
   },
@@ -489,13 +489,13 @@ export default function AjustesPage() {
                     key={id}
                     type="button"
                     onClick={() => handleTabChange(id)}
-                    className={`flex items-center justify-center gap-1.5 rounded-lg px-2 py-2 text-xs font-semibold transition ${
+                    className={`flex items-center justify-center gap-1 sm:gap-1.5 rounded-lg px-1 sm:px-2 py-2 text-[11px] sm:text-xs font-semibold transition ${
                       active
                         ? "bg-[var(--surface)] text-[var(--signal)] shadow-sm"
                         : "text-[color-mix(in_srgb,var(--ink)_65%,transparent)] hover:text-[var(--ink)]"
                     }`}
                   >
-                    <Icon size={16} strokeWidth={active ? 2.25 : 1.75} className="shrink-0" />
+                    <Icon size={15} strokeWidth={active ? 2.25 : 1.75} className="shrink-0" />
                     <span className="sm:hidden truncate">{shortLabel}</span>
                     <span className="hidden sm:inline whitespace-nowrap">{label}</span>
                   </button>
