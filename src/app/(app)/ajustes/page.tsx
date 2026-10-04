@@ -489,14 +489,14 @@ export default function AjustesPage() {
                     key={id}
                     type="button"
                     onClick={() => handleTabChange(id)}
-                    className={`flex items-center justify-center gap-1 sm:gap-1.5 rounded-lg px-1 sm:px-2 py-2 text-[11px] sm:text-xs font-semibold transition ${
+                    className={`flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 rounded-lg px-0.5 sm:px-2 py-1.5 sm:py-2 text-[10.5px] sm:text-xs font-semibold transition ${
                       active
                         ? "bg-[var(--surface)] text-[var(--signal)] shadow-sm"
                         : "text-[color-mix(in_srgb,var(--ink)_65%,transparent)] hover:text-[var(--ink)]"
                     }`}
                   >
-                    <Icon size={15} strokeWidth={active ? 2.25 : 1.75} className="shrink-0" />
-                    <span className="sm:hidden truncate">{shortLabel}</span>
+                    <Icon size={16} strokeWidth={active ? 2.25 : 1.75} className="shrink-0 sm:size-4" />
+                    <span className="sm:hidden tracking-tight whitespace-nowrap">{shortLabel}</span>
                     <span className="hidden sm:inline whitespace-nowrap">{label}</span>
                   </button>
                 );
