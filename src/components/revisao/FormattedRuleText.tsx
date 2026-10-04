@@ -14,9 +14,11 @@ export function FormattedRuleText({
   text,
   className = "text-sm font-medium text-[var(--ink)] leading-relaxed",
 }: FormattedRuleTextProps) {
-  if (!text) return null;
+  if (text == null) return null;
+  const safeText = typeof text === "string" ? text : String(text);
+  if (!safeText.trim()) return null;
 
-  const lines = text.split("\n");
+  const lines = safeText.split("\n");
   const isDividerOnly = (line: string) => /^[=\-_*~#]{3,}$/.test(line.trim());
 
   return (

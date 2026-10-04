@@ -85,5 +85,7 @@ export function corNivelDominio(nivel: NivelDominio): string {
       return "var(--signal, #3b82f6)";
     case 3:
       return "var(--success, #22c55e)";
+    default:
+      return "var(--signal, #3b82f6)";
   }
 }

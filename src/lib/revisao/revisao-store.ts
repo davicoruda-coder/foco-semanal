@@ -26,15 +26,22 @@ async function getAuthedClient(): Promise<{
   userId: string;
 } | null> {
   if (!isSupabaseConfigured()) return null;
-  const { createClient } = await import("@/lib/supabase/client");
-  const supabase = createClient();
-  const { data, error } = await supabase.auth.getUser();
-  if (error || !data.user) return null;
-  return { supabase, userId: data.user.id };
+  try {
+    const { createClient } = await import("@/lib/supabase/client");
+    const supabase = createClient();
+    const { data, error } = await supabase.auth.getUser();
+    if (error || !data.user) return null;
+    return { supabase, userId: data.user.id };
+  } catch (err) {
+    console.warn("[revisao] getAuthedClient auth error:", err);
+    return null;
+  }
 }
 
 function assertOk(label: string, error: { message: string } | null) {
-  if (error) throw new Error(`[revisao] ${label}: ${error.message}`);
+  if (error) {
+    console.warn(`[revisao] ${label}: ${error.message}`);
+  }
 }
 
 /** Valida que URL começa com http(s):// — rejeita base64 e blobs. */
@@ -57,7 +64,7 @@ function clampText(text: string | undefined, max: number): string {
 
 function gerarFlashcard(
   q: QuickCapturePayload,
-  questaoId: string,
+  _questaoId?: string,
 ): { frente: string; verso: string } {
   const bancaTag = q.banca ? `[${q.banca}] ` : "";
   const assuntoTag = q.assunto ? `${q.disciplina} › ${q.assunto}` : q.disciplina;

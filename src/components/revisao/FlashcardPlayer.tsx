@@ -41,9 +41,12 @@ export function FlashcardPlayer({
   }, [cards, flashcardsDoDia]);
 
   const deck = sessionDeck;
-  const currentCard = deck[currentIndex];
+  const currentCard =
+    Array.isArray(deck) && currentIndex >= 0 && currentIndex < deck.length
+      ? deck[currentIndex]
+      : undefined;
 
-  if (!deck || deck.length === 0 || currentIndex >= deck.length) {
+  if (!deck || deck.length === 0 || currentIndex >= deck.length || !currentCard) {
     return (
       <div className="rounded-[var(--radius)] border border-[var(--line)] bg-[var(--surface)] p-8 text-center">
         <div className="mx-auto mb-3 flex size-12 items-center justify-center rounded-full bg-[var(--signal-soft)] text-[var(--signal)]">
@@ -74,9 +77,13 @@ export function FlashcardPlayer({
     try {
       await responderFlashcard(
         currentCard.id,
-        currentCard.nivel_dominio,
+        currentCard.nivel_dominio ?? 0,
         resposta,
       );
+      setIsFlipped(false);
+      setCurrentIndex((prev) => prev + 1);
+    } catch (err) {
+      console.warn("[FlashcardPlayer] erro ao responder:", err);
       setIsFlipped(false);
       setCurrentIndex((prev) => prev + 1);
     } finally {
@@ -145,9 +152,9 @@ export function FlashcardPlayer({
         <div className="flex items-center gap-2">
           <span
             className="rounded-full px-2 py-0.5 text-[10px] font-semibold text-white shadow-xs"
-            style={{ backgroundColor: corNivelDominio(currentCard.nivel_dominio) }}
+            style={{ backgroundColor: corNivelDominio(currentCard.nivel_dominio ?? 0) }}
           >
-            Nível {currentCard.nivel_dominio}
+            Nível {currentCard.nivel_dominio ?? 0}
           </span>
           <button
             type="button"
@@ -191,7 +198,7 @@ export function FlashcardPlayer({
               Desafio / Enunciado
             </span>
             <FormattedRuleText
-              text={currentCard.frente}
+              text={currentCard.frente || ""}
               className="text-base font-medium text-[var(--ink)] leading-relaxed"
             />
           </div>
@@ -201,7 +208,7 @@ export function FlashcardPlayer({
             <span className="text-xs font-semibold uppercase tracking-wider text-[var(--ok,#16a34a)]">
               Regra Chave & Resolução
             </span>
-            <FormattedRuleText text={currentCard.verso} />
+            <FormattedRuleText text={currentCard.verso || ""} />
           </div>
         )}
       </div>

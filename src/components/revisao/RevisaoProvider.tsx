@@ -18,6 +18,7 @@ import type {
   MateriaRevisao,
   AIGeneratedCard,
 } from "@/lib/revisao/types";
+import * as revisaoStore from "@/lib/revisao/revisao-store";
 import type { RevisaoStats } from "@/lib/revisao/revisao-store";
 import { useApp } from "@/components/AppProvider";
 import { normalizeRotation } from "@/lib/utils";
@@ -189,31 +190,31 @@ export function RevisaoProvider({ children }: { children: ReactNode }) {
     const map = new Map<string, MateriaRevisao>();
 
     // 1. Matérias manuais salvas em Revisão
-    for (const m of materias) {
-      const nome = m.nome.trim();
+    for (const m of materias || []) {
+      const nome = typeof m?.nome === "string" ? m.nome.trim() : "";
       const key = nome.toLowerCase();
       if (nome && !hiddenNames.has(key) && !map.has(key)) {
-        map.set(key, m);
+        map.set(key, { ...m, nome });
       }
     }
 
     // 2. Matérias e disciplinas do sistema (FocoHub)
-    for (const s of appData.subjects) {
-      const rot = normalizeRotation(s.rotation);
-      if (rot && rot.items.length > 0) {
+    for (const s of appData?.subjects || []) {
+      const rot = normalizeRotation(s?.rotation);
+      if (rot && Array.isArray(rot.items) && rot.items.length > 0) {
         for (const it of rot.items) {
-          const nome = it.name.trim();
+          const nome = typeof it?.name === "string" ? it.name.trim() : "";
           const key = nome.toLowerCase();
           if (nome && !hiddenNames.has(key) && !map.has(key)) {
             map.set(key, {
-              id: `sys-rot-${it.id}`,
+              id: `sys-rot-${it.id || key}`,
               nome,
               created_at: new Date().toISOString(),
             });
           }
         }
         // Se a matéria pai com rodízio não tiver nome genérico ("revisão", "ciclo", "rodízio")
-        const parentNome = s.name.trim();
+        const parentNome = typeof s?.name === "string" ? s.name.trim() : "";
         const parentKey = parentNome.toLowerCase();
         if (
           parentNome &&
@@ -226,17 +227,17 @@ export function RevisaoProvider({ children }: { children: ReactNode }) {
           !map.has(parentKey)
         ) {
           map.set(parentKey, {
-            id: `sys-sub-${s.id}`,
+            id: `sys-sub-${s.id || parentKey}`,
             nome: parentNome,
             created_at: new Date().toISOString(),
           });
         }
       } else {
-        const nome = s.name.trim();
+        const nome = typeof s?.name === "string" ? s.name.trim() : "";
         const key = nome.toLowerCase();
         if (nome && !hiddenNames.has(key) && !map.has(key)) {
           map.set(key, {
-            id: `sys-sub-${s.id}`,
+            id: `sys-sub-${s?.id || key}`,
             nome,
             created_at: new Date().toISOString(),
           });
@@ -245,8 +246,8 @@ export function RevisaoProvider({ children }: { children: ReactNode }) {
     }
 
     // 3. Disciplinas de questões já registradas no caderno
-    for (const q of questoes) {
-      const nome = q.disciplina?.trim();
+    for (const q of questoes || []) {
+      const nome = typeof q?.disciplina === "string" ? q.disciplina.trim() : "";
       if (nome) {
         const key = nome.toLowerCase();
         if (!hiddenNames.has(key) && !map.has(key)) {
@@ -260,31 +261,37 @@ export function RevisaoProvider({ children }: { children: ReactNode }) {
     }
 
     // 4. Disciplinas de flashcards (manuais, IA ou tira-dúvidas)
-    for (const f of allFlashcards) {
-      const nome = f.disciplina?.trim() || f.questao?.disciplina?.trim();
+    for (const f of allFlashcards || []) {
+      const rawNome =
+        typeof f?.disciplina === "string"
+          ? f.disciplina
+          : typeof f?.questao?.disciplina === "string"
+            ? f.questao.disciplina
+            : "";
+      const nome = rawNome.trim();
       if (nome) {
         const key = nome.toLowerCase();
         if (!hiddenNames.has(key) && !map.has(key)) {
           map.set(key, {
             id: `fc-${key}`,
             nome,
-            created_at: f.created_at || new Date().toISOString(),
+            created_at: f?.created_at || new Date().toISOString(),
           });
         }
       }
     }
 
     return Array.from(map.values()).sort((a, b) =>
-      a.nome.localeCompare(b.nome, "pt-BR"),
+      (a?.nome || "").localeCompare(b?.nome || "", "pt-BR"),
     );
-  }, [materias, appData.subjects, questoes, allFlashcards, hiddenNames]);
+  }, [materias, appData?.subjects, questoes, allFlashcards, hiddenNames]);
 
   /* ---- Boot: carregar perfil ---- */
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
-        const store = await import("@/lib/revisao/revisao-store");
+        const store = revisaoStore;
         const p = await store.ensurePerfil();
         if (!cancelled) setPerfil(p);
       } catch (err) {
@@ -302,7 +309,7 @@ export function RevisaoProvider({ children }: { children: ReactNode }) {
   const reloadQuestoes = useCallback(async (filters?: CadernoFilters) => {
     setQuestoesLoading(true);
     try {
-      const store = await import("@/lib/revisao/revisao-store");
+      const store = revisaoStore;
       const data = await store.listQuestoes(filters);
       setQuestoes(data);
     } catch (err) {
@@ -315,7 +322,7 @@ export function RevisaoProvider({ children }: { children: ReactNode }) {
   const handleAddQuestao = useCallback(
     async (payload: QuickCapturePayload): Promise<boolean> => {
       try {
-        const store = await import("@/lib/revisao/revisao-store");
+        const store = revisaoStore;
         const result = await store.addQuestao(payload);
         if (result) {
           setQuestoes((prev) => [result.questao, ...prev]);
@@ -340,7 +347,7 @@ export function RevisaoProvider({ children }: { children: ReactNode }) {
       updates: Partial<QuickCapturePayload>,
     ): Promise<boolean> => {
       try {
-        const store = await import("@/lib/revisao/revisao-store");
+        const store = revisaoStore;
         await store.updateQuestao(id, updates);
         setQuestoes((prev) =>
           prev.map((q) => (q.id === id ? { ...q, ...updates } : q)),
@@ -356,7 +363,7 @@ export function RevisaoProvider({ children }: { children: ReactNode }) {
 
   const handleDeleteQuestao = useCallback(async (id: string) => {
     try {
-      const store = await import("@/lib/revisao/revisao-store");
+      const store = revisaoStore;
       await store.deleteQuestao(id);
       setQuestoes((prev) => prev.filter((q) => q.id !== id));
       setFlashcardsDoDia((prev) => prev.filter((f) => f.questao_id !== id));
@@ -369,7 +376,7 @@ export function RevisaoProvider({ children }: { children: ReactNode }) {
   const reloadFlashcards = useCallback(async () => {
     setFlashcardsLoading(true);
     try {
-      const store = await import("@/lib/revisao/revisao-store");
+      const store = revisaoStore;
       const [dia, todos] = await Promise.all([
         store.getFlashcardsDoDia(),
         store.listFlashcards(),
@@ -398,7 +405,7 @@ export function RevisaoProvider({ children }: { children: ReactNode }) {
   const reloadMaterias = useCallback(async () => {
     setMateriasLoading(true);
     try {
-      const store = await import("@/lib/revisao/revisao-store");
+      const store = revisaoStore;
       const list = await store.listMateriasRevisao();
       setMaterias(list);
     } catch (err) {
@@ -418,7 +425,7 @@ export function RevisaoProvider({ children }: { children: ReactNode }) {
       return next;
     });
     try {
-      const store = await import("@/lib/revisao/revisao-store");
+      const store = revisaoStore;
       const nova = await store.addMateriaRevisao(trimmed);
       if (nova) {
         setMaterias((prev) =>
@@ -444,7 +451,7 @@ export function RevisaoProvider({ children }: { children: ReactNode }) {
         });
       }
       try {
-        const store = await import("@/lib/revisao/revisao-store");
+        const store = revisaoStore;
         await store.deleteMateriaRevisao(id);
         setMaterias((prev) => prev.filter((m) => m.id !== id));
       } catch (err) {
@@ -465,7 +472,7 @@ export function RevisaoProvider({ children }: { children: ReactNode }) {
       resposta: "errei" | "dificil" | "bom" | "facil",
     ) => {
       try {
-        const store = await import("@/lib/revisao/revisao-store");
+        const store = revisaoStore;
         await store.responderFlashcard(id, nivelAtual, resposta);
         // Remove do deck do dia (foi respondido)
         setFlashcardsDoDia((prev) => prev.filter((f) => f.id !== id));
@@ -482,7 +489,7 @@ export function RevisaoProvider({ children }: { children: ReactNode }) {
       updates: { frente?: string; verso?: string },
     ): Promise<boolean> => {
       try {
-        const store = await import("@/lib/revisao/revisao-store");
+        const store = revisaoStore;
         const ok = await store.updateFlashcard(id, updates);
         if (ok) {
           setAllFlashcards((prev) =>
@@ -504,7 +511,7 @@ export function RevisaoProvider({ children }: { children: ReactNode }) {
   const handleDeleteFlashcard = useCallback(
     async (id: string): Promise<boolean> => {
       try {
-        const store = await import("@/lib/revisao/revisao-store");
+        const store = revisaoStore;
         const ok = await store.deleteFlashcard(id);
         if (ok) {
           setAllFlashcards((prev) => prev.filter((f) => f.id !== id));
@@ -527,7 +534,7 @@ export function RevisaoProvider({ children }: { children: ReactNode }) {
       questaoId?: string,
     ): Promise<Flashcard | null> => {
       try {
-        const store = await import("@/lib/revisao/revisao-store");
+        const store = revisaoStore;
         const card = await store.addFlashcardManual(disciplina, frente, verso, questaoId);
         if (card) {
           setAllFlashcards((prev) => [card, ...prev]);
@@ -545,7 +552,7 @@ export function RevisaoProvider({ children }: { children: ReactNode }) {
   /* ---- Stats ---- */
   const reloadStats = useCallback(async () => {
     try {
-      const store = await import("@/lib/revisao/revisao-store");
+      const store = revisaoStore;
       const s = await store.getRevisaoStats();
       setStats(s);
     } catch (err) {
@@ -556,7 +563,7 @@ export function RevisaoProvider({ children }: { children: ReactNode }) {
   /* ---- Module toggle ---- */
   const handleSetModuloAtivo = useCallback(async (ativo: boolean) => {
     try {
-      const store = await import("@/lib/revisao/revisao-store");
+      const store = revisaoStore;
       await store.setModuloAtivo("revisao", ativo);
       setPerfil((prev) =>
         prev

@@ -18,6 +18,7 @@ import { useApp } from "@/components/AppProvider";
 import { LoginScreen } from "@/components/LoginScreen";
 import { UserAccountMenu } from "@/components/UserAccountMenu";
 import { useOpenTransition } from "@/lib/use-open-transition";
+import { getFlashcardsCountDoDia } from "@/lib/revisao/revisao-store";
 
 /** Desktop: navegação central de trabalho (workflow diário). */
 const DESKTOP_PRIMARY_TABS = [
@@ -177,9 +178,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     let isMounted = true;
     const fetchCount = async () => {
       try {
-        const { getFlashcardsCountDoDia } = await import(
-          "@/lib/revisao/revisao-store"
-        );
         const count = await getFlashcardsCountDoDia();
         if (isMounted) setPendingFlashcardsCount(count);
       } catch (err) {

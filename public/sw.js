@@ -1,5 +1,5 @@
 /* Foco Semanal — service worker (demo / PWA) */
-const CACHE = "foco-semanal-v10";
+const CACHE = "foco-semanal-v11";
 const PRECACHE = [
   "/icons/icon-192.png",
   "/icons/icon-512.png",
@@ -33,9 +33,13 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
 
-  // Navegação autenticada: sempre rede (sem cache de HTML).
+  // Navegação autenticada: sempre tenta rede primeiro, com fallback seguro para não quebrar a tela
   if (request.mode === "navigate") {
-    event.respondWith(fetch(request));
+    event.respondWith(
+      fetch(request).catch(() =>
+        caches.match(request).then((res) => res || caches.match("/hoje") || fetch(request)),
+      ),
+    );
     return;
   }
 
@@ -43,17 +47,19 @@ self.addEventListener("fetch", (event) => {
     caches.match(request).then(
       (cached) =>
         cached ||
-        fetch(request).then((res) => {
-          if (
-            res.ok &&
-            (url.pathname.startsWith("/_next/") ||
-              url.pathname.startsWith("/icons/"))
-          ) {
-            const copy = res.clone();
-            caches.open(CACHE).then((c) => c.put(request, copy));
-          }
-          return res;
-        }),
+        fetch(request)
+          .then((res) => {
+            if (
+              res.ok &&
+              (url.pathname.startsWith("/_next/") ||
+                url.pathname.startsWith("/icons/"))
+            ) {
+              const copy = res.clone();
+              caches.open(CACHE).then((c) => c.put(request, copy));
+            }
+            return res;
+          })
+          .catch(() => cached || new Response("", { status: 408, statusText: "Offline" })),
     ),
   );
 });

@@ -69,6 +69,7 @@ export function FlashcardDeckList() {
 
   /* Se um deck estiver ativo, renderiza o Player focado */
   if (activeDeck) {
+    const activeCards = Array.isArray(activeDeck.cards) ? activeDeck.cards : [];
     return (
       <div className="space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
@@ -83,18 +84,18 @@ export function FlashcardDeckList() {
             <ArrowLeft size={16} /> Voltar para lista de Decks
           </button>
           <div className="text-xs font-semibold text-[color-mix(in_srgb,var(--ink)_60%,transparent)] uppercase tracking-wider">
-            Deck: <span className="text-[var(--ink)] font-bold">{activeDeck.title}</span> ({activeDeck.cards.length} {activeDeck.cards.length === 1 ? "card" : "cards"})
+            Deck: <span className="text-[var(--ink)] font-bold">{activeDeck.title}</span> ({activeCards.length} {activeCards.length === 1 ? "card" : "cards"})
           </div>
         </div>
 
         <FlashcardPlayer
-          cards={activeDeck.cards}
+          cards={activeCards}
           onCardDeleted={(deletedId) => {
             setActiveDeck((prev) => {
               if (!prev) return null;
               return {
                 ...prev,
-                cards: prev.cards.filter((c) => c.id !== deletedId),
+                cards: (prev.cards || []).filter((c) => c.id !== deletedId),
               };
             });
           }}
@@ -291,21 +292,22 @@ export function FlashcardDeckList() {
         ) : (
           <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-3">
             {materias.map((materia) => {
-              const materiaNomeLower = materia.nome.toLowerCase();
+              const materiaNome = typeof materia?.nome === "string" ? materia.nome : "";
+              const materiaNomeLower = materiaNome.toLowerCase();
 
               // Cards de hoje desta matéria (caderno ou IA)
-              const cardsHoje = flashcardsDoDia.filter(
-                (c) =>
-                  c.questao?.disciplina?.toLowerCase() === materiaNomeLower ||
-                  c.disciplina?.toLowerCase() === materiaNomeLower,
-              );
+              const cardsHoje = (flashcardsDoDia || []).filter((c) => {
+                const discQ = typeof c?.questao?.disciplina === "string" ? c.questao.disciplina.toLowerCase() : "";
+                const discF = typeof c?.disciplina === "string" ? c.disciplina.toLowerCase() : "";
+                return (discQ && discQ === materiaNomeLower) || (discF && discF === materiaNomeLower);
+              });
 
               // Todos os cards desta matéria (caderno ou IA)
-              const cardsTotal = allFlashcards.filter(
-                (c) =>
-                  c.questao?.disciplina?.toLowerCase() === materiaNomeLower ||
-                  c.disciplina?.toLowerCase() === materiaNomeLower,
-              );
+              const cardsTotal = (allFlashcards || []).filter((c) => {
+                const discQ = typeof c?.questao?.disciplina === "string" ? c.questao.disciplina.toLowerCase() : "";
+                const discF = typeof c?.disciplina === "string" ? c.disciplina.toLowerCase() : "";
+                return (discQ && discQ === materiaNomeLower) || (discF && discF === materiaNomeLower);
+              });
 
               const hasCardsHoje = cardsHoje.length > 0;
               const hasTotalCards = cardsTotal.length > 0;

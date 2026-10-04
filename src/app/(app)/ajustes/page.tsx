@@ -25,6 +25,7 @@ import {
   Trophy,
   Upload,
   Volume2,
+  VolumeX,
 } from "lucide-react";
 import { useApp } from "@/components/AppProvider";
 import { AccessManagement } from "@/components/AccessManagement";
@@ -1059,6 +1060,11 @@ function AlarmSettings() {
     saveAlarmPrefs(next);
   }
 
+  const isPlayStart = alarm.playOnStart ?? true;
+  const isPlayTransition = alarm.playOnTransition ?? true;
+  const isPlaySessionEnd = alarm.playOnSessionEnd ?? true;
+  const isPlayCycleEnd = alarm.playOnCycleEnd ?? true;
+
   return (
     <section className="surface mt-4 p-4 md:p-5">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
@@ -1099,16 +1105,36 @@ function AlarmSettings() {
       {/* Grid de Eventos Sonoros */}
       <div className="mt-4 space-y-3.5">
         {/* 1. Play da Sessão */}
-        <div className="rounded-xl border border-[color-mix(in_srgb,var(--line)_70%,transparent)] bg-[var(--mist)]/30 p-3.5 sm:p-4">
+        <div
+          className={`rounded-xl border transition-all p-3.5 sm:p-4 ${
+            isPlayStart
+              ? "border-[color-mix(in_srgb,var(--line)_70%,transparent)] bg-[var(--mist)]/30"
+              : "border-[color-mix(in_srgb,var(--line)_50%,transparent)] bg-[var(--mist)]/15 opacity-90"
+          }`}
+        >
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div className="flex items-start gap-3 min-w-0 pr-2">
-              <span className="mt-0.5 grid size-7 shrink-0 place-items-center rounded-lg bg-[var(--signal-soft)] text-[var(--signal)]">
+              <span
+                className={`mt-0.5 grid size-7 shrink-0 place-items-center rounded-lg transition-colors ${
+                  isPlayStart
+                    ? "bg-[var(--signal-soft)] text-[var(--signal)]"
+                    : "bg-[color-mix(in_srgb,var(--ink)_8%,transparent)] text-[color-mix(in_srgb,var(--ink)_45%,transparent)]"
+                }`}
+              >
                 <Play size={13} fill="currentColor" strokeWidth={0} />
               </span>
               <div>
-                <span className="text-sm font-semibold text-[var(--ink)]">
-                  Play da Sessão
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-semibold text-[var(--ink)]">
+                    Play da Sessão
+                  </span>
+                  {!isPlayStart && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-[color-mix(in_srgb,var(--ink)_8%,transparent)] px-2 py-0.5 text-[10px] font-medium text-[color-mix(in_srgb,var(--ink)_55%,transparent)]">
+                      <VolumeX size={10} strokeWidth={2.2} />
+                      Silencioso
+                    </span>
+                  )}
+                </div>
                 <p className="mt-0.5 text-xs text-[color-mix(in_srgb,var(--ink)_65%,transparent)] leading-relaxed">
                   Toque suave ao iniciar ou retomar a sessão, confirmando sonoramente o início da contagem.
                 </p>
@@ -1118,21 +1144,33 @@ function AlarmSettings() {
             <div className="flex items-center gap-2.5 shrink-0 self-end sm:self-center">
               <button
                 type="button"
+                disabled={!isPlayStart}
                 onClick={() =>
                   previewSessionStartTone(alarm.startTone, alarm.volume, alarm.startRepeats)
                 }
-                className="rounded-lg border border-[var(--line)] bg-[var(--surface)] px-2.5 py-1 text-xs font-medium text-[var(--ink)] hover:bg-[var(--mist)] transition cursor-pointer"
-                title="Ouvir som de play da sessão"
+                className={`rounded-lg border px-2.5 py-1 text-xs font-medium transition ${
+                  isPlayStart
+                    ? "border-[var(--line)] bg-[var(--surface)] text-[var(--ink)] hover:bg-[var(--mist)] cursor-pointer"
+                    : "border-[color-mix(in_srgb,var(--line)_50%,transparent)] bg-[var(--surface)]/50 text-[color-mix(in_srgb,var(--ink)_35%,transparent)] cursor-not-allowed"
+                }`}
+                title={isPlayStart ? "Ouvir som de play da sessão" : "Som desativado para este evento"}
               >
                 Testar
               </button>
-              <label className="relative inline-flex cursor-pointer items-center shrink-0">
+              <label
+                className="relative inline-flex cursor-pointer items-center shrink-0"
+                title={isPlayStart ? "Desativar som do Play da Sessão" : "Ativar som do Play da Sessão"}
+              >
                 <input
                   type="checkbox"
-                  checked={alarm.playOnStart ?? true}
-                  onChange={(e) =>
-                    updateAlarm({ ...alarm, playOnStart: e.target.checked })
-                  }
+                  checked={isPlayStart}
+                  onChange={(e) => {
+                    const checked = e.target.checked;
+                    updateAlarm({ ...alarm, playOnStart: checked });
+                    if (checked) {
+                      previewSessionStartTone(alarm.startTone, alarm.volume, alarm.startRepeats);
+                    }
+                  }}
                   className="peer sr-only"
                 />
                 <div className="peer h-6 w-11 rounded-full bg-[var(--line)] after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-[var(--signal)] peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none" />
@@ -1140,78 +1178,116 @@ function AlarmSettings() {
             </div>
           </div>
 
-          {(alarm.playOnStart ?? true) && (
-            <div className="mt-3 pt-3 border-t border-[color-mix(in_srgb,var(--line)_55%,transparent)] flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <span className="text-xs font-medium text-[color-mix(in_srgb,var(--ink)_65%,transparent)]">
-                  Toque
-                </span>
-                <div className="mt-1 flex flex-wrap gap-1.5">
-                  {START_TONES.map(({ id, label }) => {
-                    const active = (alarm.startTone ?? "zen") === id;
-                    return (
-                      <button
-                        key={id}
-                        type="button"
-                        onClick={() => {
-                          updateAlarm({ ...alarm, startTone: id });
-                          previewSessionStartTone(id, alarm.volume, alarm.startRepeats);
-                        }}
-                        className={`rounded-full px-3 py-1 text-xs font-medium transition cursor-pointer ${
-                          active
-                            ? "bg-[var(--signal-soft)] text-[var(--signal)] ring-1 ring-[color-mix(in_srgb,var(--signal)_40%,transparent)]"
-                            : "bg-[color-mix(in_srgb,var(--ink)_6%,transparent)] text-[color-mix(in_srgb,var(--ink)_60%,transparent)] hover:text-[var(--ink)]"
-                        }`}
-                      >
-                        {label}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
+          <div className="mt-3 pt-3 border-t border-[color-mix(in_srgb,var(--line)_55%,transparent)] flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <span className="text-xs font-medium text-[color-mix(in_srgb,var(--ink)_65%,transparent)]">
+                Toque
+              </span>
+              <div className="mt-1 flex flex-wrap gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => updateAlarm({ ...alarm, playOnStart: false })}
+                  className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition cursor-pointer ${
+                    !isPlayStart
+                      ? "bg-[color-mix(in_srgb,var(--ink)_14%,transparent)] text-[var(--ink)] ring-1 ring-[color-mix(in_srgb,var(--ink)_28%,transparent)] font-semibold shadow-xs"
+                      : "bg-[color-mix(in_srgb,var(--ink)_6%,transparent)] text-[color-mix(in_srgb,var(--ink)_60%,transparent)] hover:text-[var(--ink)]"
+                  }`}
+                  title="Desativar som neste evento"
+                >
+                  <VolumeX size={12} strokeWidth={2} />
+                  <span>Sem som</span>
+                </button>
 
-              <div>
-                <span className="text-xs font-medium text-[color-mix(in_srgb,var(--ink)_65%,transparent)]">
-                  Repetições
-                </span>
-                <div className="mt-1 flex gap-1.5">
-                  {REPEAT_OPTIONS.map(({ value, label }) => {
-                    const active = (alarm.startRepeats ?? 1) === value;
-                    return (
-                      <button
-                        key={value}
-                        type="button"
-                        onClick={() => {
-                          updateAlarm({ ...alarm, startRepeats: value as 1 | 2 | 3 });
-                          previewSessionStartTone(alarm.startTone, alarm.volume, value as 1 | 2 | 3);
-                        }}
-                        className={`rounded-full px-2.5 py-1 text-xs font-medium transition cursor-pointer ${
-                          active
-                            ? "bg-[var(--signal-soft)] text-[var(--signal)] ring-1 ring-[color-mix(in_srgb,var(--signal)_40%,transparent)]"
-                            : "bg-[color-mix(in_srgb,var(--ink)_6%,transparent)] text-[color-mix(in_srgb,var(--ink)_60%,transparent)] hover:text-[var(--ink)]"
-                        }`}
-                      >
-                        {label}
-                      </button>
-                    );
-                  })}
-                </div>
+                {START_TONES.map(({ id, label }) => {
+                  const active = isPlayStart && (alarm.startTone ?? "zen") === id;
+                  return (
+                    <button
+                      key={id}
+                      type="button"
+                      onClick={() => {
+                        updateAlarm({ ...alarm, playOnStart: true, startTone: id });
+                        previewSessionStartTone(id, alarm.volume, alarm.startRepeats);
+                      }}
+                      className={`rounded-full px-3 py-1 text-xs font-medium transition cursor-pointer ${
+                        active
+                          ? "bg-[var(--signal-soft)] text-[var(--signal)] ring-1 ring-[color-mix(in_srgb,var(--signal)_40%,transparent)] font-semibold"
+                          : "bg-[color-mix(in_srgb,var(--ink)_6%,transparent)] text-[color-mix(in_srgb,var(--ink)_60%,transparent)] hover:text-[var(--ink)]"
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
               </div>
             </div>
-          )}
+
+            <div
+              className={`transition-opacity ${
+                !isPlayStart ? "opacity-35 pointer-events-none select-none" : ""
+              }`}
+              title={!isPlayStart ? "Repetições desativadas enquanto o som estiver mudo" : undefined}
+            >
+              <span className="text-xs font-medium text-[color-mix(in_srgb,var(--ink)_65%,transparent)]">
+                Repetições
+              </span>
+              <div className="mt-1 flex gap-1.5">
+                {REPEAT_OPTIONS.map(({ value, label }) => {
+                  const active = isPlayStart && (alarm.startRepeats ?? 1) === value;
+                  return (
+                    <button
+                      key={value}
+                      type="button"
+                      disabled={!isPlayStart}
+                      onClick={() => {
+                        updateAlarm({ ...alarm, startRepeats: value as 1 | 2 | 3 });
+                        previewSessionStartTone(alarm.startTone, alarm.volume, value as 1 | 2 | 3);
+                      }}
+                      className={`rounded-full px-2.5 py-1 text-xs font-medium transition cursor-pointer ${
+                        active
+                          ? "bg-[var(--signal-soft)] text-[var(--signal)] ring-1 ring-[color-mix(in_srgb,var(--signal)_40%,transparent)]"
+                          : "bg-[color-mix(in_srgb,var(--ink)_6%,transparent)] text-[color-mix(in_srgb,var(--ink)_60%,transparent)] hover:text-[var(--ink)]"
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* 2. Transição de Matéria */}
-        <div className="rounded-xl border border-[color-mix(in_srgb,var(--line)_70%,transparent)] bg-[var(--mist)]/30 p-3.5 sm:p-4">
+        <div
+          className={`rounded-xl border transition-all p-3.5 sm:p-4 ${
+            isPlayTransition
+              ? "border-[color-mix(in_srgb,var(--line)_70%,transparent)] bg-[var(--mist)]/30"
+              : "border-[color-mix(in_srgb,var(--line)_50%,transparent)] bg-[var(--mist)]/15 opacity-90"
+          }`}
+        >
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div className="flex items-start gap-3 min-w-0 pr-2">
-              <span className="mt-0.5 grid size-7 shrink-0 place-items-center rounded-lg bg-sky-500/15 text-sky-600 dark:text-sky-400">
+              <span
+                className={`mt-0.5 grid size-7 shrink-0 place-items-center rounded-lg transition-colors ${
+                  isPlayTransition
+                    ? "bg-sky-500/15 text-sky-600 dark:text-sky-400"
+                    : "bg-[color-mix(in_srgb,var(--ink)_8%,transparent)] text-[color-mix(in_srgb,var(--ink)_45%,transparent)]"
+                }`}
+              >
                 <ArrowRight size={14} strokeWidth={2.5} />
               </span>
               <div>
-                <span className="text-sm font-semibold text-[var(--ink)]">
-                  Transição de Matéria
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-semibold text-[var(--ink)]">
+                    Transição de Matéria
+                  </span>
+                  {!isPlayTransition && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-[color-mix(in_srgb,var(--ink)_8%,transparent)] px-2 py-0.5 text-[10px] font-medium text-[color-mix(in_srgb,var(--ink)_55%,transparent)]">
+                      <VolumeX size={10} strokeWidth={2.2} />
+                      Silencioso
+                    </span>
+                  )}
+                </div>
                 <p className="mt-0.5 text-xs text-[color-mix(in_srgb,var(--ink)_65%,transparent)] leading-relaxed">
                   Sinaliza a conclusão da matéria atual e o início do próximo estudo da fila.
                 </p>
@@ -1221,6 +1297,7 @@ function AlarmSettings() {
             <div className="flex items-center gap-2.5 shrink-0 self-end sm:self-center">
               <button
                 type="button"
+                disabled={!isPlayTransition}
                 onClick={() =>
                   previewTransitionTone(
                     alarm.transitionTone,
@@ -1228,18 +1305,33 @@ function AlarmSettings() {
                     alarm.transitionRepeats,
                   )
                 }
-                className="rounded-lg border border-[var(--line)] bg-[var(--surface)] px-2.5 py-1 text-xs font-medium text-[var(--ink)] hover:bg-[var(--mist)] transition cursor-pointer"
-                title="Ouvir toque de transição"
+                className={`rounded-lg border px-2.5 py-1 text-xs font-medium transition ${
+                  isPlayTransition
+                    ? "border-[var(--line)] bg-[var(--surface)] text-[var(--ink)] hover:bg-[var(--mist)] cursor-pointer"
+                    : "border-[color-mix(in_srgb,var(--line)_50%,transparent)] bg-[var(--surface)]/50 text-[color-mix(in_srgb,var(--ink)_35%,transparent)] cursor-not-allowed"
+                }`}
+                title={isPlayTransition ? "Ouvir toque de transição" : "Som desativado para este evento"}
               >
                 Testar
               </button>
-              <label className="relative inline-flex cursor-pointer items-center shrink-0">
+              <label
+                className="relative inline-flex cursor-pointer items-center shrink-0"
+                title={isPlayTransition ? "Desativar toque de transição" : "Ativar toque de transição"}
+              >
                 <input
                   type="checkbox"
-                  checked={alarm.playOnTransition ?? true}
-                  onChange={(e) =>
-                    updateAlarm({ ...alarm, playOnTransition: e.target.checked })
-                  }
+                  checked={isPlayTransition}
+                  onChange={(e) => {
+                    const checked = e.target.checked;
+                    updateAlarm({ ...alarm, playOnTransition: checked });
+                    if (checked) {
+                      previewTransitionTone(
+                        alarm.transitionTone,
+                        alarm.volume,
+                        alarm.transitionRepeats,
+                      );
+                    }
+                  }}
                   className="peer sr-only"
                 />
                 <div className="peer h-6 w-11 rounded-full bg-[var(--line)] after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-[var(--signal)] peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none" />
@@ -1247,86 +1339,124 @@ function AlarmSettings() {
             </div>
           </div>
 
-          {(alarm.playOnTransition ?? true) && (
-            <div className="mt-3 pt-3 border-t border-[color-mix(in_srgb,var(--line)_55%,transparent)] flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <span className="text-xs font-medium text-[color-mix(in_srgb,var(--ink)_65%,transparent)]">
-                  Toque
-                </span>
-                <div className="mt-1 flex flex-wrap gap-1.5">
-                  {TRANSITION_TONES.map(({ id, label }) => {
-                    const active = (alarm.transitionTone ?? "passo") === id;
-                    return (
-                      <button
-                        key={id}
-                        type="button"
-                        onClick={() => {
-                          updateAlarm({ ...alarm, transitionTone: id });
-                          previewTransitionTone(
-                            id,
-                            alarm.volume,
-                            alarm.transitionRepeats,
-                          );
-                        }}
-                        className={`rounded-full px-3 py-1 text-xs font-medium transition cursor-pointer ${
-                          active
-                            ? "bg-sky-500/15 text-sky-700 dark:text-sky-300 ring-1 ring-sky-500/30"
-                            : "bg-[color-mix(in_srgb,var(--ink)_6%,transparent)] text-[color-mix(in_srgb,var(--ink)_60%,transparent)] hover:text-[var(--ink)]"
-                        }`}
-                      >
-                        {label}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
+          <div className="mt-3 pt-3 border-t border-[color-mix(in_srgb,var(--line)_55%,transparent)] flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <span className="text-xs font-medium text-[color-mix(in_srgb,var(--ink)_65%,transparent)]">
+                Toque
+              </span>
+              <div className="mt-1 flex flex-wrap gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => updateAlarm({ ...alarm, playOnTransition: false })}
+                  className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition cursor-pointer ${
+                    !isPlayTransition
+                      ? "bg-[color-mix(in_srgb,var(--ink)_14%,transparent)] text-[var(--ink)] ring-1 ring-[color-mix(in_srgb,var(--ink)_28%,transparent)] font-semibold shadow-xs"
+                      : "bg-[color-mix(in_srgb,var(--ink)_6%,transparent)] text-[color-mix(in_srgb,var(--ink)_60%,transparent)] hover:text-[var(--ink)]"
+                  }`}
+                  title="Desativar som neste evento"
+                >
+                  <VolumeX size={12} strokeWidth={2} />
+                  <span>Sem som</span>
+                </button>
 
-              <div>
-                <span className="text-xs font-medium text-[color-mix(in_srgb,var(--ink)_65%,transparent)]">
-                  Repetições
-                </span>
-                <div className="mt-1 flex gap-1.5">
-                  {REPEAT_OPTIONS.map(({ value, label }) => {
-                    const active = (alarm.transitionRepeats ?? 1) === value;
-                    return (
-                      <button
-                        key={value}
-                        type="button"
-                        onClick={() => {
-                          updateAlarm({ ...alarm, transitionRepeats: value as 1 | 2 | 3 });
-                          previewTransitionTone(
-                            alarm.transitionTone,
-                            alarm.volume,
-                            value as 1 | 2 | 3,
-                          );
-                        }}
-                        className={`rounded-full px-2.5 py-1 text-xs font-medium transition cursor-pointer ${
-                          active
-                            ? "bg-sky-500/15 text-sky-700 dark:text-sky-300 ring-1 ring-sky-500/30"
-                            : "bg-[color-mix(in_srgb,var(--ink)_6%,transparent)] text-[color-mix(in_srgb,var(--ink)_60%,transparent)] hover:text-[var(--ink)]"
-                        }`}
-                      >
-                        {label}
-                      </button>
-                    );
-                  })}
-                </div>
+                {TRANSITION_TONES.map(({ id, label }) => {
+                  const active = isPlayTransition && (alarm.transitionTone ?? "passo") === id;
+                  return (
+                    <button
+                      key={id}
+                      type="button"
+                      onClick={() => {
+                        updateAlarm({ ...alarm, playOnTransition: true, transitionTone: id });
+                        previewTransitionTone(
+                          id,
+                          alarm.volume,
+                          alarm.transitionRepeats,
+                        );
+                      }}
+                      className={`rounded-full px-3 py-1 text-xs font-medium transition cursor-pointer ${
+                        active
+                          ? "bg-sky-500/15 text-sky-700 dark:text-sky-300 ring-1 ring-sky-500/30 font-semibold"
+                          : "bg-[color-mix(in_srgb,var(--ink)_6%,transparent)] text-[color-mix(in_srgb,var(--ink)_60%,transparent)] hover:text-[var(--ink)]"
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
               </div>
             </div>
-          )}
+
+            <div
+              className={`transition-opacity ${
+                !isPlayTransition ? "opacity-35 pointer-events-none select-none" : ""
+              }`}
+              title={!isPlayTransition ? "Repetições desativadas enquanto o som estiver mudo" : undefined}
+            >
+              <span className="text-xs font-medium text-[color-mix(in_srgb,var(--ink)_65%,transparent)]">
+                Repetições
+              </span>
+              <div className="mt-1 flex gap-1.5">
+                {REPEAT_OPTIONS.map(({ value, label }) => {
+                  const active = isPlayTransition && (alarm.transitionRepeats ?? 1) === value;
+                  return (
+                    <button
+                      key={value}
+                      type="button"
+                      disabled={!isPlayTransition}
+                      onClick={() => {
+                        updateAlarm({ ...alarm, transitionRepeats: value as 1 | 2 | 3 });
+                        previewTransitionTone(
+                          alarm.transitionTone,
+                          alarm.volume,
+                          value as 1 | 2 | 3,
+                        );
+                      }}
+                      className={`rounded-full px-2.5 py-1 text-xs font-medium transition cursor-pointer ${
+                        active
+                          ? "bg-sky-500/15 text-sky-700 dark:text-sky-300 ring-1 ring-sky-500/30"
+                          : "bg-[color-mix(in_srgb,var(--ink)_6%,transparent)] text-[color-mix(in_srgb,var(--ink)_60%,transparent)] hover:text-[var(--ink)]"
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* 3. Fim da Sessão (Bloco Concluído) */}
-        <div className="rounded-xl border border-[color-mix(in_srgb,var(--line)_70%,transparent)] bg-[var(--mist)]/30 p-3.5 sm:p-4">
+        <div
+          className={`rounded-xl border transition-all p-3.5 sm:p-4 ${
+            isPlaySessionEnd
+              ? "border-[color-mix(in_srgb,var(--line)_70%,transparent)] bg-[var(--mist)]/30"
+              : "border-[color-mix(in_srgb,var(--line)_50%,transparent)] bg-[var(--mist)]/15 opacity-90"
+          }`}
+        >
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div className="flex items-start gap-3 min-w-0 pr-2">
-              <span className="mt-0.5 grid size-7 shrink-0 place-items-center rounded-lg bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
+              <span
+                className={`mt-0.5 grid size-7 shrink-0 place-items-center rounded-lg transition-colors ${
+                  isPlaySessionEnd
+                    ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
+                    : "bg-[color-mix(in_srgb,var(--ink)_8%,transparent)] text-[color-mix(in_srgb,var(--ink)_45%,transparent)]"
+                }`}
+              >
                 <CheckCircle2 size={14} strokeWidth={2.5} />
               </span>
               <div>
-                <span className="text-sm font-semibold text-[var(--ink)]">
-                  Fim da Sessão (Bloco Concluído)
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-semibold text-[var(--ink)]">
+                    Fim da Sessão (Bloco Concluído)
+                  </span>
+                  {!isPlaySessionEnd && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-[color-mix(in_srgb,var(--ink)_8%,transparent)] px-2 py-0.5 text-[10px] font-medium text-[color-mix(in_srgb,var(--ink)_55%,transparent)]">
+                      <VolumeX size={10} strokeWidth={2.2} />
+                      Silencioso
+                    </span>
+                  )}
+                </div>
                 <p className="mt-0.5 text-xs text-[color-mix(in_srgb,var(--ink)_65%,transparent)] leading-relaxed">
                   Toca quando todas as matérias do bloco são finalizadas com êxito.
                 </p>
@@ -1336,6 +1466,7 @@ function AlarmSettings() {
             <div className="flex items-center gap-2.5 shrink-0 self-end sm:self-center">
               <button
                 type="button"
+                disabled={!isPlaySessionEnd}
                 onClick={() =>
                   previewSessionEndTone(
                     alarm.sessionEndTone,
@@ -1343,18 +1474,33 @@ function AlarmSettings() {
                     alarm.sessionEndRepeats,
                   )
                 }
-                className="rounded-lg border border-[var(--line)] bg-[var(--surface)] px-2.5 py-1 text-xs font-medium text-[var(--ink)] hover:bg-[var(--mist)] transition cursor-pointer"
-                title="Ouvir toque de fim de sessão"
+                className={`rounded-lg border px-2.5 py-1 text-xs font-medium transition ${
+                  isPlaySessionEnd
+                    ? "border-[var(--line)] bg-[var(--surface)] text-[var(--ink)] hover:bg-[var(--mist)] cursor-pointer"
+                    : "border-[color-mix(in_srgb,var(--line)_50%,transparent)] bg-[var(--surface)]/50 text-[color-mix(in_srgb,var(--ink)_35%,transparent)] cursor-not-allowed"
+                }`}
+                title={isPlaySessionEnd ? "Ouvir toque de fim de sessão" : "Som desativado para este evento"}
               >
                 Testar
               </button>
-              <label className="relative inline-flex cursor-pointer items-center shrink-0">
+              <label
+                className="relative inline-flex cursor-pointer items-center shrink-0"
+                title={isPlaySessionEnd ? "Desativar toque de fim de sessão" : "Ativar toque de fim de sessão"}
+              >
                 <input
                   type="checkbox"
-                  checked={alarm.playOnSessionEnd ?? true}
-                  onChange={(e) =>
-                    updateAlarm({ ...alarm, playOnSessionEnd: e.target.checked })
-                  }
+                  checked={isPlaySessionEnd}
+                  onChange={(e) => {
+                    const checked = e.target.checked;
+                    updateAlarm({ ...alarm, playOnSessionEnd: checked });
+                    if (checked) {
+                      previewSessionEndTone(
+                        alarm.sessionEndTone,
+                        alarm.volume,
+                        alarm.sessionEndRepeats,
+                      );
+                    }
+                  }}
                   className="peer sr-only"
                 />
                 <div className="peer h-6 w-11 rounded-full bg-[var(--line)] after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-[var(--signal)] peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none" />
@@ -1362,82 +1508,120 @@ function AlarmSettings() {
             </div>
           </div>
 
-          {(alarm.playOnSessionEnd ?? true) && (
-            <div className="mt-3 pt-3 border-t border-[color-mix(in_srgb,var(--line)_55%,transparent)] flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <span className="text-xs font-medium text-[color-mix(in_srgb,var(--ink)_65%,transparent)]">
-                  Toque
-                </span>
-                <div className="mt-1 flex flex-wrap gap-1.5">
-                  {SESSION_END_TONES.map(({ id, label }) => {
-                    const active = (alarm.sessionEndTone ?? "acorde") === id;
-                    return (
-                      <button
-                        key={id}
-                        type="button"
-                        onClick={() => {
-                          updateAlarm({ ...alarm, sessionEndTone: id });
-                          previewSessionEndTone(id, alarm.volume, alarm.sessionEndRepeats);
-                        }}
-                        className={`rounded-full px-3 py-1 text-xs font-medium transition cursor-pointer ${
-                          active
-                            ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 ring-1 ring-emerald-500/30"
-                            : "bg-[color-mix(in_srgb,var(--ink)_6%,transparent)] text-[color-mix(in_srgb,var(--ink)_60%,transparent)] hover:text-[var(--ink)]"
-                        }`}
-                      >
-                        {label}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
+          <div className="mt-3 pt-3 border-t border-[color-mix(in_srgb,var(--line)_55%,transparent)] flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <span className="text-xs font-medium text-[color-mix(in_srgb,var(--ink)_65%,transparent)]">
+                Toque
+              </span>
+              <div className="mt-1 flex flex-wrap gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => updateAlarm({ ...alarm, playOnSessionEnd: false })}
+                  className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition cursor-pointer ${
+                    !isPlaySessionEnd
+                      ? "bg-[color-mix(in_srgb,var(--ink)_14%,transparent)] text-[var(--ink)] ring-1 ring-[color-mix(in_srgb,var(--ink)_28%,transparent)] font-semibold shadow-xs"
+                      : "bg-[color-mix(in_srgb,var(--ink)_6%,transparent)] text-[color-mix(in_srgb,var(--ink)_60%,transparent)] hover:text-[var(--ink)]"
+                  }`}
+                  title="Desativar som neste evento"
+                >
+                  <VolumeX size={12} strokeWidth={2} />
+                  <span>Sem som</span>
+                </button>
 
-              <div>
-                <span className="text-xs font-medium text-[color-mix(in_srgb,var(--ink)_65%,transparent)]">
-                  Repetições
-                </span>
-                <div className="mt-1 flex gap-1.5">
-                  {REPEAT_OPTIONS.map(({ value, label }) => {
-                    const active = (alarm.sessionEndRepeats ?? 2) === value;
-                    return (
-                      <button
-                        key={value}
-                        type="button"
-                        onClick={() => {
-                          updateAlarm({ ...alarm, sessionEndRepeats: value as 1 | 2 | 3 });
-                          previewSessionEndTone(
-                            alarm.sessionEndTone,
-                            alarm.volume,
-                            value as 1 | 2 | 3,
-                          );
-                        }}
-                        className={`rounded-full px-2.5 py-1 text-xs font-medium transition cursor-pointer ${
-                          active
-                            ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 ring-1 ring-emerald-500/30"
-                            : "bg-[color-mix(in_srgb,var(--ink)_6%,transparent)] text-[color-mix(in_srgb,var(--ink)_60%,transparent)] hover:text-[var(--ink)]"
-                        }`}
-                      >
-                        {label}
-                      </button>
-                    );
-                  })}
-                </div>
+                {SESSION_END_TONES.map(({ id, label }) => {
+                  const active = isPlaySessionEnd && (alarm.sessionEndTone ?? "acorde") === id;
+                  return (
+                    <button
+                      key={id}
+                      type="button"
+                      onClick={() => {
+                        updateAlarm({ ...alarm, playOnSessionEnd: true, sessionEndTone: id });
+                        previewSessionEndTone(id, alarm.volume, alarm.sessionEndRepeats);
+                      }}
+                      className={`rounded-full px-3 py-1 text-xs font-medium transition cursor-pointer ${
+                        active
+                          ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 ring-1 ring-emerald-500/30 font-semibold"
+                          : "bg-[color-mix(in_srgb,var(--ink)_6%,transparent)] text-[color-mix(in_srgb,var(--ink)_60%,transparent)] hover:text-[var(--ink)]"
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
               </div>
             </div>
-          )}
+
+            <div
+              className={`transition-opacity ${
+                !isPlaySessionEnd ? "opacity-35 pointer-events-none select-none" : ""
+              }`}
+              title={!isPlaySessionEnd ? "Repetições desativadas enquanto o som estiver mudo" : undefined}
+            >
+              <span className="text-xs font-medium text-[color-mix(in_srgb,var(--ink)_65%,transparent)]">
+                Repetições
+              </span>
+              <div className="mt-1 flex gap-1.5">
+                {REPEAT_OPTIONS.map(({ value, label }) => {
+                  const active = isPlaySessionEnd && (alarm.sessionEndRepeats ?? 2) === value;
+                  return (
+                    <button
+                      key={value}
+                      type="button"
+                      disabled={!isPlaySessionEnd}
+                      onClick={() => {
+                        updateAlarm({ ...alarm, sessionEndRepeats: value as 1 | 2 | 3 });
+                        previewSessionEndTone(
+                          alarm.sessionEndTone,
+                          alarm.volume,
+                          value as 1 | 2 | 3,
+                        );
+                      }}
+                      className={`rounded-full px-2.5 py-1 text-xs font-medium transition cursor-pointer ${
+                        active
+                          ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 ring-1 ring-emerald-500/30"
+                          : "bg-[color-mix(in_srgb,var(--ink)_6%,transparent)] text-[color-mix(in_srgb,var(--ink)_60%,transparent)] hover:text-[var(--ink)]"
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
         </div>
 
-        {/* 4. Fim do Ciclo (100% Concluído) */}
-        <div className="rounded-xl border border-[color-mix(in_srgb,var(--line)_70%,transparent)] bg-[var(--mist)]/30 p-3.5 sm:p-4">
+        {/* 4. Fim do Ciclo (Meta 100%) */}
+        <div
+          className={`rounded-xl border transition-all p-3.5 sm:p-4 ${
+            isPlayCycleEnd
+              ? "border-[color-mix(in_srgb,var(--line)_70%,transparent)] bg-[var(--mist)]/30"
+              : "border-[color-mix(in_srgb,var(--line)_50%,transparent)] bg-[var(--mist)]/15 opacity-90"
+          }`}
+        >
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div className="flex items-start gap-3 min-w-0 pr-2">
-              <span className="mt-0.5 grid size-7 shrink-0 place-items-center rounded-lg bg-amber-500/15 text-amber-600 dark:text-amber-400">
+              <span
+                className={`mt-0.5 grid size-7 shrink-0 place-items-center rounded-lg transition-colors ${
+                  isPlayCycleEnd
+                    ? "bg-amber-500/15 text-amber-600 dark:text-amber-400"
+                    : "bg-[color-mix(in_srgb,var(--ink)_8%,transparent)] text-[color-mix(in_srgb,var(--ink)_45%,transparent)]"
+                }`}
+              >
                 <Trophy size={14} strokeWidth={2.5} />
               </span>
               <div>
-                <span className="text-sm font-semibold text-[var(--ink)]">
-                  Fim do Ciclo (Meta 100%)
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-semibold text-[var(--ink)]">
+                    Fim do Ciclo (Meta 100%)
+                  </span>
+                  {!isPlayCycleEnd && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-[color-mix(in_srgb,var(--ink)_8%,transparent)] px-2 py-0.5 text-[10px] font-medium text-[color-mix(in_srgb,var(--ink)_55%,transparent)]">
+                      <VolumeX size={10} strokeWidth={2.2} />
+                      Silencioso
+                    </span>
+                  )}
+                </div>
                 <p className="mt-0.5 text-xs text-[color-mix(in_srgb,var(--ink)_65%,transparent)] leading-relaxed">
                   Som triunfal comemorativo quando todas as matérias do ciclo são completadas.
                 </p>
@@ -1447,6 +1631,7 @@ function AlarmSettings() {
             <div className="flex items-center gap-2.5 shrink-0 self-end sm:self-center">
               <button
                 type="button"
+                disabled={!isPlayCycleEnd}
                 onClick={() =>
                   previewCycleEndTone(
                     alarm.cycleEndTone,
@@ -1454,18 +1639,33 @@ function AlarmSettings() {
                     alarm.cycleEndRepeats,
                   )
                 }
-                className="rounded-lg border border-[var(--line)] bg-[var(--surface)] px-2.5 py-1 text-xs font-medium text-[var(--ink)] hover:bg-[var(--mist)] transition cursor-pointer"
-                title="Ouvir celebração do ciclo"
+                className={`rounded-lg border px-2.5 py-1 text-xs font-medium transition ${
+                  isPlayCycleEnd
+                    ? "border-[var(--line)] bg-[var(--surface)] text-[var(--ink)] hover:bg-[var(--mist)] cursor-pointer"
+                    : "border-[color-mix(in_srgb,var(--line)_50%,transparent)] bg-[var(--surface)]/50 text-[color-mix(in_srgb,var(--ink)_35%,transparent)] cursor-not-allowed"
+                }`}
+                title={isPlayCycleEnd ? "Ouvir celebração do ciclo" : "Som desativado para este evento"}
               >
                 Testar
               </button>
-              <label className="relative inline-flex cursor-pointer items-center shrink-0">
+              <label
+                className="relative inline-flex cursor-pointer items-center shrink-0"
+                title={isPlayCycleEnd ? "Desativar celebração do ciclo" : "Ativar celebração do ciclo"}
+              >
                 <input
                   type="checkbox"
-                  checked={alarm.playOnCycleEnd ?? true}
-                  onChange={(e) =>
-                    updateAlarm({ ...alarm, playOnCycleEnd: e.target.checked })
-                  }
+                  checked={isPlayCycleEnd}
+                  onChange={(e) => {
+                    const checked = e.target.checked;
+                    updateAlarm({ ...alarm, playOnCycleEnd: checked });
+                    if (checked) {
+                      previewCycleEndTone(
+                        alarm.cycleEndTone,
+                        alarm.volume,
+                        alarm.cycleEndRepeats,
+                      );
+                    }
+                  }}
                   className="peer sr-only"
                 />
                 <div className="peer h-6 w-11 rounded-full bg-[var(--line)] after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-[var(--signal)] peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none" />
@@ -1473,73 +1673,91 @@ function AlarmSettings() {
             </div>
           </div>
 
-          {(alarm.playOnCycleEnd ?? true) && (
-            <div className="mt-3 pt-3 border-t border-[color-mix(in_srgb,var(--line)_55%,transparent)] flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <span className="text-xs font-medium text-[color-mix(in_srgb,var(--ink)_65%,transparent)]">
-                  Toque de Celebração
-                </span>
-                <div className="mt-1 flex flex-wrap gap-1.5">
-                  {CYCLE_END_TONES.map(({ id, label }) => {
-                    const active = (alarm.cycleEndTone ?? "triunfo") === id;
-                    return (
-                      <button
-                        key={id}
-                        type="button"
-                        onClick={() => {
-                          updateAlarm({ ...alarm, cycleEndTone: id });
-                          previewCycleEndTone(
-                            id,
-                            alarm.volume,
-                            alarm.cycleEndRepeats,
-                          );
-                        }}
-                        className={`rounded-full px-3 py-1 text-xs font-medium transition cursor-pointer ${
-                          active
-                            ? "bg-amber-500/15 text-amber-700 dark:text-amber-300 ring-1 ring-amber-500/30"
-                            : "bg-[color-mix(in_srgb,var(--ink)_6%,transparent)] text-[color-mix(in_srgb,var(--ink)_60%,transparent)] hover:text-[var(--ink)]"
-                        }`}
-                      >
-                        {label}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
+          <div className="mt-3 pt-3 border-t border-[color-mix(in_srgb,var(--line)_55%,transparent)] flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <span className="text-xs font-medium text-[color-mix(in_srgb,var(--ink)_65%,transparent)]">
+                Toque de Celebração
+              </span>
+              <div className="mt-1 flex flex-wrap gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => updateAlarm({ ...alarm, playOnCycleEnd: false })}
+                  className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition cursor-pointer ${
+                    !isPlayCycleEnd
+                      ? "bg-[color-mix(in_srgb,var(--ink)_14%,transparent)] text-[var(--ink)] ring-1 ring-[color-mix(in_srgb,var(--ink)_28%,transparent)] font-semibold shadow-xs"
+                      : "bg-[color-mix(in_srgb,var(--ink)_6%,transparent)] text-[color-mix(in_srgb,var(--ink)_60%,transparent)] hover:text-[var(--ink)]"
+                  }`}
+                  title="Desativar som neste evento"
+                >
+                  <VolumeX size={12} strokeWidth={2} />
+                  <span>Sem som</span>
+                </button>
 
-              <div>
-                <span className="text-xs font-medium text-[color-mix(in_srgb,var(--ink)_65%,transparent)]">
-                  Repetições
-                </span>
-                <div className="mt-1 flex gap-1.5">
-                  {REPEAT_OPTIONS.map(({ value, label }) => {
-                    const active = (alarm.cycleEndRepeats ?? 1) === value;
-                    return (
-                      <button
-                        key={value}
-                        type="button"
-                        onClick={() => {
-                          updateAlarm({ ...alarm, cycleEndRepeats: value as 1 | 2 | 3 });
-                          previewCycleEndTone(
-                            alarm.cycleEndTone,
-                            alarm.volume,
-                            value as 1 | 2 | 3,
-                          );
-                        }}
-                        className={`rounded-full px-2.5 py-1 text-xs font-medium transition cursor-pointer ${
-                          active
-                            ? "bg-amber-500/15 text-amber-700 dark:text-amber-300 ring-1 ring-amber-500/30"
-                            : "bg-[color-mix(in_srgb,var(--ink)_6%,transparent)] text-[color-mix(in_srgb,var(--ink)_60%,transparent)] hover:text-[var(--ink)]"
-                        }`}
-                      >
-                        {label}
-                      </button>
-                    );
-                  })}
-                </div>
+                {CYCLE_END_TONES.map(({ id, label }) => {
+                  const active = isPlayCycleEnd && (alarm.cycleEndTone ?? "triunfo") === id;
+                  return (
+                    <button
+                      key={id}
+                      type="button"
+                      onClick={() => {
+                        updateAlarm({ ...alarm, playOnCycleEnd: true, cycleEndTone: id });
+                        previewCycleEndTone(
+                          id,
+                          alarm.volume,
+                          alarm.cycleEndRepeats,
+                        );
+                      }}
+                      className={`rounded-full px-3 py-1 text-xs font-medium transition cursor-pointer ${
+                        active
+                          ? "bg-amber-500/15 text-amber-700 dark:text-amber-300 ring-1 ring-amber-500/30 font-semibold"
+                          : "bg-[color-mix(in_srgb,var(--ink)_6%,transparent)] text-[color-mix(in_srgb,var(--ink)_60%,transparent)] hover:text-[var(--ink)]"
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
               </div>
             </div>
-          )}
+
+            <div
+              className={`transition-opacity ${
+                !isPlayCycleEnd ? "opacity-35 pointer-events-none select-none" : ""
+              }`}
+              title={!isPlayCycleEnd ? "Repetições desativadas enquanto o som estiver mudo" : undefined}
+            >
+              <span className="text-xs font-medium text-[color-mix(in_srgb,var(--ink)_65%,transparent)]">
+                Repetições
+              </span>
+              <div className="mt-1 flex gap-1.5">
+                {REPEAT_OPTIONS.map(({ value, label }) => {
+                  const active = isPlayCycleEnd && (alarm.cycleEndRepeats ?? 1) === value;
+                  return (
+                    <button
+                      key={value}
+                      type="button"
+                      disabled={!isPlayCycleEnd}
+                      onClick={() => {
+                        updateAlarm({ ...alarm, cycleEndRepeats: value as 1 | 2 | 3 });
+                        previewCycleEndTone(
+                          alarm.cycleEndTone,
+                          alarm.volume,
+                          value as 1 | 2 | 3,
+                        );
+                      }}
+                      className={`rounded-full px-2.5 py-1 text-xs font-medium transition cursor-pointer ${
+                        active
+                          ? "bg-amber-500/15 text-amber-700 dark:text-amber-300 ring-1 ring-amber-500/30"
+                          : "bg-[color-mix(in_srgb,var(--ink)_6%,transparent)] text-[color-mix(in_srgb,var(--ink)_60%,transparent)] hover:text-[var(--ink)]"
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </section>
