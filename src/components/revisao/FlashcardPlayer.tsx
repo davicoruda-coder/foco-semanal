@@ -15,6 +15,58 @@ import { useRevisao } from "./RevisaoProvider";
 import { FormattedRuleText } from "./FormattedRuleText";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 
+interface RatingOptionConfig {
+  id: RespostaRevisao;
+  label: string;
+  interval: string;
+  shortcut: string;
+  baseClasses: string;
+  selectedClasses: string;
+}
+
+const RATING_BUTTONS: RatingOptionConfig[] = [
+  {
+    id: "errei",
+    label: "Errei",
+    interval: "+1 dia",
+    shortcut: "1",
+    baseClasses:
+      "border-[color-mix(in_srgb,#ef4444_30%,transparent)] bg-[color-mix(in_srgb,#ef4444_10%,transparent)] text-[#ef4444] hover:bg-[#ef4444] hover:text-white",
+    selectedClasses:
+      "bg-[#ef4444] text-white border-[#ef4444] shadow-md shadow-red-500/20 scale-[1.02] ring-2 ring-[#ef4444]/40 ring-offset-1 ring-offset-[var(--surface)]",
+  },
+  {
+    id: "dificil",
+    label: "Difícil",
+    interval: "+2 dias",
+    shortcut: "2",
+    baseClasses:
+      "border-[color-mix(in_srgb,#f59e0b_30%,transparent)] bg-[color-mix(in_srgb,#f59e0b_10%,transparent)] text-[#f59e0b] hover:bg-[#f59e0b] hover:text-white",
+    selectedClasses:
+      "bg-[#f59e0b] text-white border-[#f59e0b] shadow-md shadow-amber-500/20 scale-[1.02] ring-2 ring-[#f59e0b]/40 ring-offset-1 ring-offset-[var(--surface)]",
+  },
+  {
+    id: "bom",
+    label: "Bom",
+    interval: "+4 a 7 dias",
+    shortcut: "3",
+    baseClasses:
+      "border-[color-mix(in_srgb,#3b82f6_30%,transparent)] bg-[color-mix(in_srgb,#3b82f6_10%,transparent)] text-[#3b82f6] hover:bg-[#3b82f6] hover:text-white",
+    selectedClasses:
+      "bg-[#3b82f6] text-white border-[#3b82f6] shadow-md shadow-blue-500/20 scale-[1.02] ring-2 ring-[#3b82f6]/40 ring-offset-1 ring-offset-[var(--surface)]",
+  },
+  {
+    id: "facil",
+    label: "Fácil / Dominado",
+    interval: "+15 a 30 dias",
+    shortcut: "4",
+    baseClasses:
+      "border-[color-mix(in_srgb,#22c55e_30%,transparent)] bg-[color-mix(in_srgb,#22c55e_10%,transparent)] text-[#22c55e] hover:bg-[#22c55e] hover:text-white",
+    selectedClasses:
+      "bg-[#22c55e] text-white border-[#22c55e] shadow-md shadow-emerald-500/20 scale-[1.02] ring-2 ring-[#22c55e]/40 ring-offset-1 ring-offset-[var(--surface)]",
+  },
+];
+
 export function FlashcardPlayer({
   cards,
   onFinish,
@@ -29,6 +81,7 @@ export function FlashcardPlayer({
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [selectedRating, setSelectedRating] = useState<RespostaRevisao | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
@@ -51,18 +104,25 @@ export function FlashcardPlayer({
 
   const handleResponse = async (resposta: RespostaRevisao) => {
     if (submitting || !currentCard) return;
+    setSelectedRating(resposta);
     setSubmitting(true);
     try {
-      await responderFlashcard(
-        currentCard.id,
-        currentCard.nivel_dominio ?? 0,
-        resposta,
-      );
+      await Promise.all([
+        responderFlashcard(
+          currentCard.id,
+          currentCard.nivel_dominio ?? 0,
+          resposta,
+        ),
+        // Feedback visual suave de 180ms para percepção tátil imediata antes de avançar
+        new Promise((resolve) => setTimeout(resolve, 180)),
+      ]);
       setIsFlipped(false);
+      setSelectedRating(null);
       setCurrentIndex((prev) => prev + 1);
     } catch (err) {
       console.warn("[FlashcardPlayer] erro ao responder:", err);
       setIsFlipped(false);
+      setSelectedRating(null);
       setCurrentIndex((prev) => prev + 1);
     } finally {
       setSubmitting(false);
@@ -79,6 +139,7 @@ export function FlashcardPlayer({
         setSessionDeck((prev) => prev.filter((c) => c.id !== cardId));
         onCardDeleted?.(cardId);
         setIsFlipped(false);
+        setSelectedRating(null);
         setShowDeleteConfirm(false);
       }
     } finally {
@@ -188,8 +249,9 @@ export function FlashcardPlayer({
 
       {/* Cartão Flashcard com Flip */}
       <div
+        key={currentCard.id}
         onClick={() => setIsFlipped(!isFlipped)}
-        className="group relative min-h-[260px] cursor-pointer rounded-[var(--radius)] border border-[var(--line)] bg-[var(--surface)] p-6 shadow-[var(--shadow-sm)] transition hover:border-[var(--signal)]"
+        className="group relative min-h-[260px] cursor-pointer rounded-[var(--radius)] border border-[var(--line)] bg-[var(--surface)] p-6 shadow-[var(--shadow-sm)] transition-all duration-200 hover:border-[var(--signal)] active:scale-[0.99] touch-manipulation select-none"
       >
         <div className="absolute right-3.5 top-3.5 flex items-center gap-1 text-[10px] font-medium text-[color-mix(in_srgb,var(--ink)_45%,transparent)] group-hover:text-[var(--signal)]">
           <RotateCw size={12} />
@@ -225,45 +287,41 @@ export function FlashcardPlayer({
             Como foi sua recordação?
           </p>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-            <button
-              type="button"
-              disabled={submitting}
-              onClick={() => handleResponse("errei")}
-              className="rounded-[var(--radius-btn)] border border-[color-mix(in_srgb,#ef4444_30%,transparent)] bg-[color-mix(in_srgb,#ef4444_10%,transparent)] px-3 py-2 text-xs font-semibold text-[#ef4444] transition hover:bg-[#ef4444] hover:text-white"
-            >
-              Errei
-              <span className="block text-[10px] font-normal opacity-80">+1 dia</span>
-            </button>
+            {RATING_BUTTONS.map((btn) => {
+              const isSelected = selectedRating === btn.id;
+              const isOtherSelected = selectedRating !== null && !isSelected;
 
-            <button
-              type="button"
-              disabled={submitting}
-              onClick={() => handleResponse("dificil")}
-              className="rounded-[var(--radius-btn)] border border-[color-mix(in_srgb,#f59e0b_30%,transparent)] bg-[color-mix(in_srgb,#f59e0b_10%,transparent)] px-3 py-2 text-xs font-semibold text-[#f59e0b] transition hover:bg-[#f59e0b] hover:text-white"
-            >
-              Difícil
-              <span className="block text-[10px] font-normal opacity-80">+2 dias</span>
-            </button>
-
-            <button
-              type="button"
-              disabled={submitting}
-              onClick={() => handleResponse("bom")}
-              className="rounded-[var(--radius-btn)] border border-[color-mix(in_srgb,#3b82f6_30%,transparent)] bg-[color-mix(in_srgb,#3b82f6_10%,transparent)] px-3 py-2 text-xs font-semibold text-[#3b82f6] transition hover:bg-[#3b82f6] hover:text-white"
-            >
-              Bom
-              <span className="block text-[10px] font-normal opacity-80">+4 a 7 dias</span>
-            </button>
-
-            <button
-              type="button"
-              disabled={submitting}
-              onClick={() => handleResponse("facil")}
-              className="rounded-[var(--radius-btn)] border border-[color-mix(in_srgb,#22c55e_30%,transparent)] bg-[color-mix(in_srgb,#22c55e_10%,transparent)] px-3 py-2 text-xs font-semibold text-[#22c55e] transition hover:bg-[#22c55e] hover:text-white"
-            >
-              Fácil / Dominado
-              <span className="block text-[10px] font-normal opacity-80">+15 a 30 dias</span>
-            </button>
+              return (
+                <button
+                  key={btn.id}
+                  type="button"
+                  disabled={submitting}
+                  onClick={() => handleResponse(btn.id)}
+                  aria-pressed={isSelected}
+                  className={`group relative flex flex-col items-center justify-center rounded-[var(--radius-btn)] border px-3 py-2 sm:py-2.5 text-xs font-semibold select-none cursor-pointer transition-all duration-150 ease-out active:scale-95 touch-manipulation ${
+                    isSelected
+                      ? btn.selectedClasses
+                      : isOtherSelected
+                        ? "opacity-35 scale-[0.98] pointer-events-none border-[var(--line)] bg-[var(--mist)] text-[color-mix(in_srgb,var(--ink)_50%,transparent)]"
+                        : `${btn.baseClasses} hover:scale-[1.01]`
+                  }`}
+                >
+                  <span className="flex items-center gap-1.5 font-bold">
+                    <span>{btn.label}</span>
+                    <span className="hidden sm:inline-block rounded px-1 py-0.5 text-[9px] font-mono opacity-50 bg-black/10 dark:bg-white/10 leading-none">
+                      {btn.shortcut}
+                    </span>
+                  </span>
+                  <span
+                    className={`block text-[10px] font-normal transition-opacity ${
+                      isSelected ? "text-white/90" : "opacity-80 group-hover:opacity-100"
+                    }`}
+                  >
+                    {btn.interval}
+                  </span>
+                </button>
+              );
+            })}
           </div>
         </div>
       ) : (
