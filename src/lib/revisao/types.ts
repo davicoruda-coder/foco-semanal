@@ -76,6 +76,8 @@ export interface Flashcard {
   user_id: string;
   frente: string;
   verso: string;
+  frente_imagem_url?: string | null;
+  verso_imagem_url?: string | null;
   proxima_revisao: string; // "YYYY-MM-DD"
   nivel_dominio: NivelDominio;
   created_at: string;

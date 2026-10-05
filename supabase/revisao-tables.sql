@@ -69,6 +69,8 @@ CREATE TABLE IF NOT EXISTS flashcards (
   user_id         UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   frente          TEXT NOT NULL,
   verso           TEXT NOT NULL,
+  frente_imagem_url TEXT,
+  verso_imagem_url  TEXT,
   proxima_revisao DATE NOT NULL DEFAULT CURRENT_DATE,
   nivel_dominio   INT NOT NULL DEFAULT 0,
   created_at      TIMESTAMPTZ NOT NULL DEFAULT now()

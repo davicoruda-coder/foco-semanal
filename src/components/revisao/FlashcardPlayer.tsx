@@ -1,7 +1,9 @@
+/* eslint-disable @next/next/no-img-element */
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
+  Maximize2,
   RotateCw,
   Sparkles,
   Trash2,
@@ -14,6 +16,7 @@ import {
 import { useRevisao } from "./RevisaoProvider";
 import { FormattedRuleText } from "./FormattedRuleText";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { FlashcardImageLightbox } from "./FlashcardImageLightbox";
 
 interface RatingOptionConfig {
   id: RespostaRevisao;
@@ -77,23 +80,20 @@ export function FlashcardPlayer({
   onCardDeleted?: (cardId: string) => void;
 }) {
   const { flashcardsDoDia, responderFlashcard, deleteFlashcard } = useRevisao();
-  const [sessionDeck, setSessionDeck] = useState<Flashcard[]>(cards || flashcardsDoDia);
+  const [deletedIds, setDeletedIds] = useState<string[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [selectedRating, setSelectedRating] = useState<RespostaRevisao | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [zoomImage, setZoomImage] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (cards) {
-      setSessionDeck(cards);
-    } else {
-      setSessionDeck(flashcardsDoDia);
-    }
-  }, [cards, flashcardsDoDia]);
-
-  const deck = sessionDeck;
+  const baseDeck = cards ?? flashcardsDoDia;
+  const deck = useMemo(
+    () => baseDeck.filter((c) => !deletedIds.includes(c.id)),
+    [baseDeck, deletedIds],
+  );
   const currentCard =
     Array.isArray(deck) && currentIndex >= 0 && currentIndex < deck.length
       ? deck[currentIndex]
@@ -136,7 +136,7 @@ export function FlashcardPlayer({
       const cardId = currentCard.id;
       const ok = await deleteFlashcard(cardId);
       if (ok) {
-        setSessionDeck((prev) => prev.filter((c) => c.id !== cardId));
+        setDeletedIds((prev) => [...prev, cardId]);
         onCardDeleted?.(cardId);
         setIsFlipped(false);
         setSelectedRating(null);
@@ -152,6 +152,7 @@ export function FlashcardPlayer({
       if (
         isCompleted ||
         showDeleteConfirm ||
+        zoomImage !== null ||
         !currentCard ||
         e.target instanceof HTMLInputElement ||
         e.target instanceof HTMLTextAreaElement
@@ -181,7 +182,7 @@ export function FlashcardPlayer({
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isCompleted, isFlipped, submitting, showDeleteConfirm, currentCard]);
+  }, [isCompleted, isFlipped, submitting, showDeleteConfirm, zoomImage, currentCard]);
 
   if (isCompleted || !currentCard) {
     return (
@@ -264,10 +265,40 @@ export function FlashcardPlayer({
             <span className="text-xs font-semibold uppercase tracking-wider text-[var(--signal)]">
               Desafio / Enunciado
             </span>
-            <FormattedRuleText
-              text={currentCard.frente || ""}
-              className="text-base font-medium text-[var(--ink)] leading-relaxed"
-            />
+
+            {currentCard.frente_imagem_url && (
+              <div
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setZoomImage(currentCard.frente_imagem_url!);
+                }}
+                className="relative group/img my-1 max-h-72 w-full overflow-hidden rounded-lg border border-[var(--line)] bg-black/5 dark:bg-black/25 flex items-center justify-center cursor-zoom-in transition hover:border-[var(--signal)]"
+                title="Clique para ampliar em tela cheia"
+              >
+                <img
+                  src={currentCard.frente_imagem_url}
+                  alt="Imagem da Frente"
+                  className="max-h-72 w-auto max-w-full object-contain"
+                />
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setZoomImage(currentCard.frente_imagem_url!);
+                  }}
+                  className="absolute right-2 top-2 rounded-md bg-black/70 px-2 py-1 text-[11px] font-semibold text-white backdrop-blur-xs opacity-0 group-hover/img:opacity-100 transition hover:bg-black/90 flex items-center gap-1 shadow-md"
+                >
+                  <Maximize2 size={12} /> Ampliar
+                </button>
+              </div>
+            )}
+
+            {currentCard.frente && (
+              <FormattedRuleText
+                text={currentCard.frente}
+                className="text-base font-medium text-[var(--ink)] leading-relaxed"
+              />
+            )}
           </div>
         ) : (
           /* Verso */
@@ -275,7 +306,35 @@ export function FlashcardPlayer({
             <span className="text-xs font-semibold uppercase tracking-wider text-[var(--ok,#16a34a)]">
               Regra Chave & Resolução
             </span>
-            <FormattedRuleText text={currentCard.verso || ""} />
+
+            {currentCard.verso_imagem_url && (
+              <div
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setZoomImage(currentCard.verso_imagem_url!);
+                }}
+                className="relative group/img my-1 max-h-72 w-full overflow-hidden rounded-lg border border-[var(--line)] bg-black/5 dark:bg-black/25 flex items-center justify-center cursor-zoom-in transition hover:border-emerald-500"
+                title="Clique para ampliar em tela cheia"
+              >
+                <img
+                  src={currentCard.verso_imagem_url}
+                  alt="Imagem do Verso"
+                  className="max-h-72 w-auto max-w-full object-contain"
+                />
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setZoomImage(currentCard.verso_imagem_url!);
+                  }}
+                  className="absolute right-2 top-2 rounded-md bg-black/70 px-2 py-1 text-[11px] font-semibold text-white backdrop-blur-xs opacity-0 group-hover/img:opacity-100 transition hover:bg-black/90 flex items-center gap-1 shadow-md"
+                >
+                  <Maximize2 size={12} /> Ampliar
+                </button>
+              </div>
+            )}
+
+            {currentCard.verso && <FormattedRuleText text={currentCard.verso} />}
           </div>
         )}
       </div>
@@ -348,6 +407,14 @@ export function FlashcardPlayer({
           if (!deleting) setShowDeleteConfirm(false);
         }}
       />
+
+      {/* Lightbox para visualização de imagem em tela cheia */}
+      {zoomImage && (
+        <FlashcardImageLightbox
+          src={zoomImage}
+          onClose={() => setZoomImage(null)}
+        />
+      )}
     </div>
   );
 }

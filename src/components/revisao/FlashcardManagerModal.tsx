@@ -1,14 +1,14 @@
+/* eslint-disable @next/next/no-img-element */
 "use client";
 
 import { useMemo, useState } from "react";
 import {
-  Bot,
   BookOpen,
   Calendar,
   Check,
-  Edit3,
-  ExternalLink,
+  Image as ImageIcon,
   Layers,
+  Maximize2,
   Pencil,
   Plus,
   Search,
@@ -20,6 +20,8 @@ import type { Flashcard, MateriaRevisao, NivelDominio } from "@/lib/revisao/type
 import { NIVEL_DOMINIO_LABEL } from "@/lib/revisao/types";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { useRevisao } from "./RevisaoProvider";
+import { FlashcardImageInput } from "./FlashcardImageInput";
+import { FlashcardImageLightbox } from "./FlashcardImageLightbox";
 
 interface FlashcardManagerModalProps {
   materia: MateriaRevisao;
@@ -41,13 +43,20 @@ export function FlashcardManagerModal({
   const [showNewCard, setShowNewNewCard] = useState(false);
   const [newFrente, setNewFrente] = useState("");
   const [newVerso, setNewVerso] = useState("");
+  const [newFrenteImg, setNewFrenteImg] = useState<string | null>(null);
+  const [newVersoImg, setNewVersoImg] = useState<string | null>(null);
   const [savingNew, setSavingNew] = useState(false);
 
   // Edição inline
   const [editingCardId, setEditingCardId] = useState<string | null>(null);
   const [editFrente, setEditFrente] = useState("");
   const [editVerso, setEditVerso] = useState("");
+  const [editFrenteImg, setEditFrenteImg] = useState<string | null>(null);
+  const [editVersoImg, setEditVersoImg] = useState<string | null>(null);
   const [savingEdit, setSavingEdit] = useState(false);
+
+  // Lightbox para visualização de imagem em tamanho real
+  const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
 
   // Confirmação de exclusão
   const [pendingDeleteCard, setPendingDeleteCard] = useState<Flashcard | null>(
@@ -79,34 +88,51 @@ export function FlashcardManagerModal({
     );
   }, [materiaCards, search]);
 
-  // Criar novo card manual
+  // Criar novo card manual (permite texto, imagem, ou ambos)
   async function handleCreateManual(e: React.FormEvent) {
     e.preventDefault();
-    if (!newFrente.trim() || !newVerso.trim()) return;
+    const hasFront = Boolean(newFrente.trim() || newFrenteImg);
+    const hasBack = Boolean(newVerso.trim() || newVersoImg);
+    if (!hasFront || !hasBack) return;
 
     setSavingNew(true);
-    await addFlashcardManual(materia.nome, newFrente.trim(), newVerso.trim());
+    await addFlashcardManual(
+      materia.nome,
+      newFrente.trim(),
+      newVerso.trim(),
+      undefined,
+      newFrenteImg,
+      newVersoImg,
+    );
     setSavingNew(false);
     setNewFrente("");
     setNewVerso("");
+    setNewFrenteImg(null);
+    setNewVersoImg(null);
     setShowNewNewCard(false);
   }
 
   // Iniciar edição
   function startEditing(card: Flashcard) {
     setEditingCardId(card.id);
-    setEditFrente(card.frente);
-    setEditVerso(card.verso);
+    setEditFrente(card.frente || "");
+    setEditVerso(card.verso || "");
+    setEditFrenteImg(card.frente_imagem_url || null);
+    setEditVersoImg(card.verso_imagem_url || null);
   }
 
   // Salvar edição
   async function handleSaveEdit(cardId: string) {
-    if (!editFrente.trim() || !editVerso.trim()) return;
+    const hasFront = Boolean(editFrente.trim() || editFrenteImg);
+    const hasBack = Boolean(editVerso.trim() || editVersoImg);
+    if (!hasFront || !hasBack) return;
 
     setSavingEdit(true);
     await updateFlashcard(cardId, {
       frente: editFrente.trim(),
       verso: editVerso.trim(),
+      frente_imagem_url: editFrenteImg,
+      verso_imagem_url: editVersoImg,
     });
     setSavingEdit(false);
     setEditingCardId(null);
@@ -121,6 +147,14 @@ export function FlashcardManagerModal({
       setEditingCardId(null);
     }
   }
+
+  const isNewCardValid =
+    (Boolean(newFrente.trim()) || Boolean(newFrenteImg)) &&
+    (Boolean(newVerso.trim()) || Boolean(newVersoImg));
+
+  const isEditCardValid =
+    (Boolean(editFrente.trim()) || Boolean(editFrenteImg)) &&
+    (Boolean(editVerso.trim()) || Boolean(editVersoImg));
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-3 backdrop-blur-xs animate-in fade-in duration-200">
@@ -194,7 +228,7 @@ export function FlashcardManagerModal({
         {showNewCard && (
           <form
             onSubmit={handleCreateManual}
-            className="border-b border-[var(--signal)]/30 bg-[color-mix(in_srgb,var(--signal)_4%,var(--surface))] p-4 sm:px-6 space-y-3"
+            className="border-b border-[var(--signal)]/30 bg-[color-mix(in_srgb,var(--signal)_4%,var(--surface))] p-4 sm:px-6 space-y-4 max-h-[60vh] overflow-y-auto"
           >
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold uppercase tracking-wider text-[var(--signal)]">
@@ -206,6 +240,8 @@ export function FlashcardManagerModal({
                   setShowNewNewCard(false);
                   setNewFrente("");
                   setNewVerso("");
+                  setNewFrenteImg(null);
+                  setNewVersoImg(null);
                 }}
                 className="text-xs text-[color-mix(in_srgb,var(--ink)_50%,transparent)] hover:text-[var(--ink)]"
               >
@@ -213,32 +249,46 @@ export function FlashcardManagerModal({
               </button>
             </div>
 
-            <div className="space-y-2">
-              <div>
-                <label className="block text-[11px] font-medium text-[color-mix(in_srgb,var(--ink)_70%,transparent)] mb-1">
+            <div className="space-y-3.5">
+              {/* Frente */}
+              <div className="space-y-1.5">
+                <label className="block text-[11px] font-medium text-[color-mix(in_srgb,var(--ink)_75%,transparent)]">
                   Frente (Pergunta / Conceito / Enunciado):
                 </label>
                 <textarea
                   rows={2}
                   value={newFrente}
                   onChange={(e) => setNewFrente(e.target.value)}
-                  placeholder="Ex: O que é o princípio da insignificância no Direito Penal?"
-                  required
+                  placeholder="Ex: O que é o princípio da insignificância? (ou deixe em branco se for só imagem)"
                   className="w-full rounded-[var(--radius-tag)] border border-[var(--line)] bg-[var(--surface)] p-2.5 text-xs text-[var(--ink)] outline-none focus:border-[var(--signal)] resize-none"
+                />
+                <FlashcardImageInput
+                  label="Foto ou Print da Frente (Opcional):"
+                  side="frente"
+                  value={newFrenteImg}
+                  onChange={setNewFrenteImg}
+                  disabled={savingNew}
                 />
               </div>
 
-              <div>
-                <label className="block text-[11px] font-medium text-[color-mix(in_srgb,var(--ink)_70%,transparent)] mb-1">
-                  Verso (Resposta / Explicação correta):
+              {/* Verso */}
+              <div className="space-y-1.5 pt-1 border-t border-[var(--line)]/50">
+                <label className="block text-[11px] font-medium text-[color-mix(in_srgb,var(--ink)_75%,transparent)]">
+                  Verso (Resposta / Explicação / Resolução):
                 </label>
                 <textarea
                   rows={2}
                   value={newVerso}
                   onChange={(e) => setNewVerso(e.target.value)}
-                  placeholder="Ex: Causa supralegal de exclusão da tipicidade material quando a conduta é de mínima ofensividade..."
-                  required
+                  placeholder="Ex: Causa supralegal de exclusão... (ou deixe em branco se for só imagem)"
                   className="w-full rounded-[var(--radius-tag)] border border-[var(--line)] bg-[var(--surface)] p-2.5 text-xs text-[var(--ink)] outline-none focus:border-[var(--signal)] resize-none"
+                />
+                <FlashcardImageInput
+                  label="Foto ou Print do Verso (Opcional):"
+                  side="verso"
+                  value={newVersoImg}
+                  onChange={setNewVersoImg}
+                  disabled={savingNew}
                 />
               </div>
             </div>
@@ -250,6 +300,8 @@ export function FlashcardManagerModal({
                   setShowNewNewCard(false);
                   setNewFrente("");
                   setNewVerso("");
+                  setNewFrenteImg(null);
+                  setNewVersoImg(null);
                 }}
                 className="rounded-[var(--radius-btn)] border border-[var(--line)] px-3 py-1.5 text-xs font-medium text-[var(--ink)] hover:bg-[var(--mist)] transition"
               >
@@ -257,7 +309,7 @@ export function FlashcardManagerModal({
               </button>
               <button
                 type="submit"
-                disabled={savingNew || !newFrente.trim() || !newVerso.trim()}
+                disabled={savingNew || !isNewCardValid}
                 className="inline-flex items-center gap-1.5 rounded-[var(--radius-btn)] bg-[var(--signal)] px-3.5 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:brightness-110 disabled:opacity-50"
               >
                 {savingNew ? "Salvando..." : "Salvar Flashcard"}
@@ -276,7 +328,7 @@ export function FlashcardManagerModal({
               <p className="text-xs text-[color-mix(in_srgb,var(--ink)_55%,transparent)]">
                 {search
                   ? "Tente buscar por outras palavras-chave."
-                  : "Crie um novo cartão manual acima ou gere automaticamente com a IA."}
+                  : "Crie um novo cartão manual acima com texto ou imagens, ou gere automaticamente com a IA."}
               </p>
               {!search && !showNewCard && (
                 <button
@@ -294,6 +346,7 @@ export function FlashcardManagerModal({
               const isAI = card.origem === "ia" || !card.questao_id;
               const isCaderno = Boolean(card.questao_id);
               const nivel = (card.nivel_dominio ?? 0) as NivelDominio;
+              const hasImages = Boolean(card.frente_imagem_url || card.verso_imagem_url);
 
               return (
                 <div
@@ -319,6 +372,13 @@ export function FlashcardManagerModal({
                       ) : (
                         <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-emerald-600 dark:text-emerald-400">
                           <Pencil size={10} /> Manual
+                        </span>
+                      )}
+
+                      {/* Badge se contiver imagem */}
+                      {hasImages && (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-indigo-500/10 px-2 py-0.5 text-indigo-600 dark:text-indigo-400">
+                          <ImageIcon size={10} /> Com Imagem
                         </span>
                       )}
 
@@ -363,28 +423,44 @@ export function FlashcardManagerModal({
 
                   {/* Conteúdo do Card */}
                   {isEditing ? (
-                    <div className="space-y-2 pt-1">
-                      <div>
-                        <span className="block text-[10px] uppercase font-bold tracking-wider text-[var(--signal)] mb-0.5">
-                          Frente (Pergunta):
+                    <div className="space-y-3 pt-1">
+                      <div className="space-y-1.5">
+                        <span className="block text-[10px] uppercase font-bold tracking-wider text-[var(--signal)]">
+                          Frente (Pergunta / Imagem):
                         </span>
                         <textarea
                           rows={2}
                           value={editFrente}
                           onChange={(e) => setEditFrente(e.target.value)}
+                          placeholder="Texto da pergunta (ou deixe em branco se usar apenas imagem)..."
                           className="w-full rounded-[var(--radius-tag)] border border-[var(--signal)]/50 bg-[var(--surface)] p-2 text-xs text-[var(--ink)] outline-none focus:border-[var(--signal)]"
+                        />
+                        <FlashcardImageInput
+                          label="Foto ou Print da Frente:"
+                          side="frente"
+                          value={editFrenteImg}
+                          onChange={setEditFrenteImg}
+                          disabled={savingEdit}
                         />
                       </div>
 
-                      <div>
-                        <span className="block text-[10px] uppercase font-bold tracking-wider text-emerald-600 dark:text-emerald-400 mb-0.5">
-                          Verso (Resposta):
+                      <div className="space-y-1.5 pt-1 border-t border-[var(--line)]/50">
+                        <span className="block text-[10px] uppercase font-bold tracking-wider text-emerald-600 dark:text-emerald-400">
+                          Verso (Resposta / Imagem):
                         </span>
                         <textarea
                           rows={2}
                           value={editVerso}
                           onChange={(e) => setEditVerso(e.target.value)}
+                          placeholder="Texto da resposta (ou deixe em branco se usar apenas imagem)..."
                           className="w-full rounded-[var(--radius-tag)] border border-emerald-500/50 bg-[var(--surface)] p-2 text-xs text-[var(--ink)] outline-none focus:border-emerald-500"
+                        />
+                        <FlashcardImageInput
+                          label="Foto ou Print do Verso:"
+                          side="verso"
+                          value={editVersoImg}
+                          onChange={setEditVersoImg}
+                          disabled={savingEdit}
                         />
                       </div>
 
@@ -398,7 +474,7 @@ export function FlashcardManagerModal({
                         </button>
                         <button
                           type="button"
-                          disabled={savingEdit || !editFrente.trim() || !editVerso.trim()}
+                          disabled={savingEdit || !isEditCardValid}
                           onClick={() => handleSaveEdit(card.id)}
                           className="inline-flex items-center gap-1 rounded-[var(--radius-btn)] bg-[var(--signal)] px-3 py-1 text-xs font-semibold text-white hover:brightness-110 disabled:opacity-50"
                         >
@@ -410,23 +486,67 @@ export function FlashcardManagerModal({
                   ) : (
                     <div className="grid gap-2 text-xs sm:grid-cols-2">
                       {/* Frente */}
-                      <div className="rounded-[var(--radius-tag)] bg-[color-mix(in_srgb,var(--mist)_60%,var(--surface))] p-2.5 border border-[var(--line)]/50">
-                        <span className="block text-[10px] font-bold uppercase tracking-wider text-[var(--signal)] mb-1">
+                      <div className="rounded-[var(--radius-tag)] bg-[color-mix(in_srgb,var(--mist)_60%,var(--surface))] p-2.5 border border-[var(--line)]/50 space-y-1.5">
+                        <span className="block text-[10px] font-bold uppercase tracking-wider text-[var(--signal)]">
                           Pergunta:
                         </span>
-                        <p className="whitespace-pre-wrap text-[var(--ink)] leading-relaxed line-clamp-4">
-                          {card.frente}
-                        </p>
+                        {card.frente_imagem_url && (
+                          <div
+                            onClick={() => setLightboxSrc(card.frente_imagem_url!)}
+                            className="group/img relative cursor-pointer overflow-hidden rounded-md border border-[var(--line)] bg-black/5 hover:opacity-95 transition"
+                            title="Clique para ampliar"
+                          >
+                            <img
+                              src={card.frente_imagem_url}
+                              alt="Imagem da Frente"
+                              className="max-h-24 w-auto object-contain mx-auto"
+                            />
+                            <div className="absolute right-1 bottom-1 rounded bg-black/60 p-1 text-white opacity-0 group-hover/img:opacity-100 transition">
+                              <Maximize2 size={11} />
+                            </div>
+                          </div>
+                        )}
+                        {card.frente ? (
+                          <p className="whitespace-pre-wrap text-[var(--ink)] leading-relaxed line-clamp-4">
+                            {card.frente}
+                          </p>
+                        ) : (
+                          <p className="text-[11px] italic text-[color-mix(in_srgb,var(--ink)_50%,transparent)]">
+                            (Card visual — baseado em imagem)
+                          </p>
+                        )}
                       </div>
 
                       {/* Verso */}
-                      <div className="rounded-[var(--radius-tag)] bg-[color-mix(in_srgb,var(--ok,#16a34a)_6%,var(--surface))] p-2.5 border border-[color-mix(in_srgb,var(--ok,#16a34a)_20%,transparent)]">
-                        <span className="block text-[10px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 mb-1">
+                      <div className="rounded-[var(--radius-tag)] bg-[color-mix(in_srgb,var(--ok,#16a34a)_6%,var(--surface))] p-2.5 border border-[color-mix(in_srgb,var(--ok,#16a34a)_20%,transparent)] space-y-1.5">
+                        <span className="block text-[10px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
                           Resposta:
                         </span>
-                        <p className="whitespace-pre-wrap text-[var(--ink)] leading-relaxed line-clamp-4">
-                          {card.verso}
-                        </p>
+                        {card.verso_imagem_url && (
+                          <div
+                            onClick={() => setLightboxSrc(card.verso_imagem_url!)}
+                            className="group/img relative cursor-pointer overflow-hidden rounded-md border border-[var(--line)] bg-black/5 hover:opacity-95 transition"
+                            title="Clique para ampliar"
+                          >
+                            <img
+                              src={card.verso_imagem_url}
+                              alt="Imagem do Verso"
+                              className="max-h-24 w-auto object-contain mx-auto"
+                            />
+                            <div className="absolute right-1 bottom-1 rounded bg-black/60 p-1 text-white opacity-0 group-hover/img:opacity-100 transition">
+                              <Maximize2 size={11} />
+                            </div>
+                          </div>
+                        )}
+                        {card.verso ? (
+                          <p className="whitespace-pre-wrap text-[var(--ink)] leading-relaxed line-clamp-4">
+                            {card.verso}
+                          </p>
+                        ) : (
+                          <p className="text-[11px] italic text-[color-mix(in_srgb,var(--ink)_50%,transparent)]">
+                            (Card visual — baseado em imagem)
+                          </p>
+                        )}
                       </div>
                     </div>
                   )}
@@ -460,6 +580,14 @@ export function FlashcardManagerModal({
         onConfirm={handleConfirmDelete}
         onCancel={() => setPendingDeleteCard(null)}
       />
+
+      {/* Modal Lightbox para visualização em alta resolução */}
+      {lightboxSrc && (
+        <FlashcardImageLightbox
+          src={lightboxSrc}
+          onClose={() => setLightboxSrc(null)}
+        />
+      )}
     </div>
   );
 }

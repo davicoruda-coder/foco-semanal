@@ -322,17 +322,26 @@ export async function responderFlashcard(
   assertOk("responder flashcard", error);
 }
 
-/** Atualiza frente e/ou verso de um flashcard existente. */
+/** Atualiza frente, verso e/ou imagens de um flashcard existente. */
 export async function updateFlashcard(
   id: string,
-  updates: { frente?: string; verso?: string },
+  updates: {
+    frente?: string;
+    verso?: string;
+    frente_imagem_url?: string | null;
+    verso_imagem_url?: string | null;
+  },
 ): Promise<boolean> {
   const auth = await getAuthedClient();
   if (!auth) return false;
 
-  const patch: Record<string, string> = {};
+  const patch: Record<string, unknown> = {};
   if (updates.frente !== undefined) patch.frente = clampText(updates.frente, 5000);
   if (updates.verso !== undefined) patch.verso = clampText(updates.verso, 5000);
+  if (updates.frente_imagem_url !== undefined)
+    patch.frente_imagem_url = updates.frente_imagem_url;
+  if (updates.verso_imagem_url !== undefined)
+    patch.verso_imagem_url = updates.verso_imagem_url;
 
   const { error } = await auth.supabase
     .from("flashcards")
@@ -357,12 +366,14 @@ export async function deleteFlashcard(id: string): Promise<boolean> {
   return true;
 }
 
-/** Cria um flashcard manual para uma matéria (opcionalmente vinculado a uma questão). */
+/** Cria um flashcard manual para uma matéria (opcionalmente com imagens e/ou vinculado a uma questão). */
 export async function addFlashcardManual(
   disciplina: string,
   frente: string,
   verso: string,
   questaoId?: string,
+  frenteImagemUrl?: string | null,
+  versoImagemUrl?: string | null,
 ): Promise<Flashcard | null> {
   const auth = await getAuthedClient();
   if (!auth) return null;
@@ -372,6 +383,8 @@ export async function addFlashcardManual(
     user_id: auth.userId,
     frente: clampText(frente, 5000),
     verso: clampText(verso, 5000),
+    frente_imagem_url: frenteImagemUrl || null,
+    verso_imagem_url: versoImagemUrl || null,
     disciplina: clampText(disciplina, 100),
     origem: questaoId ? ("caderno" as const) : ("manual" as const),
     proxima_revisao: hoje,

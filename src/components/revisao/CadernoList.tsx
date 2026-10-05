@@ -29,6 +29,7 @@ import { DialogFrame } from "@/components/DialogFrame";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { QuickCaptureForm } from "./QuickCaptureForm";
 import { FormattedRuleText } from "./FormattedRuleText";
+import { FlashcardImageInput } from "./FlashcardImageInput";
 import {
   CAUSA_ERRO_LABEL,
   STATUS_RESULTADO_LABEL,
@@ -135,6 +136,8 @@ export function CadernoList({
   const [manualCardQuestao, setManualCardQuestao] = useState<QuestaoCaderno | null>(null);
   const [cardFrente, setCardFrente] = useState("");
   const [cardVerso, setCardVerso] = useState("");
+  const [cardFrenteImg, setCardFrenteImg] = useState<string | null>(null);
+  const [cardVersoImg, setCardVersoImg] = useState<string | null>(null);
   const [savingManualCard, setSavingManualCard] = useState(false);
   const [manualCardFeedback, setManualCardFeedback] = useState<string | null>(null);
 
@@ -155,11 +158,15 @@ export function CadernoList({
     const detalhe = q.enunciado_texto ? `\n\n${q.enunciado_texto.slice(0, 250)}${q.enunciado_texto.length > 250 ? "…" : ""}` : q.codigo_questao ? `\n\nQuestão #${q.codigo_questao}` : "";
     setCardFrente(`${prefix}${detalhe}`);
     setCardVerso(`📌 ${q.aprendizado_chave}`);
+    setCardFrenteImg(null);
+    setCardVersoImg(null);
     setManualCardFeedback(null);
   };
 
   const handleSaveManualCard = async () => {
-    if (!manualCardQuestao || !cardFrente.trim() || !cardVerso.trim() || savingManualCard) return;
+    const hasFront = Boolean(cardFrente.trim() || cardFrenteImg);
+    const hasBack = Boolean(cardVerso.trim() || cardVersoImg);
+    if (!manualCardQuestao || !hasFront || !hasBack || savingManualCard) return;
     setSavingManualCard(true);
     try {
       const card = await addFlashcardManual(
@@ -167,6 +174,8 @@ export function CadernoList({
         cardFrente.trim(),
         cardVerso.trim(),
         manualCardQuestao.id,
+        cardFrenteImg,
+        cardVersoImg,
       );
       if (card) {
         setManualCardFeedback("Flashcard criado com sucesso!");
@@ -938,10 +947,10 @@ export function CadernoList({
                 </div>
               )}
 
-              <div className="space-y-3">
-                <div>
-                  <label className="mb-1 block text-xs font-medium uppercase tracking-wider text-[color-mix(in_srgb,var(--ink)_55%,transparent)]">
-                    Frente (Pergunta ou Contexto) *
+              <div className="space-y-3.5">
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-medium uppercase tracking-wider text-[color-mix(in_srgb,var(--ink)_65%,transparent)]">
+                    Frente (Pergunta, Contexto ou Imagem)
                   </label>
                   <textarea
                     value={cardFrente}
@@ -950,11 +959,18 @@ export function CadernoList({
                     className="w-full resize-none rounded-[var(--radius-btn)] border border-[var(--line)] bg-[var(--surface)] px-3 py-2.5 text-sm text-[var(--ink)] outline-none transition focus:border-[var(--signal)] focus:ring-2 focus:ring-[var(--signal-soft)] leading-relaxed"
                     placeholder="Ex: Qual é a regra sobre..."
                   />
+                  <FlashcardImageInput
+                    label="Foto ou Print da Frente (Opcional):"
+                    side="frente"
+                    value={cardFrenteImg}
+                    onChange={setCardFrenteImg}
+                    disabled={savingManualCard}
+                  />
                 </div>
 
-                <div>
-                  <label className="mb-1 block text-xs font-medium uppercase tracking-wider text-[color-mix(in_srgb,var(--ink)_55%,transparent)]">
-                    Verso (Resposta ou Regra) *
+                <div className="space-y-1.5 pt-1 border-t border-[var(--line)]/50">
+                  <label className="block text-xs font-medium uppercase tracking-wider text-[color-mix(in_srgb,var(--ink)_65%,transparent)]">
+                    Verso (Resposta, Regra ou Imagem)
                   </label>
                   <textarea
                     value={cardVerso}
@@ -962,6 +978,13 @@ export function CadernoList({
                     rows={3}
                     className="w-full resize-none rounded-[var(--radius-btn)] border border-[var(--line)] bg-[var(--surface)] px-3 py-2.5 text-sm text-[var(--ink)] outline-none transition focus:border-[var(--signal)] focus:ring-2 focus:ring-[var(--signal-soft)] leading-relaxed"
                     placeholder="Ex: Não ocorre crase..."
+                  />
+                  <FlashcardImageInput
+                    label="Foto ou Print do Verso (Opcional):"
+                    side="verso"
+                    value={cardVersoImg}
+                    onChange={setCardVersoImg}
+                    disabled={savingManualCard}
                   />
                 </div>
               </div>
@@ -977,7 +1000,11 @@ export function CadernoList({
               </button>
               <button
                 type="button"
-                disabled={savingManualCard || !cardFrente.trim() || !cardVerso.trim()}
+                disabled={
+                  savingManualCard ||
+                  (!cardFrente.trim() && !cardFrenteImg) ||
+                  (!cardVerso.trim() && !cardVersoImg)
+                }
                 onClick={handleSaveManualCard}
                 className="inline-flex items-center gap-1.5 rounded-[var(--radius-btn)] bg-[var(--signal)] px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:brightness-110 disabled:opacity-60"
               >

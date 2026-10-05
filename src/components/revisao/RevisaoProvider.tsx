@@ -96,7 +96,12 @@ type RevisaoContextValue = {
   ) => Promise<void>;
   updateFlashcard: (
     id: string,
-    updates: { frente?: string; verso?: string },
+    updates: {
+      frente?: string;
+      verso?: string;
+      frente_imagem_url?: string | null;
+      verso_imagem_url?: string | null;
+    },
   ) => Promise<boolean>;
   deleteFlashcard: (id: string) => Promise<boolean>;
   addFlashcardManual: (
@@ -104,6 +109,8 @@ type RevisaoContextValue = {
     frente: string,
     verso: string,
     questaoId?: string,
+    frenteImagemUrl?: string | null,
+    versoImagemUrl?: string | null,
   ) => Promise<Flashcard | null>;
   reloadFlashcards: () => Promise<void>;
 
@@ -486,7 +493,12 @@ export function RevisaoProvider({ children }: { children: ReactNode }) {
   const handleUpdateFlashcard = useCallback(
     async (
       id: string,
-      updates: { frente?: string; verso?: string },
+      updates: {
+        frente?: string;
+        verso?: string;
+        frente_imagem_url?: string | null;
+        verso_imagem_url?: string | null;
+      },
     ): Promise<boolean> => {
       try {
         const store = revisaoStore;
@@ -532,10 +544,19 @@ export function RevisaoProvider({ children }: { children: ReactNode }) {
       frente: string,
       verso: string,
       questaoId?: string,
+      frenteImagemUrl?: string | null,
+      versoImagemUrl?: string | null,
     ): Promise<Flashcard | null> => {
       try {
         const store = revisaoStore;
-        const card = await store.addFlashcardManual(disciplina, frente, verso, questaoId);
+        const card = await store.addFlashcardManual(
+          disciplina,
+          frente,
+          verso,
+          questaoId,
+          frenteImagemUrl,
+          versoImagemUrl,
+        );
         if (card) {
           setAllFlashcards((prev) => [card, ...prev]);
           setFlashcardsDoDia((prev) => [card, ...prev]);
