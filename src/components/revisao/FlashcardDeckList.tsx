@@ -89,6 +89,7 @@ export function FlashcardDeckList() {
         </div>
 
         <FlashcardPlayer
+          key={activeDeck.id}
           cards={activeCards}
           onCardDeleted={(deletedId) => {
             setActiveDeck((prev) => {
