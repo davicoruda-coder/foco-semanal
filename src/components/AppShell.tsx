@@ -353,7 +353,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   {href === "/revisao" && pendingFlashcardsCount > 0 && (
                     <span
                       title={`${pendingFlashcardsCount} flashcard${pendingFlashcardsCount > 1 ? "s" : ""} para revisar hoje`}
-                      className="rounded-full bg-[var(--signal)] px-1.5 py-0.5 text-[10px] font-bold text-white leading-none shadow-2xs"
+                      className="rounded-full bg-[var(--warn)] px-1.5 py-0.5 text-[10px] font-bold text-white dark:text-neutral-950 font-mono-num leading-none shadow-2xs"
                     >
                       {pendingFlashcardsCount > 99 ? "99+" : pendingFlashcardsCount}
                     </span>
@@ -409,7 +409,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   {href === "/revisao" && pendingFlashcardsCount > 0 && (
                     <span
                       title={`${pendingFlashcardsCount} flashcard${pendingFlashcardsCount > 1 ? "s" : ""} para revisar hoje`}
-                      className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-[var(--signal)] px-1 text-[10px] font-bold text-white shadow-xs ring-2 ring-[var(--surface)]"
+                      className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-[var(--warn)] px-1 text-[10px] font-bold text-white dark:text-neutral-950 font-mono-num shadow-xs ring-2 ring-[var(--surface)]"
                     >
                       {pendingFlashcardsCount > 99 ? "99+" : pendingFlashcardsCount}
                     </span>

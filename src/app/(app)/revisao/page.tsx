@@ -130,7 +130,7 @@ function RevisaoContent() {
           <div className="relative inline-flex items-center justify-center">
             <Layers size={16} className="shrink-0 sm:size-3.5" />
             {flashcardsDoDia.length > 0 && (
-              <span className="absolute -top-1 -right-2.5 sm:hidden grid min-w-3.5 h-3.5 place-items-center rounded-full bg-[var(--signal)] px-0.5 text-[8px] font-bold text-white leading-none shadow-xs">
+              <span className="absolute -top-1 -right-2.5 sm:hidden grid min-w-3.5 h-3.5 place-items-center rounded-full bg-[var(--warn)] px-0.5 text-[8px] font-bold text-white dark:text-neutral-950 font-mono-num leading-none shadow-xs">
                 {flashcardsDoDia.length}
               </span>
             )}
@@ -138,7 +138,7 @@ function RevisaoContent() {
           <span className="sm:hidden tracking-tight">Cards</span>
           <span className="hidden sm:inline whitespace-nowrap">Flashcards</span>
           {flashcardsDoDia.length > 0 && (
-            <span className="hidden sm:grid size-4 shrink-0 place-items-center rounded-full bg-[var(--signal)] text-[9px] font-bold text-white">
+            <span className="hidden sm:grid size-4 shrink-0 place-items-center rounded-full bg-[var(--warn)] text-[9px] font-bold text-white dark:text-neutral-950 font-mono-num">
               {flashcardsDoDia.length}
             </span>
           )}

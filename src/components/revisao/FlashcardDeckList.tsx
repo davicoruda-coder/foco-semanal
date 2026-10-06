@@ -343,7 +343,7 @@ export function FlashcardDeckList() {
                       <span
                         className={`rounded-full px-2.5 py-0.5 font-semibold text-[11px] ${
                           hasCardsHoje
-                            ? "bg-[var(--signal-soft)] text-[var(--signal)]"
+                            ? "bg-[var(--warn-soft)] text-[var(--warn)] border border-[var(--warn)]/20"
                             : "bg-[var(--mist)] text-[color-mix(in_srgb,var(--ink)_50%,transparent)]"
                         }`}
                       >
