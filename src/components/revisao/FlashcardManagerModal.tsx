@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import type { Flashcard, MateriaRevisao, NivelDominio } from "@/lib/revisao/types";
 import { NIVEL_DOMINIO_LABEL } from "@/lib/revisao/types";
+import { DialogFrame } from "@/components/DialogFrame";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { useRevisao } from "./RevisaoProvider";
 import { FlashcardImageInput } from "./FlashcardImageInput";
@@ -190,49 +191,56 @@ export function FlashcardManagerModal({
     (Boolean(editVerso.trim()) || Boolean(editVersoImg));
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-3 backdrop-blur-xs animate-in fade-in duration-200">
-      <div className="surface max-h-[90vh] w-full max-w-2xl overflow-hidden rounded-[var(--radius)] border border-[var(--line)] shadow-2xl flex flex-col">
-        {/* Header do Modal */}
-        <div className="flex items-center justify-between border-b border-[var(--line)] p-4 sm:px-6">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <div className="grid size-9 place-items-center rounded-xl bg-[var(--signal-soft)] text-[var(--signal)] shrink-0">
-              <Layers size={18} />
+    <>
+      <DialogFrame
+        open={true}
+        onClose={onClose}
+        labelledBy="modal-materia-title"
+        overlayClassName="z-[60]"
+        cardClassName="surface flex max-h-[85vh] sm:max-h-[88vh] w-full max-w-2xl flex-col overflow-hidden p-0 shadow-2xl border border-[var(--line)] rounded-[var(--radius)]"
+      >
+        <div className="flex flex-col h-full max-h-[85vh] sm:max-h-[88vh] min-h-0">
+          {/* Header do Modal */}
+          <div className="flex items-center justify-between border-b border-[var(--line)] p-4 sm:px-6 shrink-0">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="grid size-9 place-items-center rounded-xl bg-[var(--signal-soft)] text-[var(--signal)] shrink-0">
+                <Layers size={18} />
+              </div>
+              <div className="min-w-0">
+                <h3 id="modal-materia-title" className="font-display text-base sm:text-lg font-bold text-[var(--ink)] truncate">
+                  {materia.nome}
+                </h3>
+                <p className="text-xs text-[color-mix(in_srgb,var(--ink)_60%,transparent)]">
+                  {materiaCards.length}{" "}
+                  {materiaCards.length === 1 ? "flashcard cadastrado" : "flashcards cadastrados"}
+                </p>
+              </div>
             </div>
-            <div className="min-w-0">
-              <h3 className="font-display text-base sm:text-lg font-bold text-[var(--ink)] truncate">
-                {materia.nome}
-              </h3>
-              <p className="text-xs text-[color-mix(in_srgb,var(--ink)_60%,transparent)]">
-                {materiaCards.length}{" "}
-                {materiaCards.length === 1 ? "flashcard cadastrado" : "flashcards cadastrados"}
-              </p>
-            </div>
-          </div>
 
-          <div className="flex items-center gap-2">
-            {!showNewCard && (
+            <div className="flex items-center gap-2">
+              {!showNewCard && (
+                <button
+                  type="button"
+                  onClick={() => setShowNewNewCard(true)}
+                  className="inline-flex items-center gap-1.5 rounded-[var(--radius-btn)] bg-[var(--signal)] px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:brightness-110"
+                >
+                  <Plus size={15} strokeWidth={2.5} />
+                  <span>Novo Card</span>
+                </button>
+              )}
               <button
                 type="button"
-                onClick={() => setShowNewNewCard(true)}
-                className="inline-flex items-center gap-1.5 rounded-[var(--radius-btn)] bg-[var(--signal)] px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:brightness-110"
+                onClick={onClose}
+                className="rounded-full p-1.5 text-[color-mix(in_srgb,var(--ink)_45%,transparent)] transition hover:bg-[var(--mist)] hover:text-[var(--ink)]"
+                aria-label="Fechar"
               >
-                <Plus size={15} strokeWidth={2.5} />
-                <span>Novo Card</span>
+                <X size={18} />
               </button>
-            )}
-            <button
-              type="button"
-              onClick={onClose}
-              className="rounded-full p-1.5 text-[color-mix(in_srgb,var(--ink)_45%,transparent)] transition hover:bg-[var(--mist)] hover:text-[var(--ink)]"
-              aria-label="Fechar"
-            >
-              <X size={18} />
-            </button>
+            </div>
           </div>
-        </div>
 
-        {/* Barra de Busca & Ações */}
-        <div className="border-b border-[var(--line)] bg-[color-mix(in_srgb,var(--mist)_30%,var(--surface))] p-3 sm:px-6">
+          {/* Barra de Busca & Ações */}
+          <div className="border-b border-[var(--line)] bg-[color-mix(in_srgb,var(--mist)_30%,var(--surface))] p-3 sm:px-6 shrink-0">
           <div className="relative">
             <Search
               size={15}
@@ -257,12 +265,12 @@ export function FlashcardManagerModal({
           </div>
         </div>
 
-        {/* Formulário: Adicionar Novo Card Manual */}
-        {showNewCard && (
-          <form
-            onSubmit={handleCreateManual}
-            className="border-b border-[var(--signal)]/30 bg-[color-mix(in_srgb,var(--signal)_4%,var(--surface))] p-4 sm:px-6 space-y-4 max-h-[60vh] overflow-y-auto"
-          >
+          {/* Formulário: Adicionar Novo Card Manual */}
+          {showNewCard && (
+            <form
+              onSubmit={handleCreateManual}
+              className="border-b border-[var(--signal)]/30 bg-[color-mix(in_srgb,var(--signal)_4%,var(--surface))] p-4 sm:px-6 space-y-4 max-h-[50vh] overflow-y-auto shrink-0"
+            >
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold uppercase tracking-wider text-[var(--signal)]">
                 Criar Flashcard Manual
@@ -361,7 +369,7 @@ export function FlashcardManagerModal({
         )}
 
         {/* Lista de Cards */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-3">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-3 min-h-0">
           {successNotice && (
             <div className="flex items-center gap-2 rounded-[var(--radius-tag)] border border-emerald-500/30 bg-emerald-500/10 p-2.5 text-xs font-semibold text-emerald-400">
               <Check size={14} className="shrink-0" />
@@ -611,18 +619,19 @@ export function FlashcardManagerModal({
           )}
         </div>
 
-        {/* Rodapé */}
-        <div className="border-t border-[var(--line)] bg-[color-mix(in_srgb,var(--mist)_20%,var(--surface))] p-3 sm:px-6 flex justify-between items-center text-xs text-[color-mix(in_srgb,var(--ink)_55%,transparent)]">
-          <span>{filteredCards.length} de {materiaCards.length} cards listados</span>
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-[var(--radius-btn)] border border-[var(--line)] bg-[var(--surface)] px-4 py-1.5 text-xs font-semibold text-[var(--ink)] hover:bg-[var(--mist)] transition"
-          >
-            Fechar
-          </button>
+          {/* Rodapé */}
+          <div className="border-t border-[var(--line)] bg-[color-mix(in_srgb,var(--mist)_20%,var(--surface))] p-3 sm:px-6 flex justify-between items-center text-xs text-[color-mix(in_srgb,var(--ink)_55%,transparent)] shrink-0">
+            <span>{filteredCards.length} de {materiaCards.length} cards listados</span>
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-[var(--radius-btn)] border border-[var(--line)] bg-[var(--surface)] px-4 py-1.5 text-xs font-semibold text-[var(--ink)] hover:bg-[var(--mist)] transition"
+            >
+              Fechar
+            </button>
+          </div>
         </div>
-      </div>
+      </DialogFrame>
 
       {/* Confirmação de exclusão de card */}
       <ConfirmDialog
@@ -643,6 +652,6 @@ export function FlashcardManagerModal({
           onClose={() => setLightboxSrc(null)}
         />
       )}
-    </div>
+    </>
   );
 }

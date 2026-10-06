@@ -1,7 +1,5 @@
-/* eslint-disable @next/next/no-img-element */
-"use client";
-
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { X, ZoomIn } from "lucide-react";
 
 interface FlashcardImageLightboxProps {
@@ -19,6 +17,12 @@ export function FlashcardImageLightbox({
   alt = "Imagem ampliada",
   onClose,
 }: FlashcardImageLightboxProps) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   useEffect(() => {
     if (!src) return;
 
@@ -32,18 +36,18 @@ export function FlashcardImageLightbox({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [src, onClose]);
 
-  if (!src) return null;
+  if (!src || !mounted) return null;
 
-  return (
+  return createPortal(
     <div
       role="dialog"
       aria-modal="true"
       onClick={onClose}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4 backdrop-blur-sm animate-in fade-in duration-200"
+      className="fixed inset-0 z-[80] flex items-center justify-center bg-black/85 p-4 backdrop-blur-sm animate-in fade-in duration-200"
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="relative max-h-[92vh] max-w-[95vw] sm:max-w-4xl overflow-hidden rounded-xl border border-white/20 bg-neutral-950/90 shadow-2xl flex flex-col"
+        className="relative max-h-[92vh] max-w-[95vw] sm:max-w-4xl overflow-hidden rounded-xl border border-white/20 bg-neutral-950/90 shadow-2xl flex flex-col m-auto"
       >
         <div className="flex items-center justify-between border-b border-white/10 px-4 py-2.5 bg-neutral-900/60">
           <span className="text-xs font-medium text-neutral-300 flex items-center gap-1.5">
@@ -67,6 +71,7 @@ export function FlashcardImageLightbox({
           />
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
