@@ -582,27 +582,20 @@ export function StudySessionChrome() {
           }}
         />
 
-        <div className="mt-5 flex flex-col gap-2.5">
+        <div className="mt-5 flex flex-col gap-2">
           <button
             type="button"
-            className="btn btn-primary py-3 text-sm font-semibold tracking-wide flex items-center justify-center gap-2 cursor-pointer"
+            className="btn btn-primary w-full py-3 text-sm font-semibold tracking-wide flex items-center justify-center gap-2 cursor-pointer"
             onClick={() => afterNotesThen(flow.chooseRest)}
           >
             <span>Descansar ({flow.settings.restMinutes} min)</span>
           </button>
           <button
             type="button"
-            className="btn py-2.5 text-sm font-medium hover:border-[var(--signal)] hover:text-[var(--signal)] cursor-pointer"
-            onClick={() => afterNotesThen(flow.chooseContinue)}
-          >
-            Continuar estudando
-          </button>
-          <button
-            type="button"
-            className="btn border-transparent bg-transparent py-2 text-xs font-medium text-[color-mix(in_srgb,var(--ink)_55%,transparent)] hover:text-rose-500 hover:bg-rose-500/10 cursor-pointer"
+            className="w-full py-2.5 text-xs sm:text-sm font-medium text-[color-mix(in_srgb,var(--ink)_60%,transparent)] hover:text-[var(--ink)] hover:bg-[var(--mist)] rounded-[var(--radius-btn)] transition flex items-center justify-center gap-1.5 cursor-pointer"
             onClick={() => afterNotesThen(flow.chooseFinish)}
           >
-            Finalizar estudos
+            <span>Finalizar estudos</span>
           </button>
         </div>
       </DialogFrame>
