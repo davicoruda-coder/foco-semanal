@@ -538,6 +538,17 @@ export function RevisaoProvider({ children }: { children: ReactNode }) {
     [],
   );
 
+  /* ---- Stats ---- */
+  const reloadStats = useCallback(async () => {
+    try {
+      const store = revisaoStore;
+      const s = await store.getRevisaoStats();
+      setStats(s);
+    } catch (err) {
+      console.warn("[revisao] load stats:", err);
+    }
+  }, []);
+
   const handleAddFlashcardManual = useCallback(
     async (
       disciplina: string,
@@ -560,6 +571,7 @@ export function RevisaoProvider({ children }: { children: ReactNode }) {
         if (card) {
           setAllFlashcards((prev) => [card, ...prev]);
           setFlashcardsDoDia((prev) => [card, ...prev]);
+          void reloadStats();
         }
         return card;
       } catch (err) {
@@ -567,19 +579,8 @@ export function RevisaoProvider({ children }: { children: ReactNode }) {
         return null;
       }
     },
-    [],
+    [reloadStats],
   );
-
-  /* ---- Stats ---- */
-  const reloadStats = useCallback(async () => {
-    try {
-      const store = revisaoStore;
-      const s = await store.getRevisaoStats();
-      setStats(s);
-    } catch (err) {
-      console.warn("[revisao] load stats:", err);
-    }
-  }, []);
 
   /* ---- Module toggle ---- */
   const handleSetModuloAtivo = useCallback(async (ativo: boolean) => {

@@ -343,13 +343,38 @@ export async function updateFlashcard(
   if (updates.verso_imagem_url !== undefined)
     patch.verso_imagem_url = updates.verso_imagem_url;
 
-  const { error } = await auth.supabase
+  let { error } = await auth.supabase
     .from("flashcards")
     .update(patch)
     .eq("id", id)
     .eq("user_id", auth.userId);
+
+  // Fallback caso as colunas de imagens ainda não tenham sido migradas no Supabase
+  if (
+    error &&
+    (error.code === "PGRST204" || error.code === "42703") &&
+    ("frente_imagem_url" in patch || "verso_imagem_url" in patch)
+  ) {
+    console.warn(
+      "[revisao] Colunas de imagem não encontradas no banco ao atualizar. Atualizando apenas texto...",
+    );
+    const fallbackPatch = { ...patch };
+    delete fallbackPatch.frente_imagem_url;
+    delete fallbackPatch.verso_imagem_url;
+    if (Object.keys(fallbackPatch).length > 0) {
+      const retry = await auth.supabase
+        .from("flashcards")
+        .update(fallbackPatch)
+        .eq("id", id)
+        .eq("user_id", auth.userId);
+      error = retry.error;
+    } else {
+      error = null;
+    }
+  }
+
   assertOk("update flashcard", error);
-  return true;
+  return !error;
 }
 
 /** Exclui um flashcard específico. */
@@ -383,24 +408,54 @@ export async function addFlashcardManual(
     user_id: auth.userId,
     frente: clampText(frente, 5000),
     verso: clampText(verso, 5000),
-    frente_imagem_url: frenteImagemUrl || null,
-    verso_imagem_url: versoImagemUrl || null,
     disciplina: clampText(disciplina, 100),
     origem: questaoId ? ("caderno" as const) : ("manual" as const),
     proxima_revisao: hoje,
     nivel_dominio: 0,
   };
 
+  // Anexa colunas de imagem somente quando realmente fornecidas
+  if (frenteImagemUrl && frenteImagemUrl.trim()) {
+    row.frente_imagem_url = frenteImagemUrl.trim();
+  }
+  if (versoImagemUrl && versoImagemUrl.trim()) {
+    row.verso_imagem_url = versoImagemUrl.trim();
+  }
+
   if (questaoId) {
     row.questao_id = questaoId;
   }
 
-  const { data, error } = await auth.supabase
+  let { data, error } = await auth.supabase
     .from("flashcards")
     .insert(row)
     .select()
     .single();
+
+  // Fallback caso as colunas de imagens ainda não tenham sido criadas no Supabase (código PGRST204 ou 42703)
+  // Garante que o texto digitado pelo usuário seja salvo com sucesso!
+  if (
+    error &&
+    (error.code === "PGRST204" || error.code === "42703") &&
+    (row.frente_imagem_url || row.verso_imagem_url)
+  ) {
+    console.warn(
+      "[revisao] Colunas de imagem não encontradas no banco. Salvando flashcard sem imagens como contingência...",
+    );
+    const fallbackRow = { ...row };
+    delete fallbackRow.frente_imagem_url;
+    delete fallbackRow.verso_imagem_url;
+    const retry = await auth.supabase
+      .from("flashcards")
+      .insert(fallbackRow)
+      .select()
+      .single();
+    data = retry.data;
+    error = retry.error;
+  }
+
   assertOk("insert manual flashcard", error);
+  if (error || !data) return null;
   return data as Flashcard;
 }
 

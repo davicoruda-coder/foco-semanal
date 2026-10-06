@@ -3,6 +3,7 @@
 
 import { useMemo, useState } from "react";
 import {
+  AlertCircle,
   BookOpen,
   Calendar,
   Check,
@@ -46,6 +47,8 @@ export function FlashcardManagerModal({
   const [newFrenteImg, setNewFrenteImg] = useState<string | null>(null);
   const [newVersoImg, setNewVersoImg] = useState<string | null>(null);
   const [savingNew, setSavingNew] = useState(false);
+  const [createError, setCreateError] = useState<string | null>(null);
+  const [successNotice, setSuccessNotice] = useState<string | null>(null);
 
   // Edição inline
   const [editingCardId, setEditingCardId] = useState<string | null>(null);
@@ -54,6 +57,7 @@ export function FlashcardManagerModal({
   const [editFrenteImg, setEditFrenteImg] = useState<string | null>(null);
   const [editVersoImg, setEditVersoImg] = useState<string | null>(null);
   const [savingEdit, setSavingEdit] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
 
   // Lightbox para visualização de imagem em tamanho real
   const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
@@ -96,20 +100,36 @@ export function FlashcardManagerModal({
     if (!hasFront || !hasBack) return;
 
     setSavingNew(true);
-    await addFlashcardManual(
-      materia.nome,
-      newFrente.trim(),
-      newVerso.trim(),
-      undefined,
-      newFrenteImg,
-      newVersoImg,
-    );
-    setSavingNew(false);
-    setNewFrente("");
-    setNewVerso("");
-    setNewFrenteImg(null);
-    setNewVersoImg(null);
-    setShowNewNewCard(false);
+    setCreateError(null);
+    try {
+      const card = await addFlashcardManual(
+        materia.nome,
+        newFrente.trim(),
+        newVerso.trim(),
+        undefined,
+        newFrenteImg,
+        newVersoImg,
+      );
+      if (!card) {
+        throw new Error(
+          "Não foi possível salvar o flashcard. Verifique a conexão com o banco de dados.",
+        );
+      }
+      setNewFrente("");
+      setNewVerso("");
+      setNewFrenteImg(null);
+      setNewVersoImg(null);
+      setShowNewNewCard(false);
+      setSuccessNotice("Flashcard salvo com sucesso!");
+      setTimeout(() => setSuccessNotice(null), 3000);
+    } catch (err: unknown) {
+      console.error("[FlashcardManagerModal] erro ao salvar card:", err);
+      const msg =
+        err instanceof Error ? err.message : "Erro ao salvar flashcard.";
+      setCreateError(msg);
+    } finally {
+      setSavingNew(false);
+    }
   }
 
   // Iniciar edição
@@ -119,6 +139,7 @@ export function FlashcardManagerModal({
     setEditVerso(card.verso || "");
     setEditFrenteImg(card.frente_imagem_url || null);
     setEditVersoImg(card.verso_imagem_url || null);
+    setEditError(null);
   }
 
   // Salvar edição
@@ -128,14 +149,26 @@ export function FlashcardManagerModal({
     if (!hasFront || !hasBack) return;
 
     setSavingEdit(true);
-    await updateFlashcard(cardId, {
-      frente: editFrente.trim(),
-      verso: editVerso.trim(),
-      frente_imagem_url: editFrenteImg,
-      verso_imagem_url: editVersoImg,
-    });
-    setSavingEdit(false);
-    setEditingCardId(null);
+    setEditError(null);
+    try {
+      const ok = await updateFlashcard(cardId, {
+        frente: editFrente.trim(),
+        verso: editVerso.trim(),
+        frente_imagem_url: editFrenteImg,
+        verso_imagem_url: editVersoImg,
+      });
+      if (!ok) {
+        throw new Error("Não foi possível atualizar o flashcard.");
+      }
+      setEditingCardId(null);
+    } catch (err: unknown) {
+      console.error("[FlashcardManagerModal] erro ao editar:", err);
+      const msg =
+        err instanceof Error ? err.message : "Erro ao atualizar flashcard.";
+      setEditError(msg);
+    } finally {
+      setSavingEdit(false);
+    }
   }
 
   // Confirmar exclusão
@@ -242,12 +275,20 @@ export function FlashcardManagerModal({
                   setNewVerso("");
                   setNewFrenteImg(null);
                   setNewVersoImg(null);
+                  setCreateError(null);
                 }}
                 className="text-xs text-[color-mix(in_srgb,var(--ink)_50%,transparent)] hover:text-[var(--ink)]"
               >
                 Cancelar
               </button>
             </div>
+
+            {createError && (
+              <div className="flex items-center gap-2 rounded-[var(--radius-tag)] border border-red-500/30 bg-red-500/10 p-2.5 text-xs text-red-400">
+                <AlertCircle size={15} className="shrink-0" />
+                <span>{createError}</span>
+              </div>
+            )}
 
             <div className="space-y-3.5">
               {/* Frente */}
@@ -302,6 +343,7 @@ export function FlashcardManagerModal({
                   setNewVerso("");
                   setNewFrenteImg(null);
                   setNewVersoImg(null);
+                  setCreateError(null);
                 }}
                 className="rounded-[var(--radius-btn)] border border-[var(--line)] px-3 py-1.5 text-xs font-medium text-[var(--ink)] hover:bg-[var(--mist)] transition"
               >
@@ -320,6 +362,12 @@ export function FlashcardManagerModal({
 
         {/* Lista de Cards */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-3">
+          {successNotice && (
+            <div className="flex items-center gap-2 rounded-[var(--radius-tag)] border border-emerald-500/30 bg-emerald-500/10 p-2.5 text-xs font-semibold text-emerald-400">
+              <Check size={14} className="shrink-0" />
+              <span>{successNotice}</span>
+            </div>
+          )}
           {filteredCards.length === 0 ? (
             <div className="rounded-[var(--radius)] border border-dashed border-[var(--line)] p-8 text-center space-y-2">
               <p className="text-xs sm:text-sm font-semibold text-[var(--ink)]">
@@ -463,6 +511,13 @@ export function FlashcardManagerModal({
                           disabled={savingEdit}
                         />
                       </div>
+
+                      {editError && (
+                        <div className="flex items-center gap-2 rounded-[var(--radius-tag)] border border-red-500/30 bg-red-500/10 p-2 text-xs text-red-400">
+                          <AlertCircle size={14} className="shrink-0" />
+                          <span>{editError}</span>
+                        </div>
+                      )}
 
                       <div className="flex justify-end gap-1.5 pt-1">
                         <button

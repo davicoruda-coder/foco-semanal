@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useEffect } from "react";
 import {
+  AlertCircle,
   ExternalLink,
   Filter,
   GraduationCap,
@@ -140,6 +141,7 @@ export function CadernoList({
   const [cardVersoImg, setCardVersoImg] = useState<string | null>(null);
   const [savingManualCard, setSavingManualCard] = useState(false);
   const [manualCardFeedback, setManualCardFeedback] = useState<string | null>(null);
+  const [manualCardError, setManualCardError] = useState<string | null>(null);
 
   // Mapeamento de quantos flashcards existem para cada questão
   const cardsVinculados = useMemo(() => {
@@ -161,6 +163,7 @@ export function CadernoList({
     setCardFrenteImg(null);
     setCardVersoImg(null);
     setManualCardFeedback(null);
+    setManualCardError(null);
   };
 
   const handleSaveManualCard = async () => {
@@ -168,6 +171,7 @@ export function CadernoList({
     const hasBack = Boolean(cardVerso.trim() || cardVersoImg);
     if (!manualCardQuestao || !hasFront || !hasBack || savingManualCard) return;
     setSavingManualCard(true);
+    setManualCardError(null);
     try {
       const card = await addFlashcardManual(
         manualCardQuestao.disciplina,
@@ -182,8 +186,15 @@ export function CadernoList({
         setTimeout(() => {
           setManualCardQuestao(null);
           setManualCardFeedback(null);
+          setManualCardError(null);
         }, 800);
+      } else {
+        setManualCardError("Não foi possível salvar o flashcard. Tente novamente.");
       }
+    } catch (err: unknown) {
+      console.error("[CadernoList] erro ao salvar card:", err);
+      const msg = err instanceof Error ? err.message : "Erro ao salvar flashcard.";
+      setManualCardError(msg);
     } finally {
       setSavingManualCard(false);
     }
@@ -944,6 +955,13 @@ export function CadernoList({
                 <div className="rounded-[var(--radius-btn)] bg-[color-mix(in_srgb,var(--ok)_12%,var(--surface))] p-2.5 text-xs font-semibold text-[var(--ok)] flex items-center gap-1.5">
                   <Check size={14} />
                   {manualCardFeedback}
+                </div>
+              )}
+
+              {manualCardError && (
+                <div className="rounded-[var(--radius-btn)] bg-red-500/10 border border-red-500/30 p-2.5 text-xs font-semibold text-red-400 flex items-center gap-1.5">
+                  <AlertCircle size={14} />
+                  {manualCardError}
                 </div>
               )}
 
