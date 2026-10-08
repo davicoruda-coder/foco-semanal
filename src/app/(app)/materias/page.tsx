@@ -648,42 +648,89 @@ function RotationEditor({
         {(rot?.items ?? []).map((it, i) => {
           const current = rot != null && i === rot.index;
           return (
-            <li key={it.id} className="flex items-center gap-2">
-              <button
-                type="button"
-                title={current ? "Da vez" : "Definir como a da vez"}
-                aria-label={
-                  current
-                    ? `${it.name} é a da vez`
-                    : `Definir ${it.name} como a da vez`
-                }
-                onClick={() => setCurrent(it.id)}
-                className={`grid size-5 shrink-0 place-items-center rounded-full ring-1 transition ${
-                  current
-                    ? "bg-[var(--signal)] ring-[var(--signal)]"
-                    : "bg-[var(--surface)] ring-[var(--line)] hover:ring-[var(--signal)]"
-                }`}
-              >
-                <span
-                  className={`size-1.5 rounded-full ${
-                    current ? "bg-white" : "bg-transparent"
-                  }`}
-                />
-              </button>
-              <div className="min-w-0 flex-1">
-                <input
-                  className="input w-full py-1.5 text-sm"
-                  value={nameDrafts[it.id] ?? it.name}
-                  onChange={(e) =>
-                    setNameDrafts((prev) => ({
-                      ...prev,
-                      [it.id]: e.target.value,
-                    }))
+            <li
+              key={it.id}
+              className={`rounded-[var(--radius-tag)] border p-2.5 transition ${
+                current
+                  ? "border-[color-mix(in_srgb,var(--signal)_45%,var(--line))] bg-[color-mix(in_srgb,var(--signal)_6%,var(--surface))]"
+                  : "border-[color-mix(in_srgb,var(--line)_70%,transparent)] bg-[color-mix(in_srgb,var(--surface)_60%,transparent)] hover:border-[var(--line)]"
+              }`}
+            >
+              {/* Linha Principal: Bolinha da vez + Nome da Matéria + Ações de Ordem e Exclusão */}
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  title={current ? "Da vez (atual)" : "Definir como a da vez"}
+                  aria-label={
+                    current
+                      ? `${it.name} é a da vez`
+                      : `Definir ${it.name} como a da vez`
                   }
-                  onBlur={() => renameItem(it.id)}
-                />
+                  onClick={() => setCurrent(it.id)}
+                  className={`grid size-5 shrink-0 place-items-center rounded-full ring-1 transition ${
+                    current
+                      ? "bg-[var(--signal)] ring-[var(--signal)] shadow-2xs"
+                      : "bg-[var(--surface)] ring-[var(--line)] hover:ring-[var(--signal)]"
+                  }`}
+                >
+                  <span
+                    className={`size-1.5 rounded-full ${
+                      current ? "bg-white" : "bg-transparent"
+                    }`}
+                  />
+                </button>
+
+                <div className="min-w-0 flex-1">
+                  <input
+                    className="input w-full py-1.5 text-sm font-medium"
+                    value={nameDrafts[it.id] ?? it.name}
+                    onChange={(e) =>
+                      setNameDrafts((prev) => ({
+                        ...prev,
+                        [it.id]: e.target.value,
+                      }))
+                    }
+                    onBlur={() => renameItem(it.id)}
+                  />
+                </div>
+
+                <div className="flex items-center gap-0.5 shrink-0">
+                  <button
+                    type="button"
+                    className="rounded-full p-1 text-[color-mix(in_srgb,var(--ink)_45%,transparent)] transition hover:bg-[var(--surface)] hover:text-[var(--ink)] disabled:opacity-30"
+                    title="Subir"
+                    aria-label={`Subir ${it.name}`}
+                    disabled={i === 0}
+                    onClick={() => move(it.id, -1)}
+                  >
+                    <ChevronUp size={15} strokeWidth={2} />
+                  </button>
+                  <button
+                    type="button"
+                    className="rounded-full p-1 text-[color-mix(in_srgb,var(--ink)_45%,transparent)] transition hover:bg-[var(--surface)] hover:text-[var(--ink)] disabled:opacity-30"
+                    title="Descer"
+                    aria-label={`Descer ${it.name}`}
+                    disabled={rot != null && i === rot.items.length - 1}
+                    onClick={() => move(it.id, 1)}
+                  >
+                    <ChevronDown size={15} strokeWidth={2} />
+                  </button>
+                  <button
+                    type="button"
+                    className="rounded-full p-1 text-[color-mix(in_srgb,var(--ink)_45%,transparent)] transition hover:bg-[var(--surface)] hover:text-[var(--warn)]"
+                    title="Remover disciplina"
+                    aria-label={`Remover ${it.name}`}
+                    onClick={() => setPendingRemoveItem({ id: it.id, name: it.name })}
+                  >
+                    <Trash2 size={14} strokeWidth={1.75} />
+                  </button>
+                </div>
+              </div>
+
+              {/* Conteúdo Secundário: Anotações, Recursos e Progresso (indentado e alinhado sob o nome) */}
+              <div className="pl-7 pt-1.5 space-y-1.5">
                 {editingNoteId === it.id ? (
-                  <div className="mt-1.5 rounded-[var(--radius-tag)] border border-[color-mix(in_srgb,var(--signal)_40%,var(--line))] bg-[var(--surface)] p-2 shadow-sm">
+                  <div className="rounded-[var(--radius-tag)] border border-[color-mix(in_srgb,var(--signal)_40%,var(--line))] bg-[var(--surface)] p-2 shadow-sm">
                     <textarea
                       ref={(el) => {
                         if (el) {
@@ -728,7 +775,7 @@ function RotationEditor({
                     </div>
                   </div>
                 ) : (
-                  <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                  <div className="flex flex-wrap items-center gap-1.5">
                     {it.notes.trim() ? (
                       <button
                         type="button"
@@ -761,7 +808,7 @@ function RotationEditor({
                     )}
                   </div>
                 )}
-                <div className="mt-1">
+                <div>
                   <SubjectResources
                     compact
                     recursos={it.recursos}
@@ -776,7 +823,7 @@ function RotationEditor({
                     }}
                   />
                 </div>
-                <div className="mt-1.5">
+                <div>
                   <ProgressEditor
                     compact
                     progress={it.progress}
@@ -792,35 +839,6 @@ function RotationEditor({
                   />
                 </div>
               </div>
-              <button
-                type="button"
-                className="rounded-full p-1 text-[color-mix(in_srgb,var(--ink)_45%,transparent)] transition hover:bg-[var(--surface)] hover:text-[var(--ink)] disabled:opacity-30"
-                title="Subir"
-                aria-label={`Subir ${it.name}`}
-                disabled={i === 0}
-                onClick={() => move(it.id, -1)}
-              >
-                <ChevronUp size={15} strokeWidth={2} />
-              </button>
-              <button
-                type="button"
-                className="rounded-full p-1 text-[color-mix(in_srgb,var(--ink)_45%,transparent)] transition hover:bg-[var(--surface)] hover:text-[var(--ink)] disabled:opacity-30"
-                title="Descer"
-                aria-label={`Descer ${it.name}`}
-                disabled={rot != null && i === rot.items.length - 1}
-                onClick={() => move(it.id, 1)}
-              >
-                <ChevronDown size={15} strokeWidth={2} />
-              </button>
-              <button
-                type="button"
-                className="rounded-full p-1 text-[color-mix(in_srgb,var(--ink)_45%,transparent)] transition hover:bg-[var(--surface)] hover:text-[var(--warn)]"
-                title="Remover disciplina"
-                aria-label={`Remover ${it.name}`}
-                onClick={() => setPendingRemoveItem({ id: it.id, name: it.name })}
-              >
-                <Trash2 size={14} strokeWidth={1.75} />
-              </button>
             </li>
           );
         })}
