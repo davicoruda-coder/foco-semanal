@@ -108,7 +108,7 @@ export async function addQuestao(
     assunto: clampText(payload.assunto, 100),
     status_resultado: payload.status_resultado,
     causa_erro: payload.causa_erro,
-    aprendizado_chave: clampText(payload.aprendizado_chave, 1500),
+    aprendizado_chave: clampText(payload.aprendizado_chave, 8000),
   };
 
   const { data: questao, error: qErr } = await auth.supabase
@@ -208,7 +208,7 @@ export async function updateQuestao(
   if (updates.causa_erro !== undefined)
     row.causa_erro = updates.causa_erro;
   if (updates.aprendizado_chave !== undefined)
-    row.aprendizado_chave = clampText(updates.aprendizado_chave, 1500);
+    row.aprendizado_chave = clampText(updates.aprendizado_chave, 8000);
 
   const { error } = await auth.supabase
     .from("questoes_caderno")
@@ -336,8 +336,8 @@ export async function updateFlashcard(
   if (!auth) return false;
 
   const patch: Record<string, unknown> = {};
-  if (updates.frente !== undefined) patch.frente = clampText(updates.frente, 5000);
-  if (updates.verso !== undefined) patch.verso = clampText(updates.verso, 5000);
+  if (updates.frente !== undefined) patch.frente = clampText(updates.frente, 8000);
+  if (updates.verso !== undefined) patch.verso = clampText(updates.verso, 8000);
   if (updates.frente_imagem_url !== undefined)
     patch.frente_imagem_url = updates.frente_imagem_url;
   if (updates.verso_imagem_url !== undefined)
@@ -406,8 +406,8 @@ export async function addFlashcardManual(
   const hoje = new Date().toISOString().slice(0, 10);
   const row: Record<string, unknown> = {
     user_id: auth.userId,
-    frente: clampText(frente, 5000),
-    verso: clampText(verso, 5000),
+    frente: clampText(frente, 8000),
+    verso: clampText(verso, 8000),
     disciplina: clampText(disciplina, 100),
     origem: questaoId ? ("caderno" as const) : ("manual" as const),
     proxima_revisao: hoje,
