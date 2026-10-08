@@ -43,7 +43,10 @@ export function FlashcardImageInput({
 
   const processAndUpload = useCallback(
     async (file: File) => {
-      if (!file.type.startsWith("image/")) {
+      const isImage =
+        file.type.startsWith("image/") ||
+        /\.(jpe?g|png|webp|gif|bmp)$/i.test(file.name);
+      if (!isImage) {
         setErrorMessage("Selecione um arquivo de imagem válido (PNG, JPG, WebP).");
         return;
       }

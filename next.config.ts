@@ -1,6 +1,29 @@
 import type { NextConfig } from "next";
 
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+let supabaseHost = "https://*.supabase.co";
+try {
+  if (supabaseUrl) {
+    const parsed = new URL(supabaseUrl);
+    supabaseHost = parsed.origin;
+  }
+} catch {
+  // fallback para wildcard
+}
+
 const nextConfig: NextConfig = {
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "*.supabase.co",
+      },
+      {
+        protocol: "https",
+        hostname: "*.googleusercontent.com",
+      },
+    ],
+  },
   async headers() {
     return [
       {
@@ -19,7 +42,7 @@ const nextConfig: NextConfig = {
               "default-src 'self'",
               "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
               "style-src 'self' 'unsafe-inline'",
-              "img-src 'self' data: blob:",
+              `img-src 'self' data: blob: https://*.supabase.co ${supabaseHost} https://*.googleusercontent.com`,
               "font-src 'self' data:",
               "connect-src 'self' https://*.supabase.co wss://*.supabase.co",
               "frame-ancestors 'none'",
@@ -34,3 +57,4 @@ const nextConfig: NextConfig = {
 };
 
 export default nextConfig;
+
