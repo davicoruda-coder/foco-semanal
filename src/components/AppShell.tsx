@@ -275,7 +275,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   });
 
   return (
-    <div className="relative min-h-screen w-full max-w-full overflow-x-hidden pb-[calc(4.5rem+env(safe-area-inset-bottom,0px))] lg:pb-0">
+    <div className="relative min-h-screen w-full max-w-full overflow-x-clip pb-[calc(4.5rem+env(safe-area-inset-bottom,0px))] lg:pb-0">
       {cloudSync.message ? (
         <div
           className={`px-4 py-2 text-center text-xs font-medium ${
@@ -288,7 +288,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           {cloudSync.message}
         </div>
       ) : null}
-      <header className="sticky top-0 z-20 border-b border-[color-mix(in_srgb,var(--line)_80%,transparent)] bg-[color-mix(in_srgb,var(--surface)_90%,var(--paper))]/90 pt-[env(safe-area-inset-top,0px)] backdrop-blur-md lg:hidden transition-colors">
+      <header className="sticky top-0 z-30 border-b border-[color-mix(in_srgb,var(--line)_80%,transparent)] bg-[color-mix(in_srgb,var(--surface)_90%,var(--paper))]/90 pt-[env(safe-area-inset-top,0px)] backdrop-blur-md lg:hidden transition-colors">
         <div className="mx-auto flex h-12 max-w-lg items-center justify-between px-3">
           <Link
             href="/hoje"
@@ -304,7 +304,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       </header>
 
-      <header className="sticky top-0 z-20 hidden border-b border-[color-mix(in_srgb,var(--line)_80%,transparent)] bg-[color-mix(in_srgb,var(--surface)_88%,var(--paper))]/85 backdrop-blur-md lg:block transition-colors">
+      <header className="sticky top-0 z-30 hidden border-b border-[color-mix(in_srgb,var(--line)_80%,transparent)] bg-[color-mix(in_srgb,var(--surface)_88%,var(--paper))]/85 backdrop-blur-md lg:block transition-colors">
         <div className="mx-auto grid h-16 max-w-7xl grid-cols-[1fr_auto_1fr] items-center gap-4 px-5 md:px-8">
           {/* Logo / Marca */}
           <div className="flex items-center justify-start min-w-0">
