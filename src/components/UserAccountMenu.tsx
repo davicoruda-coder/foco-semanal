@@ -71,7 +71,13 @@ function compressAvatar(file: File): Promise<string> {
   });
 }
 
-export function UserAccountMenu() {
+export function UserAccountMenu({
+  variant = "header",
+  isActive = false,
+}: {
+  variant?: "header" | "bottom-nav";
+  isActive?: boolean;
+} = {}) {
   const { user, cloud, logout, updateUserAvatar } = useApp();
   const [mounted, setMounted] = useState(false);
   const [open, setOpen] = useState(false);
@@ -391,9 +397,100 @@ export function UserAccountMenu() {
     </>
   );
 
+  if (variant === "bottom-nav") {
+    return (
+      <div ref={containerRef} className="flex min-w-0 flex-1 flex-col items-center justify-center">
+        <button
+          type="button"
+          onClick={() => setOpen((prev) => !prev)}
+          aria-label="Perfil e Ajustes"
+          aria-expanded={open}
+          aria-haspopup="dialog"
+          title={`Perfil: ${user.name || user.email}`}
+          className={`flex w-full min-w-0 flex-col items-center justify-center gap-1 text-[11px] transition-colors ${
+            open || isActive
+              ? "font-semibold text-[var(--signal)]"
+              : "font-medium text-[color-mix(in_srgb,var(--ink)_45%,transparent)]"
+          }`}
+        >
+          <span
+            className={`relative grid size-9 place-items-center rounded-xl transition-colors ${
+              open || isActive ? "nav-tab-active-chip" : "bg-transparent"
+            }`}
+          >
+            {showCustomPhoto ? (
+              <img
+                src={user.avatarUrl}
+                alt="Perfil"
+                onError={() => setImgError(true)}
+                className={`size-6 rounded-full object-cover ring-1 transition-all ${
+                  open || isActive
+                    ? "ring-[var(--signal)] shadow-xs"
+                    : "ring-[var(--line)]"
+                }`}
+              />
+            ) : (
+              <span
+                className={`flex size-6 items-center justify-center rounded-full text-[10px] font-bold tracking-tight transition-all ${
+                  open || isActive
+                    ? "bg-[var(--signal)] text-white shadow-xs"
+                    : "bg-[color-mix(in_srgb,var(--signal)_14%,var(--surface))] text-[var(--signal)] ring-1 ring-[color-mix(in_srgb,var(--signal)_30%,var(--line))]"
+                }`}
+              >
+                {initials}
+              </span>
+            )}
+          </span>
+          <span className="max-w-full truncate px-0.5 leading-none">
+            Perfil
+          </span>
+        </button>
+
+        {/* Mobile Bottom Sheet (renderizado no body via Portal para não ser preso pela navbar) */}
+        {mounted &&
+          open &&
+          createPortal(
+            <div className="lg:hidden">
+              <div
+                className="fixed inset-0 z-[55] bg-black/50 backdrop-blur-xs transition-opacity"
+                onClick={() => setOpen(false)}
+                aria-hidden="true"
+              />
+              <div
+                ref={sheetRef}
+                role="dialog"
+                aria-modal="true"
+                aria-label="Gerenciamento de Conta"
+                className="fixed inset-x-0 bottom-0 z-[60] rounded-t-[24px] border-t border-[var(--line)] bg-[var(--surface)] p-5 pb-[calc(1.5rem+env(safe-area-inset-bottom))] shadow-2xl max-h-[90vh] overflow-y-auto animate-in slide-in-from-bottom duration-200"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-[var(--line)]" />
+                <MenuContent />
+              </div>
+            </div>,
+            document.body,
+          )}
+
+        {/* Diálogo de confirmação de Logout */}
+        <ConfirmDialog
+          open={confirmLogout}
+          title="Sair da conta?"
+          message="Você precisará do e-mail e da senha para entrar de novo. Os seus dados na nuvem continuam seguros."
+          confirmLabel="Sim, sair"
+          cancelLabel="Cancelar"
+          onCancel={() => setConfirmLogout(false)}
+          onConfirm={() => {
+            setConfirmLogout(false);
+            logout();
+          }}
+        />
+      </div>
+    );
+  }
+
   return (
     <div ref={containerRef} className="relative inline-flex items-center">
-      {/* Botão de Perfil — Cápsula Elegante no Desktop e Bolinha com Tap Target Ergonômico no Mobile */}
+      {/* Botão de Perfil — Cápsula Elegante no Desktop */}
       <button
         type="button"
         onClick={() => setOpen((prev) => !prev)}

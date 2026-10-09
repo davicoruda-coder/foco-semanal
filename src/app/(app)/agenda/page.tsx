@@ -11,6 +11,7 @@ import {
 import { useApp } from "@/components/AppProvider";
 import { DAYS } from "@/lib/types";
 import { blockStyle, todayIndex } from "@/lib/utils";
+import { ReminderBoard } from "@/components/ReminderBoard";
 import { MonthCalendarDialog } from "@/components/MonthCalendar";
 
 /** Com muitos blocos no dia, encolhe para “só hoje”. */
@@ -47,16 +48,21 @@ export default function AgendaPage() {
   const weekDays = DAYS.map((name, i) => ({ name, i }));
 
   return (
-    <div className="space-y-4 sm:space-y-5">
+    <div className="space-y-5 sm:space-y-6">
       <MonthCalendarDialog
         open={calendarOpen}
         onClose={() => setCalendarOpen(false)}
       />
 
       <div className="flex flex-wrap items-center justify-between gap-2 px-0.5">
-        <h1 className="font-display text-xl sm:text-2xl font-semibold tracking-tight text-[var(--ink)]">
-          Agenda
-        </h1>
+        <div>
+          <h1 className="font-display text-xl sm:text-2xl font-bold tracking-tight text-[var(--ink)]">
+            Rotina
+          </h1>
+          <p className="text-xs text-[color-mix(in_srgb,var(--ink)_65%,transparent)] sm:text-sm">
+            Sua grade de estudos e lembretes para manter o foco
+          </p>
+        </div>
         <Link
           href="/semana"
           title="Editar grade semanal (adicionar, mover ou renomear matérias)"
@@ -201,6 +207,11 @@ export default function AgendaPage() {
             </div>
           </div>
         )}
+      </section>
+
+      {/* Lembretes e Notas Rápidas integradas na Rotina */}
+      <section className="surface p-3.5 sm:p-6">
+        <ReminderBoard />
       </section>
     </div>
   );
