@@ -114,6 +114,17 @@ export function CadernoList({
     } catch {}
   };
 
+  const [showFilters, setShowFilters] = useState(false);
+
+  const activeDropdownFiltersCount = useMemo(() => {
+    let count = 0;
+    if (disciplinaFiltro !== "todas") count++;
+    if (bancaFiltro !== "todas") count++;
+    if (causaFiltro !== "todas") count++;
+    if (resultadoFiltro !== "todas") count++;
+    return count;
+  }, [disciplinaFiltro, bancaFiltro, causaFiltro, resultadoFiltro]);
+
   const hasActiveFilters = Boolean(
     search.trim() ||
     disciplinaFiltro !== "todas" ||
@@ -362,13 +373,40 @@ export function CadernoList({
             )}
           </div>
 
-          {/* Toggle Grade / Lista e Contador de Resultados */}
-          <div className="flex items-center justify-between sm:justify-end gap-2.5">
+          {/* Toggle Grade / Lista, Botão Filtros e Contador de Resultados */}
+          <div className="flex items-center justify-between sm:justify-end gap-2 shrink-0">
             <span className="text-xs text-[color-mix(in_srgb,var(--ink)_55%,transparent)] font-medium">
               {questoesFiltradas.length === 1
                 ? "1 anotação"
                 : `${questoesFiltradas.length} anotações`}
             </span>
+
+            {/* Botão de Filtros Expansível */}
+            <button
+              type="button"
+              onClick={() => setShowFilters((prev) => !prev)}
+              aria-expanded={showFilters}
+              className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-semibold transition ${
+                showFilters || activeDropdownFiltersCount > 0
+                  ? "border-[var(--signal)] bg-[var(--signal-soft)] text-[var(--signal)]"
+                  : "border-[var(--line)] bg-[var(--mist)] text-[color-mix(in_srgb,var(--ink)_65%,transparent)] hover:text-[var(--ink)]"
+              }`}
+              title={showFilters ? "Ocultar painel de filtros" : "Abrir opções de filtro"}
+            >
+              <Filter size={13} />
+              <span>Filtros</span>
+              {activeDropdownFiltersCount > 0 && (
+                <span className="grid size-4 place-items-center rounded-full bg-[var(--signal)] text-[9.5px] font-bold text-white leading-none">
+                  {activeDropdownFiltersCount}
+                </span>
+              )}
+              <ChevronDown
+                size={13}
+                className={`transition-transform duration-200 ${
+                  showFilters ? "rotate-180" : ""
+                }`}
+              />
+            </button>
 
             {/* Alternador de Visualização: Grade vs Lista */}
             <div className="flex items-center rounded-lg border border-[var(--line)] bg-[var(--mist)] p-0.5 text-[color-mix(in_srgb,var(--ink)_60%,transparent)]">
@@ -404,81 +442,176 @@ export function CadernoList({
           </div>
         </div>
 
-        {/* Filtros em Linha Compacta */}
-        <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-[color-mix(in_srgb,var(--line)_50%,transparent)]">
-          <div className="flex items-center gap-1.5 text-xs text-[color-mix(in_srgb,var(--ink)_50%,transparent)] shrink-0 mr-1">
-            <Filter size={13} />
-            <span className="text-[11px] font-medium hidden sm:inline">Filtros:</span>
-          </div>
+        {/* Painel Expansível de Filtros Perfeitamente Alinhado em Grid */}
+        {showFilters && (
+          <div className="pt-2.5 border-t border-[var(--line)]/60 space-y-2.5">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-2.5">
+              {/* Filtro 1: Disciplina */}
+              <div>
+                <label className="block text-[10px] sm:text-[10.5px] font-bold uppercase tracking-wider text-[color-mix(in_srgb,var(--ink)_55%,transparent)] mb-1 truncate">
+                  Disciplina
+                </label>
+                <select
+                  value={disciplinaFiltro}
+                  onChange={(e) => setDisciplinaFiltro(e.target.value)}
+                  className="w-full rounded-[var(--radius-btn)] border border-[var(--line)] bg-[var(--mist)] px-2.5 py-1.5 text-xs text-[var(--ink)] outline-none cursor-pointer hover:border-[var(--signal)] focus:border-[var(--signal)] transition truncate"
+                >
+                  <option value="todas">Todas as Disciplinas</option>
+                  {disciplinas.map((d) => (
+                    <option key={d} value={d}>
+                      {d}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-          <select
-            value={disciplinaFiltro}
-            onChange={(e) => setDisciplinaFiltro(e.target.value)}
-            className="min-w-0 max-w-[160px] truncate rounded-[var(--radius-btn)] border border-[var(--line)] bg-[var(--mist)] px-2.5 py-1 text-xs text-[var(--ink)] outline-none cursor-pointer hover:border-[var(--signal)] transition"
-          >
-            <option value="todas">Todas Disciplinas</option>
-            {disciplinas.map((d) => (
-              <option key={d} value={d}>
-                {d}
-              </option>
-            ))}
-          </select>
+              {/* Filtro 2: Banca */}
+              <div>
+                <label className="block text-[10px] sm:text-[10.5px] font-bold uppercase tracking-wider text-[color-mix(in_srgb,var(--ink)_55%,transparent)] mb-1 truncate">
+                  Banca
+                </label>
+                <select
+                  value={bancaFiltro}
+                  onChange={(e) => setBancaFiltro(e.target.value)}
+                  className="w-full rounded-[var(--radius-btn)] border border-[var(--line)] bg-[var(--mist)] px-2.5 py-1.5 text-xs text-[var(--ink)] outline-none cursor-pointer hover:border-[var(--signal)] focus:border-[var(--signal)] transition truncate"
+                >
+                  <option value="todas">Todas as Bancas</option>
+                  {bancas.map((b) => (
+                    <option key={b} value={b}>
+                      {b}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-          <select
-            value={bancaFiltro}
-            onChange={(e) => setBancaFiltro(e.target.value)}
-            className="min-w-0 max-w-[140px] truncate rounded-[var(--radius-btn)] border border-[var(--line)] bg-[var(--mist)] px-2.5 py-1 text-xs text-[var(--ink)] outline-none cursor-pointer hover:border-[var(--signal)] transition"
-          >
-            <option value="todas">Todas Bancas</option>
-            {bancas.map((b) => (
-              <option key={b} value={b}>
-                {b}
-              </option>
-            ))}
-          </select>
+              {/* Filtro 3: Motivo do Erro */}
+              <div>
+                <label className="block text-[10px] sm:text-[10.5px] font-bold uppercase tracking-wider text-[color-mix(in_srgb,var(--ink)_55%,transparent)] mb-1 truncate">
+                  Motivo do Erro
+                </label>
+                <select
+                  value={causaFiltro}
+                  onChange={(e) => setCausaFiltro(e.target.value)}
+                  className="w-full rounded-[var(--radius-btn)] border border-[var(--line)] bg-[var(--mist)] px-2.5 py-1.5 text-xs text-[var(--ink)] outline-none cursor-pointer hover:border-[var(--signal)] focus:border-[var(--signal)] transition truncate"
+                >
+                  <option value="todas">Todos os Motivos</option>
+                  {(Object.entries(CAUSA_ERRO_LABEL) as [CausaErro, string][]).map(
+                    ([key, label]) => (
+                      <option key={key} value={key}>
+                        {label}
+                      </option>
+                    ),
+                  )}
+                </select>
+              </div>
 
-          <select
-            value={causaFiltro}
-            onChange={(e) => setCausaFiltro(e.target.value)}
-            className="min-w-0 max-w-[150px] truncate rounded-[var(--radius-btn)] border border-[var(--line)] bg-[var(--mist)] px-2.5 py-1 text-xs text-[var(--ink)] outline-none cursor-pointer hover:border-[var(--signal)] transition"
-          >
-            <option value="todas">Todas Causas</option>
-            {(Object.entries(CAUSA_ERRO_LABEL) as [CausaErro, string][]).map(
-              ([key, label]) => (
-                <option key={key} value={key}>
-                  {label}
-                </option>
-              ),
+              {/* Filtro 4: Situação na Questão */}
+              <div>
+                <label className="block text-[10px] sm:text-[10.5px] font-bold uppercase tracking-wider text-[color-mix(in_srgb,var(--ink)_55%,transparent)] mb-1 truncate">
+                  Situação
+                </label>
+                <select
+                  value={resultadoFiltro}
+                  onChange={(e) => setResultadoFiltro(e.target.value)}
+                  className="w-full rounded-[var(--radius-btn)] border border-[var(--line)] bg-[var(--mist)] px-2.5 py-1.5 text-xs text-[var(--ink)] outline-none cursor-pointer hover:border-[var(--signal)] focus:border-[var(--signal)] transition truncate"
+                >
+                  <option value="todas">Todas as Situações</option>
+                  {(
+                    Object.entries(STATUS_RESULTADO_LABEL) as [StatusResultado, string][]
+                  ).map(([key, label]) => (
+                    <option key={key} value={key}>
+                      {label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Ações do Rodapé dos Filtros */}
+            {hasActiveFilters && (
+              <div className="flex items-center justify-between pt-1 text-xs">
+                <span className="text-[11px] text-[color-mix(in_srgb,var(--ink)_55%,transparent)]">
+                  Filtros ativos ({questoesFiltradas.length} resultado{questoesFiltradas.length === 1 ? "" : "s"})
+                </span>
+                <button
+                  type="button"
+                  onClick={handleClearFilters}
+                  className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-semibold text-rose-600 hover:bg-rose-500/10 transition"
+                  title="Limpar todos os filtros e busca"
+                >
+                  <RotateCcw size={11} />
+                  Limpar Filtros
+                </button>
+              </div>
             )}
-          </select>
+          </div>
+        )}
 
-          <select
-            value={resultadoFiltro}
-            onChange={(e) => setResultadoFiltro(e.target.value)}
-            className="min-w-0 max-w-[140px] truncate rounded-[var(--radius-btn)] border border-[var(--line)] bg-[var(--mist)] px-2.5 py-1 text-xs text-[var(--ink)] outline-none cursor-pointer hover:border-[var(--signal)] transition"
-          >
-            <option value="todas">Todos Resultados</option>
-            {(
-              Object.entries(STATUS_RESULTADO_LABEL) as [StatusResultado, string][]
-            ).map(([key, label]) => (
-              <option key={key} value={key}>
-                {label}
-              </option>
-            ))}
-          </select>
-
-          {hasActiveFilters && (
+        {/* Chips de Filtros Ativos (quando o painel está recolhido) */}
+        {!showFilters && activeDropdownFiltersCount > 0 && (
+          <div className="flex flex-wrap items-center gap-1.5 pt-1.5 border-t border-[var(--line)]/50 text-xs">
+            <span className="text-[11px] text-[color-mix(in_srgb,var(--ink)_55%,transparent)]">Filtros:</span>
+            {disciplinaFiltro !== "todas" && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-[var(--signal-soft)] text-[var(--signal)] border border-[var(--signal)]/30 px-2 py-0.5 text-[11px] font-medium">
+                {disciplinaFiltro}
+                <button
+                  type="button"
+                  onClick={() => setDisciplinaFiltro("todas")}
+                  className="hover:opacity-70 p-0.5"
+                  title="Remover filtro de disciplina"
+                >
+                  <X size={10} />
+                </button>
+              </span>
+            )}
+            {bancaFiltro !== "todas" && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-[var(--signal-soft)] text-[var(--signal)] border border-[var(--signal)]/30 px-2 py-0.5 text-[11px] font-medium">
+                {bancaFiltro}
+                <button
+                  type="button"
+                  onClick={() => setBancaFiltro("todas")}
+                  className="hover:opacity-70 p-0.5"
+                  title="Remover filtro de banca"
+                >
+                  <X size={10} />
+                </button>
+              </span>
+            )}
+            {causaFiltro !== "todas" && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-[var(--signal-soft)] text-[var(--signal)] border border-[var(--signal)]/30 px-2 py-0.5 text-[11px] font-medium">
+                {CAUSA_ERRO_LABEL[causaFiltro as CausaErro] || causaFiltro}
+                <button
+                  type="button"
+                  onClick={() => setCausaFiltro("todas")}
+                  className="hover:opacity-70 p-0.5"
+                  title="Remover filtro de motivo do erro"
+                >
+                  <X size={10} />
+                </button>
+              </span>
+            )}
+            {resultadoFiltro !== "todas" && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-[var(--signal-soft)] text-[var(--signal)] border border-[var(--signal)]/30 px-2 py-0.5 text-[11px] font-medium">
+                {STATUS_RESULTADO_LABEL[resultadoFiltro as StatusResultado] || resultadoFiltro}
+                <button
+                  type="button"
+                  onClick={() => setResultadoFiltro("todas")}
+                  className="hover:opacity-70 p-0.5"
+                  title="Remover filtro de situação"
+                >
+                  <X size={10} />
+                </button>
+              </span>
+            )}
             <button
               type="button"
               onClick={handleClearFilters}
-              className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-medium text-[color-mix(in_srgb,var(--ink)_60%,transparent)] hover:text-rose-600 hover:bg-rose-500/10 transition"
-              title="Limpar todos os filtros"
+              className="text-[11px] font-semibold text-rose-600 hover:underline ml-auto"
             >
-              <RotateCcw size={11} />
               Limpar
             </button>
-          )}
-        </div>
+          </div>
+        )}
       </div>
 
       {/* Lista ou Grade de Registros */}
