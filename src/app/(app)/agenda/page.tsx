@@ -54,74 +54,74 @@ export default function AgendaPage() {
         onClose={() => setCalendarOpen(false)}
       />
 
-      <div className="flex flex-wrap items-center justify-between gap-2 px-0.5">
-        <div>
-          <h1 className="font-display text-xl sm:text-2xl font-bold tracking-tight text-[var(--ink)]">
-            Rotina
-          </h1>
-          <p className="text-xs text-[color-mix(in_srgb,var(--ink)_65%,transparent)] sm:text-sm">
-            Sua grade de estudos e lembretes para manter o foco
-          </p>
-        </div>
-        <Link
-          href="/semana"
-          title="Editar grade semanal (adicionar, mover ou renomear matérias)"
-          aria-label="Editar grade semanal"
-          className="inline-flex min-h-9 items-center gap-1.5 rounded-full border border-[var(--line)] bg-[var(--surface)] px-3 py-1 text-xs font-semibold text-[var(--ink)] shadow-xs transition hover:border-[var(--signal)] hover:text-[var(--signal)] active:scale-95 sm:min-h-10 sm:px-3.5 sm:text-sm"
-        >
-          <Pencil size={13} strokeWidth={2} />
-          <span>Editar grade</span>
-        </Link>
+      <div className="flex items-center justify-between px-0.5">
+        <h1 className="font-display text-xl sm:text-2xl font-bold tracking-tight text-[var(--ink)]">
+          Rotina
+        </h1>
       </div>
 
       <section className="surface overflow-hidden p-0">
-        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--line)] bg-[var(--mist)] px-3.5 py-2.5 md:px-5 md:py-3">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--line)] bg-[var(--mist)] px-3.5 py-2 sm:px-4 sm:py-2.5">
           <button
             type="button"
             title="Abrir calendário do mês"
             aria-label="Abrir calendário do mês"
-            className="font-display inline-flex min-h-11 items-center gap-2 rounded-[var(--radius-tag)] text-[15px] font-semibold tracking-tight text-[var(--ink)] transition hover:text-[var(--signal)] md:min-h-0 md:text-lg"
+            className="font-display inline-flex min-h-10 items-center gap-2 rounded-[var(--radius-tag)] text-sm sm:text-base font-semibold tracking-tight text-[var(--ink)] transition hover:text-[var(--signal)] md:min-h-0 md:text-lg"
             onClick={() => setCalendarOpen(true)}
           >
-            <CalendarDays size={18} strokeWidth={2} />
+            <CalendarDays size={17} strokeWidth={2} />
             {`${DAYS[day]} · ${new Date().toLocaleDateString("pt-BR", {
               day: "2-digit",
               month: "2-digit",
             })}`}
           </button>
-          {showWeekToggle && (
-            <button
-              type="button"
-              title={
-                showFullWeek
-                  ? narrow
-                    ? "Mostrar hoje"
-                    : "Mostrar só hoje"
-                  : "Mostrar semana toda"
-              }
-              aria-label={
-                showFullWeek
-                  ? narrow
-                    ? "Mostrar hoje"
-                    : "Mostrar só hoje"
-                  : "Mostrar semana toda"
-              }
-              className="inline-flex min-h-11 items-center gap-1 rounded-full bg-[color-mix(in_srgb,var(--ink)_8%,transparent)] px-3.5 py-2 text-sm font-medium text-[color-mix(in_srgb,var(--ink)_70%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--ink)_12%,transparent)] hover:text-[var(--ink)] md:min-h-0 md:rounded-[var(--radius-tag)] md:px-2 md:py-1 md:text-xs"
-              onClick={() => setWeekOverride(!showFullWeek)}
+
+          <div className="flex items-center gap-1.5">
+            <Link
+              href="/semana"
+              title="Editar grade semanal (adicionar, mover ou renomear matérias)"
+              aria-label="Editar grade semanal"
+              className="inline-flex min-h-9 items-center gap-1.5 rounded-full bg-[color-mix(in_srgb,var(--ink)_8%,transparent)] px-3 py-1.5 text-xs font-semibold text-[color-mix(in_srgb,var(--ink)_75%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--ink)_14%,transparent)] hover:text-[var(--ink)] active:scale-95 md:min-h-0 md:rounded-[var(--radius-tag)] md:px-2.5 md:py-1"
             >
-              {showFullWeek ? (
-                <>
-                  <ChevronUp size={14} strokeWidth={2} />
-                  <span className="md:hidden">Hoje</span>
-                  <span className="hidden md:inline">Só hoje</span>
-                </>
-              ) : (
-                <>
-                  <ChevronDown size={14} strokeWidth={2} /> Semana
-                </>
-              )}
-            </button>
-          )}
+              <Pencil size={12} strokeWidth={2.2} />
+              <span>Editar grade</span>
+            </Link>
+
+            {showWeekToggle && (
+              <button
+                type="button"
+                title={
+                  showFullWeek
+                    ? narrow
+                      ? "Mostrar hoje"
+                      : "Mostrar só hoje"
+                    : "Mostrar semana toda"
+                }
+                aria-label={
+                  showFullWeek
+                    ? narrow
+                      ? "Mostrar hoje"
+                      : "Mostrar só hoje"
+                    : "Mostrar semana toda"
+                }
+                className="inline-flex min-h-9 items-center gap-1 rounded-full bg-[color-mix(in_srgb,var(--ink)_8%,transparent)] px-3 py-1.5 text-xs font-semibold text-[color-mix(in_srgb,var(--ink)_75%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--ink)_14%,transparent)] hover:text-[var(--ink)] active:scale-95 md:min-h-0 md:rounded-[var(--radius-tag)] md:px-2 md:py-1"
+                onClick={() => setWeekOverride(!showFullWeek)}
+              >
+                {showFullWeek ? (
+                  <>
+                    <ChevronUp size={13} strokeWidth={2} />
+                    <span className="md:hidden">Hoje</span>
+                    <span className="hidden md:inline">Só hoje</span>
+                  </>
+                ) : (
+                  <>
+                    <ChevronDown size={13} strokeWidth={2} />
+                    <span>Semana</span>
+                  </>
+                )}
+              </button>
+            )}
+          </div>
         </div>
 
         {showFullWeek ? (
