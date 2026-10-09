@@ -55,7 +55,7 @@ const TOPICS: TutorialTopic[] = [
       "Finalizar matéria em play: clique no ícone de avançar (⏭) na barra de sessão para salvar o foco, registrar anotações e passar imediatamente para a próxima.",
       "Descanso entre sessões: ao concluir as matérias do bloco, o sistema inicia automaticamente a pausa configurada por você em Ajustes (ex.: 5 a 15 min), com alarme sonoro suave antes da próxima sessão.",
     ],
-    tip: "Você pode personalizar a duração de foco de cada matéria, o descanso e as matérias por sessão em Ajustes. O temporizador/cronômetro da barra lateral no PC funciona como relógio livre para tarefas avulsas (redações, exercícios, simulados) e não avança o ciclo automaticamente.",
+    tip: "Você pode personalizar a duração de foco de cada matéria, o descanso e as matérias por sessão em Ajustes. O temporizador/cronômetro da barra lateral no computador funciona como relógio livre para tarefas avulsas (redações, exercícios, simulados) e não avança o ciclo automaticamente.",
   },
   {
     id: "rodizio",
@@ -86,7 +86,7 @@ const TOPICS: TutorialTopic[] = [
       "Flashcards e Repetição Espaçada: formule seus próprios cartões ou gere com IA. O card entra no deck com repetição inicial em 24h para fixação imediata; ao acertar, os intervalos expandem automaticamente (4 a 7 dias, depois 15 a 30 dias).",
       "Deck Global vs Treino Isolado: utilize o 'Deck Global do Dia' para revisar rapidamente todos os cards previstos para hoje pelo algoritmo, ou treine uma disciplina específica de forma isolada nos 'Decks por Matéria'.",
     ],
-    tip: "Atalhos rápidos no PC: ao revisar flashcards no computador, use a barra de Espaço para virar o cartão/mostrar a resposta e as teclas 1 a 4 para classificar sua recordação (1: Errei, 2: Difícil, 3: Bom, 4: Fácil). No celular, basta tocar no cartão e botões. Consulte também a aba Diagnóstico para ver onde reforçar a teoria.",
+    tip: "Atalhos rápidos no computador: ao revisar flashcards no computador, use a barra de Espaço para virar o cartão/mostrar a resposta e as teclas 1 a 4 para classificar sua recordação (1: Errei, 2: Difícil, 3: Bom, 4: Fácil). No celular, basta tocar no cartão e botões. Consulte também a aba Diagnóstico para ver onde reforçar a teoria.",
   },
   {
     id: "agenda",
@@ -116,7 +116,7 @@ const TOPICS: TutorialTopic[] = [
       "Lembretes & Alarmes: crie lembretes com data, hora e alerta sonoro/notificação. Acesse facilmente pela barra lateral no computador ou pela aba dedicada 'Lembretes' no menu inferior do celular.",
       "Notas Rápidas: use o mural de post-its para anotações livres, fórmulas, links e rascunhos sem sair do fluxo de estudos.",
     ],
-    tip: "Instale o FocoHub como aplicativo (PWA) no seu celular ou PC para notificações sonoras e tela cheia.",
+    tip: "Instale o FocoHub como aplicativo (PWA) no seu celular ou computador para notificações sonoras e tela cheia.",
   },
 ];
 

@@ -696,7 +696,7 @@ export function TiraDuvidas() {
                 <button
                   type="button"
                   onClick={() => handleSetTextSize("base")}
-                  title="Padrão Confortável (16px) - Recomendado para PC"
+                  title="Padrão Confortável (16px) - Recomendado para Computador"
                   className={`inline-flex items-center gap-1 px-2.5 py-1 text-xs font-bold rounded-md transition-all ${
                     textSize === "base"
                       ? "bg-[var(--signal)] text-white shadow-xs"

@@ -88,14 +88,14 @@ export default function AjudaPage() {
             </div>
           </section>
 
-          {/* Card de Atalhos no Teclado (PC) */}
+          {/* Card de Atalhos no Teclado (Computador) */}
           <section className="surface p-4 shadow-xs space-y-2.5">
             <div className="flex items-center gap-2">
               <div className="grid size-7 place-items-center rounded-lg bg-[var(--signal-soft)] text-[var(--signal)] shrink-0">
                 <Keyboard size={15} />
               </div>
               <h2 className="text-xs font-semibold text-[var(--ink)]">
-                Atalhos Rápidos (PC)
+                Atalhos Rápidos (Computador)
               </h2>
             </div>
             <div className="space-y-1.5 text-[11px] text-[color-mix(in_srgb,var(--ink)_80%,transparent)]">
