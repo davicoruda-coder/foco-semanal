@@ -397,15 +397,13 @@ export function UserAccountMenu({
           aria-expanded={open}
           aria-haspopup="dialog"
           title={`Perfil: ${user.name || user.email}`}
-          className={`flex w-full min-w-0 flex-col items-center justify-center gap-1 text-[11px] transition-colors ${
-            open || isActive
-              ? "font-semibold text-[var(--signal)]"
-              : "font-medium text-[color-mix(in_srgb,var(--ink)_45%,transparent)]"
-          }`}
+          className="group relative flex h-full w-full min-w-0 flex-col items-center justify-center transition-transform duration-150 ease-out active:scale-90 focus-visible:outline-none"
         >
           <span
-            className={`relative grid size-9 place-items-center rounded-xl transition-colors ${
-              open || isActive ? "nav-tab-active-chip" : "bg-transparent"
+            className={`relative grid size-10 place-items-center rounded-full transition-all duration-200 ${
+              open || isActive
+                ? "bg-[color-mix(in_srgb,var(--signal)_12%,var(--surface))]"
+                : "bg-transparent group-hover:bg-[var(--mist)]"
             }`}
           >
             {showCustomPhoto ? (
@@ -413,26 +411,23 @@ export function UserAccountMenu({
                 src={user.avatarUrl}
                 alt="Perfil"
                 onError={() => setImgError(true)}
-                className={`size-6 rounded-full object-cover ring-1 transition-all ${
+                className={`size-[30px] rounded-full object-cover transition-all duration-200 ${
                   open || isActive
-                    ? "ring-[var(--signal)] shadow-xs"
-                    : "ring-[var(--line)]"
+                    ? "ring-2 ring-[var(--signal)] ring-offset-2 ring-offset-[var(--surface)] scale-105 shadow-xs"
+                    : "ring-[1.5px] ring-[var(--line)] group-hover:ring-[color-mix(in_srgb,var(--ink)_35%,transparent)]"
                 }`}
               />
             ) : (
               <span
-                className={`flex size-6 items-center justify-center rounded-full text-[10px] font-bold tracking-tight transition-all ${
+                className={`flex size-[30px] items-center justify-center rounded-full text-xs font-bold tracking-tight transition-all duration-200 ${
                   open || isActive
-                    ? "bg-[var(--signal)] text-white shadow-xs"
-                    : "bg-[color-mix(in_srgb,var(--signal)_14%,var(--surface))] text-[var(--signal)] ring-1 ring-[color-mix(in_srgb,var(--signal)_30%,var(--line))]"
+                    ? "bg-[var(--signal)] text-white ring-2 ring-[var(--signal)] ring-offset-2 ring-offset-[var(--surface)] scale-105 shadow-xs"
+                    : "bg-[color-mix(in_srgb,var(--signal)_14%,var(--surface))] text-[var(--signal)] ring-[1.5px] ring-[color-mix(in_srgb,var(--signal)_30%,var(--line))]"
                 }`}
               >
                 {initials}
               </span>
             )}
-          </span>
-          <span className="max-w-full truncate px-0.5 leading-none">
-            Perfil
           </span>
         </button>
 
