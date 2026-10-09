@@ -389,7 +389,7 @@ export function UserAccountMenu({
 
   if (variant === "bottom-nav") {
     return (
-      <div ref={containerRef} className="flex min-w-0 flex-1 flex-col items-center justify-center">
+      <div ref={containerRef} className="flex h-full min-w-0 flex-1 items-center justify-center">
         <button
           type="button"
           onClick={() => setOpen((prev) => !prev)}
@@ -397,38 +397,30 @@ export function UserAccountMenu({
           aria-expanded={open}
           aria-haspopup="dialog"
           title={`Perfil: ${user.name || user.email}`}
-          className="group relative flex h-full w-full min-w-0 flex-col items-center justify-center transition-transform duration-150 ease-out active:scale-90 focus-visible:outline-none"
+          className="group relative flex size-12 items-center justify-center rounded-full transition-transform duration-150 ease-out active:scale-90 focus-visible:outline-none"
         >
-          <span
-            className={`relative grid size-10 place-items-center rounded-full transition-all duration-200 ${
-              open || isActive
-                ? "bg-[color-mix(in_srgb,var(--signal)_12%,var(--surface))]"
-                : "bg-transparent group-hover:bg-[var(--mist)]"
-            }`}
-          >
-            {showCustomPhoto ? (
-              <img
-                src={user.avatarUrl}
-                alt="Perfil"
-                onError={() => setImgError(true)}
-                className={`size-[30px] rounded-full object-cover transition-all duration-200 ${
-                  open || isActive
-                    ? "ring-2 ring-[var(--signal)] ring-offset-2 ring-offset-[var(--surface)] scale-105 shadow-xs"
-                    : "ring-[1.5px] ring-[var(--line)] group-hover:ring-[color-mix(in_srgb,var(--ink)_35%,transparent)]"
-                }`}
-              />
-            ) : (
-              <span
-                className={`flex size-[30px] items-center justify-center rounded-full text-xs font-bold tracking-tight transition-all duration-200 ${
-                  open || isActive
-                    ? "bg-[var(--signal)] text-white ring-2 ring-[var(--signal)] ring-offset-2 ring-offset-[var(--surface)] scale-105 shadow-xs"
-                    : "bg-[color-mix(in_srgb,var(--signal)_14%,var(--surface))] text-[var(--signal)] ring-[1.5px] ring-[color-mix(in_srgb,var(--signal)_30%,var(--line))]"
-                }`}
-              >
-                {initials}
-              </span>
-            )}
-          </span>
+          {showCustomPhoto ? (
+            <img
+              src={user.avatarUrl}
+              alt="Perfil"
+              onError={() => setImgError(true)}
+              className={`size-10 rounded-full object-cover transition-all duration-200 ${
+                open || isActive
+                  ? "ring-[2.5px] ring-[var(--signal)] ring-offset-2 ring-offset-[var(--surface)] scale-105 shadow-sm"
+                  : "ring-2 ring-[var(--line)] group-hover:ring-[color-mix(in_srgb,var(--ink)_35%,transparent)] shadow-2xs"
+              }`}
+            />
+          ) : (
+            <span
+              className={`flex size-10 items-center justify-center rounded-full text-sm font-bold tracking-tight transition-all duration-200 ${
+                open || isActive
+                  ? "bg-[var(--signal)] text-white ring-[2.5px] ring-[var(--signal)] ring-offset-2 ring-offset-[var(--surface)] scale-105 shadow-sm"
+                  : "bg-[color-mix(in_srgb,var(--signal)_14%,var(--surface))] text-[var(--signal)] ring-2 ring-[color-mix(in_srgb,var(--signal)_30%,var(--line))] shadow-2xs"
+              }`}
+            >
+              {initials}
+            </span>
+          )}
         </button>
 
         {/* Mobile Bottom Sheet (renderizado no body via Portal para não ser preso pela navbar) */}
