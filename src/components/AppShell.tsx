@@ -6,7 +6,6 @@ import { usePathname } from "next/navigation";
 import {
   BookMarked,
   CalendarDays,
-  ChartColumn,
   Sparkles,
 } from "lucide-react";
 import { BrandIcon } from "@/components/BrandIcon";
@@ -21,15 +20,13 @@ const DESKTOP_PRIMARY_TABS = [
   { href: "/agenda", label: "Rotina", icon: CalendarDays },
   { href: "/hoje", label: "Estudo", icon: BookMarked },
   { href: "/revisao", label: "Fixar", icon: Sparkles },
-  { href: "/estatisticas", label: "Métricas", icon: ChartColumn },
 ];
 
-/** Mobile: 4 abas primárias (a 5ª é o Perfil). */
+/** Mobile: 3 abas principais (a 4ª é o Perfil). */
 const MOBILE_PRIMARY = [
   { href: "/agenda", label: "Rotina", icon: CalendarDays },
   { href: "/hoje", label: "Estudo", icon: BookMarked },
   { href: "/revisao", label: "Fixar", icon: Sparkles },
-  { href: "/estatisticas", label: "Métricas", icon: ChartColumn },
 ];
 
 function isRouteActive(pathname: string, href: string) {
@@ -155,6 +152,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   });
 
   const isProfileActive =
+    pathname.startsWith("/estatisticas") ||
     pathname.startsWith("/ajustes") ||
     pathname.startsWith("/configuracoes") ||
     pathname.startsWith("/ajuda") ||

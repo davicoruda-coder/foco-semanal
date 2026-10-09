@@ -13,6 +13,7 @@ import {
   Sparkles,
   X,
   CircleHelp,
+  ChartColumn,
   ChevronDown,
 } from "lucide-react";
 import { useApp } from "@/components/AppProvider";
@@ -330,6 +331,15 @@ export function UserAccountMenu({
 
       {/* Seção de Navegação e Configurações */}
       <div className="py-2 space-y-0.5 text-xs text-[var(--ink)]">
+        <Link
+          href="/estatisticas"
+          onClick={() => setOpen(false)}
+          className="flex items-center gap-2.5 rounded-lg px-2.5 py-2 font-medium transition hover:bg-[var(--mist)]"
+        >
+          <ChartColumn size={15} strokeWidth={1.8} className="opacity-70" />
+          <span>Estatísticas de Foco</span>
+        </Link>
+
         <Link
           href="/ajustes"
           onClick={() => setOpen(false)}
