@@ -180,10 +180,10 @@ export function FlashcardDeckList() {
               <button
                 type="button"
                 onClick={() => setShowAIGenerator(!showAIGenerator)}
-                className={`inline-flex items-center gap-1.5 rounded-[var(--radius-btn)] border px-3 py-1.5 text-xs sm:text-sm font-semibold shadow-sm transition ${
+                className={`inline-flex items-center gap-1.5 rounded-[var(--radius-btn)] border px-3 py-1.5 text-xs sm:text-sm font-semibold shadow-xs transition ${
                   showAIGenerator
-                    ? "border-[var(--signal)] bg-[color-mix(in_srgb,var(--signal)_10%,var(--surface))] text-[var(--signal)]"
-                    : "border-[var(--line)] bg-[var(--surface)] text-[color-mix(in_srgb,#a855f7_70%,var(--ink))] hover:border-[color-mix(in_srgb,#a855f7_40%,var(--line))]"
+                    ? "border-[var(--signal)] bg-[var(--signal-soft)] text-[var(--signal)]"
+                    : "border-[color-mix(in_srgb,var(--signal)_35%,var(--line))] bg-[var(--surface)] text-[var(--signal)] hover:bg-[var(--signal-soft)] active:scale-95"
                 }`}
               >
                 <Bot size={14} />

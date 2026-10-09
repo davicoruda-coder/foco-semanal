@@ -9,8 +9,6 @@ import {
   Layers,
   MessageCircleQuestion,
   PieChart,
-  Plus,
-  Sparkles,
   X,
 } from "lucide-react";
 import { FlashcardsIcon } from "@/components/FlashcardsIcon";
@@ -63,43 +61,14 @@ function RevisaoContent() {
 
   return (
     <div className="space-y-4 max-w-full min-w-0">
-      {/* Header com Abas e Ação Principal */}
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--line)] pb-3">
-        <div className="min-w-0 max-w-full">
-          <h1 className="font-display text-xl sm:text-2xl font-semibold tracking-tight text-[var(--ink)] flex flex-wrap items-center gap-2">
-            Fixação Ativa
-            <span className="rounded-full bg-[var(--signal)] px-2 py-0.5 text-[11px] font-bold text-white shadow-xs">
-              IA
-            </span>
-          </h1>
-        </div>
-
-        {/* Ações: Gerar com IA e Captura Rápida */}
-        <div className="flex flex-wrap items-center gap-2">
-          <button
-            type="button"
-            onClick={() => {
-              setAiInitialData({});
-              setShowAIModal(true);
-            }}
-            className="inline-flex items-center gap-1.5 rounded-[var(--radius-btn)] border border-[color-mix(in_srgb,var(--signal)_35%,var(--line))] bg-[var(--surface)] px-3.5 py-2 text-xs sm:text-sm font-semibold text-[var(--signal)] shadow-xs transition hover:bg-[var(--signal-soft)] active:scale-95"
-            title="Criar flashcards automaticamente a partir de texto com IA"
-          >
-            <Bot size={16} />
-            <span>
-              Gerar Flashcards <span className="hidden sm:inline">com IA</span>
-            </span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setShowCaptureModal(true)}
-            className="inline-flex items-center gap-1.5 rounded-[var(--radius-btn)] bg-[var(--signal)] px-3.5 py-2 text-xs sm:text-sm font-semibold text-white shadow-sm transition hover:brightness-110 active:scale-95"
-          >
-            <Plus size={16} />
-            Anotar no Caderno
-          </button>
-        </div>
+      {/* Header do Módulo */}
+      <div className="border-b border-[var(--line)] pb-2.5">
+        <h1 className="font-display text-xl sm:text-2xl font-semibold tracking-tight text-[var(--ink)] flex items-center gap-2">
+          Fixação Ativa
+          <span className="rounded-full bg-[var(--signal)] px-2 py-0.5 text-[11px] font-bold text-white shadow-xs">
+            IA
+          </span>
+        </h1>
       </div>
 
       {/* Navegação de Abas do Módulo (Segmented Control em 4 colunas — estilo app móvel com ícone acima no celular para nunca cortar texto) */}
@@ -183,6 +152,7 @@ function RevisaoContent() {
       {/* Conteúdo da Aba Ativa */}
       {activeTab === "caderno" && (
         <CadernoList
+          onNewQuestao={() => setShowCaptureModal(true)}
           onGenerateWithAI={(text, disciplina) => {
             setAiInitialData({ text, disciplina });
             setShowAIModal(true);

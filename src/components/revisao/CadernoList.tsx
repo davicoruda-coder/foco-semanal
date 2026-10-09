@@ -91,8 +91,10 @@ function getCardContent(q: QuestaoCaderno) {
 
 export function CadernoList({
   onGenerateWithAI,
+  onNewQuestao,
 }: {
   onGenerateWithAI?: (texto: string, disciplina: string) => void;
+  onNewQuestao?: () => void;
 } = {}) {
   const { questoes, questoesLoading, deleteQuestao, allFlashcards, addFlashcardManual } = useRevisao();
   const [search, setSearch] = useState("");
@@ -311,6 +313,29 @@ export function CadernoList({
     <div className="space-y-4">
       {/* Barra de Busca e Filtros Rápidos Compacta */}
       <div className="rounded-[var(--radius)] border border-[var(--line)] bg-[var(--surface)] p-2.5 sm:p-3 shadow-xs space-y-2.5">
+        {/* Topo do Caderno: Título e Ação Direta de Anotação */}
+        <div className="flex items-center justify-between gap-2.5 pb-2 border-b border-[var(--line)]/60">
+          <div>
+            <h2 className="font-display text-sm sm:text-base font-bold text-[var(--ink)]">
+              Caderno de Erros
+            </h2>
+            <p className="text-[11px] sm:text-xs text-[color-mix(in_srgb,var(--ink)_55%,transparent)] hidden sm:block">
+              Fichas de estudo ativo baseadas nas suas questões e dúvidas
+            </p>
+          </div>
+          {onNewQuestao && (
+            <button
+              type="button"
+              onClick={onNewQuestao}
+              className="inline-flex items-center gap-1.5 rounded-[var(--radius-btn)] bg-[var(--signal)] px-3 py-1.5 sm:px-3.5 sm:py-2 text-xs sm:text-sm font-semibold text-white shadow-sm transition hover:brightness-110 active:scale-95 shrink-0"
+              title="Registrar novo erro, chute ou dúvida"
+            >
+              <Plus size={15} />
+              <span>Anotar no Caderno</span>
+            </button>
+          )}
+        </div>
+
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
           {/* Campo de Busca Compacto com largura contida */}
           <div className="relative flex-1 max-w-full sm:max-w-md">
@@ -462,17 +487,33 @@ export function CadernoList({
           Carregando questões do caderno...
         </div>
       ) : questoesFiltradas.length === 0 ? (
-        <div className="rounded-[var(--radius)] border border-dashed border-[var(--line)] p-8 text-center">
+        <div className="rounded-[var(--radius)] border border-dashed border-[var(--line)] p-8 text-center space-y-3">
           <GraduationCap
             size={36}
-            className="mx-auto mb-2 text-[color-mix(in_srgb,var(--ink)_35%,transparent)]"
+            className="mx-auto text-[color-mix(in_srgb,var(--ink)_35%,transparent)]"
           />
-          <p className="text-sm font-medium text-[var(--ink)]">
-            Nenhuma questão encontrada
-          </p>
-          <p className="mt-1 text-xs text-[color-mix(in_srgb,var(--ink)_50%,transparent)]">
-            Use o botão &apos;+ Anotar no Caderno&apos; acima para registrar seus erros ou dúvidas de exercícios, simulados e provas.
-          </p>
+          <div className="max-w-md mx-auto">
+            <p className="text-sm font-semibold text-[var(--ink)]">
+              {hasActiveFilters
+                ? "Nenhuma anotação encontrada com esses filtros"
+                : "Seu caderno de erros está vazio"}
+            </p>
+            <p className="mt-1 text-xs text-[color-mix(in_srgb,var(--ink)_50%,transparent)] leading-relaxed">
+              {hasActiveFilters
+                ? "Tente ajustar os filtros ou a busca acima para encontrar suas anotações."
+                : "Registre seus erros ou dúvidas de exercícios, simulados e provas para fixação ativa."}
+            </p>
+          </div>
+          {onNewQuestao && (
+            <button
+              type="button"
+              onClick={onNewQuestao}
+              className="inline-flex items-center gap-1.5 rounded-[var(--radius-btn)] bg-[var(--signal)] px-4 py-2 text-xs sm:text-sm font-semibold text-white shadow-sm transition hover:brightness-110 active:scale-95"
+            >
+              <Plus size={16} />
+              Anotar no Caderno
+            </button>
+          )}
         </div>
       ) : (
         <div
