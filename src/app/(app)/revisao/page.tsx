@@ -8,7 +8,6 @@ import {
   ChevronRight,
   Layers,
   MessageCircleQuestion,
-  PieChart,
   X,
 } from "lucide-react";
 import { FlashcardsIcon } from "@/components/FlashcardsIcon";
@@ -17,11 +16,10 @@ import { RevisaoProvider, useRevisao } from "@/components/revisao/RevisaoProvide
 import { CadernoList } from "@/components/revisao/CadernoList";
 import { QuickCaptureForm } from "@/components/revisao/QuickCaptureForm";
 import { FlashcardDeckList } from "@/components/revisao/FlashcardDeckList";
-import { RevisaoStats } from "@/components/revisao/RevisaoStats";
 import { AIFlashcardGenerator } from "@/components/revisao/AIFlashcardGenerator";
 import { TiraDuvidas } from "@/components/revisao/TiraDuvidas";
 
-type TabId = "caderno" | "flashcards" | "tira-duvidas" | "estatisticas";
+type TabId = "caderno" | "flashcards" | "tira-duvidas";
 
 function RevisaoContent() {
   const { reloadQuestoes, reloadFlashcards, flashcardsDoDia, moduloAtivo } =
@@ -71,12 +69,12 @@ function RevisaoContent() {
         </h1>
       </div>
 
-      {/* Navegação de Abas do Módulo (Segmented Control em 4 colunas — estilo app móvel com ícone acima no celular para nunca cortar texto) */}
-      <div className="grid grid-cols-4 w-full items-center gap-1 rounded-xl border border-[var(--line)] bg-[var(--mist)] p-1">
+      {/* Navegação de Abas do Módulo (Segmented Control em 3 colunas — espaçoso e sem aperto) */}
+      <div className="grid grid-cols-3 w-full items-center gap-1 rounded-xl border border-[var(--line)] bg-[var(--mist)] p-1">
         <button
           type="button"
           onClick={() => setActiveTab("caderno")}
-          className={`flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 rounded-lg px-0.5 sm:px-3 py-1.5 sm:py-2 text-[10.5px] sm:text-xs font-semibold transition ${
+          className={`flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 rounded-lg px-1 sm:px-3 py-1.5 sm:py-2 text-[11px] sm:text-xs font-semibold transition ${
             activeTab === "caderno"
               ? "bg-[var(--surface)] text-[var(--signal)] shadow-xs"
               : "text-[color-mix(in_srgb,var(--ink)_60%,transparent)] hover:text-[var(--ink)]"
@@ -90,7 +88,7 @@ function RevisaoContent() {
         <button
           type="button"
           onClick={() => setActiveTab("flashcards")}
-          className={`flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 rounded-lg px-0.5 sm:px-3 py-1.5 sm:py-2 text-[10.5px] sm:text-xs font-semibold transition ${
+          className={`flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 rounded-lg px-1 sm:px-3 py-1.5 sm:py-2 text-[11px] sm:text-xs font-semibold transition ${
             activeTab === "flashcards"
               ? "bg-[var(--surface)] text-[var(--signal)] shadow-xs"
               : "text-[color-mix(in_srgb,var(--ink)_60%,transparent)] hover:text-[var(--ink)]"
@@ -116,7 +114,7 @@ function RevisaoContent() {
         <button
           type="button"
           onClick={() => setActiveTab("tira-duvidas")}
-          className={`flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 rounded-lg px-0.5 sm:px-3 py-1.5 sm:py-2 text-[10.5px] sm:text-xs font-semibold transition ${
+          className={`flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 rounded-lg px-1 sm:px-3 py-1.5 sm:py-2 text-[11px] sm:text-xs font-semibold transition ${
             activeTab === "tira-duvidas"
               ? "bg-[var(--surface)] text-[var(--signal)] shadow-xs"
               : "text-[color-mix(in_srgb,var(--ink)_60%,transparent)] hover:text-[var(--ink)]"
@@ -134,19 +132,6 @@ function RevisaoContent() {
             IA
           </span>
         </button>
-
-        <button
-          type="button"
-          onClick={() => setActiveTab("estatisticas")}
-          className={`flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 rounded-lg px-0.5 sm:px-3 py-1.5 sm:py-2 text-[10.5px] sm:text-xs font-semibold transition ${
-            activeTab === "estatisticas"
-              ? "bg-[var(--surface)] text-[var(--signal)] shadow-xs"
-              : "text-[color-mix(in_srgb,var(--ink)_60%,transparent)] hover:text-[var(--ink)]"
-          }`}
-        >
-          <PieChart size={16} className="shrink-0 sm:size-3.5" />
-          <span className="tracking-tight whitespace-nowrap">Diagnóstico</span>
-        </button>
       </div>
 
       {/* Conteúdo da Aba Ativa */}
@@ -161,7 +146,6 @@ function RevisaoContent() {
       )}
       {activeTab === "flashcards" && <FlashcardDeckList />}
       {activeTab === "tira-duvidas" && <TiraDuvidas />}
-      {activeTab === "estatisticas" && <RevisaoStats />}
 
       {/* Modal de Captura Rápida com DialogFrame e Header Fixo */}
       <DialogFrame

@@ -1,8 +1,18 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight, Download, Plus, X } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Clock,
+  Download,
+  PieChart,
+  Plus,
+  X,
+} from "lucide-react";
 import { useApp } from "@/components/AppProvider";
+import { RevisaoProvider } from "@/components/revisao/RevisaoProvider";
+import { RevisaoStats } from "@/components/revisao/RevisaoStats";
 import { SIDEBAR_TIMER_ID, useTimerRuntime } from "@/components/TimerRuntimeProvider";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { DialogFrame } from "@/components/DialogFrame";
@@ -131,6 +141,19 @@ export default function EstatisticasPage() {
     String(new Date().getHours()),
   );
   const [addHint, setAddHint] = useState<string | null>(null);
+  const [metricaView, setMetricaView] = useState<"foco" | "diagnostico">("foco");
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      if (
+        params.get("aba") === "diagnostico" ||
+        params.get("tab") === "diagnostico"
+      ) {
+        setMetricaView("diagnostico");
+      }
+    }
+  }, []);
 
   useEffect(() => {
     const applyLocal = () => {
@@ -518,64 +541,105 @@ export default function EstatisticasPage() {
         </div>
       </DialogFrame>
 
-      {/* Top Header com Título e Seletor de Período */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="font-display text-xl sm:text-2xl font-semibold tracking-tight text-[var(--ink)]">
-            Estatísticas
-          </h1>
-          <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
-            <span className="inline-flex items-center gap-2">
-              <span
-                className={`inline-flex h-2 w-2 rounded-full ${
-                  tracking
-                    ? "bg-[var(--ok)]"
-                    : "bg-[color-mix(in_srgb,var(--ink)_25%,transparent)]"
-                }`}
-              />
-              <span className="opacity-60">
-                {tracking ? "Registrando agora…" : "Pausado — não está contando"}
-              </span>
-            </span>
-            {user ? (
-              <span className="opacity-50">
-                {syncing ? "Sincronizando…" : syncHint}
-              </span>
-            ) : null}
+      {/* Top Header com Título e Seletor Principal */}
+      <div className="flex flex-col gap-3.5 border-b border-[var(--line)] pb-3">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div>
+            <h1 className="font-display text-xl sm:text-2xl font-semibold tracking-tight text-[var(--ink)]">
+              Métricas
+            </h1>
+            <p className="mt-0.5 text-xs text-[color-mix(in_srgb,var(--ink)_60%,transparent)]">
+              Acompanhe seu tempo de estudo focado e o diagnóstico analítico de erros.
+            </p>
+          </div>
+
+          {/* Seletor Segmentado de Visualização: Tempo de Foco | Diagnóstico de Erros */}
+          <div className="grid grid-cols-2 sm:inline-flex w-full sm:w-auto items-center gap-1 rounded-xl border border-[var(--line)] bg-[var(--mist)] p-1">
+            <button
+              type="button"
+              onClick={() => setMetricaView("foco")}
+              className={`inline-flex items-center justify-center gap-1.5 rounded-lg px-3.5 py-1.5 text-xs font-semibold transition ${
+                metricaView === "foco"
+                  ? "bg-[var(--surface)] text-[var(--signal)] shadow-xs"
+                  : "text-[color-mix(in_srgb,var(--ink)_60%,transparent)] hover:text-[var(--ink)]"
+              }`}
+            >
+              <Clock size={15} strokeWidth={2} className="shrink-0" />
+              <span>Tempo de Foco</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setMetricaView("diagnostico")}
+              className={`inline-flex items-center justify-center gap-1.5 rounded-lg px-3.5 py-1.5 text-xs font-semibold transition ${
+                metricaView === "diagnostico"
+                  ? "bg-[var(--surface)] text-[var(--signal)] shadow-xs"
+                  : "text-[color-mix(in_srgb,var(--ink)_60%,transparent)] hover:text-[var(--ink)]"
+              }`}
+            >
+              <PieChart size={15} strokeWidth={2} className="shrink-0" />
+              <span>Diagnóstico de Erros</span>
+            </button>
           </div>
         </div>
 
-        {/* Range Selector: Dia | Semana | Mês | Ano */}
-        <div className="flex flex-wrap gap-1 rounded-full border border-[var(--line)] bg-[var(--surface)] p-1 shadow-xs">
-          {(
-            [
-              ["dia", "Dia"],
-              ["semana", "Semana"],
-              ["mes", "Mês"],
-              ["ano", "Ano"],
-            ] as const
-          ).map(([value, label]) => {
-            const active = range === value;
-            return (
-              <button
-                key={value}
-                type="button"
-                onClick={() => setRange(value)}
-                className={`rounded-full px-3.5 py-1 text-xs sm:text-sm font-semibold transition ${
-                  active
-                    ? "bg-[var(--signal)] text-white shadow-xs"
-                    : "text-[color-mix(in_srgb,var(--ink)_65%,transparent)] hover:text-[var(--ink)]"
-                }`}
-              >
-                {label}
-              </button>
-            );
-          })}
-        </div>
+        {metricaView === "foco" && (
+          <div className="flex flex-wrap items-center justify-between gap-2 pt-1 text-xs">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+              <span className="inline-flex items-center gap-2">
+                <span
+                  className={`inline-flex h-2 w-2 rounded-full ${
+                    tracking
+                      ? "bg-[var(--ok)]"
+                      : "bg-[color-mix(in_srgb,var(--ink)_25%,transparent)]"
+                  }`}
+                />
+                <span className="opacity-60">
+                  {tracking ? "Registrando agora…" : "Pausado — não está contando"}
+                </span>
+              </span>
+              {user ? (
+                <span className="opacity-50">
+                  {syncing ? "Sincronizando…" : syncHint}
+                </span>
+              ) : null}
+            </div>
+
+            {/* Range Selector: Dia | Semana | Mês | Ano */}
+            <div className="flex flex-wrap gap-1 rounded-full border border-[var(--line)] bg-[var(--surface)] p-1 shadow-xs">
+              {(
+                [
+                  ["dia", "Dia"],
+                  ["semana", "Semana"],
+                  ["mes", "Mês"],
+                  ["ano", "Ano"],
+                ] as const
+              ).map(([value, label]) => {
+                const active = range === value;
+                return (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => setRange(value)}
+                    className={`rounded-full px-3.5 py-1 text-xs sm:text-sm font-semibold transition ${
+                      active
+                        ? "bg-[var(--signal)] text-white shadow-xs"
+                        : "text-[color-mix(in_srgb,var(--ink)_65%,transparent)] hover:text-[var(--ink)]"
+                    }`}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Navegador de período (Anterior / Atual / Próximo) */}
-      <div className="flex items-center gap-2 rounded-[var(--radius-btn)] border border-[var(--line)] bg-[var(--surface)] p-2 shadow-xs">
+      {metricaView === "foco" ? (
+        <>
+          {/* Navegador de período (Anterior / Atual / Próximo) */}
+          <div className="flex items-center gap-2 rounded-[var(--radius-btn)] border border-[var(--line)] bg-[var(--surface)] p-2 shadow-xs">
         <button
           type="button"
           className="grid h-9 w-9 shrink-0 place-items-center rounded-full transition hover:bg-[var(--mist)]"
@@ -787,6 +851,14 @@ export default function EstatisticasPage() {
           ) : null}
         </aside>
       </div>
+        </>
+      ) : (
+        <div className="pt-2">
+          <RevisaoProvider>
+            <RevisaoStats />
+          </RevisaoProvider>
+        </div>
+      )}
     </div>
   );
 }

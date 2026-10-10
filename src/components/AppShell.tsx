@@ -20,7 +20,7 @@ import { getFlashcardsCountDoDia } from "@/lib/revisao/revisao-store";
 const DESKTOP_PRIMARY_TABS = [
   { href: "/hoje", label: "Hoje", icon: BookMarked },
   { href: "/revisao", label: "Fixar", icon: Sparkles },
-  { href: "/estatisticas", label: "Estatísticas", icon: ChartColumn },
+  { href: "/estatisticas", label: "Métricas", icon: ChartColumn },
 ];
 
 /** Mobile: 3 abas principais (a 4ª é o Perfil). */

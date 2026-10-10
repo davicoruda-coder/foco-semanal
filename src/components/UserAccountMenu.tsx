@@ -337,7 +337,7 @@ export function UserAccountMenu({
           className="flex items-center gap-2.5 rounded-lg px-2.5 py-2 font-medium transition hover:bg-[var(--mist)]"
         >
           <ChartColumn size={15} strokeWidth={1.8} className="opacity-70" />
-          <span>Estatísticas de Foco</span>
+          <span>Métricas de Desempenho</span>
         </Link>
 
         <Link
