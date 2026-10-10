@@ -560,7 +560,7 @@ export default function EstatisticasPage() {
               onClick={() => setMetricaView("foco")}
               className={`inline-flex items-center justify-center gap-1.5 rounded-lg px-3.5 py-1.5 text-xs font-semibold transition ${
                 metricaView === "foco"
-                  ? "bg-[var(--surface)] text-[var(--signal)] shadow-xs"
+                  ? "bg-[var(--signal)] text-white shadow-xs"
                   : "text-[color-mix(in_srgb,var(--ink)_60%,transparent)] hover:text-[var(--ink)]"
               }`}
             >
@@ -573,7 +573,7 @@ export default function EstatisticasPage() {
               onClick={() => setMetricaView("diagnostico")}
               className={`inline-flex items-center justify-center gap-1.5 rounded-lg px-3.5 py-1.5 text-xs font-semibold transition ${
                 metricaView === "diagnostico"
-                  ? "bg-[var(--surface)] text-[var(--signal)] shadow-xs"
+                  ? "bg-[var(--signal)] text-white shadow-xs"
                   : "text-[color-mix(in_srgb,var(--ink)_60%,transparent)] hover:text-[var(--ink)]"
               }`}
             >
