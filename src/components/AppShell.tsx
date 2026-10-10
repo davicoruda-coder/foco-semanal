@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import {
   BookMarked,
   CalendarDays,
+  ChartColumn,
   Sparkles,
 } from "lucide-react";
 import { BrandIcon } from "@/components/BrandIcon";
@@ -17,19 +18,19 @@ import { getFlashcardsCountDoDia } from "@/lib/revisao/revisao-store";
 
 /** Desktop: navegação central de trabalho (workflow diário). */
 const DESKTOP_PRIMARY_TABS = [
-  { href: "/agenda", label: "Rotina", icon: CalendarDays },
-  { href: "/hoje", label: "Estudo", icon: BookMarked },
+  { href: "/hoje", label: "Hoje", icon: BookMarked },
   { href: "/revisao", label: "Fixar", icon: Sparkles },
+  { href: "/estatisticas", label: "Estatísticas", icon: ChartColumn },
 ];
 
 /** Mobile: 3 abas principais (a 4ª é o Perfil). */
 const MOBILE_PRIMARY = [
   { href: "/agenda", label: "Rotina", icon: CalendarDays },
-  { href: "/hoje", label: "Estudo", icon: BookMarked },
+  { href: "/hoje", label: "Hoje", icon: BookMarked },
   { href: "/revisao", label: "Fixar", icon: Sparkles },
 ];
 
-function isRouteActive(pathname: string, href: string) {
+function isRouteActive(pathname: string, href: string, isDesktop = false) {
   if (href === "/agenda") {
     return (
       pathname.startsWith("/agenda") ||
@@ -38,7 +39,14 @@ function isRouteActive(pathname: string, href: string) {
     );
   }
   if (href === "/hoje") {
-    return pathname.startsWith("/hoje") || pathname.startsWith("/materias");
+    return (
+      pathname.startsWith("/hoje") ||
+      pathname.startsWith("/materias") ||
+      (isDesktop &&
+        (pathname.startsWith("/semana") ||
+          pathname.startsWith("/agenda") ||
+          pathname.startsWith("/lembretes")))
+    );
   }
   return pathname.startsWith(href);
 }
@@ -141,7 +149,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   const desktopPrimary = DESKTOP_PRIMARY_TABS.filter((item) => {
     if (item.href === "/revisao") return revisaoActive;
-    if (item.href === "/agenda" && !semanaActive) return false;
     return true;
   });
 
@@ -181,7 +188,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <header className="sticky top-0 z-30 border-b border-[color-mix(in_srgb,var(--line)_80%,transparent)] bg-[color-mix(in_srgb,var(--surface)_90%,var(--paper))]/90 pt-[env(safe-area-inset-top,0px)] backdrop-blur-md lg:hidden transition-colors">
         <div className="mx-auto flex h-12 max-w-lg items-center px-3">
           <Link
-            href="/agenda"
+            href="/hoje"
             className="flex min-w-0 items-center gap-2"
             title="FocoHub"
           >
@@ -199,7 +206,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           {/* Logo / Marca */}
           <div className="flex items-center justify-start min-w-0">
             <Link
-              href="/agenda"
+              href="/hoje"
               className="flex min-w-0 shrink-0 items-center gap-2.5 transition hover:opacity-90"
               title="FocoHub"
             >
@@ -210,13 +217,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </Link>
           </div>
 
-          {/* Controle Central Segmentado (Rotina | Estudo | Fixar | Métricas) */}
+          {/* Controle Central Segmentado (Hoje | Fixar | Estatísticas) */}
           <nav
             aria-label="Modos de trabalho"
             className="flex items-center justify-self-center rounded-xl border border-[color-mix(in_srgb,var(--line)_70%,transparent)] bg-[var(--mist)]/90 p-1 shadow-2xs backdrop-blur-xs"
           >
             {desktopPrimary.map(({ href, label, icon: Icon }) => {
-              const active = isRouteActive(pathname, href);
+              const active = isRouteActive(pathname, href, true);
               return (
                 <Link
                   key={href}
