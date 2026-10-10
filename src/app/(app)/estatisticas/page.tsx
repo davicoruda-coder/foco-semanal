@@ -598,10 +598,8 @@ export default function EstatisticasPage() {
                   {tracking ? "Registrando agora…" : "Pausado — não está contando"}
                 </span>
               </span>
-              {user ? (
-                <span className="opacity-50">
-                  {syncing ? "Sincronizando…" : syncHint}
-                </span>
+              {syncing ? (
+                <span className="opacity-50">Sincronizando…</span>
               ) : null}
             </div>
 

@@ -350,14 +350,8 @@ export function CadernoList({
             )}
           </div>
 
-          {/* Toggle Grade / Lista, Botão Filtros e Contador de Resultados */}
+          {/* Toggle Grade / Lista, Botão Filtros */}
           <div className="flex items-center justify-between sm:justify-end gap-2 shrink-0">
-            <span className="text-xs text-[color-mix(in_srgb,var(--ink)_55%,transparent)] font-medium">
-              {questoesFiltradas.length === 1
-                ? "1 anotação"
-                : `${questoesFiltradas.length} anotações`}
-            </span>
-
             {/* Botão de Filtros Expansível */}
             <button
               type="button"
