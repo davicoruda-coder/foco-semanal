@@ -559,7 +559,7 @@ export function TiraDuvidas() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <label className="text-sm font-semibold text-[var(--ink)]">
-                  Enunciado da questão ou sua dúvida
+                  Enunciado da questão ou sua dúvida:
                 </label>
                 {!isUnlimited && (
                   <span
