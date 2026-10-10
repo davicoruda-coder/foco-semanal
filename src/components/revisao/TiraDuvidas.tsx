@@ -558,9 +558,8 @@ export function TiraDuvidas() {
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <label className="text-xs font-semibold text-[var(--ink)] flex items-center gap-1.5">
-                  <span>Enunciado da questão ou sua dúvida</span>
-                  <span className="text-[var(--warn)]">*</span>
+                <label className="text-sm font-semibold text-[var(--ink)]">
+                  Enunciado da questão ou sua dúvida
                 </label>
                 {!isUnlimited && (
                   <span
@@ -577,9 +576,11 @@ export function TiraDuvidas() {
                   </span>
                 )}
               </div>
-              <span className="text-[11px] text-[color-mix(in_srgb,var(--ink)_45%,transparent)]">
-                {textLength}/{MAX_TEXT_LENGTH}
-              </span>
+              {textLength > 10000 && (
+                <span className="text-[11px] text-[color-mix(in_srgb,var(--ink)_45%,transparent)] font-mono-num">
+                  {textLength}/{MAX_TEXT_LENGTH}
+                </span>
+              )}
             </div>
             <textarea
               value={pergunta}
@@ -587,7 +588,7 @@ export function TiraDuvidas() {
               placeholder="Cole aqui o texto da questão, a alternativa que gerou dúvida, ou descreva sua dúvida teórica..."
               rows={5}
               maxLength={MAX_TEXT_LENGTH}
-              className="w-full min-h-[120px] resize-y rounded-[var(--radius-btn)] border border-[var(--line)] bg-[var(--surface)] p-3 text-sm sm:text-base text-[var(--ink)] outline-none transition placeholder:text-[color-mix(in_srgb,var(--ink)_35%,transparent)] focus:border-[var(--signal)] focus:ring-2 focus:ring-[var(--signal-soft)] leading-relaxed"
+              className="w-full min-h-[120px] resize-y rounded-[var(--radius-btn)] border border-[var(--line)] bg-[var(--surface)] p-3 text-sm text-[var(--ink)] outline-none transition placeholder:text-sm placeholder:text-[color-mix(in_srgb,var(--ink)_35%,transparent)] focus:border-[var(--signal)] focus:ring-2 focus:ring-[var(--signal-soft)] leading-relaxed"
             />
           </div>
 
