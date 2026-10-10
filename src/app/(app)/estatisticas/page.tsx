@@ -737,12 +737,12 @@ export default function EstatisticasPage() {
 
             <button
               type="button"
-              className="btn btn-primary w-full justify-center"
+              className="inline-flex items-center justify-center gap-2 rounded-[var(--radius-btn)] bg-[var(--ink)] text-white hover:bg-[color-mix(in_srgb,var(--ink)_88%,white)] dark:bg-white dark:text-neutral-950 dark:hover:bg-neutral-100 py-2.5 px-4 text-sm font-semibold shadow-xs transition active:scale-95 disabled:opacity-70 disabled:pointer-events-none w-full"
               disabled={downloadingReport}
               onClick={() => void downloadReport()}
             >
-              <Download size={16} strokeWidth={2} />
-              {downloadingReport ? "Gerando PDF…" : REPORT_BUTTON_LABEL[range]}
+              <Download size={16} strokeWidth={2.2} />
+              <span>{downloadingReport ? "Gerando PDF…" : REPORT_BUTTON_LABEL[range]}</span>
             </button>
 
             <button
