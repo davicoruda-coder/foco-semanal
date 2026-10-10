@@ -8,6 +8,7 @@ import {
   Download,
   PieChart,
   Plus,
+  RefreshCw,
   X,
 } from "lucide-react";
 import { useApp } from "@/components/AppProvider";
@@ -773,7 +774,8 @@ export default function EstatisticasPage() {
                     .finally(() => setSyncing(false));
                 }}
               >
-                Atualizar da nuvem
+                <RefreshCw size={14} strokeWidth={2} className={syncing ? "animate-spin" : ""} />
+                <span>{syncing ? "Sincronizando…" : "Atualizar da nuvem"}</span>
               </button>
             ) : null}
 
