@@ -122,15 +122,13 @@ function RevisaoContent() {
         >
           <div className="relative inline-flex items-center justify-center">
             <MessageCircleQuestion size={16} className="shrink-0 sm:size-3.5" />
-            <span className="absolute -top-1 -right-2.5 sm:hidden shrink-0 rounded-full bg-gradient-to-r from-[var(--signal)] to-[color-mix(in_srgb,#f59e0b_50%,var(--signal))] px-0.5 py-px text-[7.5px] font-bold text-white leading-none shadow-xs">
-              IA
+            <span className="absolute -top-1 -right-2 sm:hidden grid size-3.5 place-items-center rounded-full bg-[var(--signal)] text-white shadow-xs">
+              <Bot size={9} strokeWidth={2.4} />
             </span>
           </div>
           <span className="sm:hidden tracking-tight">Dúvidas</span>
           <span className="hidden sm:inline whitespace-nowrap">Tira-Dúvidas</span>
-          <span className="hidden sm:inline-block shrink-0 rounded-full bg-gradient-to-r from-[var(--signal)] to-[color-mix(in_srgb,#f59e0b_50%,var(--signal))] px-1 py-px text-[9px] font-bold text-white leading-none">
-            IA
-          </span>
+          <Bot size={13} className="hidden sm:inline-block shrink-0 text-[var(--signal)]" strokeWidth={2.2} />
         </button>
       </div>
 

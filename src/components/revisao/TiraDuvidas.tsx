@@ -507,41 +507,6 @@ export function TiraDuvidas() {
 
   return (
     <div className="mx-auto max-w-4xl space-y-4">
-      {/* Header Unificado */}
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-[var(--radius)] border border-[color-mix(in_srgb,var(--signal)_28%,var(--line))] bg-gradient-to-r from-[color-mix(in_srgb,var(--signal)_12%,var(--surface))] via-[var(--surface)] to-[color-mix(in_srgb,var(--signal)_5%,var(--surface))] p-4 sm:p-5 shadow-[var(--shadow-sm)]">
-        <div className="flex items-center gap-3.5 min-w-0">
-          <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-[var(--signal)] text-white shadow-sm">
-            <MessageCircleQuestion size={22} />
-          </div>
-          <div className="flex flex-wrap items-center gap-2 min-w-0">
-            <h3 className="font-display text-base font-bold text-[var(--ink)] sm:text-lg">
-              Tira-Dúvidas com IA
-            </h3>
-            <span className="inline-flex items-center gap-1 rounded-full bg-[var(--signal-soft)] px-2.5 py-0.5 text-[11px] font-semibold text-[var(--signal)]">
-              Didática & Resolução
-            </span>
-          </div>
-        </div>
-
-        {/* Badge de limite apenas se houver cota restritiva */}
-        {!isUnlimited && (
-          <div className="flex items-center gap-2 shrink-0">
-            <span
-              className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold ${
-                canGenerate
-                  ? "border-[color-mix(in_srgb,var(--signal)_25%,transparent)] bg-[color-mix(in_srgb,var(--signal)_12%,var(--surface))] text-[var(--signal)]"
-                  : "border-[color-mix(in_srgb,var(--warn)_25%,transparent)] bg-[color-mix(in_srgb,var(--warn)_12%,var(--surface))] text-[var(--warn)]"
-              }`}
-            >
-              <Sparkles size={12} />
-              {canGenerate
-                ? `${remaining} ${remaining === 1 ? "geração restante" : "gerações restantes"} hoje`
-                : "Limite diário atingido"}
-            </span>
-          </div>
-        )}
-      </div>
-
       {/* Banner de IA não configurada */}
       {aiConfig && !aiConfig.configured && (
         <div className="rounded-xl border border-[var(--warn)]/30 bg-[var(--warn-soft)] p-3.5 text-xs text-[var(--warn)]">
@@ -592,10 +557,26 @@ export function TiraDuvidas() {
           {/* Textarea */}
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
-              <label className="text-xs font-semibold text-[var(--ink)] flex items-center gap-1.5">
-                <span>Enunciado da questão ou sua dúvida</span>
-                <span className="text-[var(--warn)]">*</span>
-              </label>
+              <div className="flex items-center gap-2">
+                <label className="text-xs font-semibold text-[var(--ink)] flex items-center gap-1.5">
+                  <span>Enunciado da questão ou sua dúvida</span>
+                  <span className="text-[var(--warn)]">*</span>
+                </label>
+                {!isUnlimited && (
+                  <span
+                    className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold ${
+                      canGenerate
+                        ? "border-[color-mix(in_srgb,var(--signal)_25%,transparent)] bg-[color-mix(in_srgb,var(--signal)_12%,var(--surface))] text-[var(--signal)]"
+                        : "border-[color-mix(in_srgb,var(--warn)_25%,transparent)] bg-[color-mix(in_srgb,var(--warn)_12%,var(--surface))] text-[var(--warn)]"
+                    }`}
+                  >
+                    <Sparkles size={10} />
+                    {canGenerate
+                      ? `${remaining} restantes hoje`
+                      : "Limite diário atingido"}
+                  </span>
+                )}
+              </div>
               <span className="text-[11px] text-[color-mix(in_srgb,var(--ink)_45%,transparent)]">
                 {textLength}/{MAX_TEXT_LENGTH}
               </span>
