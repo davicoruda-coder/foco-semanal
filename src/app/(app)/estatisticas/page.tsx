@@ -15,7 +15,6 @@ import { useApp } from "@/components/AppProvider";
 import { RevisaoProvider } from "@/components/revisao/RevisaoProvider";
 import { RevisaoStats } from "@/components/revisao/RevisaoStats";
 import { SIDEBAR_TIMER_ID, useTimerRuntime } from "@/components/TimerRuntimeProvider";
-import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { DialogFrame } from "@/components/DialogFrame";
 import { FocusBarChart } from "@/components/FocusBarChart";
 import {
@@ -30,7 +29,6 @@ import {
 import { downloadFocusReport } from "@/lib/focus-report";
 import {
   addFocusSeconds,
-  clearFocusLog,
   commitFocusDisplaySnapshot,
   dateKey,
   formatFocusDuration,
@@ -43,10 +41,8 @@ import {
   type FocusLog,
 } from "@/lib/focus-log";
 import {
-  clearFocusLogCloud,
   syncFocusLogWithCloud,
 } from "@/lib/supabase/focus-sync";
-import { promptDestructivePassword } from "@/lib/destructive-guard";
 import { DAYS } from "@/lib/types";
 
 type Range = "dia" | "semana" | "mes" | "ano";
@@ -129,7 +125,6 @@ export default function EstatisticasPage() {
   const [range, setRange] = useState<Range>("semana");
   const [referenceDate, setReferenceDate] = useState(() => new Date());
   const [log, setLog] = useState<FocusLog>({ version: 1, days: {} });
-  const [confirmReset, setConfirmReset] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [syncHint, setSyncHint] = useState<string | null>(null);
   const [downloadingReport, setDownloadingReport] = useState(false);
@@ -421,37 +416,8 @@ export default function EstatisticasPage() {
     }
   }
 
-  async function resetHistory() {
-    const auth = promptDestructivePassword("resetar o histórico de tempo");
-    if (auth === "cancel") {
-      setConfirmReset(false);
-      return;
-    }
-    if (auth === "wrong") {
-      window.alert("Senha incorreta. Tente de novo.");
-      return;
-    }
-    const empty = clearFocusLog();
-    clearInterrupts();
-    setInterrupts([]);
-    setLog(empty);
-    window.dispatchEvent(new Event("foco-focus-log"));
-    setConfirmReset(false);
-    await clearFocusLogCloud();
-  }
-
   return (
     <div className="w-full max-w-7xl mx-auto space-y-4 sm:space-y-5">
-      <ConfirmDialog
-        open={confirmReset}
-        title="Resetar histórico de tempo?"
-        message="Isso apaga todo o tempo registrado (dia, semana, mês e ano) neste aparelho e na nuvem, e os avisos de sessão interrompida. Os temporizadores em si não mudam. Será pedida a senha de autorização. Esta ação não pode ser desfeita."
-        confirmLabel="Sim, resetar"
-        cancelLabel="Cancelar"
-        onCancel={() => setConfirmReset(false)}
-        onConfirm={() => void resetHistory()}
-      />
-
       <DialogFrame
         open={addTimeOpen}
         onClose={() => setAddTimeOpen(false)}
@@ -778,16 +744,6 @@ export default function EstatisticasPage() {
                 <span>{syncing ? "Sincronizando…" : "Atualizar da nuvem"}</span>
               </button>
             ) : null}
-
-            <div className="pt-2 border-t border-[var(--line)]">
-              <button
-                type="button"
-                className="text-xs font-medium text-[var(--warn)] hover:underline opacity-80 hover:opacity-100 transition"
-                onClick={() => setConfirmReset(true)}
-              >
-                Resetar histórico de tempo
-              </button>
-            </div>
           </section>
 
           {interrupts.length > 0 ? (

@@ -58,6 +58,9 @@ import {
   type TransitionToneId,
 } from "@/lib/audio";
 import { backupFileError } from "@/lib/backup";
+import { clearFocusLog } from "@/lib/focus-log";
+import { clearInterrupts } from "@/lib/clock-interrupt";
+import { clearFocusLogCloud } from "@/lib/supabase/focus-sync";
 import { promptDestructivePassword } from "@/lib/destructive-guard";
 import { MIN_PASSWORD_LENGTH, isValidNewPassword, newPasswordHint } from "@/lib/password";
 import {
@@ -123,6 +126,9 @@ export default function AjustesPage() {
   const [cloudWipeMsg, setCloudWipeMsg] = useState<string | null>(null);
   const [confirmLogout, setConfirmLogout] = useState(false);
   const [confirmCloudWipe, setConfirmCloudWipe] = useState(false);
+  const [confirmResetTime, setConfirmResetTime] = useState(false);
+  const [resetTimeBusy, setResetTimeBusy] = useState(false);
+  const [resetTimeMsg, setResetTimeMsg] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deletePassword, setDeletePassword] = useState("");
   const [deleteBusy, setDeleteBusy] = useState(false);
@@ -306,6 +312,43 @@ export default function AjustesPage() {
                 ? "Dados na nuvem apagados. Estado inicial restaurado."
                 : result.error,
             );
+          })();
+        }}
+      />
+      <ConfirmDialog
+        open={confirmResetTime}
+        title="Resetar histórico de tempo de foco?"
+        message="Isso apaga todo o tempo registrado (dia, semana, mês e ano) neste aparelho e na nuvem, e os avisos de sessão interrompida. Suas matérias, ciclo e anotações permanecem intactos. Será pedida a senha de autorização. Esta ação não pode ser desfeita."
+        confirmLabel="Sim, resetar histórico"
+        cancelLabel="Cancelar"
+        onCancel={() => setConfirmResetTime(false)}
+        onConfirm={() => {
+          void (async () => {
+            const auth = promptDestructivePassword("resetar o histórico de tempo");
+            if (auth === "cancel") {
+              setConfirmResetTime(false);
+              return;
+            }
+            if (auth === "wrong") {
+              window.alert("Senha incorreta. Tente de novo.");
+              return;
+            }
+            setConfirmResetTime(false);
+            setResetTimeBusy(true);
+            setResetTimeMsg(null);
+            try {
+              clearFocusLog();
+              clearInterrupts();
+              await clearFocusLogCloud();
+              if (typeof window !== "undefined") {
+                window.dispatchEvent(new Event("foco-focus-log"));
+              }
+              setResetTimeMsg("Histórico de tempo de foco zerado com sucesso.");
+            } catch {
+              setResetTimeMsg("Erro ao resetar histórico na nuvem.");
+            } finally {
+              setResetTimeBusy(false);
+            }
           })();
         }}
       />
@@ -745,25 +788,52 @@ export default function AjustesPage() {
                 Sair
               </button>
               {cloud && (
-                <div className="border-t border-[var(--line)] pt-3">
-                  <p className="text-xs text-[color-mix(in_srgb,var(--ink)_75%,transparent)] sm:text-sm leading-relaxed">
-                    Apaga matérias, semana, lembretes, notas e sessões na nuvem. A
-                    conta permanece conectada. Pede a senha de autorização.
-                  </p>
-                  <button
-                    type="button"
-                    className="btn mt-2 text-[var(--warn)]"
-                    disabled={cloudWipeBusy}
-                    onClick={() => {
-                      setCloudWipeMsg(null);
-                      setConfirmCloudWipe(true);
-                    }}
-                  >
-                    {cloudWipeBusy ? "Apagando…" : "Apagar dados na nuvem"}
-                  </button>
-                  {cloudWipeMsg && (
-                    <p className="mt-2 text-sm opacity-70">{cloudWipeMsg}</p>
-                  )}
+                <div className="border-t border-[var(--line)] pt-3 space-y-4">
+                  <div>
+                    <p className="text-xs font-semibold text-[var(--ink)]">
+                      Estrutura de estudos na nuvem
+                    </p>
+                    <p className="mt-0.5 text-xs text-[color-mix(in_srgb,var(--ink)_75%,transparent)] sm:text-sm leading-relaxed">
+                      Apaga matérias, semana, lembretes, notas e sessões na nuvem, restaurando o modelo inicial. Mantém a conta conectada e não altera o histórico de tempo estudado.
+                    </p>
+                    <button
+                      type="button"
+                      className="btn mt-2 text-[var(--warn)] text-xs sm:text-sm"
+                      disabled={cloudWipeBusy}
+                      onClick={() => {
+                        setCloudWipeMsg(null);
+                        setConfirmCloudWipe(true);
+                      }}
+                    >
+                      {cloudWipeBusy ? "Apagando…" : "Apagar dados na nuvem"}
+                    </button>
+                    {cloudWipeMsg && (
+                      <p className="mt-2 text-sm opacity-70">{cloudWipeMsg}</p>
+                    )}
+                  </div>
+
+                  <div className="border-t border-[var(--line)] pt-3">
+                    <p className="text-xs font-semibold text-[var(--ink)]">
+                      Histórico de tempo de foco
+                    </p>
+                    <p className="mt-0.5 text-xs text-[color-mix(in_srgb,var(--ink)_75%,transparent)] sm:text-sm leading-relaxed">
+                      Zera todo o tempo registrado (dia, semana, mês e ano) neste aparelho e na nuvem. Suas matérias, ciclo e anotações permanecem intactos.
+                    </p>
+                    <button
+                      type="button"
+                      className="btn mt-2 text-[var(--warn)] text-xs sm:text-sm"
+                      disabled={resetTimeBusy}
+                      onClick={() => {
+                        setResetTimeMsg(null);
+                        setConfirmResetTime(true);
+                      }}
+                    >
+                      {resetTimeBusy ? "Resetando…" : "Resetar histórico de tempo"}
+                    </button>
+                    {resetTimeMsg && (
+                      <p className="mt-2 text-sm opacity-70">{resetTimeMsg}</p>
+                    )}
+                  </div>
                 </div>
               )}
             </div>
