@@ -56,7 +56,7 @@ export default function AgendaPage() {
 
       <div className="flex items-center justify-between px-0.5">
         <h1 className="font-display text-xl sm:text-2xl font-bold tracking-tight text-[var(--ink)]">
-          Rotina
+          Hoje
         </h1>
       </div>
 
@@ -81,10 +81,9 @@ export default function AgendaPage() {
               href="/semana"
               title="Editar grade semanal (adicionar, mover ou renomear matérias)"
               aria-label="Editar grade semanal"
-              className="inline-flex min-h-9 items-center gap-1.5 rounded-full bg-[color-mix(in_srgb,var(--ink)_8%,transparent)] px-3 py-1.5 text-xs font-semibold text-[color-mix(in_srgb,var(--ink)_75%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--ink)_14%,transparent)] hover:text-[var(--ink)] active:scale-95 md:min-h-0 md:rounded-[var(--radius-tag)] md:px-2.5 md:py-1"
+              className="inline-flex size-8 sm:size-9 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--ink)_8%,transparent)] text-[color-mix(in_srgb,var(--ink)_75%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--ink)_14%,transparent)] hover:text-[var(--ink)] active:scale-95"
             >
-              <Pencil size={12} strokeWidth={2.2} />
-              <span>Editar grade</span>
+              <Pencil size={14} strokeWidth={2} />
             </Link>
 
             {showWeekToggle && (

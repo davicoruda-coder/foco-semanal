@@ -25,8 +25,8 @@ const DESKTOP_PRIMARY_TABS = [
 
 /** Mobile: 3 abas principais (a 4ª é o Perfil). */
 const MOBILE_PRIMARY = [
-  { href: "/agenda", label: "Rotina", icon: CalendarDays },
-  { href: "/hoje", label: "Hoje", icon: BookMarked },
+  { href: "/agenda", label: "Hoje", icon: CalendarDays },
+  { href: "/hoje", label: "Estudo", icon: BookMarked },
   { href: "/revisao", label: "Fixar", icon: Sparkles },
 ];
 
@@ -188,7 +188,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <header className="sticky top-0 z-30 border-b border-[color-mix(in_srgb,var(--line)_80%,transparent)] bg-[color-mix(in_srgb,var(--surface)_90%,var(--paper))]/90 pt-[env(safe-area-inset-top,0px)] backdrop-blur-md lg:hidden transition-colors">
         <div className="mx-auto flex h-12 max-w-lg items-center px-3">
           <Link
-            href="/hoje"
+            href="/agenda"
             className="flex min-w-0 items-center gap-2"
             title="FocoHub"
           >
