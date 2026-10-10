@@ -324,29 +324,6 @@ export function CadernoList({
     <div className="space-y-4">
       {/* Barra de Busca e Filtros Rápidos Compacta */}
       <div className="rounded-[var(--radius)] border border-[var(--line)] bg-[var(--surface)] p-2.5 sm:p-3 shadow-xs space-y-2.5">
-        {/* Topo do Caderno: Título e Ação Direta de Anotação */}
-        <div className="flex items-center justify-between gap-2.5 pb-2 border-b border-[var(--line)]/60">
-          <div>
-            <h2 className="font-display text-sm sm:text-base font-bold text-[var(--ink)]">
-              Caderno de Erros
-            </h2>
-            <p className="text-[11px] sm:text-xs text-[color-mix(in_srgb,var(--ink)_55%,transparent)] hidden sm:block">
-              Fichas de estudo ativo baseadas nas suas questões e dúvidas
-            </p>
-          </div>
-          {onNewQuestao && (
-            <button
-              type="button"
-              onClick={onNewQuestao}
-              className="inline-flex items-center gap-1.5 rounded-[var(--radius-btn)] bg-[var(--signal)] px-3 py-1.5 sm:px-3.5 sm:py-2 text-xs sm:text-sm font-semibold text-white shadow-sm transition hover:brightness-110 active:scale-95 shrink-0"
-              title="Registrar novo erro, chute ou dúvida"
-            >
-              <Plus size={15} />
-              <span>Anotar no Caderno</span>
-            </button>
-          )}
-        </div>
-
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
           {/* Campo de Busca Compacto com largura contida */}
           <div className="relative flex-1 max-w-full sm:max-w-md">
@@ -439,6 +416,19 @@ export function CadernoList({
                 <span className="hidden md:inline">Lista</span>
               </button>
             </div>
+
+            {/* Ação Primária: Anotar no Caderno */}
+            {onNewQuestao && (
+              <button
+                type="button"
+                onClick={onNewQuestao}
+                className="inline-flex items-center gap-1.5 rounded-[var(--radius-btn)] bg-[var(--signal)] px-3 py-1.5 text-xs sm:text-sm font-semibold text-white shadow-sm transition hover:brightness-110 active:scale-95 shrink-0"
+                title="Registrar novo erro, chute ou dúvida"
+              >
+                <Plus size={15} />
+                <span>Anotar no Caderno</span>
+              </button>
+            )}
           </div>
         </div>
 
