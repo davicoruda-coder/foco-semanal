@@ -541,18 +541,11 @@ export default function EstatisticasPage() {
         </div>
       </DialogFrame>
 
-      {/* Top Header com Título e Seletor Principal */}
-      <div className="flex flex-col gap-3.5 border-b border-[var(--line)] pb-3">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <div>
-            <h1 className="font-display text-xl sm:text-2xl font-semibold tracking-tight text-[var(--ink)]">
-              Métricas
-            </h1>
-            <p className="mt-0.5 text-xs text-[color-mix(in_srgb,var(--ink)_60%,transparent)]">
-              Acompanhe seu tempo de estudo focado e o diagnóstico analítico de erros.
-            </p>
-          </div>
+      <h1 className="sr-only">Métricas de Desempenho e Foco</h1>
 
+      {/* Top Controls: Seletor de Módulo (Tempo de Foco | Diagnóstico de Erros), Status e Período */}
+      <div className="flex flex-col gap-3 border-b border-[var(--line)] pb-3">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           {/* Seletor Segmentado de Visualização: Tempo de Foco | Diagnóstico de Erros */}
           <div className="grid grid-cols-2 sm:inline-flex w-full sm:w-auto items-center gap-1 rounded-xl border border-[var(--line)] bg-[var(--mist)] p-1">
             <button
@@ -581,12 +574,11 @@ export default function EstatisticasPage() {
               <span>Diagnóstico de Erros</span>
             </button>
           </div>
-        </div>
 
-        {metricaView === "foco" && (
-          <div className="flex flex-wrap items-center justify-between gap-2 pt-1 text-xs">
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-              <span className="inline-flex items-center gap-2">
+          {/* Quando no modo Foco: Status do cronômetro e Seletor de Período (Dia | Semana | Mês | Ano) */}
+          {metricaView === "foco" && (
+            <div className="flex flex-wrap items-center justify-between sm:justify-end gap-3 text-xs">
+              <div className="flex items-center gap-2">
                 <span
                   className={`inline-flex h-2 w-2 rounded-full ${
                     tracking
@@ -597,41 +589,41 @@ export default function EstatisticasPage() {
                 <span className="opacity-60">
                   {tracking ? "Registrando agora…" : "Pausado — não está contando"}
                 </span>
-              </span>
-              {syncing ? (
-                <span className="opacity-50">Sincronizando…</span>
-              ) : null}
-            </div>
+                {syncing ? (
+                  <span className="opacity-50">Sincronizando…</span>
+                ) : null}
+              </div>
 
-            {/* Range Selector: Dia | Semana | Mês | Ano */}
-            <div className="flex flex-wrap gap-1 rounded-full border border-[var(--line)] bg-[var(--surface)] p-1 shadow-xs">
-              {(
-                [
-                  ["dia", "Dia"],
-                  ["semana", "Semana"],
-                  ["mes", "Mês"],
-                  ["ano", "Ano"],
-                ] as const
-              ).map(([value, label]) => {
-                const active = range === value;
-                return (
-                  <button
-                    key={value}
-                    type="button"
-                    onClick={() => setRange(value)}
-                    className={`rounded-full px-3.5 py-1 text-xs sm:text-sm font-semibold transition ${
-                      active
-                        ? "bg-[var(--signal)] text-white shadow-xs"
-                        : "text-[color-mix(in_srgb,var(--ink)_65%,transparent)] hover:text-[var(--ink)]"
-                    }`}
-                  >
-                    {label}
-                  </button>
-                );
-              })}
+              {/* Range Selector: Dia | Semana | Mês | Ano */}
+              <div className="flex flex-wrap gap-1 rounded-full border border-[var(--line)] bg-[var(--surface)] p-1 shadow-xs">
+                {(
+                  [
+                    ["dia", "Dia"],
+                    ["semana", "Semana"],
+                    ["mes", "Mês"],
+                    ["ano", "Ano"],
+                  ] as const
+                ).map(([value, label]) => {
+                  const active = range === value;
+                  return (
+                    <button
+                      key={value}
+                      type="button"
+                      onClick={() => setRange(value)}
+                      className={`rounded-full px-3.5 py-1 text-xs sm:text-sm font-semibold transition ${
+                        active
+                          ? "bg-[var(--signal)] text-white shadow-xs"
+                          : "text-[color-mix(in_srgb,var(--ink)_65%,transparent)] hover:text-[var(--ink)]"
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       {metricaView === "foco" ? (

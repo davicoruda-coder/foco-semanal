@@ -59,17 +59,10 @@ function RevisaoContent() {
 
   return (
     <div className="space-y-4 max-w-full min-w-0">
-      {/* Header do Módulo com Título e Seletor de Abas alinhados no desktop */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-[var(--line)] pb-3">
-        <h1 className="font-display text-xl sm:text-2xl font-semibold tracking-tight text-[var(--ink)] flex items-center gap-2">
-          Fixação Ativa
-          <span className="rounded-full bg-[var(--signal)] px-2 py-0.5 text-[11px] font-bold text-white shadow-xs">
-            IA
-          </span>
-        </h1>
+      <h1 className="sr-only">Fixação Ativa</h1>
 
-        {/* Navegação de Abas do Módulo (Compacta no desktop, 3 colunas no celular) */}
-        <div className="grid grid-cols-3 sm:inline-flex w-full sm:w-auto items-center gap-1 rounded-xl border border-[var(--line)] bg-[var(--mist)] p-1">
+      {/* Navegação de Abas do Módulo (Compacta no desktop, 3 colunas no celular) */}
+      <div className="grid grid-cols-3 sm:inline-flex w-full sm:w-auto items-center gap-1 rounded-xl border border-[var(--line)] bg-[var(--mist)] p-1">
           <button
             type="button"
             onClick={() => setActiveTab("caderno")}
@@ -154,7 +147,6 @@ function RevisaoContent() {
             />
           </button>
         </div>
-      </div>
 
       {/* Conteúdo da Aba Ativa */}
       {activeTab === "caderno" && (
