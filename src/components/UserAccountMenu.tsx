@@ -331,14 +331,16 @@ export function UserAccountMenu({
 
       {/* Seção de Navegação e Configurações */}
       <div className="py-2 space-y-0.5 text-xs text-[var(--ink)]">
-        <Link
-          href="/estatisticas"
-          onClick={() => setOpen(false)}
-          className="flex items-center gap-2.5 rounded-lg px-2.5 py-2 font-medium transition hover:bg-[var(--mist)]"
-        >
-          <ChartColumn size={15} strokeWidth={1.8} className="opacity-70" />
-          <span>Métricas de Desempenho</span>
-        </Link>
+        {variant === "bottom-nav" && (
+          <Link
+            href="/estatisticas"
+            onClick={() => setOpen(false)}
+            className="flex items-center gap-2.5 rounded-lg px-2.5 py-2 font-medium transition hover:bg-[var(--mist)]"
+          >
+            <ChartColumn size={15} strokeWidth={1.8} className="opacity-70" />
+            <span>Métricas de Desempenho</span>
+          </Link>
+        )}
 
         <Link
           href="/ajustes"
