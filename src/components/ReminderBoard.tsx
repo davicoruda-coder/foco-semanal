@@ -310,7 +310,6 @@ function NoteCard({
         background: "var(--note-light-bg)",
         color: "var(--ink)",
         border: "1px solid var(--note-light-border)",
-        borderLeft: "3.5px solid var(--note-light-acc)",
       } as React.CSSProperties}
     >
       <textarea
