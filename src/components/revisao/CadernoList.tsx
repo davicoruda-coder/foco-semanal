@@ -416,7 +416,7 @@ export function CadernoList({
               <button
                 type="button"
                 onClick={onNewQuestao}
-                className="inline-flex items-center gap-1.5 rounded-[var(--radius-btn)] bg-[var(--ink)] text-white hover:bg-[color-mix(in_srgb,var(--ink)_88%,white)] dark:bg-white dark:text-neutral-950 dark:hover:bg-neutral-100 px-3 py-1.5 text-xs sm:text-sm font-semibold shadow-xs transition active:scale-95 shrink-0"
+                className="inline-flex items-center gap-1.5 rounded-[var(--radius-btn)] bg-[var(--signal)] text-white hover:brightness-110 px-3 py-1.5 text-xs sm:text-sm font-semibold shadow-xs transition active:scale-95 shrink-0"
                 title="Registrar novo erro, chute ou dúvida"
               >
                 <Plus size={15} strokeWidth={2.2} />
@@ -625,7 +625,7 @@ export function CadernoList({
             <button
               type="button"
               onClick={onNewQuestao}
-              className="inline-flex items-center gap-1.5 rounded-[var(--radius-btn)] bg-[var(--ink)] text-white hover:bg-[color-mix(in_srgb,var(--ink)_88%,white)] dark:bg-white dark:text-neutral-950 dark:hover:bg-neutral-100 px-4 py-2 text-xs sm:text-sm font-semibold shadow-xs transition active:scale-95"
+              className="inline-flex items-center gap-1.5 rounded-[var(--radius-btn)] bg-[var(--signal)] text-white hover:brightness-110 px-4 py-2 text-xs sm:text-sm font-semibold shadow-xs transition active:scale-95"
             >
               <Plus size={16} strokeWidth={2.2} />
               Anotar no Caderno

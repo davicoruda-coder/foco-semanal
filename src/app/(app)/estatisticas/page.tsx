@@ -520,11 +520,19 @@ export default function EstatisticasPage() {
               onClick={() => setMetricaView("foco")}
               className={`inline-flex items-center justify-center gap-1.5 rounded-lg px-3.5 py-1.5 text-xs font-semibold transition ${
                 metricaView === "foco"
-                  ? "bg-[var(--signal)] text-white shadow-xs"
-                  : "text-[color-mix(in_srgb,var(--ink)_60%,transparent)] hover:text-[var(--ink)]"
+                  ? "bg-[var(--surface)] text-[var(--ink)] shadow-xs ring-1 ring-black/[0.04] dark:ring-white/[0.06]"
+                  : "text-[color-mix(in_srgb,var(--ink)_60%,transparent)] hover:text-[var(--ink)] hover:bg-[var(--surface)]/50"
               }`}
             >
-              <Clock size={15} strokeWidth={2} className="shrink-0" />
+              <Clock
+                size={15}
+                strokeWidth={2}
+                className={`shrink-0 ${
+                  metricaView === "foco"
+                    ? "text-[var(--signal)]"
+                    : "text-[color-mix(in_srgb,var(--ink)_50%,transparent)]"
+                }`}
+              />
               <span>Tempo de Foco</span>
             </button>
 
@@ -533,11 +541,19 @@ export default function EstatisticasPage() {
               onClick={() => setMetricaView("diagnostico")}
               className={`inline-flex items-center justify-center gap-1.5 rounded-lg px-3.5 py-1.5 text-xs font-semibold transition ${
                 metricaView === "diagnostico"
-                  ? "bg-[var(--signal)] text-white shadow-xs"
-                  : "text-[color-mix(in_srgb,var(--ink)_60%,transparent)] hover:text-[var(--ink)]"
+                  ? "bg-[var(--surface)] text-[var(--ink)] shadow-xs ring-1 ring-black/[0.04] dark:ring-white/[0.06]"
+                  : "text-[color-mix(in_srgb,var(--ink)_60%,transparent)] hover:text-[var(--ink)] hover:bg-[var(--surface)]/50"
               }`}
             >
-              <PieChart size={15} strokeWidth={2} className="shrink-0" />
+              <PieChart
+                size={15}
+                strokeWidth={2}
+                className={`shrink-0 ${
+                  metricaView === "diagnostico"
+                    ? "text-[var(--signal)]"
+                    : "text-[color-mix(in_srgb,var(--ink)_50%,transparent)]"
+                }`}
+              />
               <span>Diagnóstico de Erros</span>
             </button>
           </div>
@@ -562,7 +578,7 @@ export default function EstatisticasPage() {
               </div>
 
               {/* Range Selector: Dia | Semana | Mês | Ano */}
-              <div className="flex flex-wrap gap-1 rounded-full border border-[var(--line)] bg-[var(--surface)] p-1 shadow-xs">
+              <div className="flex flex-wrap gap-1 rounded-full border border-[var(--line)] bg-[var(--mist)] p-1 shadow-2xs">
                 {(
                   [
                     ["dia", "Dia"],
@@ -579,8 +595,8 @@ export default function EstatisticasPage() {
                       onClick={() => setRange(value)}
                       className={`rounded-full px-3.5 py-1 text-xs sm:text-sm font-semibold transition ${
                         active
-                          ? "bg-[var(--signal)] text-white shadow-xs"
-                          : "text-[color-mix(in_srgb,var(--ink)_65%,transparent)] hover:text-[var(--ink)]"
+                          ? "bg-[var(--surface)] text-[var(--ink)] shadow-xs ring-1 ring-black/[0.04] dark:ring-white/[0.06]"
+                          : "text-[color-mix(in_srgb,var(--ink)_65%,transparent)] hover:text-[var(--ink)] hover:bg-[var(--surface)]/40"
                       }`}
                     >
                       {label}
@@ -704,7 +720,7 @@ export default function EstatisticasPage() {
 
             <button
               type="button"
-              className="inline-flex items-center justify-center gap-2 rounded-[var(--radius-btn)] bg-[var(--ink)] text-white hover:bg-[color-mix(in_srgb,var(--ink)_88%,white)] dark:bg-white dark:text-neutral-950 dark:hover:bg-neutral-100 py-2.5 px-4 text-sm font-semibold shadow-xs transition active:scale-95 disabled:opacity-70 disabled:pointer-events-none w-full"
+              className="btn w-full justify-center bg-[var(--surface)] hover:bg-[var(--mist)] text-sm font-semibold shadow-2xs"
               disabled={downloadingReport}
               onClick={() => void downloadReport()}
             >

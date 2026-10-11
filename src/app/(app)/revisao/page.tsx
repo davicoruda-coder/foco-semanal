@@ -68,11 +68,18 @@ function RevisaoContent() {
             onClick={() => setActiveTab("caderno")}
             className={`flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 rounded-lg px-2 sm:px-3.5 py-1.5 sm:py-2 text-[11px] sm:text-xs font-semibold transition ${
               activeTab === "caderno"
-                ? "bg-[var(--signal)] text-white shadow-xs"
-                : "text-[color-mix(in_srgb,var(--ink)_60%,transparent)] hover:text-[var(--ink)]"
+                ? "bg-[var(--surface)] text-[var(--ink)] shadow-xs ring-1 ring-black/[0.04] dark:ring-white/[0.06]"
+                : "text-[color-mix(in_srgb,var(--ink)_60%,transparent)] hover:text-[var(--ink)] hover:bg-[var(--surface)]/50"
             }`}
           >
-            <BookMarked size={16} className="shrink-0 sm:size-3.5" />
+            <BookMarked
+              size={16}
+              className={`shrink-0 sm:size-3.5 ${
+                activeTab === "caderno"
+                  ? "text-[var(--signal)]"
+                  : "text-[color-mix(in_srgb,var(--ink)_50%,transparent)]"
+              }`}
+            />
             <span className="sm:hidden tracking-tight">Caderno</span>
             <span className="hidden sm:inline whitespace-nowrap">Caderno de Erros</span>
           </button>
@@ -82,19 +89,22 @@ function RevisaoContent() {
             onClick={() => setActiveTab("flashcards")}
             className={`flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 rounded-lg px-2 sm:px-3.5 py-1.5 sm:py-2 text-[11px] sm:text-xs font-semibold transition ${
               activeTab === "flashcards"
-                ? "bg-[var(--signal)] text-white shadow-xs"
-                : "text-[color-mix(in_srgb,var(--ink)_60%,transparent)] hover:text-[var(--ink)]"
+                ? "bg-[var(--surface)] text-[var(--ink)] shadow-xs ring-1 ring-black/[0.04] dark:ring-white/[0.06]"
+                : "text-[color-mix(in_srgb,var(--ink)_60%,transparent)] hover:text-[var(--ink)] hover:bg-[var(--surface)]/50"
             }`}
           >
             <div className="relative inline-flex items-center justify-center">
-              <Layers size={16} className="shrink-0 sm:size-3.5" />
+              <Layers
+                size={16}
+                className={`shrink-0 sm:size-3.5 ${
+                  activeTab === "flashcards"
+                    ? "text-[var(--signal)]"
+                    : "text-[color-mix(in_srgb,var(--ink)_50%,transparent)]"
+                }`}
+              />
               {flashcardsDoDia.length > 0 && (
                 <span
-                  className={`absolute -top-1 -right-2.5 sm:hidden grid min-w-3.5 h-3.5 place-items-center rounded-full px-0.5 text-[8px] font-bold font-mono-num leading-none shadow-xs ${
-                    activeTab === "flashcards"
-                      ? "bg-white text-[var(--signal)]"
-                      : "bg-[var(--warn)] text-white dark:text-neutral-950"
-                  }`}
+                  className="absolute -top-1 -right-2.5 sm:hidden grid min-w-3.5 h-3.5 place-items-center rounded-full px-0.5 text-[8px] font-bold font-mono-num leading-none shadow-xs bg-[var(--warn)] text-white dark:text-neutral-950"
                 >
                   {flashcardsDoDia.length}
                 </span>
@@ -104,11 +114,7 @@ function RevisaoContent() {
             <span className="hidden sm:inline whitespace-nowrap">Flashcards</span>
             {flashcardsDoDia.length > 0 && (
               <span
-                className={`hidden sm:grid size-4 shrink-0 place-items-center rounded-full text-[9px] font-bold font-mono-num ${
-                  activeTab === "flashcards"
-                    ? "bg-white text-[var(--signal)] shadow-2xs"
-                    : "bg-[var(--warn)] text-white dark:text-neutral-950"
-                }`}
+                className="hidden sm:grid size-4 shrink-0 place-items-center rounded-full text-[9px] font-bold font-mono-num bg-[var(--warn)] text-white dark:text-neutral-950 shadow-2xs"
               >
                 {flashcardsDoDia.length}
               </span>
@@ -120,18 +126,21 @@ function RevisaoContent() {
             onClick={() => setActiveTab("tira-duvidas")}
             className={`flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 rounded-lg px-2 sm:px-3.5 py-1.5 sm:py-2 text-[11px] sm:text-xs font-semibold transition ${
               activeTab === "tira-duvidas"
-                ? "bg-[var(--signal)] text-white shadow-xs"
-                : "text-[color-mix(in_srgb,var(--ink)_60%,transparent)] hover:text-[var(--ink)]"
+                ? "bg-[var(--surface)] text-[var(--ink)] shadow-xs ring-1 ring-black/[0.04] dark:ring-white/[0.06]"
+                : "text-[color-mix(in_srgb,var(--ink)_60%,transparent)] hover:text-[var(--ink)] hover:bg-[var(--surface)]/50"
             }`}
           >
             <div className="relative inline-flex items-center justify-center">
-              <MessageCircleQuestion size={16} className="shrink-0 sm:size-3.5" />
-              <span
-                className={`absolute -top-1 -right-2 sm:hidden grid size-3.5 place-items-center rounded-full shadow-xs ${
+              <MessageCircleQuestion
+                size={16}
+                className={`shrink-0 sm:size-3.5 ${
                   activeTab === "tira-duvidas"
-                    ? "bg-white text-[var(--signal)]"
-                    : "bg-[var(--signal)] text-white"
+                    ? "text-[var(--signal)]"
+                    : "text-[color-mix(in_srgb,var(--ink)_50%,transparent)]"
                 }`}
+              />
+              <span
+                className="absolute -top-1 -right-2 sm:hidden grid size-3.5 place-items-center rounded-full shadow-xs bg-[var(--signal)] text-white"
               >
                 <Bot size={9} strokeWidth={2.4} />
               </span>
@@ -140,9 +149,7 @@ function RevisaoContent() {
             <span className="hidden sm:inline whitespace-nowrap">Tira-Dúvidas</span>
             <Bot
               size={13}
-              className={`hidden sm:inline-block shrink-0 ${
-                activeTab === "tira-duvidas" ? "text-white" : "text-[var(--signal)]"
-              }`}
+              className="hidden sm:inline-block shrink-0 text-[var(--signal)]"
               strokeWidth={2.2}
             />
           </button>
