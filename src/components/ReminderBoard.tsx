@@ -747,18 +747,6 @@ export function ReminderBoard({ compact }: { compact?: boolean }) {
           ))}
         </div>
       )}
-
-      {!compact && (
-        <button
-          type="button"
-          onClick={() => setPickingColor((v) => !v)}
-          className="fixed bottom-24 right-4 z-30 flex h-12 w-12 items-center justify-center rounded-full bg-[var(--signal)] text-white shadow-lg shadow-[var(--signal)]/35 transition-all hover:scale-105 active:scale-95 sm:hidden"
-          aria-label="Criar nova nota"
-          title="Nova nota"
-        >
-          <Plus size={24} strokeWidth={2.5} />
-        </button>
-      )}
     </div>
   );
 }
