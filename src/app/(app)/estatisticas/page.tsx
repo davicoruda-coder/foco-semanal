@@ -510,85 +510,52 @@ export default function EstatisticasPage() {
 
       <h1 className="sr-only">Métricas de Desempenho e Foco</h1>
 
-      {/* Top Controls: Seletor de Módulo (Tempo de Foco | Diagnóstico de Erros), Status e Período */}
+      {/* Top Controls: Seletor de Módulo (Tempo de Foco | Diagnóstico de Erros) e Status */}
       <div className="flex flex-col gap-3 border-b border-[var(--line)] pb-3">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          {/* Controles de Visualização: Módulo (Foco/Diagnóstico) + Granularidade (Dia/Semana/Mês/Ano) agrupados à esquerda */}
-          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
-            {/* Seletor Segmentado de Visualização: Tempo de Foco | Diagnóstico de Erros */}
-            <div className="grid grid-cols-2 sm:inline-flex w-full sm:w-auto items-center gap-1 rounded-xl border border-[var(--line)] bg-[var(--mist)] p-1">
-              <button
-                type="button"
-                onClick={() => setMetricaView("foco")}
-                className={`inline-flex items-center justify-center gap-1 sm:gap-1.5 rounded-lg px-2 sm:px-3.5 py-2 sm:py-1.5 text-[11px] min-[390px]:text-xs font-semibold whitespace-nowrap transition ${
+          {/* Seletor Segmentado de Visualização: Tempo de Foco | Diagnóstico de Erros */}
+          <div className="grid grid-cols-2 sm:inline-flex w-full sm:w-auto items-center gap-1 rounded-xl border border-[var(--line)] bg-[var(--mist)] p-1">
+            <button
+              type="button"
+              onClick={() => setMetricaView("foco")}
+              className={`inline-flex items-center justify-center gap-1 sm:gap-1.5 rounded-lg px-2 sm:px-3.5 py-2 sm:py-1.5 text-[11px] min-[390px]:text-xs font-semibold whitespace-nowrap transition ${
+                metricaView === "foco"
+                  ? "bg-[var(--surface)] text-[var(--ink)] shadow-xs ring-1 ring-black/[0.04] dark:ring-white/[0.06]"
+                  : "text-[color-mix(in_srgb,var(--ink)_60%,transparent)] hover:text-[var(--ink)] hover:bg-[var(--surface)]/50"
+              }`}
+            >
+              <Clock
+                size={14}
+                strokeWidth={2}
+                className={`shrink-0 ${
                   metricaView === "foco"
-                    ? "bg-[var(--surface)] text-[var(--ink)] shadow-xs ring-1 ring-black/[0.04] dark:ring-white/[0.06]"
-                    : "text-[color-mix(in_srgb,var(--ink)_60%,transparent)] hover:text-[var(--ink)] hover:bg-[var(--surface)]/50"
+                    ? "text-[var(--signal)]"
+                    : "text-[color-mix(in_srgb,var(--ink)_50%,transparent)]"
                 }`}
-              >
-                <Clock
-                  size={14}
-                  strokeWidth={2}
-                  className={`shrink-0 ${
-                    metricaView === "foco"
-                      ? "text-[var(--signal)]"
-                      : "text-[color-mix(in_srgb,var(--ink)_50%,transparent)]"
-                  }`}
-                />
-                <span className="truncate">Tempo de Foco</span>
-              </button>
+              />
+              <span className="truncate">Tempo de Foco</span>
+            </button>
 
-              <button
-                type="button"
-                onClick={() => setMetricaView("diagnostico")}
-                className={`inline-flex items-center justify-center gap-1 sm:gap-1.5 rounded-lg px-2 sm:px-3.5 py-2 sm:py-1.5 text-[11px] min-[390px]:text-xs font-semibold whitespace-nowrap transition ${
+            <button
+              type="button"
+              onClick={() => setMetricaView("diagnostico")}
+              className={`inline-flex items-center justify-center gap-1 sm:gap-1.5 rounded-lg px-2 sm:px-3.5 py-2 sm:py-1.5 text-[11px] min-[390px]:text-xs font-semibold whitespace-nowrap transition ${
+                metricaView === "diagnostico"
+                  ? "bg-[var(--surface)] text-[var(--ink)] shadow-xs ring-1 ring-black/[0.04] dark:ring-white/[0.06]"
+                  : "text-[color-mix(in_srgb,var(--ink)_60%,transparent)] hover:text-[var(--ink)] hover:bg-[var(--surface)]/50"
+              }`}
+            >
+              <PieChart
+                size={14}
+                strokeWidth={2}
+                className={`shrink-0 ${
                   metricaView === "diagnostico"
-                    ? "bg-[var(--surface)] text-[var(--ink)] shadow-xs ring-1 ring-black/[0.04] dark:ring-white/[0.06]"
-                    : "text-[color-mix(in_srgb,var(--ink)_60%,transparent)] hover:text-[var(--ink)] hover:bg-[var(--surface)]/50"
+                    ? "text-[var(--signal)]"
+                    : "text-[color-mix(in_srgb,var(--ink)_50%,transparent)]"
                 }`}
-              >
-                <PieChart
-                  size={14}
-                  strokeWidth={2}
-                  className={`shrink-0 ${
-                    metricaView === "diagnostico"
-                      ? "text-[var(--signal)]"
-                      : "text-[color-mix(in_srgb,var(--ink)_50%,transparent)]"
-                  }`}
-                />
-                <span className="truncate">Diagnóstico de Erros</span>
-              </button>
-            </div>
-
-            {/* Range Selector: Dia | Semana | Mês | Ano */}
-            {metricaView === "foco" && (
-              <div className="flex items-center justify-center gap-1 rounded-full border border-[var(--line)] bg-[var(--mist)] p-1 shadow-2xs">
-                {(
-                  [
-                    ["dia", "Dia"],
-                    ["semana", "Semana"],
-                    ["mes", "Mês"],
-                    ["ano", "Ano"],
-                  ] as const
-                ).map(([value, label]) => {
-                  const active = range === value;
-                  return (
-                    <button
-                      key={value}
-                      type="button"
-                      onClick={() => setRange(value)}
-                      className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
-                        active
-                          ? "bg-[var(--surface)] text-[var(--ink)] shadow-xs ring-1 ring-black/[0.04] dark:ring-white/[0.06]"
-                          : "text-[color-mix(in_srgb,var(--ink)_65%,transparent)] hover:text-[var(--ink)] hover:bg-[var(--surface)]/40"
-                      }`}
-                    >
-                      {label}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
+              />
+              <span className="truncate">Diagnóstico de Erros</span>
+            </button>
           </div>
 
           {/* Quando no modo Foco: Status do cronômetro (à direita) */}
@@ -614,56 +581,87 @@ export default function EstatisticasPage() {
 
       {metricaView === "foco" ? (
         <>
-          {/* Navegador de período (Anterior / Atual / Próximo) */}
-          <div className="flex items-center gap-2 rounded-[var(--radius-btn)] border border-[var(--line)] bg-[var(--surface)] p-2 shadow-xs w-full sm:mx-auto sm:max-w-md">
-        <button
-          type="button"
-          className="grid h-9 w-9 shrink-0 place-items-center rounded-full transition hover:bg-[var(--mist)]"
-          title="Período anterior"
-          aria-label="Mostrar período anterior"
-          onClick={() =>
-            setReferenceDate((date) => shiftPeriod(date, range, -1))
-          }
-        >
-          <ChevronLeft size={18} strokeWidth={2} />
-        </button>
+          {/* Controles Temporais Unificados: Granularidade (Dia/Semana/Mês/Ano) + Navegador de Período lado a lado */}
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-2.5 sm:gap-3.5 w-full">
+            {/* Seletor de Escala (Dia | Semana | Mês | Ano) */}
+            <div className="flex items-center justify-center gap-1 rounded-full border border-[var(--line)] bg-[var(--mist)] p-1 shadow-2xs shrink-0">
+              {(
+                [
+                  ["dia", "Dia"],
+                  ["semana", "Semana"],
+                  ["mes", "Mês"],
+                  ["ano", "Ano"],
+                ] as const
+              ).map(([value, label]) => {
+                const active = range === value;
+                return (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => setRange(value)}
+                    className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
+                      active
+                        ? "bg-[var(--surface)] text-[var(--ink)] shadow-xs ring-1 ring-black/[0.04] dark:ring-white/[0.06]"
+                        : "text-[color-mix(in_srgb,var(--ink)_65%,transparent)] hover:text-[var(--ink)] hover:bg-[var(--surface)]/40"
+                    }`}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
 
-        <div className="min-w-0 flex-1 text-center">
-          <p
-            className={`truncate text-sm font-semibold text-[var(--ink)] ${
-              range === "dia" ? "capitalize" : ""
-            }`}
-          >
-            {periodLabel}
-          </p>
-          {!viewingCurrentPeriod ? (
-            <button
-              type="button"
-              className="mt-0.5 text-xs font-semibold text-[var(--signal)] hover:underline"
-              onClick={() => setReferenceDate(new Date())}
-            >
-              Voltar para {CURRENT_PERIOD_LABEL[range].toLowerCase()}
-            </button>
-          ) : (
-            <p className="mt-0.5 text-xs opacity-50">
-              {CURRENT_PERIOD_LABEL[range]}
-            </p>
-          )}
-        </div>
+            {/* Navegador de período (Anterior / Atual / Próximo) */}
+            <div className="flex items-center gap-1.5 sm:gap-2 rounded-[var(--radius-btn)] border border-[var(--line)] bg-[var(--surface)] p-1.5 sm:px-3 shadow-xs w-full sm:w-auto sm:min-w-[300px]">
+              <button
+                type="button"
+                className="grid h-8 w-8 shrink-0 place-items-center rounded-full transition hover:bg-[var(--mist)] text-[var(--ink)]"
+                title="Período anterior"
+                aria-label="Mostrar período anterior"
+                onClick={() =>
+                  setReferenceDate((date) => shiftPeriod(date, range, -1))
+                }
+              >
+                <ChevronLeft size={16} strokeWidth={2.2} />
+              </button>
 
-        <button
-          type="button"
-          className="grid h-9 w-9 shrink-0 place-items-center rounded-full transition hover:bg-[var(--mist)] disabled:cursor-default disabled:opacity-25 disabled:hover:bg-transparent"
-          title="Próximo período"
-          aria-label="Mostrar próximo período"
-          disabled={viewingCurrentPeriod}
-          onClick={() =>
-            setReferenceDate((date) => shiftPeriod(date, range, 1))
-          }
-        >
-          <ChevronRight size={18} strokeWidth={2} />
-        </button>
-      </div>
+              <div className="min-w-0 flex-1 text-center px-1.5">
+                <p
+                  className={`truncate text-xs sm:text-sm font-semibold text-[var(--ink)] ${
+                    range === "dia" ? "capitalize" : ""
+                  }`}
+                >
+                  {periodLabel}
+                </p>
+                {!viewingCurrentPeriod ? (
+                  <button
+                    type="button"
+                    className="mt-0.5 text-[11px] font-semibold text-[var(--signal)] hover:underline"
+                    onClick={() => setReferenceDate(new Date())}
+                  >
+                    Voltar para {CURRENT_PERIOD_LABEL[range].toLowerCase()}
+                  </button>
+                ) : (
+                  <p className="mt-0.5 text-[11px] opacity-50">
+                    {CURRENT_PERIOD_LABEL[range]}
+                  </p>
+                )}
+              </div>
+
+              <button
+                type="button"
+                className="grid h-8 w-8 shrink-0 place-items-center rounded-full transition hover:bg-[var(--mist)] disabled:cursor-default disabled:opacity-25 disabled:hover:bg-transparent text-[var(--ink)]"
+                title="Próximo período"
+                aria-label="Mostrar próximo período"
+                disabled={viewingCurrentPeriod}
+                onClick={() =>
+                  setReferenceDate((date) => shiftPeriod(date, range, 1))
+                }
+              >
+                <ChevronRight size={16} strokeWidth={2.2} />
+              </button>
+            </div>
+          </div>
 
       {/* Grid Dashboard: Coluna Principal (Gráfico + Resumos) + Coluna Lateral (Ações + Avisos) */}
       <div className="grid items-start gap-4 sm:gap-5 lg:grid-cols-[minmax(0,1fr)_320px] xl:grid-cols-[minmax(0,1fr)_340px]">
