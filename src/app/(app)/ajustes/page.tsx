@@ -755,14 +755,14 @@ export default function AjustesPage() {
                       <div className="flex flex-wrap gap-2">
                         <button
                           type="submit"
-                          className="btn btn-primary"
+                          className="btn btn-primary btn-sm"
                           disabled={passwordBusy}
                         >
                           {passwordBusy ? "Salvando…" : "Salvar senha"}
                         </button>
                         <button
                           type="button"
-                          className="btn"
+                          className="btn btn-sm"
                           disabled={passwordBusy}
                           onClick={() => {
                             setPasswordFormOpen(false);
@@ -993,10 +993,12 @@ function SidebarTimerSettings() {
           />
         </label>
       </div>
-      <button type="button" className="btn btn-primary mt-3" onClick={onSave}>
-        Salvar
-      </button>
-      {savedMsg && <p className="mt-2 text-sm opacity-70">{savedMsg}</p>}
+      <div className="mt-3 flex items-center gap-3">
+        <button type="button" className="btn btn-primary btn-sm" onClick={onSave}>
+          Salvar
+        </button>
+        {savedMsg && <p className="text-xs font-medium text-[var(--ok)]">{savedMsg}</p>}
+      </div>
     </section>
   );
 }
@@ -1094,10 +1096,12 @@ function SessionBlockSettings() {
           />
         </label>
       </div>
-      <button type="button" className="btn btn-primary mt-3" onClick={onSave}>
-        Salvar
-      </button>
-      {savedMsg && <p className="mt-2 text-sm opacity-70">{savedMsg}</p>}
+      <div className="mt-3 flex items-center gap-3">
+        <button type="button" className="btn btn-primary btn-sm" onClick={onSave}>
+          Salvar
+        </button>
+        {savedMsg && <p className="text-xs font-medium text-[var(--ok)]">{savedMsg}</p>}
+      </div>
     </section>
   );
 }
