@@ -9,6 +9,7 @@ import {
   PieChart,
   Plus,
   RefreshCw,
+  RotateCcw,
   X,
 } from "lucide-react";
 import { useApp } from "@/components/AppProvider";
@@ -581,10 +582,10 @@ export default function EstatisticasPage() {
 
       {metricaView === "foco" ? (
         <>
-          {/* Controles Temporais Unificados: Granularidade (Dia/Semana/Mês/Ano) + Navegador de Período lado a lado */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-2.5 sm:gap-3.5 w-full">
+          {/* Controles Temporais Unificados: Granularidade (Dia/Semana/Mês/Ano) + Navegador de Período perfeitamente centralizados e alinhados */}
+          <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 w-full">
             {/* Seletor de Escala (Dia | Semana | Mês | Ano) */}
-            <div className="flex items-center justify-center gap-1 rounded-full border border-[var(--line)] bg-[var(--mist)] p-1 shadow-2xs shrink-0">
+            <div className="inline-flex h-[38px] items-center gap-1 rounded-full border border-[var(--line)] bg-[var(--mist)] p-1 shadow-2xs shrink-0">
               {(
                 [
                   ["dia", "Dia"],
@@ -599,7 +600,7 @@ export default function EstatisticasPage() {
                     key={value}
                     type="button"
                     onClick={() => setRange(value)}
-                    className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
+                    className={`h-full inline-flex items-center rounded-full px-3 text-xs font-semibold transition ${
                       active
                         ? "bg-[var(--surface)] text-[var(--ink)] shadow-xs ring-1 ring-black/[0.04] dark:ring-white/[0.06]"
                         : "text-[color-mix(in_srgb,var(--ink)_65%,transparent)] hover:text-[var(--ink)] hover:bg-[var(--surface)]/40"
@@ -611,11 +612,11 @@ export default function EstatisticasPage() {
               })}
             </div>
 
-            {/* Navegador de período (Anterior / Atual / Próximo) */}
-            <div className="flex items-center gap-1.5 sm:gap-2 rounded-[var(--radius-btn)] border border-[var(--line)] bg-[var(--surface)] p-1.5 sm:px-3 shadow-xs w-full sm:w-auto sm:min-w-[300px]">
+            {/* Navegador de período: Chevrons simétricos, texto de data centralizado com a mesma altura e baseline */}
+            <div className="inline-flex h-[38px] items-center gap-1 sm:gap-1.5 rounded-full border border-[var(--line)] bg-[var(--surface)] p-1 px-1.5 sm:px-2 shadow-xs shrink-0">
               <button
                 type="button"
-                className="grid h-8 w-8 shrink-0 place-items-center rounded-full transition hover:bg-[var(--mist)] text-[var(--ink)]"
+                className="grid h-7 w-7 sm:h-7.5 sm:w-7.5 place-items-center rounded-full transition hover:bg-[var(--mist)] text-[var(--ink)] active:scale-95"
                 title="Período anterior"
                 aria-label="Mostrar período anterior"
                 onClick={() =>
@@ -625,32 +626,19 @@ export default function EstatisticasPage() {
                 <ChevronLeft size={16} strokeWidth={2.2} />
               </button>
 
-              <div className="min-w-0 flex-1 text-center px-1.5">
+              <div className="px-2 sm:px-3 text-center">
                 <p
-                  className={`truncate text-xs sm:text-sm font-semibold text-[var(--ink)] ${
+                  className={`text-xs sm:text-sm font-semibold text-[var(--ink)] whitespace-nowrap ${
                     range === "dia" ? "capitalize" : ""
                   }`}
                 >
                   {periodLabel}
                 </p>
-                {!viewingCurrentPeriod ? (
-                  <button
-                    type="button"
-                    className="mt-0.5 text-[11px] font-semibold text-[var(--signal)] hover:underline"
-                    onClick={() => setReferenceDate(new Date())}
-                  >
-                    Voltar para {CURRENT_PERIOD_LABEL[range].toLowerCase()}
-                  </button>
-                ) : (
-                  <p className="mt-0.5 text-[11px] opacity-50">
-                    {CURRENT_PERIOD_LABEL[range]}
-                  </p>
-                )}
               </div>
 
               <button
                 type="button"
-                className="grid h-8 w-8 shrink-0 place-items-center rounded-full transition hover:bg-[var(--mist)] disabled:cursor-default disabled:opacity-25 disabled:hover:bg-transparent text-[var(--ink)]"
+                className="grid h-7 w-7 sm:h-7.5 sm:w-7.5 place-items-center rounded-full transition hover:bg-[var(--mist)] disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent text-[var(--ink)] active:scale-95"
                 title="Próximo período"
                 aria-label="Mostrar próximo período"
                 disabled={viewingCurrentPeriod}
@@ -661,6 +649,18 @@ export default function EstatisticasPage() {
                 <ChevronRight size={16} strokeWidth={2.2} />
               </button>
             </div>
+
+            {/* Atalho rápido para retornar ao período atual quando navegando no histórico */}
+            {!viewingCurrentPeriod && (
+              <button
+                type="button"
+                onClick={() => setReferenceDate(new Date())}
+                className="h-[38px] inline-flex items-center gap-1.5 rounded-full border border-[color-mix(in_srgb,var(--signal)_35%,var(--line))] bg-[color-mix(in_srgb,var(--signal)_8%,var(--surface))] px-3 text-xs font-semibold text-[var(--signal)] shadow-2xs hover:bg-[var(--signal)] hover:text-white transition active:scale-95 shrink-0"
+              >
+                <RotateCcw size={13} strokeWidth={2.2} />
+                <span>Voltar para {CURRENT_PERIOD_LABEL[range].toLowerCase()}</span>
+              </button>
+            )}
           </div>
 
       {/* Grid Dashboard: Coluna Principal (Gráfico + Resumos) + Coluna Lateral (Ações + Avisos) */}
