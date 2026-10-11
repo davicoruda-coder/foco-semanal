@@ -680,11 +680,7 @@ export default function EstatisticasPage() {
 
           {/* Cards de Resumo Rápido */}
           <section className="grid gap-3 sm:grid-cols-3">
-            <div className="surface relative overflow-hidden border-[color-mix(in_srgb,var(--signal)_45%,var(--line))] bg-[color-mix(in_srgb,var(--signal)_8%,var(--surface))] p-4 pl-5 shadow-xs">
-              <span
-                className="absolute inset-y-0 left-0 w-1 bg-[var(--signal)]"
-                aria-hidden
-              />
+            <div className="surface border-[color-mix(in_srgb,var(--signal)_45%,var(--line))] bg-[color-mix(in_srgb,var(--signal)_8%,var(--surface))] p-4 shadow-xs">
               <p className="text-[11px] font-semibold uppercase tracking-wider text-[var(--signal)]">
                 Hoje
               </p>
@@ -720,27 +716,27 @@ export default function EstatisticasPage() {
 
             <button
               type="button"
-              className="btn w-full justify-center bg-[var(--surface)] hover:bg-[var(--mist)] text-sm font-semibold shadow-2xs"
+              className="btn w-full justify-center bg-[var(--surface)] hover:bg-[var(--mist)] text-sm font-semibold shadow-2xs gap-2"
               disabled={downloadingReport}
               onClick={() => void downloadReport()}
             >
-              <Download size={16} strokeWidth={2.2} />
+              <Download size={15} strokeWidth={2} />
               <span>{downloadingReport ? "Gerando PDF…" : REPORT_BUTTON_LABEL[range]}</span>
             </button>
 
             <button
               type="button"
-              className="btn w-full justify-center"
+              className="btn w-full justify-center bg-[var(--surface)] hover:bg-[var(--mist)] text-sm font-semibold shadow-2xs gap-2"
               onClick={openAddTime}
             >
-              <Plus size={16} strokeWidth={2} />
-              Adicionar tempo
+              <Plus size={15} strokeWidth={2} />
+              <span>Adicionar tempo</span>
             </button>
 
             {user ? (
               <button
                 type="button"
-                className="btn w-full justify-center text-xs"
+                className="btn w-full justify-center bg-[var(--surface)] hover:bg-[var(--mist)] text-sm font-semibold shadow-2xs gap-2"
                 disabled={syncing}
                 onClick={() => {
                   setSyncing(true);
@@ -756,7 +752,7 @@ export default function EstatisticasPage() {
                     .finally(() => setSyncing(false));
                 }}
               >
-                <RefreshCw size={14} strokeWidth={2} className={syncing ? "animate-spin" : ""} />
+                <RefreshCw size={15} strokeWidth={2} className={syncing ? "animate-spin" : ""} />
                 <span>{syncing ? "Sincronizando…" : "Atualizar da nuvem"}</span>
               </button>
             ) : null}
