@@ -122,18 +122,18 @@ export function SubjectResources({ recursos = [], onChange, compact }: Props) {
               }}
               className="input w-full py-1.5 text-sm sm:w-40"
             />
-            <div className="flex items-center gap-1 shrink-0">
+            <div className="flex items-center gap-1.5 shrink-0">
               <button
                 type="button"
                 onClick={handleSave}
-                className="btn py-1.5 text-sm bg-[var(--signal)] text-white"
+                className="btn btn-primary btn-sm"
               >
                 Salvar
               </button>
               <button
                 type="button"
                 onClick={() => setIsAdding(false)}
-                className="btn py-1.5 text-sm border-transparent bg-transparent"
+                className="btn btn-sm border-transparent bg-transparent"
               >
                 Cancelar
               </button>

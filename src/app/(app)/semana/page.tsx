@@ -503,14 +503,14 @@ function DayCard({
                       <div className="mt-3.5 grid grid-cols-2 gap-2">
                         <button
                           type="button"
-                          className="btn btn-primary w-full px-2 py-2 text-xs"
+                          className="btn btn-primary btn-sm w-full"
                           onClick={addBlock}
                         >
                           Adicionar
                         </button>
                         <button
                           type="button"
-                          className="btn w-full px-2 py-2 text-xs"
+                          className="btn btn-sm w-full"
                           onClick={closeAdd}
                         >
                           Cancelar

@@ -94,7 +94,7 @@ export function SubjectIconPicker({
           <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
-              className="btn text-xs"
+              className="btn btn-sm"
               onClick={() => inputRef.current?.click()}
             >
               <ImagePlus size={14} strokeWidth={1.75} /> Upload

@@ -143,9 +143,14 @@ Híbrido: **borda + sombra suave** em `.surface`; fundo `paper` com radiais leve
 ## Components
 
 ### Buttons
-- **Primary (sessão):** fill signal, texto branco, radius btn, sombra sm; foco outline claro.
-- **Secondary / mist:** `.btn` com borda line.
-- Hover: leve opacity ou elevação; disabled: opacity reduzida.
+- **Hierarchy & Sizes:**
+  - `btn-lg` (44px): CTAs principais de sessão (“Iniciar sessão”), login/auth hero.
+  - `btn` (38px): Diálogos modais, ações primárias de página. Padding `0.5rem 1rem`, radius `12px`.
+  - `btn-sm` (31px): Ajustes, configurações, formulários internos, ações secundárias em cards. Padding `0.35rem 0.85rem`, text `13px` semibold, radius `10px`.
+  - `btn-xs` (24px): Ações compactas inline em tabelas e tags.
+- **Primary:** fill signal/gradiente, texto branco, radius correspondente; foco outline claro.
+- **Secondary / mist:** `.btn` com borda line, hover surface.
+- Hover: leve elevação; disabled: opacity reduzida sem salto de layout.
 
 ### Chips
 - **Próxima:** warn-soft + texto laranja + ring.

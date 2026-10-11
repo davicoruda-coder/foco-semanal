@@ -12,6 +12,7 @@ import {
   Download,
   GraduationCap,
   KeyRound,
+  LogOut,
   Moon,
   Palette,
   ShieldCheck,
@@ -641,7 +642,7 @@ export default function AjustesPage() {
               ) : (
                 <button
                   type="button"
-                  className="btn btn-primary"
+                  className="btn btn-primary btn-sm"
                   disabled={notifPermission === "unsupported"}
                   onClick={async () => {
                     const ok = await ensureNotificationPermission();
@@ -712,70 +713,55 @@ export default function AjustesPage() {
             </div>
 
             <div className="mt-4 space-y-3">
-              {cloud && (
+              {cloud && passwordFormOpen ? (
                 <div>
-                  {!passwordFormOpen ? (
-                    <button
-                      type="button"
-                      className="btn"
-                      onClick={() => {
-                        setPasswordFormOpen(true);
-                        setPasswordErr(null);
-                        setPasswordMsg(null);
-                      }}
-                    >
-                      <KeyRound size={16} strokeWidth={1.75} />
-                      Definir / alterar senha
-                    </button>
-                  ) : (
-                    <form className="space-y-2" onSubmit={(e) => void savePassword(e)}>
-                      <p className="text-xs text-[color-mix(in_srgb,var(--ink)_75%,transparent)] sm:text-sm leading-relaxed">
-                        Defina a senha para entrar neste e-mail em outro aparelho.
-                      </p>
-                      <input
-                        className="input w-full"
-                        type="password"
-                        autoComplete="new-password"
-                        required
-                        minLength={MIN_PASSWORD_LENGTH}
-                        placeholder="Nova senha"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                      />
-                      <input
-                        className="input w-full"
-                        type="password"
-                        autoComplete="new-password"
-                        required
-                        minLength={MIN_PASSWORD_LENGTH}
-                        placeholder="Confirmar senha"
-                        value={passwordConfirm}
-                        onChange={(e) => setPasswordConfirm(e.target.value)}
-                      />
-                      <div className="flex flex-wrap gap-2">
-                        <button
-                          type="submit"
-                          className="btn btn-primary btn-sm"
-                          disabled={passwordBusy}
-                        >
-                          {passwordBusy ? "Salvando…" : "Salvar senha"}
-                        </button>
-                        <button
-                          type="button"
-                          className="btn btn-sm"
-                          disabled={passwordBusy}
-                          onClick={() => {
-                            setPasswordFormOpen(false);
-                            setPassword("");
-                            setPasswordConfirm("");
-                            setPasswordErr(null);
-                          }}
-                        >
-                          Cancelar
-                        </button>
-                      </div>
-                    </form>
-                  )}
+                  <form className="space-y-2" onSubmit={(e) => void savePassword(e)}>
+                    <p className="text-xs text-[color-mix(in_srgb,var(--ink)_75%,transparent)] sm:text-sm leading-relaxed">
+                      Defina a senha para entrar neste e-mail em outro aparelho.
+                    </p>
+                    <input
+                      className="input w-full"
+                      type="password"
+                      autoComplete="new-password"
+                      required
+                      minLength={MIN_PASSWORD_LENGTH}
+                      placeholder="Nova senha"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                    />
+                    <input
+                      className="input w-full"
+                      type="password"
+                      autoComplete="new-password"
+                      required
+                      minLength={MIN_PASSWORD_LENGTH}
+                      placeholder="Confirmar senha"
+                      value={passwordConfirm}
+                      onChange={(e) => setPasswordConfirm(e.target.value)}
+                    />
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        type="submit"
+                        className="btn btn-primary btn-sm"
+                        disabled={passwordBusy}
+                      >
+                        {passwordBusy ? "Salvando…" : "Salvar senha"}
+                      </button>
+                      <button
+                        type="button"
+                        className="btn btn-sm"
+                        disabled={passwordBusy}
+                        onClick={() => {
+                          setPasswordFormOpen(false);
+                          setPassword("");
+                          setPasswordConfirm("");
+                          setPasswordErr(null);
+                        }}
+                      >
+                        Cancelar
+                      </button>
+                    </div>
+                  </form>
                   {passwordErr && (
                     <p className="mt-2 text-sm text-[var(--warn)]">{passwordErr}</p>
                   )}
@@ -783,10 +769,33 @@ export default function AjustesPage() {
                     <p className="mt-2 text-sm opacity-70">{passwordMsg}</p>
                   )}
                 </div>
+              ) : (
+                <div className="flex flex-wrap items-center gap-2">
+                  {cloud && (
+                    <button
+                      type="button"
+                      className="btn btn-sm"
+                      onClick={() => {
+                        setPasswordFormOpen(true);
+                        setPasswordErr(null);
+                        setPasswordMsg(null);
+                      }}
+                    >
+                      <KeyRound size={14} strokeWidth={1.75} />
+                      Definir / alterar senha
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    className="btn btn-sm text-[color-mix(in_srgb,var(--ink)_80%,transparent)] hover:text-[var(--warn)]"
+                    onClick={() => setConfirmLogout(true)}
+                  >
+                    <LogOut size={14} strokeWidth={1.75} />
+                    Sair
+                  </button>
+                </div>
               )}
-              <button type="button" className="btn" onClick={() => setConfirmLogout(true)}>
-                Sair
-              </button>
+
               {cloud && (
                 <div className="border-t border-[var(--line)] pt-3 space-y-4">
                   <div>
@@ -798,7 +807,7 @@ export default function AjustesPage() {
                     </p>
                     <button
                       type="button"
-                      className="btn mt-2 text-[var(--warn)] text-xs sm:text-sm"
+                      className="btn btn-sm mt-2 text-[var(--warn)]"
                       disabled={cloudWipeBusy}
                       onClick={() => {
                         setCloudWipeMsg(null);
@@ -821,7 +830,7 @@ export default function AjustesPage() {
                     </p>
                     <button
                       type="button"
-                      className="btn mt-2 text-[var(--warn)] text-xs sm:text-sm"
+                      className="btn btn-sm mt-2 text-[var(--warn)]"
                       disabled={resetTimeBusy}
                       onClick={() => {
                         setResetTimeMsg(null);
@@ -906,7 +915,7 @@ export default function AjustesPage() {
                     setDeleteError(null);
                     setConfirmDelete(true);
                   }}
-                  className="btn shrink-0 border-[color-mix(in_srgb,var(--warn)_40%,transparent)] bg-[color-mix(in_srgb,var(--warn)_8%,transparent)] text-[var(--warn)] hover:bg-[var(--warn)] hover:text-white transition-colors"
+                  className="btn btn-sm shrink-0 border-[color-mix(in_srgb,var(--warn)_40%,transparent)] bg-[color-mix(in_srgb,var(--warn)_8%,transparent)] text-[var(--warn)] hover:bg-[var(--warn)] hover:text-white transition-colors"
                 >
                   <Trash2 size={15} strokeWidth={1.8} />
                   <span>Excluir conta definitivamente</span>
