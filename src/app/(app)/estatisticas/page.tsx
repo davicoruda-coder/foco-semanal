@@ -612,7 +612,7 @@ export default function EstatisticasPage() {
       {metricaView === "foco" ? (
         <>
           {/* Navegador de período (Anterior / Atual / Próximo) */}
-          <div className="flex items-center gap-2 rounded-[var(--radius-btn)] border border-[var(--line)] bg-[var(--surface)] p-2 shadow-xs">
+          <div className="flex items-center gap-2 rounded-[var(--radius-btn)] border border-[var(--line)] bg-[var(--surface)] p-2 shadow-xs w-full sm:mx-auto sm:max-w-md">
         <button
           type="button"
           className="grid h-9 w-9 shrink-0 place-items-center rounded-full transition hover:bg-[var(--mist)]"
