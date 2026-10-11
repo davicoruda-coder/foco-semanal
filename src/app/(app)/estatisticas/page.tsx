@@ -513,72 +513,56 @@ export default function EstatisticasPage() {
       {/* Top Controls: Seletor de Módulo (Tempo de Foco | Diagnóstico de Erros), Status e Período */}
       <div className="flex flex-col gap-3 border-b border-[var(--line)] pb-3">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          {/* Seletor Segmentado de Visualização: Tempo de Foco | Diagnóstico de Erros */}
-          <div className="grid grid-cols-2 sm:inline-flex w-full sm:w-auto items-center gap-1 rounded-xl border border-[var(--line)] bg-[var(--mist)] p-1">
-            <button
-              type="button"
-              onClick={() => setMetricaView("foco")}
-              className={`inline-flex items-center justify-center gap-1 sm:gap-1.5 rounded-lg px-2 sm:px-3.5 py-2 sm:py-1.5 text-[11px] min-[390px]:text-xs font-semibold whitespace-nowrap transition ${
-                metricaView === "foco"
-                  ? "bg-[var(--surface)] text-[var(--ink)] shadow-xs ring-1 ring-black/[0.04] dark:ring-white/[0.06]"
-                  : "text-[color-mix(in_srgb,var(--ink)_60%,transparent)] hover:text-[var(--ink)] hover:bg-[var(--surface)]/50"
-              }`}
-            >
-              <Clock
-                size={14}
-                strokeWidth={2}
-                className={`shrink-0 ${
+          {/* Controles de Visualização: Módulo (Foco/Diagnóstico) + Granularidade (Dia/Semana/Mês/Ano) agrupados à esquerda */}
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+            {/* Seletor Segmentado de Visualização: Tempo de Foco | Diagnóstico de Erros */}
+            <div className="grid grid-cols-2 sm:inline-flex w-full sm:w-auto items-center gap-1 rounded-xl border border-[var(--line)] bg-[var(--mist)] p-1">
+              <button
+                type="button"
+                onClick={() => setMetricaView("foco")}
+                className={`inline-flex items-center justify-center gap-1 sm:gap-1.5 rounded-lg px-2 sm:px-3.5 py-2 sm:py-1.5 text-[11px] min-[390px]:text-xs font-semibold whitespace-nowrap transition ${
                   metricaView === "foco"
-                    ? "text-[var(--signal)]"
-                    : "text-[color-mix(in_srgb,var(--ink)_50%,transparent)]"
+                    ? "bg-[var(--surface)] text-[var(--ink)] shadow-xs ring-1 ring-black/[0.04] dark:ring-white/[0.06]"
+                    : "text-[color-mix(in_srgb,var(--ink)_60%,transparent)] hover:text-[var(--ink)] hover:bg-[var(--surface)]/50"
                 }`}
-              />
-              <span className="truncate">Tempo de Foco</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setMetricaView("diagnostico")}
-              className={`inline-flex items-center justify-center gap-1 sm:gap-1.5 rounded-lg px-2 sm:px-3.5 py-2 sm:py-1.5 text-[11px] min-[390px]:text-xs font-semibold whitespace-nowrap transition ${
-                metricaView === "diagnostico"
-                  ? "bg-[var(--surface)] text-[var(--ink)] shadow-xs ring-1 ring-black/[0.04] dark:ring-white/[0.06]"
-                  : "text-[color-mix(in_srgb,var(--ink)_60%,transparent)] hover:text-[var(--ink)] hover:bg-[var(--surface)]/50"
-              }`}
-            >
-              <PieChart
-                size={14}
-                strokeWidth={2}
-                className={`shrink-0 ${
-                  metricaView === "diagnostico"
-                    ? "text-[var(--signal)]"
-                    : "text-[color-mix(in_srgb,var(--ink)_50%,transparent)]"
-                }`}
-              />
-              <span className="truncate">Diagnóstico de Erros</span>
-            </button>
-          </div>
-
-          {/* Quando no modo Foco: Status do cronômetro e Seletor de Período (Dia | Semana | Mês | Ano) */}
-          {metricaView === "foco" && (
-            <div className="flex flex-wrap items-center justify-between sm:justify-end gap-3 text-xs">
-              <div className="flex items-center gap-2">
-                <span
-                  className={`inline-flex h-2 w-2 rounded-full ${
-                    tracking
-                      ? "bg-[var(--ok)]"
-                      : "bg-[color-mix(in_srgb,var(--ink)_25%,transparent)]"
+              >
+                <Clock
+                  size={14}
+                  strokeWidth={2}
+                  className={`shrink-0 ${
+                    metricaView === "foco"
+                      ? "text-[var(--signal)]"
+                      : "text-[color-mix(in_srgb,var(--ink)_50%,transparent)]"
                   }`}
                 />
-                <span className="opacity-60">
-                  {tracking ? "Registrando agora…" : "Pausado — não está contando"}
-                </span>
-                {syncing ? (
-                  <span className="opacity-50">Sincronizando…</span>
-                ) : null}
-              </div>
+                <span className="truncate">Tempo de Foco</span>
+              </button>
 
-              {/* Range Selector: Dia | Semana | Mês | Ano */}
-              <div className="flex flex-wrap gap-1 rounded-full border border-[var(--line)] bg-[var(--mist)] p-1 shadow-2xs">
+              <button
+                type="button"
+                onClick={() => setMetricaView("diagnostico")}
+                className={`inline-flex items-center justify-center gap-1 sm:gap-1.5 rounded-lg px-2 sm:px-3.5 py-2 sm:py-1.5 text-[11px] min-[390px]:text-xs font-semibold whitespace-nowrap transition ${
+                  metricaView === "diagnostico"
+                    ? "bg-[var(--surface)] text-[var(--ink)] shadow-xs ring-1 ring-black/[0.04] dark:ring-white/[0.06]"
+                    : "text-[color-mix(in_srgb,var(--ink)_60%,transparent)] hover:text-[var(--ink)] hover:bg-[var(--surface)]/50"
+                }`}
+              >
+                <PieChart
+                  size={14}
+                  strokeWidth={2}
+                  className={`shrink-0 ${
+                    metricaView === "diagnostico"
+                      ? "text-[var(--signal)]"
+                      : "text-[color-mix(in_srgb,var(--ink)_50%,transparent)]"
+                  }`}
+                />
+                <span className="truncate">Diagnóstico de Erros</span>
+              </button>
+            </div>
+
+            {/* Range Selector: Dia | Semana | Mês | Ano */}
+            {metricaView === "foco" && (
+              <div className="flex items-center justify-center gap-1 rounded-full border border-[var(--line)] bg-[var(--mist)] p-1 shadow-2xs">
                 {(
                   [
                     ["dia", "Dia"],
@@ -593,7 +577,7 @@ export default function EstatisticasPage() {
                       key={value}
                       type="button"
                       onClick={() => setRange(value)}
-                      className={`rounded-full px-3.5 py-1 text-xs sm:text-sm font-semibold transition ${
+                      className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
                         active
                           ? "bg-[var(--surface)] text-[var(--ink)] shadow-xs ring-1 ring-black/[0.04] dark:ring-white/[0.06]"
                           : "text-[color-mix(in_srgb,var(--ink)_65%,transparent)] hover:text-[var(--ink)] hover:bg-[var(--surface)]/40"
@@ -604,6 +588,25 @@ export default function EstatisticasPage() {
                   );
                 })}
               </div>
+            )}
+          </div>
+
+          {/* Quando no modo Foco: Status do cronômetro (à direita) */}
+          {metricaView === "foco" && (
+            <div className="flex items-center gap-2 text-xs sm:self-center">
+              <span
+                className={`inline-flex h-2 w-2 rounded-full ${
+                  tracking
+                    ? "bg-[var(--ok)]"
+                    : "bg-[color-mix(in_srgb,var(--ink)_25%,transparent)]"
+                }`}
+              />
+              <span className="opacity-60">
+                {tracking ? "Registrando agora…" : "Pausado — não está contando"}
+              </span>
+              {syncing ? (
+                <span className="opacity-50">Sincronizando…</span>
+              ) : null}
             </div>
           )}
         </div>
