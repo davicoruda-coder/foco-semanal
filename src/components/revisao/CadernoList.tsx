@@ -323,7 +323,7 @@ export function CadernoList({
   return (
     <div className="space-y-4">
       {/* Barra de Busca e Filtros Rápidos Compacta */}
-      <div className="rounded-[var(--radius)] border border-[var(--line)] bg-[var(--surface)] p-2.5 sm:p-3 shadow-xs space-y-2.5">
+      <div className="rounded-[var(--radius)] border border-[var(--line)] bg-[var(--surface)] p-3 sm:p-3.5 shadow-xs space-y-2.5">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
           {/* Campo de Busca Compacto com largura contida */}
           <div className="relative flex-1 max-w-full sm:max-w-md">
@@ -420,7 +420,8 @@ export function CadernoList({
                 title="Registrar novo erro, chute ou dúvida"
               >
                 <Plus size={15} strokeWidth={2.2} />
-                <span>Anotar no Caderno</span>
+                <span className="sm:hidden">Anotar</span>
+                <span className="hidden sm:inline">Anotar no Caderno</span>
               </button>
             )}
           </div>
