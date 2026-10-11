@@ -518,14 +518,14 @@ export default function EstatisticasPage() {
             <button
               type="button"
               onClick={() => setMetricaView("foco")}
-              className={`inline-flex items-center justify-center gap-1.5 rounded-lg px-3.5 py-1.5 text-xs font-semibold transition ${
+              className={`inline-flex items-center justify-center gap-1 sm:gap-1.5 rounded-lg px-2 sm:px-3.5 py-2 sm:py-1.5 text-[11px] min-[390px]:text-xs font-semibold whitespace-nowrap transition ${
                 metricaView === "foco"
                   ? "bg-[var(--surface)] text-[var(--ink)] shadow-xs ring-1 ring-black/[0.04] dark:ring-white/[0.06]"
                   : "text-[color-mix(in_srgb,var(--ink)_60%,transparent)] hover:text-[var(--ink)] hover:bg-[var(--surface)]/50"
               }`}
             >
               <Clock
-                size={15}
+                size={14}
                 strokeWidth={2}
                 className={`shrink-0 ${
                   metricaView === "foco"
@@ -533,20 +533,20 @@ export default function EstatisticasPage() {
                     : "text-[color-mix(in_srgb,var(--ink)_50%,transparent)]"
                 }`}
               />
-              <span>Tempo de Foco</span>
+              <span className="truncate">Tempo de Foco</span>
             </button>
 
             <button
               type="button"
               onClick={() => setMetricaView("diagnostico")}
-              className={`inline-flex items-center justify-center gap-1.5 rounded-lg px-3.5 py-1.5 text-xs font-semibold transition ${
+              className={`inline-flex items-center justify-center gap-1 sm:gap-1.5 rounded-lg px-2 sm:px-3.5 py-2 sm:py-1.5 text-[11px] min-[390px]:text-xs font-semibold whitespace-nowrap transition ${
                 metricaView === "diagnostico"
                   ? "bg-[var(--surface)] text-[var(--ink)] shadow-xs ring-1 ring-black/[0.04] dark:ring-white/[0.06]"
                   : "text-[color-mix(in_srgb,var(--ink)_60%,transparent)] hover:text-[var(--ink)] hover:bg-[var(--surface)]/50"
               }`}
             >
               <PieChart
-                size={15}
+                size={14}
                 strokeWidth={2}
                 className={`shrink-0 ${
                   metricaView === "diagnostico"
@@ -554,7 +554,7 @@ export default function EstatisticasPage() {
                     : "text-[color-mix(in_srgb,var(--ink)_50%,transparent)]"
                 }`}
               />
-              <span>Diagnóstico de Erros</span>
+              <span className="truncate">Diagnóstico de Erros</span>
             </button>
           </div>
 
