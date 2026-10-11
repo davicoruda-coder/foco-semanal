@@ -350,78 +350,80 @@ export function CadernoList({
             )}
           </div>
 
-          {/* Toggle Grade / Lista, Botão Filtros */}
+          {/* Toggle Grade / Lista, Botão Filtros e CTA */}
           <div className="flex items-center justify-between sm:justify-end gap-2 shrink-0">
-            {/* Botão de Filtros Expansível */}
-            <button
-              type="button"
-              onClick={() => setShowFilters((prev) => !prev)}
-              aria-expanded={showFilters}
-              className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-semibold transition ${
-                showFilters || activeDropdownFiltersCount > 0
-                  ? "border-[var(--signal)] bg-[var(--signal-soft)] text-[var(--signal)]"
-                  : "border-[var(--line)] bg-[var(--mist)] text-[color-mix(in_srgb,var(--ink)_65%,transparent)] hover:text-[var(--ink)]"
-              }`}
-              title={showFilters ? "Ocultar painel de filtros" : "Abrir opções de filtro"}
-            >
-              <Filter size={13} />
-              <span>Filtros</span>
-              {activeDropdownFiltersCount > 0 && (
-                <span className="grid size-4 place-items-center rounded-full bg-[var(--signal)] text-[9.5px] font-bold text-white leading-none">
-                  {activeDropdownFiltersCount}
-                </span>
-              )}
-              <ChevronDown
-                size={13}
-                className={`transition-transform duration-200 ${
-                  showFilters ? "rotate-180" : ""
+            {/* Grupo de Controles de Visualização: Filtros + Grade/Lista unidos */}
+            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+              {/* Botão de Filtros Expansível */}
+              <button
+                type="button"
+                onClick={() => setShowFilters((prev) => !prev)}
+                aria-expanded={showFilters}
+                className={`inline-flex items-center gap-1.5 rounded-lg border px-2 sm:px-2.5 py-1 text-xs font-semibold transition ${
+                  showFilters || activeDropdownFiltersCount > 0
+                    ? "border-[var(--signal)] bg-[var(--signal-soft)] text-[var(--signal)]"
+                    : "border-[var(--line)] bg-[var(--mist)] text-[color-mix(in_srgb,var(--ink)_65%,transparent)] hover:text-[var(--ink)]"
                 }`}
-              />
-            </button>
+                title={showFilters ? "Ocultar painel de filtros" : "Abrir opções de filtro"}
+              >
+                <Filter size={13} />
+                <span>Filtros</span>
+                {activeDropdownFiltersCount > 0 && (
+                  <span className="grid size-4 place-items-center rounded-full bg-[var(--signal)] text-[9.5px] font-bold text-white leading-none">
+                    {activeDropdownFiltersCount}
+                  </span>
+                )}
+                <ChevronDown
+                  size={13}
+                  className={`transition-transform duration-200 ${
+                    showFilters ? "rotate-180" : ""
+                  }`}
+                />
+              </button>
 
-            {/* Alternador de Visualização: Grade vs Lista */}
-            <div className="flex items-center rounded-lg border border-[var(--line)] bg-[var(--mist)] p-0.5 text-[color-mix(in_srgb,var(--ink)_60%,transparent)]">
-              <button
-                type="button"
-                onClick={() => handleViewModeChange("grid")}
-                title="Visualização em Grade (Fichas)"
-                aria-label="Visualização em Grade"
-                className={`flex items-center gap-1 rounded-md px-2 py-1 text-xs font-semibold transition ${
-                  viewMode === "grid"
-                    ? "bg-[var(--surface)] text-[var(--signal)] shadow-xs"
-                    : "hover:text-[var(--ink)]"
-                }`}
-              >
-                <LayoutGrid size={13} />
-                <span className="hidden md:inline">Grade</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => handleViewModeChange("list")}
-                title="Visualização em Lista"
-                aria-label="Visualização em Lista"
-                className={`flex items-center gap-1 rounded-md px-2 py-1 text-xs font-semibold transition ${
-                  viewMode === "list"
-                    ? "bg-[var(--surface)] text-[var(--signal)] shadow-xs"
-                    : "hover:text-[var(--ink)]"
-                }`}
-              >
-                <List size={13} />
-                <span className="hidden md:inline">Lista</span>
-              </button>
+              {/* Alternador de Visualização: Grade vs Lista */}
+              <div className="flex items-center rounded-lg border border-[var(--line)] bg-[var(--mist)] p-0.5 text-[color-mix(in_srgb,var(--ink)_60%,transparent)]">
+                <button
+                  type="button"
+                  onClick={() => handleViewModeChange("grid")}
+                  title="Visualização em Grade (Fichas)"
+                  aria-label="Visualização em Grade"
+                  className={`flex items-center gap-1 rounded-md px-2 py-1 text-xs font-semibold transition ${
+                    viewMode === "grid"
+                      ? "bg-[var(--surface)] text-[var(--signal)] shadow-xs"
+                      : "hover:text-[var(--ink)]"
+                  }`}
+                >
+                  <LayoutGrid size={13} />
+                  <span className="hidden md:inline">Grade</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleViewModeChange("list")}
+                  title="Visualização em Lista"
+                  aria-label="Visualização em Lista"
+                  className={`flex items-center gap-1 rounded-md px-2 py-1 text-xs font-semibold transition ${
+                    viewMode === "list"
+                      ? "bg-[var(--surface)] text-[var(--signal)] shadow-xs"
+                      : "hover:text-[var(--ink)]"
+                  }`}
+                >
+                  <List size={13} />
+                  <span className="hidden md:inline">Lista</span>
+                </button>
+              </div>
             </div>
 
-            {/* Ação Primária: Anotar no Caderno */}
+            {/* Ação Primária: Anotar no Caderno com texto completo */}
             {onNewQuestao && (
               <button
                 type="button"
                 onClick={onNewQuestao}
-                className="inline-flex items-center gap-1.5 rounded-[var(--radius-btn)] bg-[var(--signal)] text-white hover:brightness-110 px-3 py-1.5 text-xs sm:text-sm font-semibold shadow-xs transition active:scale-95 shrink-0"
+                className="inline-flex items-center gap-1.5 rounded-[var(--radius-btn)] bg-[var(--signal)] text-white hover:brightness-110 px-2.5 sm:px-3 py-1.5 text-xs sm:text-sm font-semibold shadow-xs transition active:scale-95 shrink-0 whitespace-nowrap"
                 title="Registrar novo erro, chute ou dúvida"
               >
                 <Plus size={15} strokeWidth={2.2} />
-                <span className="sm:hidden">Anotar</span>
-                <span className="hidden sm:inline">Anotar no Caderno</span>
+                <span>Anotar no Caderno</span>
               </button>
             )}
           </div>
