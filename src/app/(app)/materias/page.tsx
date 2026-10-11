@@ -72,13 +72,13 @@ function StudyDaysPicker({
 }) {
   return (
     <div className="space-y-2">
-      <div className="inline-flex items-center gap-0.5 rounded-full border border-[var(--line)] bg-[color-mix(in_srgb,var(--ink)_6%,transparent)] p-0.5">
+      <div className="inline-flex items-center gap-0.5 rounded-full border border-[var(--line)] bg-[var(--mist)] p-0.5 shadow-2xs">
         <button
           type="button"
-          className={`rounded-full px-2.5 py-1 text-xs font-medium transition ${
+          className={`rounded-full px-2.5 py-1 text-xs font-semibold transition ${
             value.mode === "all"
-              ? "bg-[var(--signal)] text-white"
-              : "text-[color-mix(in_srgb,var(--ink)_55%,transparent)] hover:text-[var(--ink)]"
+              ? "bg-[var(--surface)] text-[var(--ink)] shadow-xs ring-1 ring-black/[0.04] dark:ring-white/[0.06]"
+              : "text-[color-mix(in_srgb,var(--ink)_55%,transparent)] hover:text-[var(--ink)] hover:bg-[var(--surface)]/40"
           }`}
           onClick={() => onChange({ mode: "all", days: [] })}
         >
@@ -86,10 +86,10 @@ function StudyDaysPicker({
         </button>
         <button
           type="button"
-          className={`rounded-full px-2.5 py-1 text-xs font-medium transition ${
+          className={`rounded-full px-2.5 py-1 text-xs font-semibold transition ${
             value.mode === "days"
-              ? "bg-[var(--signal)] text-white"
-              : "text-[color-mix(in_srgb,var(--ink)_55%,transparent)] hover:text-[var(--ink)]"
+              ? "bg-[var(--surface)] text-[var(--ink)] shadow-xs ring-1 ring-black/[0.04] dark:ring-white/[0.06]"
+              : "text-[color-mix(in_srgb,var(--ink)_55%,transparent)] hover:text-[var(--ink)] hover:bg-[var(--surface)]/40"
           }`}
           onClick={() =>
             onChange({
@@ -1063,13 +1063,13 @@ export default function MateriasPage() {
         {/* Linha de controles rápidos / toggle de opções avançadas */}
         <div className="flex flex-wrap items-center justify-between gap-2 pt-0.5">
           <div className="flex flex-wrap items-center gap-2">
-            <div className="inline-flex items-center gap-0.5 rounded-full border border-[var(--line)] bg-[color-mix(in_srgb,var(--ink)_6%,transparent)] p-0.5">
+            <div className="inline-flex items-center gap-0.5 rounded-full border border-[var(--line)] bg-[var(--mist)] p-0.5 shadow-2xs">
               <button
                 type="button"
-                className={`rounded-full px-2.5 py-1 text-xs font-medium transition ${
+                className={`rounded-full px-2.5 py-1 text-xs font-semibold transition ${
                   !newIsFree
-                    ? "bg-[var(--signal)] text-white shadow-sm"
-                    : "text-[color-mix(in_srgb,var(--ink)_55%,transparent)] hover:text-[var(--ink)]"
+                    ? "bg-[var(--surface)] text-[var(--ink)] shadow-xs ring-1 ring-black/[0.04] dark:ring-white/[0.06]"
+                    : "text-[color-mix(in_srgb,var(--ink)_55%,transparent)] hover:text-[var(--ink)] hover:bg-[var(--surface)]/40"
                 }`}
                 onClick={() => setNewIsFree(false)}
               >
@@ -1077,10 +1077,10 @@ export default function MateriasPage() {
               </button>
               <button
                 type="button"
-                className={`rounded-full px-2.5 py-1 text-xs font-medium transition ${
+                className={`rounded-full px-2.5 py-1 text-xs font-semibold transition ${
                   newIsFree
-                    ? "bg-[var(--signal)] text-white shadow-sm"
-                    : "text-[color-mix(in_srgb,var(--ink)_55%,transparent)] hover:text-[var(--ink)]"
+                    ? "bg-[var(--surface)] text-[var(--ink)] shadow-xs ring-1 ring-black/[0.04] dark:ring-white/[0.06]"
+                    : "text-[color-mix(in_srgb,var(--ink)_55%,transparent)] hover:text-[var(--ink)] hover:bg-[var(--surface)]/40"
                 }`}
                 onClick={() => setNewIsFree(true)}
               >
@@ -1110,15 +1110,15 @@ export default function MateriasPage() {
               <span className="text-xs font-medium text-[color-mix(in_srgb,var(--ink)_70%,transparent)]">
                 Peso no ciclo:
               </span>
-              <div className="inline-flex items-center gap-0.5 rounded-full border border-[var(--line)] bg-[var(--surface)] p-0.5">
+              <div className="inline-flex items-center gap-0.5 rounded-full border border-[var(--line)] bg-[var(--mist)] p-0.5 shadow-2xs">
                 {[1, 2, 3, 4].map((w) => (
                   <button
                     key={w}
                     type="button"
-                    className={`rounded-full px-2.5 py-0.5 text-xs font-medium transition ${
+                    className={`rounded-full px-2.5 py-0.5 text-xs font-semibold transition ${
                       newWeight === w
-                        ? "bg-[var(--signal)] text-white shadow-sm"
-                        : "text-[color-mix(in_srgb,var(--ink)_55%,transparent)] hover:text-[var(--ink)]"
+                        ? "bg-[var(--surface)] text-[var(--ink)] shadow-xs ring-1 ring-black/[0.04] dark:ring-white/[0.06]"
+                        : "text-[color-mix(in_srgb,var(--ink)_55%,transparent)] hover:text-[var(--ink)] hover:bg-[var(--surface)]/40"
                     }`}
                     onClick={() => setNewWeight(w)}
                   >
@@ -1328,13 +1328,13 @@ export default function MateriasPage() {
                       <span className="text-xs font-medium uppercase tracking-wider opacity-50">
                         Modo:
                       </span>
-                      <div className="inline-flex items-center gap-0.5 rounded-full border border-[var(--line)] bg-[var(--surface)] p-0.5">
+                      <div className="inline-flex items-center gap-0.5 rounded-full border border-[var(--line)] bg-[var(--mist)] p-0.5 shadow-2xs">
                         <button
                           type="button"
-                          className={`rounded-full px-2.5 py-1 text-xs font-medium transition ${
+                          className={`rounded-full px-2.5 py-1 text-xs font-semibold transition ${
                             !free
-                              ? "bg-[var(--signal)] text-white shadow-sm"
-                              : "text-[color-mix(in_srgb,var(--ink)_55%,transparent)] hover:text-[var(--ink)]"
+                              ? "bg-[var(--surface)] text-[var(--ink)] shadow-xs ring-1 ring-black/[0.04] dark:ring-white/[0.06]"
+                              : "text-[color-mix(in_srgb,var(--ink)_55%,transparent)] hover:text-[var(--ink)] hover:bg-[var(--surface)]/40"
                           }`}
                           onClick={() => {
                             if (!free) return;
@@ -1345,10 +1345,10 @@ export default function MateriasPage() {
                         </button>
                         <button
                           type="button"
-                          className={`rounded-full px-2.5 py-1 text-xs font-medium transition ${
+                          className={`rounded-full px-2.5 py-1 text-xs font-semibold transition ${
                             free
-                              ? "bg-[var(--signal)] text-white shadow-sm"
-                              : "text-[color-mix(in_srgb,var(--ink)_55%,transparent)] hover:text-[var(--ink)]"
+                              ? "bg-[var(--surface)] text-[var(--ink)] shadow-xs ring-1 ring-black/[0.04] dark:ring-white/[0.06]"
+                              : "text-[color-mix(in_srgb,var(--ink)_55%,transparent)] hover:text-[var(--ink)] hover:bg-[var(--surface)]/40"
                           }`}
                           onClick={() => {
                             if (free) return;

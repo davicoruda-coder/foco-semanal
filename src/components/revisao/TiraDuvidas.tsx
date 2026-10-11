@@ -658,7 +658,7 @@ export function TiraDuvidas() {
                 Tamanho da letra:
               </span>
               <div
-                className="inline-flex items-center rounded-lg border border-[var(--line)] bg-[color-mix(in_srgb,var(--ink)_4%,var(--surface))] p-0.5"
+                className="inline-flex items-center rounded-lg border border-[var(--line)] bg-[var(--mist)] p-0.5 shadow-2xs"
                 role="group"
                 aria-label="Tamanho da fonte"
               >
@@ -666,39 +666,39 @@ export function TiraDuvidas() {
                   type="button"
                   onClick={() => handleSetTextSize("sm")}
                   title="Pequeno (14px) - Compacto"
-                  className={`inline-flex items-center gap-1 px-2.5 py-1 text-xs font-bold rounded-md transition-all ${
+                  className={`inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-md transition-all ${
                     textSize === "sm"
-                      ? "bg-[var(--signal)] text-white shadow-xs"
-                      : "text-[color-mix(in_srgb,var(--ink)_70%,transparent)] hover:text-[var(--ink)] hover:bg-[var(--surface)]"
+                      ? "bg-[var(--surface)] text-[var(--ink)] shadow-xs ring-1 ring-black/[0.04] dark:ring-white/[0.06]"
+                      : "text-[color-mix(in_srgb,var(--ink)_65%,transparent)] hover:text-[var(--ink)] hover:bg-[var(--surface)]/50"
                   }`}
                 >
-                  <span>A-</span>
+                  <span className={textSize === "sm" ? "text-[var(--signal)]" : ""}>A-</span>
                   <span className="text-[10px] opacity-75 font-normal">P</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => handleSetTextSize("base")}
                   title="Padrão Confortável (16px) - Recomendado para Computador"
-                  className={`inline-flex items-center gap-1 px-2.5 py-1 text-xs font-bold rounded-md transition-all ${
+                  className={`inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-md transition-all ${
                     textSize === "base"
-                      ? "bg-[var(--signal)] text-white shadow-xs"
-                      : "text-[color-mix(in_srgb,var(--ink)_70%,transparent)] hover:text-[var(--ink)] hover:bg-[var(--surface)]"
+                      ? "bg-[var(--surface)] text-[var(--ink)] shadow-xs ring-1 ring-black/[0.04] dark:ring-white/[0.06]"
+                      : "text-[color-mix(in_srgb,var(--ink)_65%,transparent)] hover:text-[var(--ink)] hover:bg-[var(--surface)]/50"
                   }`}
                 >
-                  <span>A</span>
+                  <span className={textSize === "base" ? "text-[var(--signal)]" : ""}>A</span>
                   <span className="text-[10px] opacity-75 font-normal">M</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => handleSetTextSize("lg")}
                   title="Ampliado (18px) - Leitura relaxada"
-                  className={`inline-flex items-center gap-1 px-2.5 py-1 text-xs font-bold rounded-md transition-all ${
+                  className={`inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-md transition-all ${
                     textSize === "lg"
-                      ? "bg-[var(--signal)] text-white shadow-xs"
-                      : "text-[color-mix(in_srgb,var(--ink)_70%,transparent)] hover:text-[var(--ink)] hover:bg-[var(--surface)]"
+                      ? "bg-[var(--surface)] text-[var(--ink)] shadow-xs ring-1 ring-black/[0.04] dark:ring-white/[0.06]"
+                      : "text-[color-mix(in_srgb,var(--ink)_65%,transparent)] hover:text-[var(--ink)] hover:bg-[var(--surface)]/50"
                   }`}
                 >
-                  <span>A+</span>
+                  <span className={textSize === "lg" ? "text-[var(--signal)]" : ""}>A+</span>
                   <span className="text-[10px] opacity-75 font-normal">G</span>
                 </button>
               </div>
