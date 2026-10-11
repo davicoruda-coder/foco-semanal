@@ -848,15 +848,15 @@ export default function AjustesPage() {
               atualiza o que veio no arquivo — não apaga o resto na nuvem.
             </p>
             <div className="mt-3 flex flex-wrap gap-2">
-              <button type="button" className="btn btn-primary" onClick={downloadBackup}>
-                <Download size={16} strokeWidth={1.75} /> Exportar
+              <button type="button" className="btn btn-primary btn-sm" onClick={downloadBackup}>
+                <Download size={15} strokeWidth={1.75} /> Exportar
               </button>
               <button
                 type="button"
-                className="btn"
+                className="btn btn-sm"
                 onClick={() => fileRef.current?.click()}
               >
-                <Upload size={16} strokeWidth={1.75} /> Importar
+                <Upload size={15} strokeWidth={1.75} /> Importar
               </button>
             </div>
             <input

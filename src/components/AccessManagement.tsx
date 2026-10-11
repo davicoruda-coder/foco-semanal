@@ -183,7 +183,7 @@ export function AccessManagement() {
                 </div>
                 <button
                   type="button"
-                  className="btn btn-primary px-3 py-2 text-xs"
+                  className="btn btn-primary btn-sm"
                   disabled={busyEmail === request.email}
                   onClick={() => {
                     setEmail(request.email);
@@ -240,10 +240,10 @@ export function AccessManagement() {
         </div>
         <button
           type="submit"
-          className="btn btn-primary w-full sm:w-auto"
+          className="btn btn-primary btn-sm w-full sm:w-auto"
           disabled={Boolean(busyEmail)}
         >
-          <MailPlus size={16} />
+          <MailPlus size={15} strokeWidth={1.75} />
           Liberar acesso
         </button>
       </form>

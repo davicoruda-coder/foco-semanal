@@ -554,25 +554,25 @@ export function AIAccessSettings() {
             type="button"
             onClick={() => void handleTest()}
             disabled={testing || saving || !apiKey.trim()}
-            className="btn btn-secondary text-xs sm:text-sm flex items-center gap-1.5"
+            className="btn btn-secondary btn-sm flex items-center gap-1.5"
           >
             {testing ? (
-              <Loader2 size={15} className="animate-spin" />
+              <Loader2 size={14} className="animate-spin" />
             ) : (
-              <Wifi size={15} />
+              <Wifi size={14} />
             )}
-            {testing ? "Testando conexão e modelo..." : "Testar Conexão"}
+            {testing ? "Testando conexão..." : "Testar Conexão"}
           </button>
 
           <button
             type="submit"
             disabled={saving || testing || !apiKey.trim()}
-            className="btn btn-primary text-xs sm:text-sm flex items-center gap-1.5"
+            className="btn btn-primary btn-sm flex items-center gap-1.5"
           >
             {saving ? (
-              <Loader2 size={15} className="animate-spin" />
+              <Loader2 size={14} className="animate-spin" />
             ) : (
-              <Save size={15} />
+              <Save size={14} />
             )}
             {saving ? "Salvando..." : "Salvar Configurações"}
           </button>
