@@ -73,10 +73,12 @@ const RATING_BUTTONS: RatingOptionConfig[] = [
 
 export function FlashcardPlayer({
   cards,
+  materiaNome,
   onFinish,
   onCardDeleted,
 }: {
   cards?: Flashcard[];
+  materiaNome?: string;
   onFinish?: () => void;
   onCardDeleted?: (cardId: string) => void;
 }) {
@@ -114,6 +116,12 @@ export function FlashcardPlayer({
     Array.isArray(deck) && currentIndex >= 0 && currentIndex < deck.length
       ? deck[currentIndex]
       : undefined;
+
+  const subjectName =
+    materiaNome ||
+    currentCard?.disciplina ||
+    currentCard?.questao?.disciplina ||
+    null;
 
   const isCompleted =
     !deck || deck.length === 0 || currentIndex >= deck.length || !currentCard;
@@ -234,9 +242,19 @@ export function FlashcardPlayer({
     <div className="mx-auto max-w-xl space-y-4 pb-8">
       {/* Indicador de Progresso e Ações */}
       <div className="flex items-center justify-between text-xs text-[color-mix(in_srgb,var(--ink)_60%,transparent)]">
-        <span className="font-medium">
-          Card {currentIndex + 1} de {deck.length}
-        </span>
+        <div className="flex items-center gap-1.5 min-w-0">
+          {subjectName && (
+            <span className="font-bold text-[var(--ink)] truncate max-w-[160px] sm:max-w-[240px]">
+              {subjectName}
+            </span>
+          )}
+          {subjectName && (
+            <span className="text-[color-mix(in_srgb,var(--ink)_35%,transparent)]">•</span>
+          )}
+          <span className="font-medium whitespace-nowrap">
+            Card {currentIndex + 1} de {deck.length}
+          </span>
+        </div>
         <div className="flex items-center gap-2">
           <span
             className="rounded-full px-2 py-0.5 text-[10px] font-semibold text-white shadow-xs"
@@ -480,7 +498,7 @@ export function FlashcardPlayer({
                 <div className="flex items-center justify-between border-b border-white/10 pb-2.5 mb-2 text-white">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="flex items-center gap-1.5 rounded-full bg-[var(--signal-soft)] text-[var(--signal)] px-2.5 py-0.5 text-xs font-semibold">
-                      <Sparkles size={13} /> Treino Ampliado
+                      <Sparkles size={13} /> {subjectName || "Treino Ampliado"}
                     </span>
                     <span className="text-xs font-medium text-neutral-400">
                       Card {currentIndex + 1} de {deck.length}

@@ -23,6 +23,7 @@ import { FlashcardManagerModal } from "./FlashcardManagerModal";
 type ActiveDeckState = {
   id: string;
   title: string;
+  materiaNome?: string;
   cards: Flashcard[];
 } | null;
 
@@ -72,25 +73,23 @@ export function FlashcardDeckList() {
     const activeCards = Array.isArray(activeDeck.cards) ? activeDeck.cards : [];
     return (
       <div className="space-y-4">
-        <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center justify-between gap-3">
           <button
             type="button"
             onClick={() => {
               setActiveDeck(null);
               reloadFlashcards();
             }}
-            className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-[var(--signal)] hover:underline"
+            className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-[var(--signal)] hover:underline cursor-pointer"
           >
             <ArrowLeft size={16} /> Voltar para lista de Decks
           </button>
-          <div className="text-xs font-semibold text-[color-mix(in_srgb,var(--ink)_60%,transparent)] uppercase tracking-wider">
-            Deck: <span className="text-[var(--ink)] font-bold">{activeDeck.title}</span> ({activeCards.length} {activeCards.length === 1 ? "card" : "cards"})
-          </div>
         </div>
 
         <FlashcardPlayer
           key={activeDeck.id}
           cards={activeCards}
+          materiaNome={activeDeck.materiaNome}
           onCardDeleted={(deletedId) => {
             setActiveDeck((prev) => {
               if (!prev) return null;
@@ -155,6 +154,7 @@ export function FlashcardDeckList() {
               setActiveDeck({
                 id: "dia",
                 title: "Deck Global do Dia",
+                materiaNome: "Revisão Geral",
                 cards: flashcardsDoDia,
               })
             }
@@ -367,6 +367,7 @@ export function FlashcardDeckList() {
                             setActiveDeck({
                               id: materia.id,
                               title: materia.nome,
+                              materiaNome: materia.nome,
                               cards: cardsHoje,
                             })
                           }
@@ -393,6 +394,7 @@ export function FlashcardDeckList() {
                             setActiveDeck({
                               id: materia.id,
                               title: `${materia.nome} (Modo Livre)`,
+                              materiaNome: materia.nome,
                               cards: cardsTotal,
                             })
                           }
