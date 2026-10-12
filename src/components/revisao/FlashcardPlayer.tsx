@@ -283,11 +283,11 @@ export function FlashcardPlayer({
           <button
             type="button"
             onClick={() => setIsImmersiveMode(true)}
-            title="Entrar no Modo Treino Ampliado (Tela Cheia)"
-            className="inline-flex items-center gap-1 rounded-md border border-[color-mix(in_srgb,var(--line)_80%,transparent)] bg-[var(--surface)] px-2 py-0.5 text-[11px] font-medium text-[color-mix(in_srgb,var(--ink)_70%,transparent)] transition hover:border-[var(--signal)] hover:text-[var(--signal)] active:scale-95 cursor-pointer"
+            title="Entrar no Modo Foco (Tela Cheia)"
+            className="inline-flex items-center gap-1.5 rounded-md border border-[color-mix(in_srgb,var(--line)_80%,transparent)] bg-[var(--surface)] px-2.5 py-0.5 text-[11px] font-medium text-[color-mix(in_srgb,var(--ink)_75%,transparent)] transition hover:border-[var(--signal)] hover:text-[var(--signal)] active:scale-95 cursor-pointer"
           >
-            <Maximize2 size={11} />
-            <span className="hidden sm:inline">Modo Foco</span>
+            <Maximize2 size={12} className="text-[var(--signal)]" />
+            <span>Modo Foco</span>
           </button>
           <button
             type="button"
@@ -334,7 +334,7 @@ export function FlashcardPlayer({
 
             {currentCard.frente_imagem_url && (
               <div
-                className="relative group/img my-1 max-h-72 w-full overflow-hidden rounded-lg border border-[var(--line)] bg-black/5 dark:bg-black/25 flex items-center justify-center transition hover:border-[var(--signal)] select-none"
+                className="relative my-1 max-h-72 w-full overflow-hidden rounded-lg border border-[var(--line)] bg-black/5 dark:bg-black/25 flex items-center justify-center transition hover:border-[var(--signal)] select-none"
               >
                 <img
                   src={currentCard.frente_imagem_url}
@@ -342,19 +342,6 @@ export function FlashcardPlayer({
                   className="max-h-72 w-auto max-w-full object-contain pointer-events-none"
                   draggable={false}
                 />
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setIsImmersiveMode(true);
-                  }}
-                  className="absolute right-2 top-2 z-10 flex items-center gap-1.5 rounded-md bg-black/75 px-2.5 py-1 text-[11px] font-medium text-white shadow-md backdrop-blur-xs transition-all duration-200 hover:bg-black/95 hover:scale-105 active:scale-95 cursor-pointer opacity-95 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:translate-y-1 [@media(hover:hover)]:group-hover/img:opacity-100 [@media(hover:hover)]:group-hover/img:translate-y-0"
-                  title="Abrir no modo treino ampliado"
-                  aria-label="Abrir no modo treino ampliado"
-                >
-                  <Maximize2 size={12} className="text-white/90" />
-                  <span>Ampliar</span>
-                </button>
               </div>
             )}
 
@@ -374,7 +361,7 @@ export function FlashcardPlayer({
 
             {currentCard.verso_imagem_url && (
               <div
-                className="relative group/img my-1 max-h-72 w-full overflow-hidden rounded-lg border border-[var(--line)] bg-black/5 dark:bg-black/25 flex items-center justify-center transition hover:border-emerald-500 select-none"
+                className="relative my-1 max-h-72 w-full overflow-hidden rounded-lg border border-[var(--line)] bg-black/5 dark:bg-black/25 flex items-center justify-center transition hover:border-emerald-500 select-none"
               >
                 <img
                   src={currentCard.verso_imagem_url}
@@ -382,19 +369,6 @@ export function FlashcardPlayer({
                   className="max-h-72 w-auto max-w-full object-contain pointer-events-none"
                   draggable={false}
                 />
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setIsImmersiveMode(true);
-                  }}
-                  className="absolute right-2 top-2 z-10 flex items-center gap-1.5 rounded-md bg-black/75 px-2.5 py-1 text-[11px] font-medium text-white shadow-md backdrop-blur-xs transition-all duration-200 hover:bg-black/95 hover:scale-105 active:scale-95 cursor-pointer opacity-95 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:translate-y-1 [@media(hover:hover)]:group-hover/img:opacity-100 [@media(hover:hover)]:group-hover/img:translate-y-0"
-                  title="Abrir no modo treino ampliado"
-                  aria-label="Abrir no modo treino ampliado"
-                >
-                  <Maximize2 size={12} className="text-white/90" />
-                  <span>Ampliar</span>
-                </button>
               </div>
             )}
 
