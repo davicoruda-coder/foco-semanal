@@ -26,6 +26,8 @@ interface RatingOptionConfig {
   shortcut: string;
   baseClasses: string;
   selectedClasses: string;
+  badgeClasses: string;
+  intervalClasses: string;
 }
 
 const RATING_BUTTONS: RatingOptionConfig[] = [
@@ -35,9 +37,13 @@ const RATING_BUTTONS: RatingOptionConfig[] = [
     interval: "+1 dia",
     shortcut: "1",
     baseClasses:
-      "border-[color-mix(in_srgb,#ef4444_30%,transparent)] bg-[color-mix(in_srgb,#ef4444_10%,transparent)] text-[#ef4444] hover:bg-[#ef4444] hover:text-white",
+      "border-rose-300 bg-rose-50/90 text-rose-800 hover:bg-rose-100 hover:border-rose-400 dark:bg-rose-950/40 dark:border-rose-800/80 dark:text-rose-200 dark:hover:bg-rose-900/50 shadow-xs",
     selectedClasses:
-      "bg-[#ef4444] text-white border-[#ef4444] shadow-md shadow-red-500/20 scale-[1.02] ring-2 ring-[#ef4444]/40 ring-offset-1 ring-offset-[var(--surface)]",
+      "bg-rose-600 text-white border-rose-600 shadow-md shadow-rose-600/30 scale-[1.02] ring-2 ring-rose-400/50",
+    badgeClasses:
+      "bg-rose-200/90 text-rose-900 dark:bg-rose-900/80 dark:text-rose-100",
+    intervalClasses:
+      "text-rose-700/95 dark:text-rose-300",
   },
   {
     id: "dificil",
@@ -45,9 +51,13 @@ const RATING_BUTTONS: RatingOptionConfig[] = [
     interval: "+2 dias",
     shortcut: "2",
     baseClasses:
-      "border-[color-mix(in_srgb,#f59e0b_30%,transparent)] bg-[color-mix(in_srgb,#f59e0b_10%,transparent)] text-[#f59e0b] hover:bg-[#f59e0b] hover:text-white",
+      "border-amber-300 bg-amber-50/90 text-amber-900 hover:bg-amber-100 hover:border-amber-400 dark:bg-amber-950/40 dark:border-amber-800/80 dark:text-amber-200 dark:hover:bg-amber-900/50 shadow-xs",
     selectedClasses:
-      "bg-[#f59e0b] text-white border-[#f59e0b] shadow-md shadow-amber-500/20 scale-[1.02] ring-2 ring-[#f59e0b]/40 ring-offset-1 ring-offset-[var(--surface)]",
+      "bg-amber-600 text-white border-amber-600 shadow-md shadow-amber-600/30 scale-[1.02] ring-2 ring-amber-400/50",
+    badgeClasses:
+      "bg-amber-200/90 text-amber-950 dark:bg-amber-900/80 dark:text-amber-100",
+    intervalClasses:
+      "text-amber-800/95 dark:text-amber-300",
   },
   {
     id: "bom",
@@ -55,9 +65,13 @@ const RATING_BUTTONS: RatingOptionConfig[] = [
     interval: "+4 a 7 dias",
     shortcut: "3",
     baseClasses:
-      "border-[color-mix(in_srgb,#3b82f6_30%,transparent)] bg-[color-mix(in_srgb,#3b82f6_10%,transparent)] text-[#3b82f6] hover:bg-[#3b82f6] hover:text-white",
+      "border-blue-300 bg-blue-50/90 text-blue-800 hover:bg-blue-100 hover:border-blue-400 dark:bg-blue-950/40 dark:border-blue-800/80 dark:text-blue-200 dark:hover:bg-blue-900/50 shadow-xs",
     selectedClasses:
-      "bg-[#3b82f6] text-white border-[#3b82f6] shadow-md shadow-blue-500/20 scale-[1.02] ring-2 ring-[#3b82f6]/40 ring-offset-1 ring-offset-[var(--surface)]",
+      "bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-600/30 scale-[1.02] ring-2 ring-blue-400/50",
+    badgeClasses:
+      "bg-blue-200/90 text-blue-950 dark:bg-blue-900/80 dark:text-blue-100",
+    intervalClasses:
+      "text-blue-700/95 dark:text-blue-300",
   },
   {
     id: "facil",
@@ -65,9 +79,13 @@ const RATING_BUTTONS: RatingOptionConfig[] = [
     interval: "+15 a 30 dias",
     shortcut: "4",
     baseClasses:
-      "border-[color-mix(in_srgb,#22c55e_30%,transparent)] bg-[color-mix(in_srgb,#22c55e_10%,transparent)] text-[#22c55e] hover:bg-[#22c55e] hover:text-white",
+      "border-emerald-300 bg-emerald-50/90 text-emerald-900 hover:bg-emerald-100 hover:border-emerald-400 dark:bg-emerald-950/40 dark:border-emerald-800/80 dark:text-emerald-200 dark:hover:bg-emerald-900/50 shadow-xs",
     selectedClasses:
-      "bg-[#22c55e] text-white border-[#22c55e] shadow-md shadow-emerald-500/20 scale-[1.02] ring-2 ring-[#22c55e]/40 ring-offset-1 ring-offset-[var(--surface)]",
+      "bg-emerald-600 text-white border-emerald-600 shadow-md shadow-emerald-600/30 scale-[1.02] ring-2 ring-emerald-400/50",
+    badgeClasses:
+      "bg-emerald-200/90 text-emerald-950 dark:bg-emerald-900/80 dark:text-emerald-100",
+    intervalClasses:
+      "text-emerald-800/95 dark:text-emerald-300",
   },
 ];
 
@@ -403,23 +421,29 @@ export function FlashcardPlayer({
                   disabled={submitting}
                   onClick={() => handleResponse(btn.id)}
                   aria-pressed={isSelected}
-                  className={`group relative flex flex-col items-center justify-center rounded-[var(--radius-btn)] border px-3 py-2 sm:py-2.5 text-xs font-semibold select-none cursor-pointer transition-all duration-150 ease-out active:scale-95 touch-manipulation ${
+                  className={`group relative flex flex-col items-center justify-center rounded-[var(--radius-btn)] border px-3 py-2.5 sm:py-3 text-xs font-bold select-none cursor-pointer transition-all duration-150 ease-out active:scale-95 touch-manipulation ${
                     isSelected
                       ? btn.selectedClasses
                       : isOtherSelected
-                        ? "opacity-35 scale-[0.98] pointer-events-none border-[var(--line)] bg-[var(--mist)] text-[color-mix(in_srgb,var(--ink)_50%,transparent)]"
-                        : `${btn.baseClasses} hover:scale-[1.01]`
+                        ? "opacity-25 scale-[0.98] pointer-events-none border-[var(--line)] bg-[var(--mist)] text-[color-mix(in_srgb,var(--ink)_50%,transparent)]"
+                        : `${btn.baseClasses} hover:-translate-y-0.5`
                   }`}
                 >
                   <span className="flex items-center gap-1.5 font-bold">
                     <span>{btn.label}</span>
-                    <span className="hidden sm:inline-block rounded px-1 py-0.5 text-[9px] font-mono opacity-50 bg-black/10 dark:bg-white/10 leading-none">
+                    <span
+                      className={`hidden sm:inline-block rounded px-1.5 py-0.5 text-[9px] font-mono font-bold leading-none ${
+                        isSelected
+                          ? "bg-white/25 text-white"
+                          : btn.badgeClasses
+                      }`}
+                    >
                       {btn.shortcut}
                     </span>
                   </span>
                   <span
-                    className={`block text-[10px] font-normal transition-opacity ${
-                      isSelected ? "text-white/90" : "opacity-80 group-hover:opacity-100"
+                    className={`block text-[11px] font-semibold mt-0.5 transition-opacity ${
+                      isSelected ? "text-white/95" : btn.intervalClasses
                     }`}
                   >
                     {btn.interval}
@@ -461,7 +485,7 @@ export function FlashcardPlayer({
           <div
             role="dialog"
             aria-modal="true"
-            className="fixed inset-0 z-[80] flex flex-col justify-between bg-neutral-950/95 sm:bg-neutral-950/90 sm:backdrop-blur-md p-3 sm:p-5 animate-in fade-in duration-200 select-none overflow-hidden"
+            className="dark fixed inset-0 z-[80] flex flex-col justify-between bg-neutral-950/95 sm:bg-neutral-950/90 sm:backdrop-blur-md p-3 sm:p-5 animate-in fade-in duration-200 select-none overflow-hidden"
           >
             {isCompleted || !currentCard ? (
               <div className="m-auto w-full max-w-md rounded-2xl border border-white/10 bg-neutral-900/95 p-8 text-center text-white shadow-2xl">
@@ -641,23 +665,29 @@ export function FlashcardPlayer({
                               disabled={submitting}
                               onClick={() => handleResponse(btn.id)}
                               aria-pressed={isSelected}
-                              className={`group relative flex flex-col items-center justify-center rounded-xl border p-2 sm:py-2.5 text-xs font-semibold select-none cursor-pointer transition-all duration-150 ease-out active:scale-95 touch-manipulation ${
+                              className={`group relative flex flex-col items-center justify-center rounded-xl border p-2.5 sm:py-3 text-xs font-bold select-none cursor-pointer transition-all duration-150 ease-out active:scale-95 touch-manipulation ${
                                 isSelected
                                   ? btn.selectedClasses
                                   : isOtherSelected
-                                    ? "opacity-35 scale-[0.98] pointer-events-none border-neutral-700 bg-neutral-800 text-neutral-400"
-                                    : `${btn.baseClasses} hover:scale-[1.02]`
+                                    ? "opacity-25 scale-[0.98] pointer-events-none border-neutral-700 bg-neutral-800 text-neutral-400"
+                                    : `${btn.baseClasses} hover:-translate-y-0.5`
                               }`}
                             >
                               <span className="flex items-center gap-1.5 font-bold">
                                 <span>{btn.label}</span>
-                                <span className="hidden sm:inline-block rounded px-1 py-0.5 text-[9px] font-mono opacity-60 bg-black/30 leading-none">
+                                <span
+                                  className={`hidden sm:inline-block rounded px-1.5 py-0.5 text-[9px] font-mono font-bold leading-none ${
+                                    isSelected
+                                      ? "bg-white/25 text-white"
+                                      : btn.badgeClasses
+                                  }`}
+                                >
                                   {btn.shortcut}
                                 </span>
                               </span>
                               <span
-                                className={`block text-[10px] font-normal transition-opacity ${
-                                  isSelected ? "text-white/90" : "opacity-80 group-hover:opacity-100"
+                                className={`block text-[11px] font-semibold mt-0.5 transition-opacity ${
+                                  isSelected ? "text-white/95" : btn.intervalClasses
                                 }`}
                               >
                                 {btn.interval}
