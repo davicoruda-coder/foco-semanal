@@ -9,13 +9,13 @@ export async function GET(request: Request) {
   const next = safeNextPath(searchParams.get("next"));
 
   if (!code || !isSupabaseConfigured()) {
-    return NextResponse.redirect(`${origin}/hoje?error=auth`);
+    return NextResponse.redirect(`${origin}/?error=auth`);
   }
 
   const supabase = await createClient();
   const { error } = await supabase.auth.exchangeCodeForSession(code);
   if (error) {
-    return NextResponse.redirect(`${origin}/hoje?error=auth`);
+    return NextResponse.redirect(`${origin}/?error=auth`);
   }
 
   return NextResponse.redirect(`${origin}${next}`);

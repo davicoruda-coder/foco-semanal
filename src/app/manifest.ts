@@ -6,7 +6,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: "FocoHub",
     short_name: "FocoHub",
     description: "Sistema de estudo: grade, matérias, timer e lembretes.",
-    start_url: "/hoje",
+    start_url: "/",
     scope: "/",
     display: "standalone",
     orientation: "portrait-primary",

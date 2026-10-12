@@ -37,7 +37,7 @@ self.addEventListener("fetch", (event) => {
   if (request.mode === "navigate") {
     event.respondWith(
       fetch(request).catch(() =>
-        caches.match(request).then((res) => res || caches.match("/hoje") || fetch(request)),
+        caches.match(request).then((res) => res || caches.match("/agenda") || caches.match("/hoje") || fetch(request)),
       ),
     );
     return;

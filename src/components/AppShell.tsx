@@ -285,6 +285,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 href={href}
                 aria-label={label}
                 aria-current={active ? "page" : undefined}
+                onClick={() => {
+                  try {
+                    sessionStorage.setItem("foco_app_loaded", "1");
+                  } catch {
+                    /* ignore */
+                  }
+                }}
                 className={`flex min-w-0 flex-1 flex-col items-center justify-center gap-1 text-[11px] transition-colors ${
                   active
                     ? "font-semibold text-[var(--signal)]"

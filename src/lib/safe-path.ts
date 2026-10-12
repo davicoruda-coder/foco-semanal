@@ -1,5 +1,5 @@
 /** Only allow same-origin relative paths (blocks open redirects). */
-export function safeNextPath(raw: string | null | undefined, fallback = "/hoje"): string {
+export function safeNextPath(raw: string | null | undefined, fallback = "/"): string {
   if (!raw) return fallback;
   const path = raw.trim();
   if (!path.startsWith("/")) return fallback;

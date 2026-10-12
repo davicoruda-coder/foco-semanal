@@ -25,6 +25,11 @@ export default function AgendaPage() {
   const day = todayIndex();
 
   useEffect(() => {
+    try {
+      sessionStorage.setItem("foco_app_loaded", "1");
+    } catch {
+      /* ignore */
+    }
     const mq = window.matchMedia("(max-width: 767px)");
     const sync = () => setNarrow(mq.matches);
     sync();

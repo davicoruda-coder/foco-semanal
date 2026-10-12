@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
+import { readPersistedStudyFlow } from "@/lib/study-flow-persist";
 import {
   BookMarked,
   CalendarDays,
@@ -108,11 +110,48 @@ function applyProgressUpdate(
 }
 
 export default function HojePage() {
+  const router = useRouter();
   const { data, upsertSubject, resetCycleToday } = useApp();
   const flow = useStudyFlow();
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [showFullCycle, setShowFullCycle] = useState(false);
   const day = todayIndex();
+
+  // No mobile, abrir o app do zero deve começar na aba "Hoje" (/agenda).
+  // Se o celular abriu diretamente em /hoje (ex: atalho antigo do PWA ou aba restaurada),
+  // e não possui sessão ativa de estudos em andamento, redireciona para /agenda.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const isMobile = window.innerWidth < 1024;
+    let sessionVisited = false;
+    try {
+      sessionVisited = sessionStorage.getItem("foco_app_loaded") === "1";
+    } catch {
+      /* ignore */
+    }
+
+    if (isMobile && !sessionVisited) {
+      const savedFlow = readPersistedStudyFlow();
+      const hasActiveSession =
+        savedFlow.phase !== "idle" && savedFlow.day === todayIndex();
+
+      if (!hasActiveSession && !flow.sessionActive) {
+        try {
+          sessionStorage.setItem("foco_app_loaded", "1");
+        } catch {
+          /* ignore */
+        }
+        router.replace("/agenda");
+        return;
+      }
+    }
+
+    try {
+      sessionStorage.setItem("foco_app_loaded", "1");
+    } catch {
+      /* ignore */
+    }
+  }, [flow.sessionActive, router]);
 
   const exclusiveTodayList = useMemo(
     () => exclusiveSubjectsOnDay(data.subjects, day),
