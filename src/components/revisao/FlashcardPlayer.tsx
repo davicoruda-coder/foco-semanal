@@ -502,7 +502,7 @@ export function FlashcardPlayer({
                       className="hidden sm:inline-flex items-center gap-1.5 rounded-lg border border-white/15 bg-white/5 px-2.5 py-1 text-xs font-medium text-neutral-300 hover:bg-white/10 hover:text-white transition cursor-pointer"
                     >
                       <RotateCw size={13} />
-                      <span>{isFlipped ? "Ver Frente" : "Virar card"} (Espaço)</span>
+                      <span>{isFlipped ? "Ver Frente" : "Virar card"}</span>
                     </button>
                     <button
                       type="button"
@@ -605,9 +605,6 @@ export function FlashcardPlayer({
                     >
                       <RotateCw size={15} />
                       <span>Mostrar Resposta</span>
-                      <span className="hidden sm:inline-block text-xs font-normal opacity-80">
-                        (Espaço)
-                      </span>
                     </button>
                   ) : (
                     <div className="space-y-1.5 animate-in fade-in duration-150">
