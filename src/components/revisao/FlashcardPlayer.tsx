@@ -564,14 +564,6 @@ export function FlashcardPlayer({
                           />
                         </div>
                       )}
-
-                      <p className="text-[11px] text-neutral-400 pt-1">
-                        Toque no card ou pressione{" "}
-                        <span className="font-mono bg-white/10 px-1 py-0.5 rounded text-white">
-                          Espaço
-                        </span>{" "}
-                        para ver a resposta
-                      </p>
                     </div>
                   ) : (
                     /* Verso Ampliado */
