@@ -1,7 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
   Maximize2,
@@ -125,10 +125,25 @@ export function FlashcardPlayer({
     };
   }, [isImmersiveMode]);
 
-  const baseDeck = cards ?? flashcardsDoDia;
+  const [sessionCards, setSessionCards] = useState<Flashcard[]>(() => [
+    ...(cards ?? flashcardsDoDia ?? []),
+  ]);
+
+  useEffect(() => {
+    if (cards && cards.length > 0) {
+      setSessionCards([...cards]);
+    }
+  }, [cards]);
+
+  useEffect(() => {
+    if (!cards && sessionCards.length === 0 && flashcardsDoDia.length > 0) {
+      setSessionCards([...flashcardsDoDia]);
+    }
+  }, [cards, sessionCards.length, flashcardsDoDia]);
+
   const deck = useMemo(
-    () => baseDeck.filter((c) => !deletedIds.includes(c.id)),
-    [baseDeck, deletedIds],
+    () => sessionCards.filter((c) => !deletedIds.includes(c.id)),
+    [sessionCards, deletedIds],
   );
   const currentCard =
     Array.isArray(deck) && currentIndex >= 0 && currentIndex < deck.length
@@ -144,31 +159,35 @@ export function FlashcardPlayer({
   const isCompleted =
     !deck || deck.length === 0 || currentIndex >= deck.length || !currentCard;
 
-  const handleResponse = async (resposta: RespostaRevisao) => {
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    };
+  }, []);
+
+  const handleResponse = (resposta: RespostaRevisao) => {
     if (submitting || !currentCard) return;
+    const cardId = currentCard.id;
+    const nivelAtual = (currentCard.nivel_dominio ?? 0) as 0 | 1 | 2 | 3;
+
     setSelectedRating(resposta);
     setSubmitting(true);
-    try {
-      await Promise.all([
-        responderFlashcard(
-          currentCard.id,
-          currentCard.nivel_dominio ?? 0,
-          resposta,
-        ),
-        // Feedback visual suave de 180ms para percepção tátil imediata antes de avançar
-        new Promise((resolve) => setTimeout(resolve, 180)),
-      ]);
+
+    // Persistência resiliente em segundo plano (não trava a interface do usuário)
+    void responderFlashcard(cardId, nivelAtual, resposta).catch((err) => {
+      console.warn("[FlashcardPlayer] erro ao responder flashcard:", err);
+    });
+
+    // Feedback tátil imediato e transição fluida para o próximo card (150ms)
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    timeoutRef.current = setTimeout(() => {
       setIsFlipped(false);
       setSelectedRating(null);
       setCurrentIndex((prev) => prev + 1);
-    } catch (err) {
-      console.warn("[FlashcardPlayer] erro ao responder:", err);
-      setIsFlipped(false);
-      setSelectedRating(null);
-      setCurrentIndex((prev) => prev + 1);
-    } finally {
       setSubmitting(false);
-    }
+    }, 150);
   };
 
   const handleDeleteCard = async () => {
@@ -213,16 +232,16 @@ export function FlashcardPlayer({
       } else if (isFlipped && !submitting) {
         if (e.key === "1") {
           e.preventDefault();
-          void handleResponse("errei");
+          handleResponse("errei");
         } else if (e.key === "2") {
           e.preventDefault();
-          void handleResponse("dificil");
+          handleResponse("dificil");
         } else if (e.key === "3") {
           e.preventDefault();
-          void handleResponse("bom");
+          handleResponse("bom");
         } else if (e.key === "4") {
           e.preventDefault();
-          void handleResponse("facil");
+          handleResponse("facil");
         }
       }
     }
@@ -259,35 +278,42 @@ export function FlashcardPlayer({
   return (
     <div className="mx-auto max-w-xl space-y-4 pb-8">
       {/* Indicador de Progresso e Ações */}
-      <div className="flex items-center justify-between text-xs text-[color-mix(in_srgb,var(--ink)_60%,transparent)]">
+      <div className="flex items-center justify-between gap-2 text-xs">
+        {/* Metadados: Matéria, Card X de Y e Nível de Domínio */}
         <div className="flex items-center gap-1.5 min-w-0">
           {subjectName && (
-            <span className="font-bold text-[var(--ink)] truncate max-w-[160px] sm:max-w-[240px]">
-              {subjectName}
-            </span>
+            <>
+              <span
+                className="font-bold text-[var(--ink)] truncate max-w-[110px] xs:max-w-[150px] sm:max-w-[220px]"
+                title={subjectName}
+              >
+                {subjectName}
+              </span>
+              <span className="text-[color-mix(in_srgb,var(--ink)_35%,transparent)] shrink-0">•</span>
+            </>
           )}
-          {subjectName && (
-            <span className="text-[color-mix(in_srgb,var(--ink)_35%,transparent)]">•</span>
-          )}
-          <span className="font-medium whitespace-nowrap">
+          <span className="font-medium whitespace-nowrap text-[color-mix(in_srgb,var(--ink)_70%,transparent)]">
             Card {currentIndex + 1} de {deck.length}
           </span>
-        </div>
-        <div className="flex items-center gap-2">
           <span
-            className="rounded-full px-2 py-0.5 text-[10px] font-semibold text-white shadow-xs"
+            className="inline-flex items-center whitespace-nowrap shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold text-white shadow-xs"
             style={{ backgroundColor: corNivelDominio(currentCard.nivel_dominio ?? 0) }}
           >
             Nível {currentCard.nivel_dominio ?? 0}
           </span>
+        </div>
+
+        {/* Botões de Ação */}
+        <div className="flex items-center gap-1.5 shrink-0">
           <button
             type="button"
             onClick={() => setIsImmersiveMode(true)}
             title="Entrar no Modo Foco (Tela Cheia)"
-            className="inline-flex items-center gap-1.5 rounded-md border border-[color-mix(in_srgb,var(--line)_80%,transparent)] bg-[var(--surface)] px-2.5 py-0.5 text-[11px] font-medium text-[color-mix(in_srgb,var(--ink)_75%,transparent)] transition hover:border-[var(--signal)] hover:text-[var(--signal)] active:scale-95 cursor-pointer"
+            className="inline-flex items-center gap-1.5 rounded-md border border-[color-mix(in_srgb,var(--line)_80%,transparent)] bg-[var(--surface)] px-2.5 py-0.5 text-[11px] font-medium text-[color-mix(in_srgb,var(--ink)_75%,transparent)] transition hover:border-[var(--signal)] hover:text-[var(--signal)] active:scale-95 cursor-pointer shadow-xs"
           >
-            <Maximize2 size={12} className="text-[var(--signal)]" />
-            <span>Modo Foco</span>
+            <Maximize2 size={12} className="text-[var(--signal)] shrink-0" />
+            <span className="hidden sm:inline">Modo Foco</span>
+            <span className="sm:hidden">Foco</span>
           </button>
           <button
             type="button"
@@ -296,10 +322,11 @@ export function FlashcardPlayer({
               setShowDeleteConfirm(true);
             }}
             title="Excluir flashcard"
-            className="inline-flex items-center gap-1 rounded-md border border-[color-mix(in_srgb,var(--line)_80%,transparent)] bg-[var(--surface)] px-2 py-0.5 text-[11px] font-medium text-[color-mix(in_srgb,var(--ink)_60%,transparent)] transition hover:border-rose-300 hover:bg-rose-50 hover:text-rose-600 dark:hover:border-rose-900/50 dark:hover:bg-rose-950/40 dark:hover:text-rose-400 active:scale-95 cursor-pointer"
+            aria-label="Excluir flashcard"
+            className="inline-flex items-center gap-1 rounded-md border border-[color-mix(in_srgb,var(--line)_80%,transparent)] bg-[var(--surface)] px-2 py-0.5 text-[11px] font-medium text-[color-mix(in_srgb,var(--ink)_60%,transparent)] transition hover:border-rose-300 hover:bg-rose-50 hover:text-rose-600 dark:hover:border-rose-900/50 dark:hover:bg-rose-950/40 dark:hover:text-rose-400 active:scale-95 cursor-pointer shadow-xs"
           >
-            <Trash2 size={12} />
-            <span>Excluir</span>
+            <Trash2 size={12} className="shrink-0" />
+            <span className="hidden sm:inline">Excluir</span>
           </button>
         </div>
       </div>
@@ -493,25 +520,28 @@ export function FlashcardPlayer({
             ) : (
               <>
                 {/* Cabeçalho do Modo Treino Ampliado */}
-                <div className="flex items-center justify-between border-b border-white/10 pb-2.5 mb-2 text-white">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="flex items-center gap-1.5 rounded-full bg-[var(--signal-soft)] text-[var(--signal)] px-2.5 py-0.5 text-xs font-semibold">
-                      <Sparkles size={13} /> {subjectName || "Treino Ampliado"}
+                <div className="flex items-center justify-between gap-2 border-b border-white/10 pb-2.5 mb-2 text-white">
+                  <div className="flex items-center gap-2 min-w-0 flex-wrap">
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--signal-soft)] text-[var(--signal)] px-2.5 py-0.5 text-xs font-semibold max-w-[200px] sm:max-w-xs truncate shrink-0">
+                      <Sparkles size={13} className="shrink-0" />
+                      <span className="truncate">{subjectName || "Treino Ampliado"}</span>
                     </span>
-                    <span className="text-xs font-medium text-neutral-400">
-                      Card {currentIndex + 1} de {deck.length}
-                    </span>
-                    <span
-                      className="rounded-full px-2 py-0.5 text-[10px] font-semibold text-white shadow-xs"
-                      style={{
-                        backgroundColor: corNivelDominio(currentCard.nivel_dominio ?? 0),
-                      }}
-                    >
-                      Nível {currentCard.nivel_dominio ?? 0}
-                    </span>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className="text-xs font-medium text-neutral-400 whitespace-nowrap">
+                        Card {currentIndex + 1} de {deck.length}
+                      </span>
+                      <span
+                        className="inline-flex items-center whitespace-nowrap shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold text-white shadow-xs"
+                        style={{
+                          backgroundColor: corNivelDominio(currentCard.nivel_dominio ?? 0),
+                        }}
+                      >
+                        Nível {currentCard.nivel_dominio ?? 0}
+                      </span>
+                    </div>
                   </div>
 
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 shrink-0">
                     <button
                       type="button"
                       onClick={() => setIsFlipped((prev) => !prev)}

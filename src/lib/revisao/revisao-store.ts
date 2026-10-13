@@ -21,16 +21,45 @@ import { calcularProximaRevisao, type RespostaRevisao } from "./spaced-repetitio
 /*  Helpers                                                            */
 /* ------------------------------------------------------------------ */
 
+let cachedAuth: {
+  supabase: SupabaseClient;
+  userId: string;
+  expiresAt: number;
+} | null = null;
+
 async function getAuthedClient(): Promise<{
   supabase: SupabaseClient;
   userId: string;
 } | null> {
   if (!isSupabaseConfigured()) return null;
+  const now = Date.now();
+  if (cachedAuth && cachedAuth.expiresAt > now) {
+    return { supabase: cachedAuth.supabase, userId: cachedAuth.userId };
+  }
+
   try {
     const { createClient } = await import("@/lib/supabase/client");
     const supabase = createClient();
+
+    // Tenta primeiro via getSession (leitura instantânea de storage/memória sem round-trip HTTP)
+    const { data: sessionData } = await supabase.auth.getSession();
+    if (sessionData?.session?.user) {
+      cachedAuth = {
+        supabase,
+        userId: sessionData.session.user.id,
+        expiresAt: now + 60_000,
+      };
+      return { supabase, userId: sessionData.session.user.id };
+    }
+
+    // Fallback para getUser() caso não haja sessão ativa em cache
     const { data, error } = await supabase.auth.getUser();
     if (error || !data.user) return null;
+    cachedAuth = {
+      supabase,
+      userId: data.user.id,
+      expiresAt: now + 60_000,
+    };
     return { supabase, userId: data.user.id };
   } catch (err) {
     console.warn("[revisao] getAuthedClient auth error:", err);
@@ -297,7 +326,7 @@ export async function listFlashcards(filters?: {
   }));
 }
 
-/** Atualiza nível de domínio e próxima revisão após resposta. */
+/** Atualiza nível de domínio e próxima revisão após resposta com proteção de timeout. */
 export async function responderFlashcard(
   id: string,
   nivelAtual: NivelDominio,
@@ -311,7 +340,7 @@ export async function responderFlashcard(
     resposta,
   );
 
-  const { error } = await auth.supabase
+  const updatePromise = auth.supabase
     .from("flashcards")
     .update({
       nivel_dominio: novoNivel,
@@ -319,7 +348,24 @@ export async function responderFlashcard(
     })
     .eq("id", id)
     .eq("user_id", auth.userId);
-  assertOk("responder flashcard", error);
+
+  const timeoutPromise = new Promise<{ error: { message: string } | null }>(
+    (_, reject) =>
+      setTimeout(
+        () => reject(new Error("Timeout de 8s ao atualizar flashcard no Supabase")),
+        8000,
+      ),
+  );
+
+  try {
+    const res = await Promise.race([updatePromise, timeoutPromise]);
+    assertOk(
+      "responder flashcard",
+      (res as { error?: { message: string } | null })?.error ?? null,
+    );
+  } catch (err) {
+    console.warn("[revisao] Erro ou timeout ao responder flashcard:", err);
+  }
 }
 
 /** Atualiza frente, verso e/ou imagens de um flashcard existente. */

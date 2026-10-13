@@ -20,6 +20,7 @@ import type {
 } from "@/lib/revisao/types";
 import * as revisaoStore from "@/lib/revisao/revisao-store";
 import type { RevisaoStats } from "@/lib/revisao/revisao-store";
+import { calcularProximaRevisao } from "@/lib/revisao/spaced-repetition";
 import { useApp } from "@/components/AppProvider";
 import { normalizeRotation } from "@/lib/utils";
 
@@ -478,11 +479,23 @@ export function RevisaoProvider({ children }: { children: ReactNode }) {
       nivelAtual: 0 | 1 | 2 | 3,
       resposta: "errei" | "dificil" | "bom" | "facil",
     ) => {
+      // Atualização otimista imediata no estado local
+      const { novoNivel, proximaRevisao } = calcularProximaRevisao(
+        nivelAtual,
+        resposta,
+      );
+      setAllFlashcards((prev) =>
+        prev.map((f) =>
+          f.id === id
+            ? { ...f, nivel_dominio: novoNivel, proxima_revisao: proximaRevisao }
+            : f,
+        ),
+      );
+      setFlashcardsDoDia((prev) => prev.filter((f) => f.id !== id));
+
       try {
         const store = revisaoStore;
         await store.responderFlashcard(id, nivelAtual, resposta);
-        // Remove do deck do dia (foi respondido)
-        setFlashcardsDoDia((prev) => prev.filter((f) => f.id !== id));
       } catch (err) {
         console.warn("[revisao] responder flashcard:", err);
       }

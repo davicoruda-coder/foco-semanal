@@ -44,6 +44,10 @@ export function calcularProximaRevisao(
   resposta: RespostaRevisao,
 ): SpacedResult {
   const hoje = new Date();
+  const safeNivel = Math.max(
+    0,
+    Math.min(3, Math.floor(Number(nivelAtual) || 0)),
+  ) as NivelDominio;
 
   switch (resposta) {
     case "errei":
@@ -54,20 +58,20 @@ export function calcularProximaRevisao(
 
     case "dificil":
       return {
-        novoNivel: Math.min(1, nivelAtual) as NivelDominio,
-        proximaRevisao: formatDate(addDays(hoje, nivelAtual === 0 ? 1 : 2)),
+        novoNivel: Math.min(1, safeNivel) as NivelDominio,
+        proximaRevisao: formatDate(addDays(hoje, safeNivel === 0 ? 1 : 2)),
       };
 
     case "bom":
       return {
-        novoNivel: 2,
-        proximaRevisao: formatDate(addDays(hoje, nivelAtual <= 1 ? 4 : 7)),
+        novoNivel: Math.max(2, safeNivel) as NivelDominio,
+        proximaRevisao: formatDate(addDays(hoje, safeNivel <= 1 ? 4 : 7)),
       };
 
     case "facil":
       return {
         novoNivel: 3,
-        proximaRevisao: formatDate(addDays(hoje, nivelAtual <= 2 ? 15 : 30)),
+        proximaRevisao: formatDate(addDays(hoje, safeNivel <= 2 ? 15 : 30)),
       };
   }
 }
