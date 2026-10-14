@@ -568,69 +568,77 @@ export function FlashcardManagerModal({
                       </div>
                     </div>
                   ) : (
-                    <div className="grid gap-2 text-xs sm:grid-cols-2">
+                    <div className="grid gap-2.5 sm:grid-cols-2 text-xs">
                       {/* Frente */}
-                      <div className="rounded-[var(--radius-tag)] bg-[color-mix(in_srgb,var(--mist)_60%,var(--surface))] p-2.5 border border-[var(--line)]/50 space-y-1.5">
-                        <span className="block text-[10px] font-bold uppercase tracking-wider text-[var(--signal)]">
-                          Pergunta:
-                        </span>
-                        {card.frente_imagem_url && (
-                          <div
-                            onClick={() => setLightboxSrc(card.frente_imagem_url!)}
-                            className="group/img relative cursor-pointer overflow-hidden rounded-md border border-[var(--line)] bg-black/5 hover:opacity-95 transition"
-                            title="Clique para ampliar"
-                          >
-                            <img
-                              src={card.frente_imagem_url}
-                              alt="Imagem da Frente"
-                              className="max-h-24 w-auto object-contain mx-auto"
-                            />
-                            <div className="absolute right-1 bottom-1 rounded bg-black/60 p-1 text-white opacity-0 group-hover/img:opacity-100 transition">
-                              <Maximize2 size={11} />
-                            </div>
+                      <div className="rounded-[var(--radius-tag)] bg-[color-mix(in_srgb,var(--mist)_45%,var(--surface))] p-3 border border-[var(--line)]/60 flex flex-col justify-between space-y-2">
+                        <div className="space-y-1.5">
+                          <div className="flex items-center justify-between">
+                            <span className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[9px] font-semibold tracking-wider uppercase text-[color-mix(in_srgb,var(--ink)_55%,transparent)] bg-[var(--surface)] border border-[var(--line)]/50">
+                              Frente
+                            </span>
                           </div>
-                        )}
-                        {card.frente ? (
-                          <p className="whitespace-pre-wrap text-[var(--ink)] leading-relaxed line-clamp-4">
-                            {card.frente}
-                          </p>
-                        ) : (
-                          <p className="text-[11px] italic text-[color-mix(in_srgb,var(--ink)_50%,transparent)]">
-                            (Card visual — baseado em imagem)
-                          </p>
-                        )}
+                          {card.frente_imagem_url && (
+                            <div
+                              onClick={() => setLightboxSrc(card.frente_imagem_url!)}
+                              className="group/img relative cursor-pointer overflow-hidden rounded-md border border-[var(--line)] bg-black/5 hover:opacity-95 transition"
+                              title="Clique para ampliar"
+                            >
+                              <img
+                                src={card.frente_imagem_url}
+                                alt="Imagem da Frente"
+                                className="max-h-24 w-auto object-contain mx-auto"
+                              />
+                              <div className="absolute right-1 bottom-1 rounded bg-black/60 p-1 text-white opacity-0 group-hover/img:opacity-100 transition">
+                                <Maximize2 size={11} />
+                              </div>
+                            </div>
+                          )}
+                          {card.frente ? (
+                            <p className="whitespace-pre-wrap text-[13px] font-medium text-[var(--ink)] leading-relaxed line-clamp-4">
+                              {card.frente}
+                            </p>
+                          ) : (
+                            <p className="text-[11px] italic text-[color-mix(in_srgb,var(--ink)_50%,transparent)]">
+                              (Card visual — baseado em imagem)
+                            </p>
+                          )}
+                        </div>
                       </div>
 
                       {/* Verso */}
-                      <div className="rounded-[var(--radius-tag)] bg-[color-mix(in_srgb,var(--ok,#16a34a)_6%,var(--surface))] p-2.5 border border-[color-mix(in_srgb,var(--ok,#16a34a)_20%,transparent)] space-y-1.5">
-                        <span className="block text-[10px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
-                          Resposta:
-                        </span>
-                        {card.verso_imagem_url && (
-                          <div
-                            onClick={() => setLightboxSrc(card.verso_imagem_url!)}
-                            className="group/img relative cursor-pointer overflow-hidden rounded-md border border-[var(--line)] bg-black/5 hover:opacity-95 transition"
-                            title="Clique para ampliar"
-                          >
-                            <img
-                              src={card.verso_imagem_url}
-                              alt="Imagem do Verso"
-                              className="max-h-24 w-auto object-contain mx-auto"
-                            />
-                            <div className="absolute right-1 bottom-1 rounded bg-black/60 p-1 text-white opacity-0 group-hover/img:opacity-100 transition">
-                              <Maximize2 size={11} />
-                            </div>
+                      <div className="rounded-[var(--radius-tag)] bg-[color-mix(in_srgb,var(--ok,#16a34a)_5%,var(--surface))] p-3 border border-[color-mix(in_srgb,var(--ok,#16a34a)_25%,transparent)] flex flex-col justify-between space-y-2">
+                        <div className="space-y-1.5">
+                          <div className="flex items-center justify-between">
+                            <span className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[9px] font-semibold tracking-wider uppercase text-emerald-700 dark:text-emerald-300 bg-emerald-500/10 border border-emerald-500/20">
+                              Verso
+                            </span>
                           </div>
-                        )}
-                        {card.verso ? (
-                          <p className="whitespace-pre-wrap text-[var(--ink)] leading-relaxed line-clamp-4">
-                            {card.verso}
-                          </p>
-                        ) : (
-                          <p className="text-[11px] italic text-[color-mix(in_srgb,var(--ink)_50%,transparent)]">
-                            (Card visual — baseado em imagem)
-                          </p>
-                        )}
+                          {card.verso_imagem_url && (
+                            <div
+                              onClick={() => setLightboxSrc(card.verso_imagem_url!)}
+                              className="group/img relative cursor-pointer overflow-hidden rounded-md border border-[var(--line)] bg-black/5 hover:opacity-95 transition"
+                              title="Clique para ampliar"
+                            >
+                              <img
+                                src={card.verso_imagem_url}
+                                alt="Imagem do Verso"
+                                className="max-h-24 w-auto object-contain mx-auto"
+                              />
+                              <div className="absolute right-1 bottom-1 rounded bg-black/60 p-1 text-white opacity-0 group-hover/img:opacity-100 transition">
+                                <Maximize2 size={11} />
+                              </div>
+                            </div>
+                          )}
+                          {card.verso ? (
+                            <p className="whitespace-pre-wrap text-[13px] text-[var(--ink)] leading-relaxed line-clamp-4">
+                              {card.verso}
+                            </p>
+                          ) : (
+                            <p className="text-[11px] italic text-[color-mix(in_srgb,var(--ink)_50%,transparent)]">
+                              (Card visual — baseado em imagem)
+                            </p>
+                          )}
+                        </div>
                       </div>
                     </div>
                   )}

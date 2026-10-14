@@ -89,6 +89,37 @@ const RATING_BUTTONS: RatingOptionConfig[] = [
   },
 ];
 
+/**
+ * Escala harmônica em 3 patamares para flashcards:
+ * 1. Curto (<80 caracteres): text-xl sm:text-2xl, centralizado
+ * 2. Médio (80-180 caracteres): text-lg sm:text-xl, centralizado
+ * 3. Longo (>180 caracteres ou múltiplas linhas): text-base, alinhado à esquerda
+ */
+function getFlashcardTypography(text?: string | null, isImmersive = false) {
+  if (!text) return "text-base";
+  const trimmed = text.trim();
+  const len = trimmed.length;
+  const lineCount = trimmed.split("\n").filter((l) => l.trim().length > 0).length;
+
+  if (isImmersive) {
+    if (lineCount > 3 || len > 180) {
+      return "text-lg sm:text-xl font-medium leading-relaxed text-left max-w-2xl mx-auto";
+    }
+    if (len > 80 || lineCount > 1) {
+      return "text-xl sm:text-2xl font-semibold leading-snug text-center max-w-2xl mx-auto";
+    }
+    return "text-2xl sm:text-3xl font-bold leading-snug text-center max-w-2xl mx-auto";
+  }
+
+  if (lineCount > 3 || len > 180) {
+    return "text-base font-normal sm:font-medium leading-relaxed text-left max-w-lg mx-auto";
+  }
+  if (len > 80 || lineCount > 1) {
+    return "text-lg sm:text-xl font-medium sm:font-semibold leading-snug text-center max-w-lg mx-auto";
+  }
+  return "text-xl sm:text-2xl font-semibold leading-snug text-center max-w-md sm:max-w-lg mx-auto";
+}
+
 export function FlashcardPlayer({
   cards,
   materiaNome,
@@ -345,23 +376,23 @@ export function FlashcardPlayer({
       <div
         key={currentCard.id}
         onClick={() => setIsFlipped(!isFlipped)}
-        className="group relative min-h-[260px] cursor-pointer rounded-[var(--radius)] border border-[var(--line)] bg-[var(--surface)] p-6 shadow-[var(--shadow-sm)] transition-all duration-200 hover:border-[var(--signal)] active:scale-[0.99] touch-manipulation select-none"
+        className={`group relative min-h-[260px] sm:min-h-[280px] flex flex-col justify-center items-center cursor-pointer rounded-[var(--radius)] border p-6 sm:p-8 shadow-[var(--shadow-sm)] transition-all duration-200 active:scale-[0.99] touch-manipulation select-none ${
+          isFlipped
+            ? "border-emerald-500/40 bg-[color-mix(in_srgb,var(--ok,#16a34a)_3%,var(--surface))] hover:border-emerald-500/70"
+            : "border-[var(--line)] bg-[var(--surface)] hover:border-[var(--signal)]"
+        }`}
       >
-        <div className="absolute right-3.5 top-3.5 flex items-center gap-1 text-[10px] font-medium text-[color-mix(in_srgb,var(--ink)_45%,transparent)] group-hover:text-[var(--signal)]">
-          <RotateCw size={12} />
-          {isFlipped ? "Ver Frente" : "Virar card"}
+        <div className="absolute right-3.5 top-3.5 flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-medium text-[color-mix(in_srgb,var(--ink)_50%,transparent)] bg-[var(--mist)]/70 group-hover:text-[var(--signal)] group-hover:bg-[var(--mist)] transition">
+          <RotateCw size={11} className="transition-transform duration-300 group-hover:rotate-180" />
+          <span>{isFlipped ? "Ver Frente" : "Virar card"}</span>
         </div>
 
         {!isFlipped ? (
           /* Frente */
-          <div className="flex flex-col justify-center space-y-3 pt-4">
-            <span className="text-xs font-semibold uppercase tracking-wider text-[var(--signal)]">
-              Desafio / Enunciado
-            </span>
-
+          <div className="w-full flex flex-col items-center justify-center my-auto py-2">
             {currentCard.frente_imagem_url && (
               <div
-                className="relative my-1 max-h-72 w-full overflow-hidden rounded-lg border border-[var(--line)] bg-black/5 dark:bg-black/25 flex items-center justify-center transition hover:border-[var(--signal)] select-none"
+                className="relative my-2 max-h-72 w-full overflow-hidden rounded-lg border border-[var(--line)] bg-black/5 dark:bg-black/25 flex items-center justify-center transition hover:border-[var(--signal)] select-none"
               >
                 <img
                   src={currentCard.frente_imagem_url}
@@ -375,20 +406,16 @@ export function FlashcardPlayer({
             {currentCard.frente && (
               <FormattedRuleText
                 text={currentCard.frente}
-                className="text-base font-medium text-[var(--ink)] leading-relaxed"
+                className={`${getFlashcardTypography(currentCard.frente)} text-[var(--ink)] w-full`}
               />
             )}
           </div>
         ) : (
           /* Verso */
-          <div className="flex flex-col justify-center space-y-3 pt-4">
-            <span className="text-xs font-semibold uppercase tracking-wider text-[var(--ok,#16a34a)]">
-              Regra Chave & Resolução
-            </span>
-
+          <div className="w-full flex flex-col items-center justify-center my-auto py-2 animate-in fade-in duration-150">
             {currentCard.verso_imagem_url && (
               <div
-                className="relative my-1 max-h-72 w-full overflow-hidden rounded-lg border border-[var(--line)] bg-black/5 dark:bg-black/25 flex items-center justify-center transition hover:border-emerald-500 select-none"
+                className="relative my-2 max-h-72 w-full overflow-hidden rounded-lg border border-emerald-500/30 bg-black/5 dark:bg-black/25 flex items-center justify-center transition hover:border-emerald-500 select-none"
               >
                 <img
                   src={currentCard.verso_imagem_url}
@@ -399,7 +426,12 @@ export function FlashcardPlayer({
               </div>
             )}
 
-            {currentCard.verso && <FormattedRuleText text={currentCard.verso} />}
+            {currentCard.verso && (
+              <FormattedRuleText
+                text={currentCard.verso}
+                className={`${getFlashcardTypography(currentCard.verso)} text-[var(--ink)] w-full`}
+              />
+            )}
           </div>
         )}
       </div>
@@ -577,20 +609,20 @@ export function FlashcardPlayer({
                 <div
                   key={`immersive-${currentCard.id}`}
                   onClick={() => setIsFlipped((prev) => !prev)}
-                  className="relative flex-1 min-h-0 flex flex-col items-center justify-center rounded-2xl border border-white/15 bg-neutral-900/85 p-3 sm:p-6 shadow-2xl cursor-pointer overflow-y-auto transition hover:border-[var(--signal)]/50 active:scale-[0.995]"
+                  className={`relative flex-1 min-h-0 flex flex-col items-center justify-center rounded-2xl border p-4 sm:p-8 shadow-2xl cursor-pointer overflow-y-auto transition active:scale-[0.995] ${
+                    isFlipped
+                      ? "border-emerald-500/30 bg-neutral-900/90 hover:border-emerald-500/60"
+                      : "border-white/15 bg-neutral-900/85 hover:border-[var(--signal)]/50"
+                  }`}
                 >
-                  <div className="absolute top-3 right-3 flex items-center gap-1 text-[11px] font-medium text-neutral-400 sm:hidden">
+                  <div className="absolute top-3.5 right-3.5 flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium text-neutral-400 bg-white/5 sm:hidden">
                     <RotateCw size={12} />
-                    {isFlipped ? "Ver Frente" : "Virar card"}
+                    <span>{isFlipped ? "Ver Frente" : "Virar card"}</span>
                   </div>
 
                   {!isFlipped ? (
                     /* Frente Ampliada */
-                    <div className="flex flex-col items-center justify-center space-y-3 w-full my-auto text-center">
-                      <span className="text-xs font-bold uppercase tracking-wider text-[var(--signal)]">
-                        Desafio / Enunciado
-                      </span>
-
+                    <div className="flex flex-col items-center justify-center space-y-4 w-full my-auto text-center">
                       {currentCard.frente_imagem_url && (
                         <div className="relative max-h-[50vh] sm:max-h-[56vh] w-full flex items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-black/40 p-1">
                           <img
@@ -603,21 +635,17 @@ export function FlashcardPlayer({
                       )}
 
                       {currentCard.frente && (
-                        <div className="max-w-2xl px-2">
+                        <div className="w-full max-w-3xl px-2 my-auto">
                           <FormattedRuleText
                             text={currentCard.frente}
-                            className="text-base sm:text-lg font-medium text-neutral-100 leading-relaxed text-center sm:text-left"
+                            className={`${getFlashcardTypography(currentCard.frente, true)} text-neutral-100 w-full`}
                           />
                         </div>
                       )}
                     </div>
                   ) : (
                     /* Verso Ampliado */
-                    <div className="flex flex-col items-center justify-center space-y-3 w-full my-auto text-center">
-                      <span className="text-xs font-bold uppercase tracking-wider text-emerald-400">
-                        Regra Chave & Resolução
-                      </span>
-
+                    <div className="flex flex-col items-center justify-center space-y-4 w-full my-auto text-center animate-in fade-in duration-150">
                       {currentCard.verso_imagem_url && (
                         <div className="relative max-h-[46vh] sm:max-h-[52vh] w-full flex items-center justify-center overflow-hidden rounded-xl border border-emerald-500/20 bg-black/40 p-1">
                           <img
@@ -630,10 +658,10 @@ export function FlashcardPlayer({
                       )}
 
                       {currentCard.verso && (
-                        <div className="max-w-2xl px-2">
+                        <div className="w-full max-w-3xl px-2 my-auto">
                           <FormattedRuleText
                             text={currentCard.verso}
-                            className="text-base sm:text-lg text-neutral-200 leading-relaxed text-center sm:text-left"
+                            className={`${getFlashcardTypography(currentCard.verso, true)} text-neutral-100 w-full`}
                           />
                         </div>
                       )}
