@@ -292,6 +292,7 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
   const stopwatchRef = useRef(stopwatch);
   const subjectStopwatchesRef = useRef(subjectStopwatches);
   const setSubjectStatusRef = useRef(setSubjectStatus);
+  const addStudySessionRef = useRef(addStudySession);
   const subjectsRef = useRef(subjects);
   /** Matérias pausadas junto com sessão/cronômetro — retomam no play. */
   const linkedPausedSubjectsRef = useRef<string[]>([]);
@@ -301,6 +302,7 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
   stopwatchRef.current = stopwatch;
   subjectStopwatchesRef.current = subjectStopwatches;
   setSubjectStatusRef.current = setSubjectStatus;
+  addStudySessionRef.current = addStudySession;
   subjectsRef.current = subjects;
 
   const persistClocks = useCallback(() => {
@@ -660,13 +662,16 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
       if (!isSubjectTimerKey(id) && id !== SIDEBAR_TIMER_ID) continue;
 
       let minutes = 25;
+      let subjectName = "Temporizador Geral";
       if (id === SIDEBAR_TIMER_ID) {
         minutes = sidebarTimerMinutes;
+        subjectName = sidebarTimerName || "Temporizador Geral";
       } else {
         const sid = subjectIdFromKey(id);
         const sub = subjectsRef.current.find((s) => s.id === sid);
         if (sub && usesStopwatchToday(sub, subjectsRef.current)) continue;
         minutes = Math.max(1, sub?.study_minutes ?? 25);
+        subjectName = sub?.name ?? "Matéria";
       }
 
       const left = liveSeconds(r, minutes);
@@ -680,6 +685,7 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
           if (delta > 0) {
             totalDelta += delta;
             focusCreditedCountdownRef.current[id] = left;
+            addFocusSeconds(delta, new Date(), subjectName);
           }
         }
       } else {
@@ -687,6 +693,7 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
           const delta = lastLeft - left;
           if (delta > 0) {
             totalDelta += delta;
+            addFocusSeconds(delta, new Date(), subjectName);
           }
         }
         focusCreditedCountdownRef.current[id] = left;
@@ -697,6 +704,8 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
     for (const [sid, sw] of Object.entries(subjectStopwatchesRef.current)) {
       const currentMs = liveStopwatchMs(sw);
       const lastMs = focusCreditedStopwatchRef.current[sid];
+      const sub = subjectsRef.current.find((s) => s.id === sid);
+      const subjectName = sub?.name ?? "Cronômetro Livre";
 
       if (lastMs == null || currentMs < lastMs) {
         focusCreditedStopwatchRef.current[sid] = currentMs;
@@ -706,6 +715,7 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
         if (deltaSec > 0) {
           totalDelta += deltaSec;
           focusCreditedStopwatchRef.current[sid] = lastMs + deltaSec * 1000;
+          addFocusSeconds(deltaSec, new Date(), subjectName);
         }
       }
     }
@@ -723,19 +733,16 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
         totalDelta += deltaSec;
         focusCreditedStopwatchRef.current["__sidebar_sw"] =
           lastMs + deltaSec * 1000;
+        addFocusSeconds(deltaSec, new Date(), "Cronômetro Geral");
       }
     }
 
-    if (totalDelta > 0) {
-      addFocusSeconds(totalDelta);
-    }
-    
     // Backup references so we don't lose them if tab is suspended
     writeCreditedRefs(
       focusCreditedCountdownRef.current,
-      focusCreditedStopwatchRef.current
+      focusCreditedStopwatchRef.current,
     );
-  }, [sidebarTimerMinutes]);
+  }, [sidebarTimerMinutes, sidebarTimerName]);
 
   useEffect(() => {
     if (!ready) return;
@@ -826,6 +833,18 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
         notify("FocoHub", `${item.name} concluída`);
         const sid = subjectIdFromKey(item.key);
         setSubjectStatusRef.current(sid, "ok");
+        const sub = subjectsRef.current.find((s) => s.id === sid);
+        const durationMin = Math.max(1, sub?.study_minutes ?? 25);
+        const nowIso = new Date().toISOString();
+        addStudySessionRef.current({
+          subject_id: sid,
+          subject_name: item.name,
+          started_at: new Date(Date.now() - durationMin * 60000).toISOString(),
+          ended_at: nowIso,
+          duration_minutes: durationMin,
+          mode: "ciclo",
+          completed: true,
+        });
         emitSubjectComplete(sid);
       }
     }, 1000);
@@ -883,6 +902,18 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
         notify("FocoHub", `${item.name} concluída`);
         const sid = subjectIdFromKey(item.key);
         setSubjectStatusRef.current(sid, "ok");
+        const sub = subjectsRef.current.find((s) => s.id === sid);
+        const durationMin = Math.max(1, sub?.study_minutes ?? 25);
+        const nowIso = new Date().toISOString();
+        addStudySessionRef.current({
+          subject_id: sid,
+          subject_name: item.name,
+          started_at: new Date(Date.now() - durationMin * 60000).toISOString(),
+          ended_at: nowIso,
+          duration_minutes: durationMin,
+          mode: "ciclo",
+          completed: true,
+        });
         emitSubjectComplete(sid);
       }
     }
@@ -1041,6 +1072,19 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
       playAlarmTone();
       notify("FocoHub", `${s.name} concluída`);
       setSubjectStatus(s.id, "ok");
+      const sid = s.id;
+      const sub = subjectsRef.current.find((x) => x.id === sid);
+      const durationMin = Math.max(1, sub?.study_minutes ?? 25);
+      const nowIso = new Date().toISOString();
+      addStudySession({
+        subject_id: sid,
+        subject_name: s.name,
+        started_at: new Date(Date.now() - durationMin * 60000).toISOString(),
+        ended_at: nowIso,
+        duration_minutes: durationMin,
+        mode: "ciclo",
+        completed: true,
+      });
       flushFocusSeconds();
       commitFocusDisplaySnapshot();
       window.dispatchEvent(new Event("foco-focus-log"));

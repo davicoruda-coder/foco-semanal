@@ -30,6 +30,7 @@ import {
 import { downloadFocusReport } from "@/lib/focus-report";
 import {
   addFocusSeconds,
+  aggregatePeriodSubjects,
   commitFocusDisplaySnapshot,
   dateKey,
   formatFocusDuration,
@@ -44,7 +45,7 @@ import {
 import {
   syncFocusLogWithCloud,
 } from "@/lib/supabase/focus-sync";
-import { DAYS } from "@/lib/types";
+import { DAYS, type StudySession } from "@/lib/types";
 
 type Range = "dia" | "semana" | "mes" | "ano";
 
@@ -121,7 +122,7 @@ function shiftPeriod(date: Date, range: Range, amount: number): Date {
 }
 
 export default function EstatisticasPage() {
-  const { user } = useApp();
+  const { user, data } = useApp();
   const { runtime, stopwatch, subjectStopwatches } = useTimerRuntime();
   const [range, setRange] = useState<Range>("semana");
   const [referenceDate, setReferenceDate] = useState(() => new Date());
@@ -354,6 +355,26 @@ export default function EstatisticasPage() {
     };
   }, [range, referenceDate, selectedDay, week, month, year]);
 
+  const periodDayKeys = useMemo(() => {
+    if (range === "dia") return [dateKey(referenceDate)];
+    if (range === "semana") return week.map((d) => d.key);
+    if (range === "mes") return month.map((d) => d.key);
+    const yearNum = referenceDate.getFullYear();
+    return Object.keys(log.days).filter((k) => k.startsWith(`${yearNum}-`));
+  }, [range, referenceDate, week, month, log.days]);
+
+  const subjectBreakdown = useMemo(() => {
+    return aggregatePeriodSubjects(log, periodDayKeys);
+  }, [log, periodDayKeys]);
+
+  const selectedDateKey = dateKey(referenceDate);
+  const daySessions = useMemo(() => {
+    return (data.study_sessions ?? []).filter((s: StudySession) => {
+      if (!s.started_at) return false;
+      return s.started_at.startsWith(selectedDateKey);
+    });
+  }, [data.study_sessions, selectedDateKey]);
+
   async function downloadReport() {
     setDownloadingReport(true);
     try {
@@ -361,6 +382,7 @@ export default function EstatisticasPage() {
         period: report.period,
         totalSeconds: headline,
         rows: report.rows,
+        subjectRows: subjectBreakdown,
         filename: report.filename,
       });
     } catch (error) {
@@ -706,6 +728,78 @@ export default function EstatisticasPage() {
               </p>
             </div>
           </section>
+
+          {/* Distribuição por Matéria no Período */}
+          <section className="surface p-5 sm:p-6 shadow-xs space-y-4">
+            <div className="flex items-center justify-between border-b border-[var(--line)]/60 pb-3">
+              <div>
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-[var(--signal)]">
+                  Tempo por Matéria no Período
+                </h3>
+                <p className="text-xs text-[color-mix(in_srgb,var(--ink)_55%,transparent)] mt-0.5">
+                  Discriminação do foco dedicado a cada disciplina e atividade
+                </p>
+              </div>
+            </div>
+
+            {subjectBreakdown.length === 0 ? (
+              <p className="text-xs text-[color-mix(in_srgb,var(--ink)_45%,transparent)] py-2">
+                Nenhum tempo discriminado por matéria neste período. Conforme você estuda as matérias do ciclo, o progresso individual aparecerá aqui.
+              </p>
+            ) : (
+              <div className="space-y-3 pt-1">
+                {subjectBreakdown.map((item) => (
+                  <div key={item.name} className="space-y-1.5">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="font-semibold text-[var(--ink)] truncate max-w-[200px] sm:max-w-xs">
+                        {item.name}
+                      </span>
+                      <div className="flex items-center gap-2 font-mono-num shrink-0">
+                        <span className="font-semibold text-[var(--ink)]">
+                          {formatFocusDuration(item.seconds)}
+                        </span>
+                        <span className="text-[11px] font-medium text-[color-mix(in_srgb,var(--ink)_50%,transparent)] w-10 text-right">
+                          {item.percentage}%
+                        </span>
+                      </div>
+                    </div>
+                    <div className="h-2 w-full overflow-hidden rounded-full bg-[color-mix(in_srgb,var(--ink)_8%,transparent)]">
+                      <div
+                        className="h-full rounded-full bg-[var(--signal)] transition-all duration-300"
+                        style={{ width: `${item.percentage}%` }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+
+          {/* Sessões Concluídas no Dia (quando na visão Dia) */}
+          {range === "dia" && daySessions.length > 0 && (
+            <section className="surface p-5 sm:p-6 shadow-xs space-y-3">
+              <h3 className="text-xs font-semibold uppercase tracking-wider opacity-60">
+                Sessões Concluídas no Dia
+              </h3>
+              <div className="divide-y divide-[var(--line)]/40 text-xs">
+                {daySessions.map((sess: StudySession) => (
+                  <div key={sess.id} className="py-2.5 flex items-center justify-between">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="font-semibold text-[var(--ink)] truncate">
+                        {sess.subject_name}
+                      </span>
+                      <span className="text-[10px] text-[color-mix(in_srgb,var(--ink)_45%,transparent)]">
+                        {new Date(sess.started_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                      </span>
+                    </div>
+                    <span className="font-mono-num font-semibold text-[var(--signal)] shrink-0">
+                      {sess.duration_minutes} min
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
         </div>
 
         {/* Coluna Lateral de Ações e Avisos */}

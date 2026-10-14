@@ -124,6 +124,7 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
     data,
     updateSettings,
     setSubjectStatus,
+    addStudySession,
     reopenSubjectForExtraTime,
     resetCycleToday,
     ready: appReady,
@@ -521,8 +522,19 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
     if (!current) return;
     if (isClockRunning(current.id, current.is_free)) toggleSubjectTimer(current.id);
     setSubjectStatus(current.id, "ok");
+    const durationMin = Math.max(1, current.study_minutes ?? 25);
+    const nowIso = new Date().toISOString();
+    addStudySession({
+      subject_id: current.id,
+      subject_name: current.name,
+      started_at: new Date(Date.now() - durationMin * 60000).toISOString(),
+      ended_at: nowIso,
+      duration_minutes: durationMin,
+      mode: "ciclo",
+      completed: true,
+    });
     advanceAfterComplete(current.id);
-  }, [isClockRunning, toggleSubjectTimer, setSubjectStatus, advanceAfterComplete]);
+  }, [isClockRunning, toggleSubjectTimer, setSubjectStatus, addStudySession, advanceAfterComplete]);
 
   const extendCurrentSubject = useCallback(
     (extraMinutes: number) => {

@@ -9,6 +9,8 @@ export type FocusDay = {
   seconds: number;
   /** Segundos por hora (0–23) */
   byHour: number[];
+  /** Segundos por matéria / atividade (Nome -> segundos) */
+  bySubject?: Record<string, number>;
 };
 
 export type FocusLog = {
@@ -21,7 +23,7 @@ function emptyHours(): number[] {
 }
 
 function emptyDay(): FocusDay {
-  return { seconds: 0, byHour: emptyHours() };
+  return { seconds: 0, byHour: emptyHours(), bySubject: {} };
 }
 
 export function dateKey(d = new Date()): string {
@@ -81,7 +83,7 @@ export function commitFocusDisplaySnapshot(log?: FocusLog): FocusLog {
   return next;
 }
 
-/** Une dois logs: por hora, fica o maior valor (evita perder tempo entre aparelhos). */
+/** Une dois logs: por hora e por matéria, fica o maior valor (evita perder tempo entre aparelhos). */
 export function mergeFocusLogs(a: FocusLog, b: FocusLog): FocusLog {
   const keys = new Set([...Object.keys(a.days), ...Object.keys(b.days)]);
   const days: Record<string, FocusDay> = {};
@@ -93,9 +95,16 @@ export function mergeFocusLogs(a: FocusLog, b: FocusLog): FocusLog {
       byHour[h] = Math.max(da.byHour[h] ?? 0, db.byHour[h] ?? 0);
     }
     const hourSum = byHour.reduce((sum, n) => sum + n, 0);
+
+    const bySubject: Record<string, number> = { ...(da.bySubject ?? {}) };
+    for (const [sub, sec] of Object.entries(db.bySubject ?? {})) {
+      bySubject[sub] = Math.max(bySubject[sub] ?? 0, sec);
+    }
+
     days[key] = {
       byHour,
       seconds: Math.max(hourSum, da.seconds ?? 0, db.seconds ?? 0),
+      bySubject,
     };
   }
   return { version: 1, days };
@@ -109,8 +118,12 @@ export function clearFocusLog(): FocusLog {
   return empty;
 }
 
-/** Acrescenta segundos de foco no momento atual (dia + hora). */
-export function addFocusSeconds(seconds: number, at = new Date()): FocusLog {
+/** Acrescenta segundos de foco no momento atual (dia + hora) e opcionalmente na matéria associada. */
+export function addFocusSeconds(
+  seconds: number,
+  at = new Date(),
+  subjectName?: string,
+): FocusLog {
   if (seconds <= 0) return loadFocusLog();
   const log = loadFocusLog();
   const key = dateKey(at);
@@ -119,6 +132,12 @@ export function addFocusSeconds(seconds: number, at = new Date()): FocusLog {
   if (!day.byHour || day.byHour.length !== 24) day.byHour = emptyHours();
   day.seconds += seconds;
   day.byHour[hour] = (day.byHour[hour] ?? 0) + seconds;
+
+  if (subjectName) {
+    if (!day.bySubject) day.bySubject = {};
+    day.bySubject[subjectName] = (day.bySubject[subjectName] ?? 0) + seconds;
+  }
+
   log.days[key] = day;
   saveFocusLog(log);
   return log;
@@ -128,9 +147,50 @@ export function getDay(log: FocusLog, key: string): FocusDay {
   const d = log.days[key];
   if (!d) return emptyDay();
   if (!d.byHour || d.byHour.length !== 24) {
-    return { seconds: d.seconds ?? 0, byHour: emptyHours() };
+    return {
+      seconds: d.seconds ?? 0,
+      byHour: emptyHours(),
+      bySubject: d.bySubject ?? {},
+    };
   }
-  return d;
+  return { ...d, bySubject: d.bySubject ?? {} };
+}
+
+/** Agrega os segundos por matéria para uma lista de chaves de dias */
+export function aggregatePeriodSubjects(
+  log: FocusLog,
+  dayKeys: string[],
+): { name: string; seconds: number; percentage: number }[] {
+  const totals: Record<string, number> = {};
+  let totalPeriodSeconds = 0;
+
+  for (const k of dayKeys) {
+    const day = getDay(log, k);
+    totalPeriodSeconds += day.seconds;
+    for (const [name, sec] of Object.entries(day.bySubject ?? {})) {
+      totals[name] = (totals[name] ?? 0) + sec;
+    }
+  }
+
+  // Se houver tempo de foco registrado sem matéria específica (ex: sessões anteriores a este update),
+  // atribui a diferença a "Geral / Outros" para o total bater com o cabeçalho
+  const accounted = Object.values(totals).reduce((a, b) => a + b, 0);
+  if (totalPeriodSeconds > accounted) {
+    const diff = totalPeriodSeconds - accounted;
+    totals["Geral / Outros"] = (totals["Geral / Outros"] ?? 0) + diff;
+  }
+
+  return Object.entries(totals)
+    .filter(([, sec]) => sec > 0)
+    .map(([name, seconds]) => ({
+      name,
+      seconds,
+      percentage:
+        totalPeriodSeconds > 0
+          ? Math.round((seconds / totalPeriodSeconds) * 100)
+          : 0,
+    }))
+    .sort((a, b) => b.seconds - a.seconds);
 }
 
 export function formatFocusDuration(totalSeconds: number): string {
