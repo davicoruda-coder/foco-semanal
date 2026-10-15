@@ -315,7 +315,7 @@ export function FlashcardPlayer({
           {subjectName && (
             <>
               <span
-                className="font-bold text-[var(--ink)] truncate max-w-[110px] xs:max-w-[150px] sm:max-w-[220px]"
+                className="font-bold text-[var(--ink)] truncate max-w-[95px] xs:max-w-[140px] sm:max-w-[220px]"
                 title={subjectName}
               >
                 {subjectName}
@@ -334,15 +334,15 @@ export function FlashcardPlayer({
           </span>
         </div>
 
-        {/* Botões de Ação */}
+        {/* Botões de Ação Harmonizados */}
         <div className="flex items-center gap-1.5 shrink-0">
           <button
             type="button"
             onClick={() => setIsImmersiveMode(true)}
             title="Entrar no Modo Foco (Tela Cheia)"
-            className="inline-flex items-center gap-1.5 rounded-md border border-[color-mix(in_srgb,var(--line)_80%,transparent)] bg-[var(--surface)] px-2.5 py-0.5 text-[11px] font-medium text-[color-mix(in_srgb,var(--ink)_75%,transparent)] transition hover:border-[var(--signal)] hover:text-[var(--signal)] active:scale-95 cursor-pointer shadow-xs"
+            className="inline-flex items-center gap-1.5 rounded-[var(--radius-tag)] border border-[color-mix(in_srgb,var(--line)_80%,transparent)] bg-[var(--surface)] px-2.5 h-[30px] text-xs font-medium text-[color-mix(in_srgb,var(--ink)_80%,transparent)] transition hover:border-[var(--signal)] hover:text-[var(--signal)] hover:bg-[var(--signal-soft)]/20 active:scale-95 cursor-pointer shadow-xs touch-manipulation"
           >
-            <Maximize2 size={12} className="text-[var(--signal)] shrink-0" />
+            <Maximize2 size={14} className="text-[var(--signal)] shrink-0" />
             <span className="hidden sm:inline">Modo Foco</span>
             <span className="sm:hidden">Foco</span>
           </button>
@@ -354,10 +354,10 @@ export function FlashcardPlayer({
             }}
             title="Excluir flashcard"
             aria-label="Excluir flashcard"
-            className="inline-flex items-center gap-1 rounded-md border border-[color-mix(in_srgb,var(--line)_80%,transparent)] bg-[var(--surface)] px-2 py-0.5 text-[11px] font-medium text-[color-mix(in_srgb,var(--ink)_60%,transparent)] transition hover:border-rose-300 hover:bg-rose-50 hover:text-rose-600 dark:hover:border-rose-900/50 dark:hover:bg-rose-950/40 dark:hover:text-rose-400 active:scale-95 cursor-pointer shadow-xs"
+            className="inline-flex items-center gap-1.5 rounded-[var(--radius-tag)] border border-[color-mix(in_srgb,var(--line)_80%,transparent)] bg-[var(--surface)] px-2.5 h-[30px] text-xs font-medium text-[color-mix(in_srgb,var(--ink)_75%,transparent)] transition hover:border-rose-300 hover:bg-rose-50/80 hover:text-rose-600 dark:hover:border-rose-900/50 dark:hover:bg-rose-950/40 dark:hover:text-rose-400 active:scale-95 cursor-pointer shadow-xs touch-manipulation"
           >
-            <Trash2 size={12} className="shrink-0" />
-            <span className="hidden sm:inline">Excluir</span>
+            <Trash2 size={14} className="shrink-0 text-[color-mix(in_srgb,var(--ink)_60%,transparent)]" />
+            <span>Excluir</span>
           </button>
         </div>
       </div>
