@@ -21,9 +21,14 @@ export function ServiceWorkerRegister() {
       return;
     }
 
-    void navigator.serviceWorker.register("/sw.js").catch(() => {
-      /* ignore */
-    });
+    void navigator.serviceWorker
+      .register("/sw.js")
+      .then((reg) => {
+        void reg.update();
+      })
+      .catch(() => {
+        /* ignore */
+      });
   }, []);
 
   return null;
