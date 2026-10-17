@@ -274,14 +274,9 @@ export function FlashcardManagerModal({
               className="border-b border-[var(--signal)]/30 bg-[color-mix(in_srgb,var(--signal)_4%,var(--surface))] p-4 sm:px-6 space-y-3.5 shrink-0 animate-in fade-in duration-150"
             >
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-bold uppercase tracking-wider text-[var(--signal)]">
-                  Criar Flashcard
-                </span>
-                <span className="hidden sm:inline-block text-[11px] text-[color-mix(in_srgb,var(--ink)_55%,transparent)]">
-                  • Suporta texto, foto ou híbrido (pergunta/resposta com imagem)
-                </span>
-              </div>
+              <span className="text-xs font-bold uppercase tracking-wider text-[var(--signal)]">
+                Criar Flashcard
+              </span>
               <button
                 type="button"
                 onClick={() => {
@@ -329,33 +324,28 @@ export function FlashcardManagerModal({
               />
             </div>
 
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-2 pt-1 border-t border-[var(--line)]/50">
-              <p className="text-[11px] text-[color-mix(in_srgb,var(--ink)_50%,transparent)] self-start sm:self-center">
-                Dica: Cole prints direto no campo com <kbd className="font-mono text-[10px] bg-[var(--mist)] px-1 rounded border border-[var(--line)]">Ctrl+V</kbd> ou clique no botão à direita.
-              </p>
-              <div className="flex items-center gap-2 self-end sm:self-center">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowNewNewCard(false);
-                    setNewFrente("");
-                    setNewVerso("");
-                    setNewFrenteImg(null);
-                    setNewVersoImg(null);
-                    setCreateError(null);
-                  }}
-                  className="rounded-[var(--radius-btn)] border border-[var(--line)] px-3 py-1.5 text-xs font-medium text-[var(--ink)] hover:bg-[var(--mist)] transition"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  disabled={savingNew || !isNewCardValid}
-                  className="inline-flex items-center gap-1.5 rounded-[var(--radius-btn)] bg-[var(--signal)] px-4 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:brightness-110 disabled:opacity-50 active:scale-95 cursor-pointer"
-                >
-                  {savingNew ? "Salvando..." : "Salvar Flashcard"}
-                </button>
-              </div>
+            <div className="flex items-center justify-end gap-2 pt-1 border-t border-[var(--line)]/50">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowNewNewCard(false);
+                  setNewFrente("");
+                  setNewVerso("");
+                  setNewFrenteImg(null);
+                  setNewVersoImg(null);
+                  setCreateError(null);
+                }}
+                className="rounded-[var(--radius-btn)] border border-[var(--line)] px-3 py-1.5 text-xs font-medium text-[var(--ink)] hover:bg-[var(--mist)] transition"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                disabled={savingNew || !isNewCardValid}
+                className="inline-flex items-center gap-1.5 rounded-[var(--radius-btn)] bg-[var(--signal)] px-4 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:brightness-110 disabled:opacity-50 active:scale-95 cursor-pointer"
+              >
+                {savingNew ? "Salvando..." : "Salvar Flashcard"}
+              </button>
             </div>
           </form>
         )}

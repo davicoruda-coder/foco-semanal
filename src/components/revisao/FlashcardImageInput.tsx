@@ -230,9 +230,6 @@ export function FlashcardImageInput({
                 <UploadCloud size={15} />
                 <span>Anexar Foto ou Print</span>
               </div>
-              <span className="text-[11px] text-[color-mix(in_srgb,var(--ink)_45%,transparent)]">
-                (ou cole com Ctrl+V)
-              </span>
             </div>
           )}
         </div>

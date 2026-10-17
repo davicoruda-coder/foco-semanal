@@ -72,12 +72,12 @@ export function FlashcardSideComposer({
   else if (hasText) formatType = "texto";
 
   const defaultPlaceholder = isFrente
-    ? "Ex: O que é o princípio da insignificância? (ou anexe imagem abaixo)"
-    : "Ex: Causa supralegal de exclusão da tipicidade material... (ou anexe imagem abaixo)";
+    ? "Ex: O que é o princípio da insignificância?"
+    : "Ex: Causa supralegal de exclusão da tipicidade material...";
 
   const defaultPlaceholderWithImg = isFrente
-    ? "Adicione uma pergunta ou contexto adicional (opcional com imagem)..."
-    : "Adicione uma resposta, regra ou explicação (opcional com imagem)...";
+    ? "Adicione uma pergunta ou contexto..."
+    : "Adicione uma resposta ou explicação...";
 
   const currentPlaceholder = hasImage
     ? placeholderWithImage || defaultPlaceholderWithImg
@@ -239,11 +239,6 @@ export function FlashcardSideComposer({
               Texto
             </span>
           )}
-          {formatType === "vazio" && (
-            <span className="inline-flex items-center text-[10px] italic text-[color-mix(in_srgb,var(--ink)_40%,transparent)]">
-              Preencha texto ou foto
-            </span>
-          )}
         </div>
       </div>
 
@@ -340,23 +335,22 @@ export function FlashcardSideComposer({
         </div>
       )}
 
-      {/* Barra Inferior Acoplada: Dica de Atalho à Esquerda e Botão de Imagem no Canto Inferior Direito */}
+      {/* Barra Inferior Acoplada: Botão de Imagem no Canto Inferior Direito */}
       <div className="flex items-center justify-between border-t border-[var(--line)]/40 px-2.5 py-1.5 bg-[color-mix(in_srgb,var(--mist)_15%,var(--surface))] rounded-b-[calc(var(--radius-tag)-1px)]">
-        {/* Dica discreta à esquerda */}
-        <span className="text-[10px] text-[color-mix(in_srgb,var(--ink)_45%,transparent)] select-none">
-          {imageUrl
-            ? "Imagem acoplada ao card"
-            : dragging
-              ? "Solte a imagem aqui!"
-              : "Cole com Ctrl+V ou arraste"}
-        </span>
+        <div>
+          {dragging && (
+            <span className="text-[10px] font-medium text-[var(--signal)] select-none animate-pulse">
+              Solte a imagem aqui
+            </span>
+          )}
+        </div>
 
         {/* Botão de Anexar Foto no Canto Inferior Direito */}
         <button
           type="button"
           onClick={() => !disabled && !uploading && fileInputRef.current?.click()}
           disabled={disabled || uploading}
-          className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-semibold transition active:scale-95 ${
+          className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-semibold transition active:scale-95 ml-auto ${
             imageUrl
               ? "bg-[color-mix(in_srgb,var(--signal)_10%,transparent)] text-[var(--signal)] hover:bg-[color-mix(in_srgb,var(--signal)_18%,transparent)]"
               : "border border-[var(--line)] bg-[var(--surface)] text-[color-mix(in_srgb,var(--ink)_75%,transparent)] hover:border-[var(--signal)] hover:text-[var(--signal)] hover:bg-[var(--signal-soft)]/20 shadow-2xs"
@@ -364,7 +358,7 @@ export function FlashcardSideComposer({
           title={
             imageUrl
               ? "Adicionar outra imagem ou substituir"
-              : "Anexar foto ou print (ou cole com Ctrl+V)"
+              : "Anexar foto ou print"
           }
         >
           <ImagePlus size={13} className="shrink-0 text-[var(--signal)]" />

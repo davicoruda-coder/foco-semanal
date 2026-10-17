@@ -83,10 +83,11 @@ const TOPICS: TutorialTopic[] = [
     steps: [
       "Na aba Fixar, clique em '+ Anotar no Caderno' logo após errar ou ter dúvida em uma questão, exercício ou prova.",
       "Preencha os dados essenciais: Disciplina, Assunto, Causa do Erro (Atenção, Teoria ou Interpretação) e a Regra Aprendida / O que não esquecer.",
-      "Flashcards e Repetição Espaçada: formule seus próprios cartões ou gere com IA. O card entra no deck com repetição inicial em 24h para fixação imediata; ao acertar, os intervalos expandem automaticamente (4 a 7 dias, depois 15 a 30 dias).",
+      "Flashcards com Texto ou Fotos: formule seus próprios cartões manuais ou gere com IA. Cada lado (Frente e Verso) suporta texto, foto/print ou formato híbrido. Você pode colar prints diretamente com Ctrl+V, arrastar a imagem para o campo ou clicar em 'Anexar foto ou print'.",
+      "Repetição Espaçada: o card entra no deck com repetição inicial em 24h para fixação imediata; ao acertar, os intervalos expandem automaticamente (4 a 7 dias, depois 15 a 30 dias).",
       "Deck Global vs Treino Isolado: utilize o 'Deck Global do Dia' para revisar rapidamente todos os cards previstos para hoje pelo algoritmo, ou treine uma disciplina específica de forma isolada nos 'Decks por Matéria'.",
     ],
-    tip: "Atalhos rápidos no computador: ao revisar flashcards no computador, use a barra de Espaço para virar o cartão/mostrar a resposta e as teclas 1 a 4 para classificar sua recordação (1: Errei, 2: Difícil, 3: Bom, 4: Fácil). No celular, basta tocar no cartão e botões. Consulte também as Métricas de Diagnóstico para ver onde reforçar a teoria.",
+    tip: "Atalhos rápidos no computador: cole prints direto no editor com Ctrl+V. Na revisão de flashcards, use a barra de Espaço para virar o cartão/mostrar a resposta e as teclas 1 a 4 para classificar sua recordação (1: Errei, 2: Difícil, 3: Bom, 4: Fácil). No celular, basta tocar no cartão e botões. Consulte também as Métricas de Diagnóstico para ver onde reforçar a teoria.",
   },
   {
     id: "agenda",
