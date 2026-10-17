@@ -22,7 +22,7 @@ import { NIVEL_DOMINIO_LABEL } from "@/lib/revisao/types";
 import { DialogFrame } from "@/components/DialogFrame";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { useRevisao } from "./RevisaoProvider";
-import { FlashcardImageInput } from "./FlashcardImageInput";
+import { FlashcardSideComposer } from "./FlashcardSideComposer";
 import { FlashcardImageLightbox } from "./FlashcardImageLightbox";
 
 interface FlashcardManagerModalProps {
@@ -267,15 +267,21 @@ export function FlashcardManagerModal({
         </div>
 
           {/* Formulário: Adicionar Novo Card Manual */}
+          {/* Formulário: Adicionar Novo Card Manual com Campos Acoplados */}
           {showNewCard && (
             <form
               onSubmit={handleCreateManual}
-              className="border-b border-[var(--signal)]/30 bg-[color-mix(in_srgb,var(--signal)_4%,var(--surface))] p-4 sm:px-6 space-y-4 max-h-[50vh] overflow-y-auto shrink-0"
+              className="border-b border-[var(--signal)]/30 bg-[color-mix(in_srgb,var(--signal)_4%,var(--surface))] p-4 sm:px-6 space-y-3.5 shrink-0 animate-in fade-in duration-150"
             >
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold uppercase tracking-wider text-[var(--signal)]">
-                Criar Flashcard Manual
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold uppercase tracking-wider text-[var(--signal)]">
+                  Criar Flashcard
+                </span>
+                <span className="hidden sm:inline-block text-[11px] text-[color-mix(in_srgb,var(--ink)_55%,transparent)]">
+                  • Suporta texto, foto ou híbrido (pergunta/resposta com imagem)
+                </span>
+              </div>
               <button
                 type="button"
                 onClick={() => {
@@ -299,72 +305,57 @@ export function FlashcardManagerModal({
               </div>
             )}
 
-            <div className="space-y-3.5">
-              {/* Frente */}
-              <div className="space-y-1.5">
-                <label className="block text-[11px] font-medium text-[color-mix(in_srgb,var(--ink)_75%,transparent)]">
-                  Frente (Pergunta / Conceito / Enunciado):
-                </label>
-                <textarea
-                  rows={2}
-                  value={newFrente}
-                  onChange={(e) => setNewFrente(e.target.value)}
-                  placeholder="Ex: O que é o princípio da insignificância? (ou deixe em branco se for só imagem)"
-                  className="w-full rounded-[var(--radius-tag)] border border-[var(--line)] bg-[var(--surface)] p-2.5 text-xs text-[var(--ink)] outline-none focus:border-[var(--signal)] resize-none"
-                />
-                <FlashcardImageInput
-                  label="Foto ou Print da Frente (Opcional):"
-                  side="frente"
-                  value={newFrenteImg}
-                  onChange={setNewFrenteImg}
-                  disabled={savingNew}
-                />
-              </div>
-
-              {/* Verso */}
-              <div className="space-y-1.5 pt-1 border-t border-[var(--line)]/50">
-                <label className="block text-[11px] font-medium text-[color-mix(in_srgb,var(--ink)_75%,transparent)]">
-                  Verso (Resposta / Explicação / Resolução):
-                </label>
-                <textarea
-                  rows={2}
-                  value={newVerso}
-                  onChange={(e) => setNewVerso(e.target.value)}
-                  placeholder="Ex: Causa supralegal de exclusão... (ou deixe em branco se for só imagem)"
-                  className="w-full rounded-[var(--radius-tag)] border border-[var(--line)] bg-[var(--surface)] p-2.5 text-xs text-[var(--ink)] outline-none focus:border-[var(--signal)] resize-none"
-                />
-                <FlashcardImageInput
-                  label="Foto ou Print do Verso (Opcional):"
-                  side="verso"
-                  value={newVersoImg}
-                  onChange={setNewVersoImg}
-                  disabled={savingNew}
-                />
-              </div>
+            {/* Grid 2 Colunas: Frente e Verso lado a lado no desktop */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <FlashcardSideComposer
+                side="frente"
+                label="Frente (Pergunta)"
+                textValue={newFrente}
+                onTextChange={setNewFrente}
+                imageUrl={newFrenteImg}
+                onImageChange={setNewFrenteImg}
+                disabled={savingNew}
+                onLightboxOpen={setLightboxSrc}
+              />
+              <FlashcardSideComposer
+                side="verso"
+                label="Verso (Resposta)"
+                textValue={newVerso}
+                onTextChange={setNewVerso}
+                imageUrl={newVersoImg}
+                onImageChange={setNewVersoImg}
+                disabled={savingNew}
+                onLightboxOpen={setLightboxSrc}
+              />
             </div>
 
-            <div className="flex justify-end gap-2 pt-1">
-              <button
-                type="button"
-                onClick={() => {
-                  setShowNewNewCard(false);
-                  setNewFrente("");
-                  setNewVerso("");
-                  setNewFrenteImg(null);
-                  setNewVersoImg(null);
-                  setCreateError(null);
-                }}
-                className="rounded-[var(--radius-btn)] border border-[var(--line)] px-3 py-1.5 text-xs font-medium text-[var(--ink)] hover:bg-[var(--mist)] transition"
-              >
-                Cancelar
-              </button>
-              <button
-                type="submit"
-                disabled={savingNew || !isNewCardValid}
-                className="inline-flex items-center gap-1.5 rounded-[var(--radius-btn)] bg-[var(--signal)] px-3.5 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:brightness-110 disabled:opacity-50"
-              >
-                {savingNew ? "Salvando..." : "Salvar Flashcard"}
-              </button>
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-2 pt-1 border-t border-[var(--line)]/50">
+              <p className="text-[11px] text-[color-mix(in_srgb,var(--ink)_50%,transparent)] self-start sm:self-center">
+                Dica: Cole prints direto no campo com <kbd className="font-mono text-[10px] bg-[var(--mist)] px-1 rounded border border-[var(--line)]">Ctrl+V</kbd> ou clique no botão à direita.
+              </p>
+              <div className="flex items-center gap-2 self-end sm:self-center">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowNewNewCard(false);
+                    setNewFrente("");
+                    setNewVerso("");
+                    setNewFrenteImg(null);
+                    setNewVersoImg(null);
+                    setCreateError(null);
+                  }}
+                  className="rounded-[var(--radius-btn)] border border-[var(--line)] px-3 py-1.5 text-xs font-medium text-[var(--ink)] hover:bg-[var(--mist)] transition"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingNew || !isNewCardValid}
+                  className="inline-flex items-center gap-1.5 rounded-[var(--radius-btn)] bg-[var(--signal)] px-4 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:brightness-110 disabled:opacity-50 active:scale-95 cursor-pointer"
+                >
+                  {savingNew ? "Salvando..." : "Salvar Flashcard"}
+                </button>
+              </div>
             </div>
           </form>
         )}
@@ -452,12 +443,35 @@ export function FlashcardManagerModal({
                         </span>
                       )}
 
-                      {/* Badge se contiver imagem */}
-                      {hasImages && (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-indigo-500/10 px-2 py-0.5 text-indigo-600 dark:text-indigo-400">
-                          <ImageIcon size={10} /> Com Imagem
-                        </span>
-                      )}
+                      {/* Badge de formato do card (Híbrido / Imagem / Texto) */}
+                      {(() => {
+                        const hasFrontImg = Boolean(card.frente_imagem_url);
+                        const hasBackImg = Boolean(card.verso_imagem_url);
+                        const hasFrontText = Boolean(card.frente?.trim());
+                        const hasBackText = Boolean(card.verso?.trim());
+                        const isHybrid =
+                          (hasFrontImg && hasFrontText) ||
+                          (hasBackImg && hasBackText) ||
+                          (hasFrontImg && hasBackText) ||
+                          (hasFrontText && hasBackImg);
+                        const isOnlyImg = (hasFrontImg || hasBackImg) && !hasFrontText && !hasBackText;
+
+                        if (isHybrid) {
+                          return (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-[color-mix(in_srgb,#a855f7_12%,transparent)] px-2 py-0.5 text-[#a855f7] dark:text-[#c084fc] font-semibold">
+                              <Sparkles size={10} /> Híbrido
+                            </span>
+                          );
+                        }
+                        if (isOnlyImg) {
+                          return (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-blue-500/10 px-2 py-0.5 text-blue-600 dark:text-blue-400">
+                              <ImageIcon size={10} /> Imagem
+                            </span>
+                          );
+                        }
+                        return null;
+                      })()}
 
                       {/* Badge de Domínio */}
                       <span className="rounded-full bg-[var(--mist)] px-2 py-0.5 text-[color-mix(in_srgb,var(--ink)_65%,transparent)]">
@@ -500,44 +514,29 @@ export function FlashcardManagerModal({
 
                   {/* Conteúdo do Card */}
                   {isEditing ? (
-                    <div className="space-y-3 pt-1">
-                      <div className="space-y-1.5">
-                        <span className="block text-[10px] uppercase font-bold tracking-wider text-[var(--signal)]">
-                          Frente (Pergunta / Imagem):
-                        </span>
-                        <textarea
-                          rows={2}
-                          value={editFrente}
-                          onChange={(e) => setEditFrente(e.target.value)}
-                          placeholder="Texto da pergunta (ou deixe em branco se usar apenas imagem)..."
-                          className="w-full rounded-[var(--radius-tag)] border border-[var(--signal)]/50 bg-[var(--surface)] p-2 text-xs text-[var(--ink)] outline-none focus:border-[var(--signal)]"
-                        />
-                        <FlashcardImageInput
-                          label="Foto ou Print da Frente:"
+                    <div className="space-y-2.5 pt-1">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                        <FlashcardSideComposer
                           side="frente"
-                          value={editFrenteImg}
-                          onChange={setEditFrenteImg}
+                          label="Frente (Pergunta)"
+                          textValue={editFrente}
+                          onTextChange={setEditFrente}
+                          imageUrl={editFrenteImg}
+                          onImageChange={setEditFrenteImg}
                           disabled={savingEdit}
+                          onLightboxOpen={setLightboxSrc}
+                          compact
                         />
-                      </div>
-
-                      <div className="space-y-1.5 pt-1 border-t border-[var(--line)]/50">
-                        <span className="block text-[10px] uppercase font-bold tracking-wider text-emerald-600 dark:text-emerald-400">
-                          Verso (Resposta / Imagem):
-                        </span>
-                        <textarea
-                          rows={2}
-                          value={editVerso}
-                          onChange={(e) => setEditVerso(e.target.value)}
-                          placeholder="Texto da resposta (ou deixe em branco se usar apenas imagem)..."
-                          className="w-full rounded-[var(--radius-tag)] border border-emerald-500/50 bg-[var(--surface)] p-2 text-xs text-[var(--ink)] outline-none focus:border-emerald-500"
-                        />
-                        <FlashcardImageInput
-                          label="Foto ou Print do Verso:"
+                        <FlashcardSideComposer
                           side="verso"
-                          value={editVersoImg}
-                          onChange={setEditVersoImg}
+                          label="Verso (Resposta)"
+                          textValue={editVerso}
+                          onTextChange={setEditVerso}
+                          imageUrl={editVersoImg}
+                          onImageChange={setEditVersoImg}
                           disabled={savingEdit}
+                          onLightboxOpen={setLightboxSrc}
+                          compact
                         />
                       </div>
 
@@ -552,7 +551,7 @@ export function FlashcardManagerModal({
                         <button
                           type="button"
                           onClick={() => setEditingCardId(null)}
-                          className="rounded-[var(--radius-btn)] border border-[var(--line)] px-2.5 py-1 text-xs font-medium hover:bg-[var(--mist)]"
+                          className="rounded-[var(--radius-btn)] border border-[var(--line)] px-2.5 py-1 text-xs font-medium hover:bg-[var(--mist)] transition"
                         >
                           Cancelar
                         </button>
@@ -560,7 +559,7 @@ export function FlashcardManagerModal({
                           type="button"
                           disabled={savingEdit || !isEditCardValid}
                           onClick={() => handleSaveEdit(card.id)}
-                          className="inline-flex items-center gap-1 rounded-[var(--radius-btn)] bg-[var(--signal)] px-3 py-1 text-xs font-semibold text-white hover:brightness-110 disabled:opacity-50"
+                          className="inline-flex items-center gap-1 rounded-[var(--radius-btn)] bg-[var(--signal)] px-3 py-1 text-xs font-semibold text-white hover:brightness-110 disabled:opacity-50 transition active:scale-95"
                         >
                           <Check size={13} strokeWidth={2.5} />
                           {savingEdit ? "Salvando..." : "Salvar"}

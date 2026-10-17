@@ -30,7 +30,7 @@ import { DialogFrame } from "@/components/DialogFrame";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { QuickCaptureForm } from "./QuickCaptureForm";
 import { FormattedRuleText } from "./FormattedRuleText";
-import { FlashcardImageInput } from "./FlashcardImageInput";
+import { FlashcardSideComposer } from "./FlashcardSideComposer";
 import {
   CAUSA_ERRO_LABEL,
   STATUS_RESULTADO_LABEL,
@@ -1126,46 +1126,25 @@ export function CadernoList({
                 </div>
               )}
 
-              <div className="space-y-3.5">
-                <div className="space-y-1.5">
-                  <label className="block text-xs font-medium uppercase tracking-wider text-[color-mix(in_srgb,var(--ink)_65%,transparent)]">
-                    Frente (Pergunta, Contexto ou Imagem)
-                  </label>
-                  <textarea
-                    value={cardFrente}
-                    onChange={(e) => setCardFrente(e.target.value)}
-                    rows={3}
-                    className="w-full resize-none rounded-[var(--radius-btn)] border border-[var(--line)] bg-[var(--surface)] px-3 py-2.5 text-sm text-[var(--ink)] outline-none transition focus:border-[var(--signal)] focus:ring-2 focus:ring-[var(--signal-soft)] leading-relaxed"
-                    placeholder="Ex: Qual é a regra sobre..."
-                  />
-                  <FlashcardImageInput
-                    label="Foto ou Print da Frente (Opcional):"
-                    side="frente"
-                    value={cardFrenteImg}
-                    onChange={setCardFrenteImg}
-                    disabled={savingManualCard}
-                  />
-                </div>
-
-                <div className="space-y-1.5 pt-1 border-t border-[var(--line)]/50">
-                  <label className="block text-xs font-medium uppercase tracking-wider text-[color-mix(in_srgb,var(--ink)_65%,transparent)]">
-                    Verso (Resposta, Regra ou Imagem)
-                  </label>
-                  <textarea
-                    value={cardVerso}
-                    onChange={(e) => setCardVerso(e.target.value)}
-                    rows={3}
-                    className="w-full resize-none rounded-[var(--radius-btn)] border border-[var(--line)] bg-[var(--surface)] px-3 py-2.5 text-sm text-[var(--ink)] outline-none transition focus:border-[var(--signal)] focus:ring-2 focus:ring-[var(--signal-soft)] leading-relaxed"
-                    placeholder="Ex: Não ocorre crase..."
-                  />
-                  <FlashcardImageInput
-                    label="Foto ou Print do Verso (Opcional):"
-                    side="verso"
-                    value={cardVersoImg}
-                    onChange={setCardVersoImg}
-                    disabled={savingManualCard}
-                  />
-                </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <FlashcardSideComposer
+                  side="frente"
+                  label="Frente (Pergunta / Enunciado)"
+                  textValue={cardFrente}
+                  onTextChange={setCardFrente}
+                  imageUrl={cardFrenteImg}
+                  onImageChange={setCardFrenteImg}
+                  disabled={savingManualCard}
+                />
+                <FlashcardSideComposer
+                  side="verso"
+                  label="Verso (Resposta / Regra)"
+                  textValue={cardVerso}
+                  onTextChange={setCardVerso}
+                  imageUrl={cardVersoImg}
+                  onImageChange={setCardVersoImg}
+                  disabled={savingManualCard}
+                />
               </div>
             </div>
 
