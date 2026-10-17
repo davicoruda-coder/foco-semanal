@@ -23,6 +23,7 @@ import {
   Loader2,
   BookOpen,
   LayoutGrid,
+  Sparkles,
   List,
   RotateCcw,
 } from "lucide-react";
@@ -735,15 +736,17 @@ export function CadernoList({
                         <Copy size={14} />
                       )}
                     </button>
-                    <button
-                      type="button"
-                      onClick={() => handleOpenManualCard(q)}
-                      className="rounded p-1 text-[color-mix(in_srgb,var(--ink)_50%,transparent)] hover:bg-[var(--mist)] hover:text-[var(--ink)] transition"
-                      title="Criar flashcard manual"
-                      aria-label="Criar flashcard manual"
-                    >
-                      <Plus size={14} />
-                    </button>
+                    {onGenerateWithAI && (
+                      <button
+                        type="button"
+                        onClick={() => handleGenerateAIForQuestao(q)}
+                        className="rounded p-1 text-[color-mix(in_srgb,var(--ink)_50%,transparent)] hover:bg-[color-mix(in_srgb,var(--signal)_12%,var(--surface))] hover:text-[var(--signal)] transition"
+                        title="Gerar flashcards com IA"
+                        aria-label="Gerar flashcards com IA"
+                      >
+                        <Sparkles size={14} />
+                      </button>
+                    )}
                     <button
                       type="button"
                       onClick={() => setEditingQuestao(q)}
@@ -959,20 +962,6 @@ export function CadernoList({
                   )}
                 </button>
 
-                <button
-                  type="button"
-                  onClick={() => {
-                    const q = readingQuestao;
-                    setReadingQuestao(null);
-                    handleOpenManualCard(q);
-                  }}
-                  className="inline-flex items-center gap-1.5 rounded-[var(--radius-btn)] border border-[var(--line)] bg-[var(--surface)] px-3 py-1.5 text-xs font-medium text-[var(--ink)] hover:border-[var(--signal)] hover:text-[var(--signal)] transition active:scale-95"
-                  title="Criar flashcard manual para este item"
-                >
-                  <Plus size={13} />
-                  <span>Criar Flashcard</span>
-                </button>
-
                 {onGenerateWithAI && (
                   <button
                     type="button"
@@ -981,13 +970,11 @@ export function CadernoList({
                       setReadingQuestao(null);
                       handleGenerateAIForQuestao(q);
                     }}
-                    className="inline-flex items-center gap-1.5 rounded-[var(--radius-btn)] bg-[color-mix(in_srgb,var(--signal)_12%,var(--surface))] text-[var(--signal)] border border-[color-mix(in_srgb,var(--signal)_30%,transparent)] px-3 py-1.5 text-xs font-semibold hover:brightness-110 transition active:scale-95"
+                    className="inline-flex items-center gap-1.5 rounded-[var(--radius-btn)] bg-[color-mix(in_srgb,var(--signal)_12%,var(--surface))] text-[var(--signal)] border border-[color-mix(in_srgb,var(--signal)_30%,transparent)] px-3.5 py-1.5 text-xs font-semibold hover:brightness-110 transition active:scale-95 shadow-2xs"
                     title="Gerar flashcards com IA a partir deste aprendizado"
                   >
-                    <Bot size={13} />
-                    <span>
-                      Gerar Flashcards <span className="hidden sm:inline">com IA</span>
-                    </span>
+                    <Sparkles size={13} />
+                    <span>Gerar Flashcards com IA</span>
                   </button>
                 )}
               </div>
