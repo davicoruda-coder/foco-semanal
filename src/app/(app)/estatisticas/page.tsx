@@ -93,6 +93,16 @@ const MONTHS_LONG = [
   "Dezembro",
 ];
 
+const WEEKDAY_SHORT = [
+  "Dom.",
+  "Seg.",
+  "Ter.",
+  "Qua.",
+  "Qui.",
+  "Sex.",
+  "Sáb.",
+] as const;
+
 function periodStart(range: Range, date: Date): Date {
   if (range === "semana") return startOfWeek(date);
   if (range === "mes") return new Date(date.getFullYear(), date.getMonth(), 1);
@@ -246,20 +256,30 @@ export default function EstatisticasPage() {
       }));
     }
     if (range === "semana") {
-      return week.map((d, i) => ({
-        label: DAYS[i].slice(0, 3),
-        value: d.seconds,
-        hint: `${DAYS[i]} — ${formatFocusDuration(d.seconds)}`,
-        emphasis: d.key === currentKey,
-      }));
+      return week.map((d, i) => {
+        const day = String(d.date.getDate()).padStart(2, "0");
+        const monthNum = String(d.date.getMonth() + 1).padStart(2, "0");
+        const weekday = WEEKDAY_SHORT[d.date.getDay()];
+        return {
+          label: DAYS[i].slice(0, 3),
+          value: d.seconds,
+          hint: `${day}/${monthNum} ${weekday} — ${formatFocusDuration(d.seconds)}`,
+          emphasis: d.key === currentKey,
+        };
+      });
     }
     if (range === "mes") {
-      return month.map((d) => ({
-        label: String(d.date.getDate()),
-        value: d.seconds,
-        hint: `${d.date.getDate()}/${d.date.getMonth() + 1} — ${formatFocusDuration(d.seconds)}`,
-        emphasis: d.key === currentKey,
-      }));
+      return month.map((d) => {
+        const day = String(d.date.getDate()).padStart(2, "0");
+        const monthNum = String(d.date.getMonth() + 1).padStart(2, "0");
+        const weekday = WEEKDAY_SHORT[d.date.getDay()];
+        return {
+          label: String(d.date.getDate()),
+          value: d.seconds,
+          hint: `${day}/${monthNum} ${weekday} — ${formatFocusDuration(d.seconds)}`,
+          emphasis: d.key === currentKey,
+        };
+      });
     }
     const monthI = now.getMonth();
     const selectedIsCurrentYear =
