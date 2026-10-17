@@ -93,14 +93,14 @@ const MONTHS_LONG = [
   "Dezembro",
 ];
 
-const WEEKDAY_SHORT = [
-  "Dom.",
-  "Seg.",
-  "Ter.",
-  "Qua.",
-  "Qui.",
-  "Sex.",
-  "Sáb.",
+const WEEKDAY_FULL = [
+  "Domingo",
+  "Segunda",
+  "Terça",
+  "Quarta",
+  "Quinta",
+  "Sexta",
+  "Sábado",
 ] as const;
 
 function periodStart(range: Range, date: Date): Date {
@@ -248,31 +248,29 @@ export default function EstatisticasPage() {
     if (range === "dia") {
       const hour = now.getHours();
       const selectedIsToday = dateKey(referenceDate) === currentKey;
+      const day = String(referenceDate.getDate()).padStart(2, "0");
+      const monthNum = String(referenceDate.getMonth() + 1).padStart(2, "0");
+      const weekday = WEEKDAY_FULL[referenceDate.getDay()];
       return selectedDay.byHour.map((seconds, h) => ({
         label: String(h).padStart(2, "0"),
         value: seconds,
-        hint: `${String(h).padStart(2, "0")}h — ${formatFocusDuration(seconds)}`,
+        hint: `${day}/${monthNum} ${weekday}, ${String(h).padStart(2, "0")}h — ${formatFocusDuration(seconds)}`,
         emphasis: selectedIsToday && h === hour,
       }));
     }
     if (range === "semana") {
-      return week.map((d, i) => {
-        const day = String(d.date.getDate()).padStart(2, "0");
-        const monthNum = String(d.date.getMonth() + 1).padStart(2, "0");
-        const weekday = WEEKDAY_SHORT[d.date.getDay()];
-        return {
-          label: DAYS[i].slice(0, 3),
-          value: d.seconds,
-          hint: `${day}/${monthNum} ${weekday} — ${formatFocusDuration(d.seconds)}`,
-          emphasis: d.key === currentKey,
-        };
-      });
+      return week.map((d, i) => ({
+        label: DAYS[i].slice(0, 3),
+        value: d.seconds,
+        hint: formatFocusDuration(d.seconds),
+        emphasis: d.key === currentKey,
+      }));
     }
     if (range === "mes") {
       return month.map((d) => {
         const day = String(d.date.getDate()).padStart(2, "0");
         const monthNum = String(d.date.getMonth() + 1).padStart(2, "0");
-        const weekday = WEEKDAY_SHORT[d.date.getDay()];
+        const weekday = WEEKDAY_FULL[d.date.getDay()];
         return {
           label: String(d.date.getDate()),
           value: d.seconds,
@@ -287,7 +285,7 @@ export default function EstatisticasPage() {
     return year.map((m) => ({
       label: MONTHS_SHORT[m.month],
       value: m.seconds,
-      hint: `${MONTHS_SHORT[m.month]} — ${formatFocusDuration(m.seconds)}`,
+      hint: formatFocusDuration(m.seconds),
       emphasis: selectedIsCurrentYear && m.month === monthI,
     }));
   }, [range, referenceDate, selectedDay, week, month, year]);
