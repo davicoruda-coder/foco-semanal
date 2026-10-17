@@ -299,18 +299,33 @@ export function QuickCaptureForm({
           });
         }
       } else {
-        const ok = await addQuestao(payload);
+        const res = await addQuestao(payload);
         setSaving(false);
 
-        if (ok) {
+        const isOk = typeof res === "object" ? res.ok : Boolean(res);
+        const count = typeof res === "object" ? res.count : undefined;
+        const aiError = typeof res === "object" ? res.aiError : undefined;
+
+        if (isOk) {
           if (payload.disciplina) {
             void addMateria(payload.disciplina);
           }
+          let successMsg = "Erro registrado no Caderno com sucesso!";
+          if (criarFlashcard) {
+            if (count && count > 0) {
+              successMsg =
+                count === 1
+                  ? "Questão registrada + 1 flashcard inteligente criado com IA!"
+                  : `Questão registrada + ${count} flashcards inteligentes criados com IA!`;
+            } else if (aiError) {
+              successMsg = `Questão registrada no Caderno! (Aviso IA: ${aiError})`;
+            } else {
+              successMsg = "Questão registrada + flashcard gerado com sucesso!";
+            }
+          }
           setFeedback({
             ok: true,
-            msg: criarFlashcard
-              ? "Questão registrada + flashcard criado!"
-              : "Erro registrado no Caderno com sucesso!",
+            msg: successMsg,
           });
           // Reset form
           setCodigoOuLink("");
@@ -555,22 +570,34 @@ export function QuickCaptureForm({
         </div>
       )}
 
-      {/* Opção Opcional: Criar Flashcard Imediato */}
+      {/* Opção Opcional: Criar Flashcard com IA Imediato */}
       {!isEditing && (
-        <div className="rounded-[var(--radius)] border border-[var(--line)] bg-[var(--mist)]/40 p-3">
-          <label className="flex items-start gap-2.5 cursor-pointer text-xs font-medium text-[var(--ink)]">
+        <div
+          className={`rounded-[var(--radius)] border p-3.5 transition-all duration-150 ${
+            criarFlashcard
+              ? "border-[color-mix(in_srgb,#a855f7_45%,var(--line))] bg-[color-mix(in_srgb,#a855f7_6%,var(--surface))] shadow-xs"
+              : "border-[var(--line)] bg-[color-mix(in_srgb,var(--mist)_40%,var(--surface))] hover:bg-[var(--mist)]/60"
+          }`}
+        >
+          <label className="flex items-start gap-3 cursor-pointer text-xs">
             <input
               type="checkbox"
               checked={criarFlashcard}
               onChange={(e) => setCriarFlashcard(e.target.checked)}
-              className="mt-0.5 h-4 w-4 rounded border-[var(--line)] text-[var(--signal)] focus:ring-[var(--signal)] cursor-pointer"
+              className="mt-0.5 size-4 rounded border-[var(--line)] text-[var(--signal)] focus:ring-[var(--signal)] cursor-pointer accent-[var(--signal)]"
             />
-            <div className="space-y-0.5 select-none">
-              <span className="font-semibold text-[var(--ink)]">
-                Criar flashcard automático agora
-              </span>
-              <p className="text-[11px] text-[color-mix(in_srgb,var(--ink)_55%,transparent)] leading-relaxed">
-                Deixe desmarcado se quiser apenas registrar no seu Caderno. Você pode criar flashcards manuais ou com IA depois a qualquer momento.
+            <div className="space-y-1 select-none min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="font-bold text-[var(--ink)] flex items-center gap-1.5">
+                  <Sparkles size={13} className="text-[#a855f7] dark:text-[#c084fc] shrink-0" />
+                  Gerar flashcard inteligente com IA
+                </span>
+                <span className="inline-flex items-center gap-1 rounded-full bg-[color-mix(in_srgb,#a855f7_12%,transparent)] px-2 py-0.5 text-[10px] font-semibold text-[#a855f7] dark:text-[#c084fc]">
+                  Active Recall
+                </span>
+              </div>
+              <p className="text-[11px] text-[color-mix(in_srgb,var(--ink)_60%,transparent)] leading-relaxed">
+                A IA analisa sua regra aprendida e o contexto da questão para formular perguntas e respostas ideais. Se houver múltiplos conceitos no texto, cria cards atômicos automaticamente.
               </p>
             </div>
           </label>
@@ -591,21 +618,25 @@ export function QuickCaptureForm({
         <button
           type="submit"
           disabled={saving}
-          className="flex-1 flex items-center justify-center gap-2 rounded-[var(--radius-btn)] bg-[var(--signal)] px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:brightness-110 active:scale-[0.98] disabled:opacity-60"
+          className="flex-1 flex items-center justify-center gap-2 rounded-[var(--radius-btn)] bg-[var(--signal)] px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:brightness-110 active:scale-[0.98] disabled:opacity-60 cursor-pointer"
         >
           {saving ? (
             <Loader2 size={16} className="animate-spin" />
           ) : isEditing ? (
             <CheckCircle size={16} />
+          ) : criarFlashcard ? (
+            <Sparkles size={16} />
           ) : (
             <Plus size={16} />
           )}
           {saving
-            ? "Salvando…"
+            ? criarFlashcard
+              ? "Analisando com IA e salvando…"
+              : "Salvando…"
             : isEditing
               ? "Salvar Alterações"
               : criarFlashcard
-                ? "Salvar e Criar Flashcard"
+                ? "Salvar + Gerar com IA"
                 : "Salvar no Caderno"}
         </button>
       </div>

@@ -78,7 +78,9 @@ type RevisaoContextValue = {
   // Caderno
   questoes: QuestaoCaderno[];
   questoesLoading: boolean;
-  addQuestao: (p: QuickCapturePayload) => Promise<boolean>;
+  addQuestao: (
+    p: QuickCapturePayload,
+  ) => Promise<{ ok: boolean; count?: number; aiError?: string } | boolean>;
   updateQuestao: (
     id: string,
     updates: Partial<QuickCapturePayload>,
@@ -328,17 +330,35 @@ export function RevisaoProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const handleAddQuestao = useCallback(
-    async (payload: QuickCapturePayload): Promise<boolean> => {
+    async (
+      payload: QuickCapturePayload,
+    ): Promise<{ ok: boolean; count?: number; aiError?: string } | boolean> => {
       try {
         const store = revisaoStore;
         const result = await store.addQuestao(payload);
         if (result) {
           setQuestoes((prev) => [result.questao, ...prev]);
-          if (result.flashcard) {
-            setFlashcardsDoDia((prev) => [result.flashcard!, ...prev]);
-            setAllFlashcards((prev) => [result.flashcard!, ...prev]);
+          const newCards =
+            result.flashcards && result.flashcards.length > 0
+              ? result.flashcards
+              : result.flashcard
+                ? [result.flashcard]
+                : [];
+          if (newCards.length > 0) {
+            setAllFlashcards((prev) => [...newCards, ...prev]);
+            const hoje = new Date().toISOString().slice(0, 10);
+            const novosHoje = newCards.filter(
+              (c: Flashcard) => !c.proxima_revisao || c.proxima_revisao <= hoje,
+            );
+            if (novosHoje.length > 0) {
+              setFlashcardsDoDia((prev) => [...novosHoje, ...prev]);
+            }
           }
-          return true;
+          return {
+            ok: true,
+            count: result.count ?? newCards.length,
+            aiError: result.aiError,
+          };
         }
         return false;
       } catch (err) {

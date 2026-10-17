@@ -122,7 +122,13 @@ function gerarFlashcard(
 
 export async function addQuestao(
   payload: QuickCapturePayload,
-): Promise<{ questao: QuestaoCaderno; flashcard: Flashcard | null } | null> {
+): Promise<{
+  questao: QuestaoCaderno;
+  flashcard: Flashcard | null;
+  flashcards?: Flashcard[];
+  count?: number;
+  aiError?: string;
+} | null> {
   const auth = await getAuthedClient();
   if (!auth) return null;
 
@@ -148,27 +154,83 @@ export async function addQuestao(
   assertOk("insert questao", qErr);
 
   let flashcard: Flashcard | null = null;
+  let flashcards: Flashcard[] = [];
+  let aiError: string | undefined = undefined;
 
-  // Gerar flashcard apenas se solicitado
+  // Gerar flashcard com IA a partir do erro/aprendizado
   if (payload.criar_flashcard) {
-    const { frente, verso } = gerarFlashcard(payload, questao.id);
-    const { data: fc, error: fErr } = await auth.supabase
-      .from("flashcards")
-      .insert({
-        questao_id: questao.id,
-        user_id: auth.userId,
-        frente,
-        verso,
-        origem: "caderno",
-        disciplina: clampText(payload.disciplina, 100),
-      })
-      .select()
-      .single();
-    assertOk("insert flashcard", fErr);
-    flashcard = fc as Flashcard;
+    try {
+      const res = await fetch("/api/revisao/gerar-flashcards", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          modo: "caderno",
+          texto: payload.aprendizado_chave,
+          disciplina: payload.disciplina,
+          assunto: payload.assunto,
+          banca: payload.banca,
+          enunciado: payload.enunciado_texto,
+          questao_id: questao.id,
+        }),
+      });
+
+      const data = await res.json().catch(() => null);
+
+      if (res.ok && data?.cards && Array.isArray(data.cards) && data.cards.length > 0) {
+        flashcards = data.cards as Flashcard[];
+        flashcard = flashcards[0] || null;
+      } else {
+        aiError = data?.error || "IA indisponível no momento.";
+        console.warn("[revisao] Falha na IA ao gerar flashcard, gerando fallback:", aiError);
+        // Fallback resiliente: cria flashcard básico para não perder a anotação
+        const { frente, verso } = gerarFlashcard(payload, questao.id);
+        const { data: fc } = await auth.supabase
+          .from("flashcards")
+          .insert({
+            questao_id: questao.id,
+            user_id: auth.userId,
+            frente,
+            verso,
+            origem: "caderno",
+            disciplina: clampText(payload.disciplina, 100),
+          })
+          .select()
+          .single();
+        if (fc) {
+          flashcard = fc as Flashcard;
+          flashcards = [flashcard];
+        }
+      }
+    } catch (err) {
+      console.warn("[revisao] Erro de rede na IA ao gerar flashcard:", err);
+      // Fallback resiliente
+      const { frente, verso } = gerarFlashcard(payload, questao.id);
+      const { data: fc } = await auth.supabase
+        .from("flashcards")
+        .insert({
+          questao_id: questao.id,
+          user_id: auth.userId,
+          frente,
+          verso,
+          origem: "caderno",
+          disciplina: clampText(payload.disciplina, 100),
+        })
+        .select()
+        .single();
+      if (fc) {
+        flashcard = fc as Flashcard;
+        flashcards = [flashcard];
+      }
+    }
   }
 
-  return { questao: questao as QuestaoCaderno, flashcard };
+  return {
+    questao: questao as QuestaoCaderno,
+    flashcard,
+    flashcards,
+    count: flashcards.length,
+    aiError,
+  };
 }
 
 export async function listQuestoes(

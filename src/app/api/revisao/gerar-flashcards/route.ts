@@ -35,6 +35,25 @@ REGRAS:
 - Responda APENAS com JSON válido no formato: {"cards": [{"frente": "...", "verso": "..."}]}
 - Sem markdown, sem explicações, sem texto fora do JSON`;
 
+const CADERNO_SYSTEM_PROMPT = `Você é um professor mentor especialista em aprendizado ativo, concursos e repetição espaçada.
+O estudante errou uma questão ou registrou um aprendizado no Caderno de Erros.
+Seu objetivo é transformar esse aprendizado em flashcards ideais de active recall (pergunta e resposta).
+
+DIRETRIZES FUNDAMENTAIS:
+1. DOSAGEM INTELIGENTE DE QUANTIDADE (1 a 4 cards):
+- Avalie a densidade e a quantidade de conceitos/regras independentes no texto:
+  - Se contiver apenas 1 regra direta ou conceito central: crie APENAS 1 flashcard cirúrgico e objetivo.
+  - Se contiver múltiplos conceitos, exceções, distinções ou requisitos independentes (texto longo): divida em 2 ou no máximo 4 flashcards atômicos (um para cada conceito-chave).
+  - NUNCA invente perguntas genéricas ou de enchimento. Cada flashcard deve ser valioso para uma revisão rápida.
+2. FRENTE (PERGUNTA INSTIGANTE):
+  - Deve ser uma pergunta clara, contextualizada e instigante que provoque o raciocínio ativo (Active Recall).
+  - NUNCA use apenas o nome do assunto ou uma afirmação solta como frente.
+3. VERSO (RESPOSTA EXPLICATIVA):
+  - Resposta precisa, direta e concisa, explicando o porquê de forma memorável.
+4. FORMATO OBRIGATÓRIO:
+  - Responda ESTRITAMENTE com JSON válido no formato: {"cards": [{"frente": "...", "verso": "..."}]}
+  - Sem texto antes ou depois do JSON, sem markdown extra.`;
+
 /* ------------------------------------------------------------------ */
 /*  Helpers                                                            */
 /* ------------------------------------------------------------------ */
@@ -44,7 +63,7 @@ interface AICard {
   verso: string;
 }
 
-function parseAIResponse(raw: string): AICard[] | null {
+function parseAIResponse(raw: string, maxCards: number = MAX_CARDS_PER_GENERATION): AICard[] | null {
   let cleaned = raw.trim();
   const jsonBlockMatch = cleaned.match(/```(?:json)?\s*([\s\S]*?)```/);
   if (jsonBlockMatch) {
@@ -68,7 +87,7 @@ function parseAIResponse(raw: string): AICard[] | null {
           });
         }
       }
-      return cards.length > 0 ? cards.slice(0, MAX_CARDS_PER_GENERATION) : null;
+      return cards.length > 0 ? cards.slice(0, maxCards) : null;
     }
     return null;
   } catch {
@@ -138,14 +157,26 @@ export async function POST(request: Request) {
   const body = (await request.json().catch(() => null)) as {
     texto?: unknown;
     disciplina?: unknown;
+    assunto?: unknown;
+    banca?: unknown;
+    enunciado?: unknown;
+    questao_id?: unknown;
+    modo?: unknown;
   } | null;
 
+  const modo = body?.modo === "caderno" ? "caderno" : "resumo";
   const texto = typeof body?.texto === "string" ? body.texto.trim() : "";
   const disciplina = typeof body?.disciplina === "string" ? body.disciplina.trim() : "";
+  const assunto = typeof body?.assunto === "string" ? body.assunto.trim() : "";
+  const banca = typeof body?.banca === "string" ? body.banca.trim() : "";
+  const enunciado = typeof body?.enunciado === "string" ? body.enunciado.trim() : "";
+  const questaoId = typeof body?.questao_id === "string" ? body.questao_id.trim() : null;
 
-  if (!texto || texto.length < MIN_TEXT_LENGTH) {
+  const minLength = modo === "caderno" ? 10 : MIN_TEXT_LENGTH;
+
+  if (!texto || texto.length < minLength) {
     return NextResponse.json(
-      { error: `O texto precisa ter pelo menos ${MIN_TEXT_LENGTH} caracteres.` },
+      { error: `O texto precisa ter pelo menos ${minLength} caracteres.` },
       { status: 400 },
     );
   }
@@ -199,9 +230,24 @@ export async function POST(request: Request) {
     const customPrompt =
       typeof dbConfig?.custom_prompt === "string" ? dbConfig.custom_prompt.trim() : "";
 
+    const basePrompt = modo === "caderno" ? CADERNO_SYSTEM_PROMPT : SYSTEM_PROMPT;
+
     const effectiveSystemPrompt = customPrompt
-      ? `${SYSTEM_PROMPT}\n\nDIRETRIZES E COMPORTAMENTO ADICIONAIS (DEFINIDAS PELO ADMINISTRADOR):\n${customPrompt}\n\nIMPORTANTE: Lembre-se que você DEVE SEMPRE responder APENAS no formato JSON {"cards": [{"frente": "...", "verso": "..."}]}.`
-      : SYSTEM_PROMPT;
+      ? `${basePrompt}\n\nDIRETRIZES E COMPORTAMENTO ADICIONAIS (DEFINIDAS PELO ADMINISTRADOR):\n${customPrompt}\n\nIMPORTANTE: Lembre-se que você DEVE SEMPRE responder APENAS no formato JSON {"cards": [{"frente": "...", "verso": "..."}]}.`
+      : basePrompt;
+
+    let userPromptContent = "";
+    if (modo === "caderno") {
+      const parts: string[] = [];
+      parts.push(`DISCIPLINA: ${disciplina}`);
+      if (assunto) parts.push(`ASSUNTO: ${assunto}`);
+      if (banca) parts.push(`BANCA: ${banca}`);
+      if (enunciado) parts.push(`ENUNCIADO DA QUESTÃO:\n${enunciado.slice(0, 3000)}`);
+      parts.push(`REGRA APRENDIDA / ANOTAÇÃO DO ESTUDANTE:\n${texto.slice(0, MAX_TEXT_LENGTH)}`);
+      userPromptContent = parts.join("\n\n");
+    } else {
+      userPromptContent = texto.slice(0, MAX_TEXT_LENGTH);
+    }
 
     const orResponse = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
@@ -213,11 +259,11 @@ export async function POST(request: Request) {
       },
       body: JSON.stringify({
         model: model,
-        temperature: 0.1,
+        temperature: modo === "caderno" ? 0.2 : 0.1,
         max_tokens: 4096,
         messages: [
           { role: "system", content: effectiveSystemPrompt },
-          { role: "user", content: texto.slice(0, MAX_TEXT_LENGTH) },
+          { role: "user", content: userPromptContent },
         ],
       }),
     });
@@ -250,8 +296,9 @@ export async function POST(request: Request) {
     );
   }
 
-  // 7. Parse AI response
-  const cards = parseAIResponse(aiResponseText);
+  // 7. Parse AI response (para caderno, limita entre 1 e 4 cards)
+  const maxAllowedCards = modo === "caderno" ? 4 : MAX_CARDS_PER_GENERATION;
+  const cards = parseAIResponse(aiResponseText, maxAllowedCards);
   if (!cards || cards.length === 0) {
     console.warn("[revisao-ia] invalid AI response:", aiResponseText.slice(0, 500));
     return NextResponse.json(
@@ -260,13 +307,14 @@ export async function POST(request: Request) {
     );
   }
 
-  // 8. Batch insert flashcards
+  // 8. Batch insert flashcards (vincula questao_id se fornecido)
   const rows = cards.map((c) => ({
     user_id: userId,
     frente: c.frente,
     verso: c.verso,
     origem: "ia" as const,
     disciplina,
+    questao_id: questaoId || null,
   }));
 
   const { data: inserted, error: insertError } = await supabase
