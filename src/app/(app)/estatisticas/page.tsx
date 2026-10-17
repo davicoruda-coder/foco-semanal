@@ -534,72 +534,79 @@ export default function EstatisticasPage() {
       <h1 className="sr-only">Métricas de Desempenho e Foco</h1>
 
       {/* Top Controls: Seletor de Módulo (Tempo de Foco | Diagnóstico de Erros) e Status */}
-      <div className="flex flex-col gap-3 border-b border-[var(--line)] pb-3">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          {/* Seletor Segmentado de Visualização: Tempo de Foco | Diagnóstico de Erros */}
-          <div className="grid grid-cols-2 sm:inline-flex w-full sm:w-auto items-center gap-1 rounded-xl border border-[var(--line)] bg-[var(--mist)] p-1">
-            <button
-              type="button"
-              onClick={() => setMetricaView("foco")}
-              className={`inline-flex items-center justify-center gap-1 sm:gap-1.5 rounded-lg px-2 sm:px-3.5 py-2 sm:py-1.5 text-[11px] min-[390px]:text-xs font-semibold whitespace-nowrap transition ${
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-[color-mix(in_srgb,var(--line)_70%,transparent)]">
+        {/* Seletor Segmentado de Visualização em Abas Limpas */}
+        <nav
+          aria-label="Visualizações de métricas"
+          className="grid grid-cols-2 sm:flex sm:items-center gap-1 sm:gap-6"
+        >
+          <button
+            type="button"
+            onClick={() => setMetricaView("foco")}
+            className={`group relative inline-flex items-center justify-center gap-2 px-2 sm:px-1 py-2 sm:py-3 text-xs sm:text-sm font-semibold transition-colors ${
+              metricaView === "foco"
+                ? "text-[var(--ink)]"
+                : "text-[color-mix(in_srgb,var(--ink)_55%,transparent)] hover:text-[var(--ink)]"
+            }`}
+          >
+            <Clock
+              size={15}
+              strokeWidth={2}
+              className={`shrink-0 transition-colors ${
                 metricaView === "foco"
-                  ? "bg-[var(--surface)] text-[var(--ink)] shadow-xs ring-1 ring-black/[0.04] dark:ring-white/[0.06]"
-                  : "text-[color-mix(in_srgb,var(--ink)_60%,transparent)] hover:text-[var(--ink)] hover:bg-[var(--surface)]/50"
+                  ? "text-[var(--signal)]"
+                  : "text-[color-mix(in_srgb,var(--ink)_45%,transparent)] group-hover:text-[var(--signal)]"
               }`}
-            >
-              <Clock
-                size={14}
-                strokeWidth={2}
-                className={`shrink-0 ${
-                  metricaView === "foco"
-                    ? "text-[var(--signal)]"
-                    : "text-[color-mix(in_srgb,var(--ink)_50%,transparent)]"
-                }`}
-              />
-              <span className="truncate">Tempo de Foco</span>
-            </button>
+            />
+            <span className="truncate">Tempo de Foco</span>
+            {metricaView === "foco" && (
+              <span className="absolute inset-x-0 -bottom-px h-[2.5px] rounded-full bg-[var(--signal)]" />
+            )}
+          </button>
 
-            <button
-              type="button"
-              onClick={() => setMetricaView("diagnostico")}
-              className={`inline-flex items-center justify-center gap-1 sm:gap-1.5 rounded-lg px-2 sm:px-3.5 py-2 sm:py-1.5 text-[11px] min-[390px]:text-xs font-semibold whitespace-nowrap transition ${
+          <button
+            type="button"
+            onClick={() => setMetricaView("diagnostico")}
+            className={`group relative inline-flex items-center justify-center gap-2 px-2 sm:px-1 py-2 sm:py-3 text-xs sm:text-sm font-semibold transition-colors ${
+              metricaView === "diagnostico"
+                ? "text-[var(--ink)]"
+                : "text-[color-mix(in_srgb,var(--ink)_55%,transparent)] hover:text-[var(--ink)]"
+            }`}
+          >
+            <PieChart
+              size={15}
+              strokeWidth={2}
+              className={`shrink-0 transition-colors ${
                 metricaView === "diagnostico"
-                  ? "bg-[var(--surface)] text-[var(--ink)] shadow-xs ring-1 ring-black/[0.04] dark:ring-white/[0.06]"
-                  : "text-[color-mix(in_srgb,var(--ink)_60%,transparent)] hover:text-[var(--ink)] hover:bg-[var(--surface)]/50"
+                  ? "text-[var(--signal)]"
+                  : "text-[color-mix(in_srgb,var(--ink)_45%,transparent)] group-hover:text-[var(--signal)]"
               }`}
-            >
-              <PieChart
-                size={14}
-                strokeWidth={2}
-                className={`shrink-0 ${
-                  metricaView === "diagnostico"
-                    ? "text-[var(--signal)]"
-                    : "text-[color-mix(in_srgb,var(--ink)_50%,transparent)]"
-                }`}
-              />
-              <span className="truncate">Diagnóstico de Erros</span>
-            </button>
-          </div>
+            />
+            <span className="truncate">Diagnóstico de Erros</span>
+            {metricaView === "diagnostico" && (
+              <span className="absolute inset-x-0 -bottom-px h-[2.5px] rounded-full bg-[var(--signal)]" />
+            )}
+          </button>
+        </nav>
 
-          {/* Quando no modo Foco: Status do cronômetro (à direita) */}
-          {metricaView === "foco" && (
-            <div className="flex items-center gap-2 text-xs sm:self-center">
-              <span
-                className={`inline-flex h-2 w-2 rounded-full ${
-                  tracking
-                    ? "bg-[var(--ok)]"
-                    : "bg-[color-mix(in_srgb,var(--ink)_25%,transparent)]"
-                }`}
-              />
-              <span className="opacity-60">
-                {tracking ? "Registrando agora…" : "Pausado — não está contando"}
-              </span>
-              {syncing ? (
-                <span className="opacity-50">Sincronizando…</span>
-              ) : null}
-            </div>
-          )}
-        </div>
+        {/* Quando no modo Foco: Status do cronômetro (à direita) */}
+        {metricaView === "foco" && (
+          <div className="flex items-center gap-2 text-xs pb-2.5 sm:pb-0">
+            <span
+              className={`inline-flex h-2 w-2 rounded-full ${
+                tracking
+                  ? "bg-[var(--ok)]"
+                  : "bg-[color-mix(in_srgb,var(--ink)_25%,transparent)]"
+              }`}
+            />
+            <span className="opacity-60">
+              {tracking ? "Registrando agora…" : "Pausado — não está contando"}
+            </span>
+            {syncing ? (
+              <span className="opacity-50">Sincronizando…</span>
+            ) : null}
+          </div>
+        )}
       </div>
 
       {metricaView === "foco" ? (
