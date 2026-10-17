@@ -604,102 +604,109 @@ export default function EstatisticasPage() {
 
       {metricaView === "foco" ? (
         <>
-          {/* Controles Temporais Unificados: Granularidade (Dia/Semana/Mês/Ano) + Navegador de Período perfeitamente centralizados e alinhados */}
-          <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 w-full">
-            {/* Seletor de Escala (Dia | Semana | Mês | Ano) */}
-            <div className="inline-flex h-[38px] items-center gap-1 rounded-full border border-[var(--line)] bg-[var(--mist)] p-1 shadow-2xs shrink-0">
-              {(
-                [
-                  ["dia", "Dia"],
-                  ["semana", "Semana"],
-                  ["mes", "Mês"],
-                  ["ano", "Ano"],
-                ] as const
-              ).map(([value, label]) => {
-                const active = range === value;
-                return (
-                  <button
-                    key={value}
-                    type="button"
-                    onClick={() => setRange(value)}
-                    className={`h-full inline-flex items-center rounded-full px-3 text-xs font-semibold transition ${
-                      active
-                        ? "bg-[var(--surface)] text-[var(--ink)] shadow-xs ring-1 ring-black/[0.04] dark:ring-white/[0.06]"
-                        : "text-[color-mix(in_srgb,var(--ink)_65%,transparent)] hover:text-[var(--ink)] hover:bg-[var(--surface)]/40"
-                    }`}
-                  >
-                    {label}
-                  </button>
-                );
-              })}
-            </div>
+          {/* Grid Dashboard: Coluna Principal (Gráfico + Resumos) + Coluna Lateral (Ações + Avisos) */}
+          <div className="grid items-start gap-4 sm:gap-5 lg:grid-cols-[minmax(0,1fr)_320px] xl:grid-cols-[minmax(0,1fr)_340px]">
+            {/* Coluna Principal */}
+            <div className="min-w-0 space-y-4 sm:space-y-5">
+              <section className="surface p-5 sm:p-6 shadow-xs space-y-5">
+                {/* Header Integrado do Card: Métrica Principal + Controles Temporais (Granularidade & Data) */}
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-[var(--line)]/50 pb-4 sm:pb-5">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wider opacity-60">
+                      Tempo Total no Período
+                    </p>
+                    <p className="font-mono-num mt-1 text-3xl font-semibold tracking-tight md:text-4xl text-[var(--ink)]">
+                      {formatFocusDuration(headline)}
+                    </p>
+                  </div>
 
-            {/* Navegador de período: Chevrons simétricos, texto de data centralizado com a mesma altura e baseline */}
-            <div className="inline-flex h-[38px] items-center gap-1 sm:gap-1.5 rounded-full border border-[var(--line)] bg-[var(--surface)] p-1 px-1.5 sm:px-2 shadow-xs shrink-0">
-              <button
-                type="button"
-                className="grid h-7 w-7 sm:h-7.5 sm:w-7.5 place-items-center rounded-full transition hover:bg-[var(--mist)] text-[var(--ink)] active:scale-95"
-                title="Período anterior"
-                aria-label="Mostrar período anterior"
-                onClick={() =>
-                  setReferenceDate((date) => shiftPeriod(date, range, -1))
-                }
-              >
-                <ChevronLeft size={16} strokeWidth={2.2} />
-              </button>
+                  {/* Controles de Granularidade e Navegação de Data */}
+                  <div className="flex flex-wrap items-center gap-2 sm:gap-2.5">
+                    {/* Seletor de Escala (Dia | Semana | Mês | Ano) */}
+                    <div className="inline-flex h-[36px] items-center gap-0.5 rounded-xl border border-[var(--line)] bg-[var(--mist)] p-1 shadow-2xs shrink-0">
+                      {(
+                        [
+                          ["dia", "Dia"],
+                          ["semana", "Semana"],
+                          ["mes", "Mês"],
+                          ["ano", "Ano"],
+                        ] as const
+                      ).map(([value, label]) => {
+                        const active = range === value;
+                        return (
+                          <button
+                            key={value}
+                            type="button"
+                            onClick={() => setRange(value)}
+                            className={`h-full inline-flex items-center rounded-lg px-2.5 sm:px-3 text-xs font-semibold transition ${
+                              active
+                                ? "bg-[var(--surface)] text-[var(--ink)] shadow-xs ring-1 ring-black/[0.04] dark:ring-white/[0.06]"
+                                : "text-[color-mix(in_srgb,var(--ink)_65%,transparent)] hover:text-[var(--ink)] hover:bg-[var(--surface)]/40"
+                            }`}
+                          >
+                            {label}
+                          </button>
+                        );
+                      })}
+                    </div>
 
-              <div className="px-2 sm:px-3 text-center">
-                <p
-                  className={`text-xs sm:text-sm font-semibold text-[var(--ink)] whitespace-nowrap ${
-                    range === "dia" ? "capitalize" : ""
-                  }`}
-                >
-                  {periodLabel}
-                </p>
-              </div>
+                    {/* Navegador de Período (Chevrons + Label) */}
+                    <div className="inline-flex h-[36px] items-center gap-1 rounded-xl border border-[var(--line)] bg-[var(--surface)] px-1 sm:px-1.5 shadow-2xs shrink-0">
+                      <button
+                        type="button"
+                        className="grid h-7 w-7 place-items-center rounded-lg transition hover:bg-[var(--mist)] text-[var(--ink)] active:scale-95"
+                        title="Período anterior"
+                        aria-label="Mostrar período anterior"
+                        onClick={() =>
+                          setReferenceDate((date) => shiftPeriod(date, range, -1))
+                        }
+                      >
+                        <ChevronLeft size={16} strokeWidth={2.2} />
+                      </button>
 
-              <button
-                type="button"
-                className="grid h-7 w-7 sm:h-7.5 sm:w-7.5 place-items-center rounded-full transition hover:bg-[var(--mist)] disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent text-[var(--ink)] active:scale-95"
-                title="Próximo período"
-                aria-label="Mostrar próximo período"
-                disabled={viewingCurrentPeriod}
-                onClick={() =>
-                  setReferenceDate((date) => shiftPeriod(date, range, 1))
-                }
-              >
-                <ChevronRight size={16} strokeWidth={2.2} />
-              </button>
-            </div>
+                      <div className="px-2 sm:px-2.5 text-center">
+                        <p
+                          className={`text-xs sm:text-sm font-semibold text-[var(--ink)] whitespace-nowrap ${
+                            range === "dia" ? "capitalize" : ""
+                          }`}
+                        >
+                          {periodLabel}
+                        </p>
+                      </div>
 
-            {/* Atalho rápido para retornar ao período atual quando navegando no histórico */}
-            {!viewingCurrentPeriod && (
-              <button
-                type="button"
-                onClick={() => setReferenceDate(new Date())}
-                className="h-[38px] inline-flex items-center gap-1.5 rounded-full border border-[color-mix(in_srgb,var(--signal)_35%,var(--line))] bg-[color-mix(in_srgb,var(--signal)_8%,var(--surface))] px-3 text-xs font-semibold text-[var(--signal)] shadow-2xs hover:bg-[var(--signal)] hover:text-white transition active:scale-95 shrink-0"
-              >
-                <RotateCcw size={13} strokeWidth={2.2} />
-                <span>Voltar para {CURRENT_PERIOD_LABEL[range].toLowerCase()}</span>
-              </button>
-            )}
-          </div>
+                      <button
+                        type="button"
+                        className="grid h-7 w-7 place-items-center rounded-lg transition hover:bg-[var(--mist)] disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent text-[var(--ink)] active:scale-95"
+                        title="Próximo período"
+                        aria-label="Mostrar próximo período"
+                        disabled={viewingCurrentPeriod}
+                        onClick={() =>
+                          setReferenceDate((date) => shiftPeriod(date, range, 1))
+                        }
+                      >
+                        <ChevronRight size={16} strokeWidth={2.2} />
+                      </button>
+                    </div>
 
-      {/* Grid Dashboard: Coluna Principal (Gráfico + Resumos) + Coluna Lateral (Ações + Avisos) */}
-      <div className="grid items-start gap-4 sm:gap-5 lg:grid-cols-[minmax(0,1fr)_320px] xl:grid-cols-[minmax(0,1fr)_340px]">
-        {/* Coluna Principal */}
-        <div className="min-w-0 space-y-4 sm:space-y-5">
-          <section className="surface p-5 sm:p-6 shadow-xs">
-            <p className="text-xs font-semibold uppercase tracking-wider opacity-60">
-              Tempo Total no Período
-            </p>
-            <p className="font-mono-num mt-1 text-3xl font-semibold tracking-tight md:text-4xl text-[var(--ink)]">
-              {formatFocusDuration(headline)}
-            </p>
-            <div className="mt-6">
-              <FocusBarChart bars={bars} height={range === "mes" ? 170 : 190} />
-            </div>
-          </section>
+                    {/* Atalho rápido para retornar ao período atual */}
+                    {!viewingCurrentPeriod && (
+                      <button
+                        type="button"
+                        onClick={() => setReferenceDate(new Date())}
+                        className="h-[36px] inline-flex items-center gap-1.5 rounded-xl border border-[color-mix(in_srgb,var(--signal)_35%,var(--line))] bg-[color-mix(in_srgb,var(--signal)_8%,var(--surface))] px-2.5 sm:px-3 text-xs font-semibold text-[var(--signal)] shadow-2xs hover:bg-[var(--signal)] hover:text-white transition active:scale-95 shrink-0"
+                        title={`Voltar para ${CURRENT_PERIOD_LABEL[range].toLowerCase()}`}
+                      >
+                        <RotateCcw size={13} strokeWidth={2.2} />
+                        <span>{CURRENT_PERIOD_LABEL[range]}</span>
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                <div className="pt-1">
+                  <FocusBarChart bars={bars} height={range === "mes" ? 170 : 190} />
+                </div>
+              </section>
 
           {/* Cards de Resumo Rápido */}
           <section className="grid gap-3 sm:grid-cols-3">
