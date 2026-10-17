@@ -217,10 +217,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </Link>
           </div>
 
-          {/* Controle Central Segmentado (Hoje | Fixar | Estatísticas) */}
+          {/* Controle Central Segmentado (Hoje | Fixar | Estatísticas) — Harmonizado em Cápsula (rounded-full) */}
           <nav
             aria-label="Modos de trabalho"
-            className="flex items-center justify-self-center rounded-xl border border-[color-mix(in_srgb,var(--line)_70%,transparent)] bg-[var(--mist)]/90 p-1 shadow-2xs backdrop-blur-xs"
+            className="flex items-center justify-self-center rounded-full border border-[color-mix(in_srgb,var(--line)_70%,transparent)] bg-[var(--mist)]/90 p-1 shadow-2xs backdrop-blur-xs"
           >
             {desktopPrimary.map(({ href, label, icon: Icon }) => {
               const active = isRouteActive(pathname, href, true);
@@ -231,7 +231,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   title={label}
                   aria-label={label}
                   aria-current={active ? "page" : undefined}
-                  className={`group relative inline-flex h-9 min-w-[96px] items-center justify-center gap-2 rounded-lg px-3.5 text-sm font-semibold transition-all duration-200 ${
+                  className={`group relative inline-flex h-8 min-w-[94px] items-center justify-center gap-2 rounded-full px-4 text-sm font-semibold transition-all duration-200 ${
                     active
                       ? "bg-[var(--surface)] text-[var(--ink)] shadow-xs ring-1 ring-black/[0.04] dark:ring-white/[0.06]"
                       : "text-[color-mix(in_srgb,var(--ink)_60%,transparent)] hover:text-[var(--ink)] hover:bg-[var(--surface)]/50"

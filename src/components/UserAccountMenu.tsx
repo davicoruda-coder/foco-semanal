@@ -486,8 +486,8 @@ export function UserAccountMenu({
         className={`group relative inline-flex items-center rounded-full border transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--signal)] focus-visible:ring-offset-2 active:scale-95 ${
           open
             ? "border-[color-mix(in_srgb,var(--signal)_50%,var(--line))] bg-[var(--surface)] shadow-xs"
-            : "border-[var(--line)] bg-[var(--surface)]/80 hover:border-[color-mix(in_srgb,var(--signal)_35%,var(--line))] hover:bg-[var(--mist)] hover:shadow-xs"
-        } max-sm:size-9 max-sm:justify-center max-sm:border-transparent max-sm:bg-transparent max-sm:p-0 sm:h-[38px] sm:p-[3px] sm:pr-3`}
+            : "border-[color-mix(in_srgb,var(--line)_70%,transparent)] bg-[var(--surface)]/80 hover:border-[color-mix(in_srgb,var(--signal)_35%,var(--line))] hover:bg-[var(--mist)] hover:shadow-xs"
+        } max-sm:size-9 max-sm:justify-center max-sm:border-transparent max-sm:bg-transparent max-sm:p-0 sm:h-10 sm:p-1 sm:pr-3.5`}
         title={`Conta: ${user.name || user.email}`}
         aria-label="Menu de conta do usuário"
         aria-expanded={open}
