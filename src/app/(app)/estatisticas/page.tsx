@@ -248,13 +248,10 @@ export default function EstatisticasPage() {
     if (range === "dia") {
       const hour = now.getHours();
       const selectedIsToday = dateKey(referenceDate) === currentKey;
-      const day = String(referenceDate.getDate()).padStart(2, "0");
-      const monthNum = String(referenceDate.getMonth() + 1).padStart(2, "0");
-      const weekday = WEEKDAY_FULL[referenceDate.getDay()];
       return selectedDay.byHour.map((seconds, h) => ({
         label: String(h).padStart(2, "0"),
         value: seconds,
-        hint: `${day}/${monthNum} ${weekday}, ${String(h).padStart(2, "0")}h — ${formatFocusDuration(seconds)}`,
+        hint: `${String(h).padStart(2, "0")}h — ${formatFocusDuration(seconds)}`,
         emphasis: selectedIsToday && h === hour,
       }));
     }
