@@ -42,7 +42,6 @@ export function FlashcardImageLightbox({
     <div
       role="dialog"
       aria-modal="true"
-      onClick={onClose}
       className="fixed inset-0 z-[80] flex items-center justify-center bg-black/85 p-4 backdrop-blur-sm animate-in fade-in duration-200"
     >
       <div

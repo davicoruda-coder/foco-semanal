@@ -602,6 +602,30 @@ textarea:focus-visible {
   animation: dialog-card-out 140ms ease-in both;
 }
 
+/* Trava de janela: efeito tátil/alerta quando o usuário clica fora */
+@keyframes dialog-shake {
+  0%, 100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  20% {
+    transform: translate3d(-5px, 0, 0) scale(1.008);
+  }
+  40% {
+    transform: translate3d(5px, 0, 0) scale(1.008);
+  }
+  60% {
+    transform: translate3d(-3px, 0, 0) scale(1.004);
+  }
+  80% {
+    transform: translate3d(2px, 0, 0) scale(1.002);
+  }
+}
+
+.dialog-card.dialog-shake {
+  animation: dialog-shake 320ms cubic-bezier(0.36, 0.07, 0.19, 0.97) both !important;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--signal) 40%, transparent), var(--shadow-lg, 0 10px 25px -5px rgba(0, 0, 0, 0.1)) !important;
+}
+
 /* Gradiente Sináptico Fluido — barra "Em sessão".
    Blobs (::before) + fitas/partículas (::after). Burst no play (idle→running). */
 @keyframes synaptic-flow {
@@ -1039,6 +1063,7 @@ textarea:focus-visible {
   .dialog-overlay.is-leaving,
   .dialog-card,
   .dialog-card.is-leaving,
+  .dialog-card.dialog-shake,
   .panel-in,
   .panel-out,
   .sheet-up,

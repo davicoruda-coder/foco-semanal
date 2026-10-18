@@ -451,13 +451,11 @@ function DayCard({
           {addingShown
             ? createPortal(
                 <>
-                  <button
-                    type="button"
-                    className={`scrim-fade fixed inset-0 z-30 cursor-default bg-[color-mix(in_srgb,var(--ink)_18%,transparent)] ${
+                  <div
+                    className={`scrim-fade fixed inset-0 z-30 bg-[color-mix(in_srgb,var(--ink)_18%,transparent)] ${
                       addingLeaving ? "is-leaving" : ""
                     }`}
-                    aria-label="Fechar formulário"
-                    onClick={closeAdd}
+                    aria-hidden="true"
                   />
                   {addPanelPos ? (
                     <div
