@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useRef, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import { useOpenTransition } from "@/lib/use-open-transition";
 
@@ -37,16 +37,7 @@ export function DialogFrame({
     () => true,
     () => false,
   );
-  const [shaking, setShaking] = useState(false);
-  const shakeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-  useEffect(() => {
-    return () => {
-      if (shakeTimeoutRef.current) {
-        clearTimeout(shakeTimeoutRef.current);
-      }
-    };
-  }, []);
+  const cardRef = useRef<HTMLDivElement>(null);
 
   // Trava o scroll do body enquanto o diálogo está aberto.
   useEffect(() => {
@@ -66,16 +57,44 @@ export function DialogFrame({
       onClose();
     } else {
       // Trava de segurança: impede o fechamento acidental ao clicar fora.
-      // Ativa efeito visual sutil de alerta/trava para sinalizar ao usuário.
-      if (shakeTimeoutRef.current) clearTimeout(shakeTimeoutRef.current);
-      setShaking(false);
-      requestAnimationFrame(() => {
-        setShaking(true);
-        shakeTimeoutRef.current = setTimeout(() => {
-          setShaking(false);
-          shakeTimeoutRef.current = null;
-        }, 320);
-      });
+      // Animação tátil direta via Web Animations API no card:
+      // Não altera classes CSS nem o estado React, eliminando qualquer
+      // reinício acidental de animação de entrada (que causava o piscar visual).
+      const el = cardRef.current;
+      if (!el) return;
+
+      if (
+        typeof window !== "undefined" &&
+        window.matchMedia("(prefers-reduced-motion: reduce)").matches
+      ) {
+        return;
+      }
+
+      // Cancela animação de shake anterior se ainda estiver em andamento
+      if (typeof el.getAnimations === "function") {
+        el.getAnimations().forEach((anim) => {
+          if ((anim as Animation & { id?: string }).id === "dialog-shake") {
+            anim.cancel();
+          }
+        });
+      }
+
+      el.animate(
+        [
+          { transform: "translate3d(0, 0, 0)" },
+          { transform: "translate3d(-6px, 0, 0)" },
+          { transform: "translate3d(5px, 0, 0)" },
+          { transform: "translate3d(-4px, 0, 0)" },
+          { transform: "translate3d(3px, 0, 0)" },
+          { transform: "translate3d(-1px, 0, 0)" },
+          { transform: "translate3d(0, 0, 0)" },
+        ],
+        {
+          id: "dialog-shake",
+          duration: 320,
+          easing: "cubic-bezier(0.36, 0.07, 0.19, 0.97)",
+        },
+      );
     }
   };
 
@@ -91,7 +110,8 @@ export function DialogFrame({
       onClick={handleOverlayClick}
     >
       <div
-        className={`dialog-card ${leaving ? "is-leaving" : ""} ${shaking ? "dialog-shake" : ""} ${cardClassName}`}
+        ref={cardRef}
+        className={`dialog-card ${leaving ? "is-leaving" : ""} ${cardClassName}`}
         onClick={(e) => e.stopPropagation()}
       >
         {children}
