@@ -280,7 +280,16 @@ export function CadernoList({
         const matchCodigo = q.codigo_questao?.toLowerCase().includes(term);
         const matchEnunciado = q.enunciado_texto?.toLowerCase().includes(term);
         const matchAssunto = q.assunto?.toLowerCase().includes(term);
-        if (!matchAprendizado && !matchCodigo && !matchEnunciado && !matchAssunto) {
+        const matchDisciplina = q.disciplina?.toLowerCase().includes(term);
+        const matchBanca = q.banca?.toLowerCase().includes(term);
+        if (
+          !matchAprendizado &&
+          !matchCodigo &&
+          !matchEnunciado &&
+          !matchAssunto &&
+          !matchDisciplina &&
+          !matchBanca
+        ) {
           return false;
         }
       }
@@ -493,7 +502,7 @@ export function CadernoList({
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Buscar por código, regra, assunto..."
+              placeholder="Buscar por matéria, assunto, regra, banca ou código..."
               className="w-full rounded-[var(--radius-btn)] border border-[var(--line)] bg-[var(--mist)] py-1.5 pl-8 pr-8 text-xs sm:text-sm text-[var(--ink)] outline-none transition placeholder:text-[color-mix(in_srgb,var(--ink)_40%,transparent)] focus:border-[var(--signal)] focus:bg-[var(--surface)]"
             />
             {search && (
@@ -758,69 +767,6 @@ export function CadernoList({
           </div>
         )}
       </div>
-
-      {/* Barra de Pastas por Matéria (Pílulas de Navegação Rápida) */}
-      {disciplinas.length > 0 && (
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 pt-0.5 scrollbar-subtle">
-          <button
-            type="button"
-            onClick={() => setDisciplinaFiltro("todas")}
-            className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold shrink-0 transition-all active:scale-95 ${
-              disciplinaFiltro === "todas"
-                ? "bg-[var(--signal)] text-white shadow-xs"
-                : "border border-[var(--line)] bg-[var(--surface)] text-[var(--ink)] hover:border-[var(--signal)]/50 hover:bg-[var(--mist)]"
-            }`}
-          >
-            <Folder
-              size={13}
-              className={disciplinaFiltro === "todas" ? "text-white" : "text-[var(--signal)]"}
-            />
-            <span>Todas as Pastas</span>
-            <span
-              className={`grid min-w-4 h-4 place-items-center rounded-full px-1 text-[10px] font-bold font-mono-num ${
-                disciplinaFiltro === "todas"
-                  ? "bg-white/20 text-white"
-                  : "bg-[var(--mist)] text-[color-mix(in_srgb,var(--ink)_65%,transparent)]"
-              }`}
-            >
-              {questoes.length}
-            </span>
-          </button>
-
-          {disciplinas.map((d) => {
-            const count = disciplinaCounts.get(d) || 0;
-            const isSelected = disciplinaFiltro === d;
-            return (
-              <button
-                key={d}
-                type="button"
-                onClick={() => setDisciplinaFiltro(isSelected ? "todas" : d)}
-                className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold shrink-0 transition-all active:scale-95 ${
-                  isSelected
-                    ? "bg-[var(--signal)] text-white shadow-xs"
-                    : "border border-[var(--line)] bg-[var(--surface)] text-[var(--ink)] hover:border-[var(--signal)]/50 hover:bg-[var(--mist)]"
-                }`}
-              >
-                {isSelected ? (
-                  <FolderOpen size={13} className="text-white" />
-                ) : (
-                  <Folder size={13} className="text-[var(--signal)]" />
-                )}
-                <span className="truncate max-w-[170px] sm:max-w-[220px]">{d}</span>
-                <span
-                  className={`grid min-w-4 h-4 place-items-center rounded-full px-1 text-[10px] font-bold font-mono-num ${
-                    isSelected
-                      ? "bg-white/20 text-white"
-                      : "bg-[var(--mist)] text-[color-mix(in_srgb,var(--ink)_65%,transparent)]"
-                  }`}
-                >
-                  {count}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      )}
 
       {/* Lista ou Grade de Registros */}
       {questoesLoading ? (
