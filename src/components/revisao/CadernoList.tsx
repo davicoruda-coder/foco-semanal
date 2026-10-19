@@ -844,7 +844,7 @@ export function CadernoList({
         <div className="space-y-6">
           {Array.from(questoesAgrupadas.entries()).map(([disc, items]) => (
             <section key={disc} className="space-y-3">
-              <div className="flex flex-wrap items-center gap-2 pb-1.5 border-b border-[var(--line)]/60">
+              <div className="flex items-center gap-2 pb-1.5 border-b border-[var(--line)]/60">
                 <button
                   type="button"
                   onClick={() => setDisciplinaFiltro(disc)}
@@ -853,25 +853,12 @@ export function CadernoList({
                 >
                   <Folder size={16} className="text-[var(--signal)] shrink-0 group-hover/folder:scale-110 transition-transform" />
                   <h3
-                    className="font-display font-bold text-sm sm:text-base text-[var(--ink)] group-hover/folder:text-[var(--signal)] transition-colors truncate max-w-[240px] sm:max-w-md"
+                    className="font-display font-bold text-sm sm:text-base text-[var(--ink)] group-hover/folder:text-[var(--signal)] transition-colors truncate max-w-[320px] sm:max-w-xl"
                     title={disc}
                   >
                     {disc}
                   </h3>
-                </button>
-
-                <span className="rounded-full bg-[var(--signal-soft)] text-[var(--signal)] px-2 py-0.5 text-[10.5px] font-bold font-mono-num shrink-0">
-                  {items.length} {items.length === 1 ? "anotação" : "anotações"}
-                </span>
-
-                <button
-                  type="button"
-                  onClick={() => setDisciplinaFiltro(disc)}
-                  className="inline-flex items-center gap-1 rounded-md bg-[var(--mist)] hover:bg-[var(--signal-soft)] px-2 py-0.5 text-[11px] font-semibold text-[color-mix(in_srgb,var(--ink)_65%,transparent)] hover:text-[var(--signal)] border border-[var(--line)]/60 hover:border-[var(--signal)]/30 transition-all active:scale-95 shrink-0 ml-1"
-                  title={`Abrir pasta ${disc}`}
-                >
-                  <span>Abrir pasta</span>
-                  <ChevronRight size={12} strokeWidth={2.5} />
+                  <ChevronRight size={14} className="text-[color-mix(in_srgb,var(--ink)_40%,transparent)] group-hover/folder:text-[var(--signal)] group-hover/folder:translate-x-0.5 transition-all" />
                 </button>
               </div>
 
