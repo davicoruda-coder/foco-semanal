@@ -259,7 +259,9 @@ export function CadernoList({
   }, [questoes]);
 
   const disciplinas = useMemo(() => {
-    return Array.from(disciplinaCounts.keys()).sort((a, b) => a.localeCompare(b));
+    return Array.from(disciplinaCounts.keys()).sort((a, b) =>
+      a.localeCompare(b, "pt-BR", { sensitivity: "base" })
+    );
   }, [disciplinaCounts]);
 
   // Filtragem local instantânea
@@ -286,7 +288,7 @@ export function CadernoList({
     });
   }, [questoes, bancaFiltro, disciplinaFiltro, causaFiltro, resultadoFiltro, search]);
 
-  // Agrupamento de questões por disciplina para a visualização unificada em pastas
+  // Agrupamento de questões por disciplina ordenado alfabeticamente (A-Z)
   const questoesAgrupadas = useMemo(() => {
     const map = new Map<string, QuestaoCaderno[]>();
     questoesFiltradas.forEach((q) => {
@@ -296,7 +298,13 @@ export function CadernoList({
       }
       map.get(disc)!.push(q);
     });
-    return map;
+
+    // Ordenação alfabética consistente com a barra de pílulas do topo
+    const sortedEntries = Array.from(map.entries()).sort(([a], [b]) =>
+      a.localeCompare(b, "pt-BR", { sensitivity: "base" })
+    );
+
+    return new Map(sortedEntries);
   }, [questoesFiltradas]);
 
   // Navegação no Modal de Leitura
