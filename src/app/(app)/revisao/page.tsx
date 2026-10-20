@@ -120,7 +120,7 @@ function RevisaoContent() {
           <span className="hidden sm:inline whitespace-nowrap">Flashcards</span>
           {flashcardsDoDia.length > 0 && (
             <span
-              className="hidden sm:inline-flex items-center justify-center min-w-[19px] h-[19px] px-1.5 rounded-full text-[10px] font-bold font-mono-num leading-none bg-[var(--warn)] text-white dark:text-neutral-950 shadow-2xs"
+              className="hidden sm:inline-flex items-center justify-center rounded-full bg-[var(--warn)] px-1.5 py-0.5 text-[10px] font-bold text-white dark:text-neutral-950 font-mono-num leading-none shadow-2xs"
             >
               {flashcardsDoDia.length}
             </span>
@@ -157,7 +157,7 @@ function RevisaoContent() {
           <span className="sm:hidden tracking-tight">Dúvidas</span>
           <span className="hidden sm:inline whitespace-nowrap">Tira-Dúvidas</span>
           <Bot
-            size={15.5}
+            size={15}
             className="hidden sm:inline-block shrink-0 text-[var(--signal)] transition-transform group-hover:scale-110"
             strokeWidth={2.2}
           />
