@@ -574,21 +574,29 @@ export function buildInterleavedWeightedSequence<T extends Subject>(
   // Passagem de segurança: resolve duplicatas adjacentes caso a combinação de pesos force proximidade
   const maxDistinct = new Set(base.map((s) => s.id)).size;
   if (maxDistinct > 1) {
-    for (let pass = 0; pass < totalSlots * 2; pass++) {
+    for (let pass = 0; pass < totalSlots * 3; pass++) {
       let hadSwap = false;
       for (let i = 0; i < totalSlots; i++) {
         const next = (i + 1) % totalSlots;
         if (slots[i]?.id === slots[next]?.id) {
           for (let j = 0; j < totalSlots; j++) {
+            if (j === i || j === next) continue;
+            if (slots[j]?.id === slots[i]?.id) continue;
+
+            const prevNext = i;
+            const postNext = (next + 1) % totalSlots;
             const prevJ = (j - 1 + totalSlots) % totalSlots;
-            const nextJ = (j + 1) % totalSlots;
-            if (
-              slots[j]?.id !== slots[i]?.id &&
-              slots[prevJ]?.id !== slots[i]?.id &&
-              slots[nextJ]?.id !== slots[i]?.id &&
-              slots[i]?.id !== slots[prevJ]?.id &&
-              slots[i]?.id !== slots[nextJ]?.id
-            ) {
+            const postJ = (j + 1) % totalSlots;
+
+            const validAtNext =
+              slots[j]?.id !== slots[prevNext]?.id &&
+              (postNext === j || slots[j]?.id !== slots[postNext]?.id);
+
+            const validAtJ =
+              (prevJ === next || slots[next]?.id !== slots[prevJ]?.id) &&
+              (postJ === next || slots[next]?.id !== slots[postJ]?.id);
+
+            if (validAtNext && validAtJ) {
               const tmp = slots[next];
               slots[next] = slots[j];
               slots[j] = tmp;
