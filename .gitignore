@@ -42,3 +42,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# local agents binaries / cache
+.agents/skills/impeccable/scripts/bin/
+.codex/

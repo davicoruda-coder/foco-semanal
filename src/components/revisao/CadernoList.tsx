@@ -297,24 +297,6 @@ export function CadernoList({
     });
   }, [questoes, bancaFiltro, disciplinaFiltro, causaFiltro, resultadoFiltro, search]);
 
-  // Agrupamento de questões por disciplina ordenado alfabeticamente (A-Z)
-  const questoesAgrupadas = useMemo(() => {
-    const map = new Map<string, QuestaoCaderno[]>();
-    questoesFiltradas.forEach((q) => {
-      const disc = q.disciplina?.trim() || "Outras";
-      if (!map.has(disc)) {
-        map.set(disc, []);
-      }
-      map.get(disc)!.push(q);
-    });
-
-    // Ordenação alfabética consistente com a barra de pílulas do topo
-    const sortedEntries = Array.from(map.entries()).sort(([a], [b]) =>
-      a.localeCompare(b, "pt-BR", { sensitivity: "base" })
-    );
-
-    return new Map(sortedEntries);
-  }, [questoesFiltradas]);
 
   // Navegação no Modal de Leitura
   const readingIndex = useMemo(() => {
@@ -367,7 +349,7 @@ export function CadernoList({
       <div
         key={q.id}
         onClick={() => setReadingQuestao(q)}
-        className={`group relative cursor-pointer border border-[var(--line)] bg-[var(--surface)] transition-all duration-200 hover:border-[var(--signal)] hover:shadow-md hover:-translate-y-0.5 active:scale-[0.995] overflow-hidden border-l-[3.5px] border-l-[var(--signal)] ${
+        className={`group relative cursor-pointer border border-[var(--line)] bg-[var(--surface)] transition-all duration-200 hover:border-[var(--signal)] hover:shadow-md hover:-translate-y-0.5 active:scale-[0.995] overflow-hidden ${
           viewMode === "grid"
             ? "flex flex-col justify-between min-h-[165px] sm:min-h-[175px] rounded-l-sm rounded-r-2xl sm:rounded-r-3xl p-3.5 pl-9 sm:p-4 sm:pl-10 shadow-xs"
             : "flex items-center justify-between rounded-l-sm rounded-r-xl p-3 pl-9 sm:pl-10"
@@ -768,12 +750,12 @@ export function CadernoList({
         )}
       </div>
 
-      {/* Lista ou Grade de Registros */}
+      {/* Lista ou Grade de Registros com Master-Detail (Sidebar de Cadernos + Mesa de Fichas) */}
       {questoesLoading ? (
         <div className="py-12 text-center text-sm text-[color-mix(in_srgb,var(--ink)_50%,transparent)]">
           Carregando questões do caderno...
         </div>
-      ) : questoesFiltradas.length === 0 ? (
+      ) : questoes.length === 0 ? (
         <div className="rounded-[var(--radius)] border border-dashed border-[var(--line)] p-8 text-center space-y-3">
           <GraduationCap
             size={36}
@@ -781,14 +763,10 @@ export function CadernoList({
           />
           <div className="max-w-md mx-auto">
             <p className="text-sm font-semibold text-[var(--ink)]">
-              {hasActiveFilters
-                ? "Nenhuma anotação encontrada com esses filtros"
-                : "Seu caderno de erros está vazio"}
+              Seu caderno de erros está vazio
             </p>
             <p className="mt-1 text-xs text-[color-mix(in_srgb,var(--ink)_50%,transparent)] leading-relaxed">
-              {hasActiveFilters
-                ? "Tente ajustar os filtros ou a busca acima para encontrar suas anotações."
-                : "Registre seus erros ou dúvidas de exercícios, simulados e provas para fixação ativa."}
+              Registre seus erros ou dúvidas de exercícios, simulados e provas para fixação ativa.
             </p>
           </div>
           {onNewQuestao && (
@@ -802,77 +780,227 @@ export function CadernoList({
             </button>
           )}
         </div>
-      ) : disciplinaFiltro !== "todas" ? (
-        /* VISUALIZAÇÃO DE PASTA ESPECÍFICA ABERTA */
-        <div className="space-y-3.5">
-          <div className="flex flex-wrap items-center justify-between gap-2 px-1 py-1 text-xs">
-            <div className="flex items-center gap-2 min-w-0">
-              <span className="text-[color-mix(in_srgb,var(--ink)_50%,transparent)] font-medium">
-                Pasta aberta:
-              </span>
-              <span className="font-bold text-sm sm:text-base text-[var(--ink)] inline-flex items-center gap-1.5 truncate">
-                <FolderOpen size={16} className="text-[var(--signal)] shrink-0" />
-                {disciplinaFiltro}
-              </span>
-              <span className="rounded-full bg-[var(--signal-soft)] text-[var(--signal)] font-bold text-[11px] px-2.5 py-0.5 border border-[var(--signal)]/20 shrink-0">
-                {questoesFiltradas.length}{" "}
-                {questoesFiltradas.length === 1 ? "anotação" : "anotações"}
-              </span>
-            </div>
-
+      ) : (
+        <div className="space-y-3">
+          {/* Mobile: Pílulas de Cadernos com rolagem horizontal fluida */}
+          <div className="lg:hidden flex items-center gap-1.5 overflow-x-auto pb-1 -mx-1 px-1 no-scrollbar text-xs">
             <button
               type="button"
               onClick={() => setDisciplinaFiltro("todas")}
-              className="text-xs font-semibold text-[var(--signal)] hover:underline inline-flex items-center gap-1 shrink-0"
+              className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 font-semibold text-xs transition shrink-0 ${
+                disciplinaFiltro === "todas"
+                  ? "bg-[var(--signal)] text-white shadow-2xs"
+                  : "border border-[var(--line)] bg-[var(--surface)] text-[color-mix(in_srgb,var(--ink)_75%,transparent)] hover:text-[var(--ink)]"
+              }`}
             >
-              ← Ver todas as pastas
+              <BookOpen size={12} />
+              <span>Todos</span>
+              <span
+                className={`font-mono text-[10px] font-bold ${
+                  disciplinaFiltro === "todas"
+                    ? "opacity-90"
+                    : "text-[color-mix(in_srgb,var(--ink)_50%,transparent)]"
+                }`}
+              >
+                {questoes.length}
+              </span>
             </button>
+            {disciplinas.map((d) => {
+              const count = disciplinaCounts.get(d) || 0;
+              const isSelected = disciplinaFiltro === d;
+              return (
+                <button
+                  key={d}
+                  type="button"
+                  onClick={() => setDisciplinaFiltro(isSelected ? "todas" : d)}
+                  className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 font-semibold text-xs transition shrink-0 ${
+                    isSelected
+                      ? "bg-[var(--signal)] text-white shadow-2xs"
+                      : "border border-[var(--line)] bg-[var(--surface)] text-[color-mix(in_srgb,var(--ink)_75%,transparent)] hover:text-[var(--ink)]"
+                  }`}
+                >
+                  {isSelected ? <FolderOpen size={12} /> : <Folder size={12} />}
+                  <span className="max-w-[150px] truncate">{d}</span>
+                  <span
+                    className={`font-mono text-[10px] font-bold ${
+                      isSelected
+                        ? "opacity-90"
+                        : "text-[color-mix(in_srgb,var(--ink)_50%,transparent)]"
+                    }`}
+                  >
+                    {count}
+                  </span>
+                </button>
+              );
+            })}
           </div>
 
-          <div
-            className={
-              viewMode === "grid"
-                ? "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-3.5"
-                : "space-y-2.5 max-w-4xl"
-            }
-          >
-            {questoesFiltradas.map(renderCard)}
-          </div>
-        </div>
-      ) : (
-        /* VISUALIZAÇÃO GERAL AGRUPADA EM PASTAS */
-        <div className="space-y-6">
-          {Array.from(questoesAgrupadas.entries()).map(([disc, items]) => (
-            <section key={disc} className="space-y-3">
-              <div className="flex items-center gap-2 pb-1.5 border-b border-[var(--line)]/60">
+          {/* Grid Principal Master-Detail: Sidebar (Desktop) + Mesa de Fichas */}
+          <div className="flex flex-col lg:grid lg:grid-cols-[250px_1fr] xl:grid-cols-[270px_1fr] lg:gap-5 items-start">
+            {/* Sidebar Desktop: Estante de Cadernos */}
+            <aside className="hidden lg:block w-full sticky top-20 shrink-0 space-y-2">
+              <div className="rounded-[var(--radius)] border border-[var(--line)] bg-[var(--surface)] p-2.5 shadow-xs space-y-1">
+                <div className="flex items-center justify-between px-2 py-1.5 mb-1 border-b border-[var(--line)]/50">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-[color-mix(in_srgb,var(--ink)_55%,transparent)]">
+                    Cadernos
+                  </span>
+                  <span className="text-[11px] font-mono font-medium text-[color-mix(in_srgb,var(--ink)_50%,transparent)]">
+                    {disciplinas.length} {disciplinas.length === 1 ? "matéria" : "matérias"}
+                  </span>
+                </div>
+
+                {/* Todos os Cadernos */}
                 <button
                   type="button"
-                  onClick={() => setDisciplinaFiltro(disc)}
-                  className="group/folder inline-flex items-center gap-2 text-left cursor-pointer transition hover:opacity-90 min-w-0"
-                  title={`Abrir pasta ${disc}`}
+                  onClick={() => setDisciplinaFiltro("todas")}
+                  className={`w-full flex items-center justify-between gap-2 px-2.5 py-2 rounded-xl text-xs font-semibold transition ${
+                    disciplinaFiltro === "todas"
+                      ? "bg-[var(--signal-soft)] text-[var(--signal)] shadow-2xs"
+                      : "text-[color-mix(in_srgb,var(--ink)_75%,transparent)] hover:bg-[var(--mist)] hover:text-[var(--ink)]"
+                  }`}
                 >
-                  <Folder size={16} className="text-[var(--signal)] shrink-0 group-hover/folder:scale-110 transition-transform" />
-                  <h3
-                    className="font-display font-bold text-sm sm:text-base text-[var(--ink)] group-hover/folder:text-[var(--signal)] transition-colors truncate max-w-[320px] sm:max-w-xl"
-                    title={disc}
+                  <div className="flex items-center gap-2 min-w-0">
+                    <BookOpen
+                      size={14}
+                      className={
+                        disciplinaFiltro === "todas"
+                          ? "text-[var(--signal)]"
+                          : "text-[color-mix(in_srgb,var(--ink)_50%,transparent)]"
+                      }
+                    />
+                    <span className="truncate">Todos os Cadernos</span>
+                  </div>
+                  <span
+                    className={`rounded-full px-2 py-0.5 text-[10px] font-mono font-bold leading-none shrink-0 ${
+                      disciplinaFiltro === "todas"
+                        ? "bg-[var(--signal)] text-white"
+                        : "bg-[var(--mist)] text-[color-mix(in_srgb,var(--ink)_60%,transparent)]"
+                    }`}
                   >
-                    {disc}
-                  </h3>
-                  <ChevronRight size={14} className="text-[color-mix(in_srgb,var(--ink)_40%,transparent)] group-hover/folder:text-[var(--signal)] group-hover/folder:translate-x-0.5 transition-all" />
+                    {questoes.length}
+                  </span>
                 </button>
-              </div>
 
-              <div
-                className={
-                  viewMode === "grid"
-                    ? "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-3.5"
-                    : "space-y-2.5 max-w-4xl"
-                }
-              >
-                {items.map(renderCard)}
+                {/* Lista de Matérias */}
+                <div className="max-h-[calc(100vh-220px)] overflow-y-auto space-y-0.5 pr-0.5 pt-0.5">
+                  {disciplinas.map((d) => {
+                    const count = disciplinaCounts.get(d) || 0;
+                    const isSelected = disciplinaFiltro === d;
+                    return (
+                      <button
+                        key={d}
+                        type="button"
+                        onClick={() => setDisciplinaFiltro(isSelected ? "todas" : d)}
+                        title={d}
+                        className={`w-full flex items-center justify-between gap-2 px-2.5 py-2 rounded-xl text-xs font-semibold transition ${
+                          isSelected
+                            ? "bg-[var(--signal-soft)] text-[var(--signal)] shadow-2xs"
+                            : "text-[color-mix(in_srgb,var(--ink)_75%,transparent)] hover:bg-[var(--mist)] hover:text-[var(--ink)]"
+                        }`}
+                      >
+                        <div className="flex items-center gap-2 min-w-0">
+                          {isSelected ? (
+                            <FolderOpen size={14} className="text-[var(--signal)] shrink-0" />
+                          ) : (
+                            <Folder
+                              size={14}
+                              className="text-[color-mix(in_srgb,var(--ink)_50%,transparent)] shrink-0"
+                            />
+                          )}
+                          <span className="truncate">{d}</span>
+                        </div>
+                        <span
+                          className={`rounded-full px-2 py-0.5 text-[10px] font-mono font-bold leading-none shrink-0 ${
+                            isSelected
+                              ? "bg-[var(--signal)] text-white"
+                              : "bg-[var(--mist)] text-[color-mix(in_srgb,var(--ink)_60%,transparent)]"
+                          }`}
+                        >
+                          {count}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
-            </section>
-          ))}
+            </aside>
+
+            {/* Conteúdo Principal: Mesa de Fichas */}
+            <div className="w-full min-w-0 space-y-3">
+              {questoesFiltradas.length === 0 ? (
+                <div className="rounded-[var(--radius)] border border-dashed border-[var(--line)] p-8 text-center space-y-3 bg-[var(--surface)]">
+                  <GraduationCap
+                    size={36}
+                    className="mx-auto text-[color-mix(in_srgb,var(--ink)_35%,transparent)]"
+                  />
+                  <div className="max-w-md mx-auto">
+                    <p className="text-sm font-semibold text-[var(--ink)]">
+                      Nenhuma anotação encontrada com esses filtros
+                    </p>
+                    <p className="mt-1 text-xs text-[color-mix(in_srgb,var(--ink)_50%,transparent)] leading-relaxed">
+                      Tente ajustar os filtros ou a busca acima para encontrar suas anotações.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleClearFilters}
+                    className="inline-flex items-center gap-1.5 rounded-[var(--radius-btn)] border border-[var(--line)] bg-[var(--mist)] hover:bg-[var(--surface)] px-3 py-1.5 text-xs font-semibold text-[var(--ink)] transition"
+                  >
+                    <RotateCcw size={13} />
+                    Limpar Filtros
+                  </button>
+                </div>
+              ) : (
+                <>
+                  {/* Micro-header da Mesa */}
+                  <div className="flex items-center justify-between px-1 py-0.5 text-xs">
+                    <div className="flex items-center gap-2 min-w-0">
+                      {disciplinaFiltro !== "todas" ? (
+                        <>
+                          <FolderOpen size={15} className="text-[var(--signal)] shrink-0" />
+                          <span className="font-bold text-[var(--ink)] truncate text-sm">
+                            {disciplinaFiltro}
+                          </span>
+                        </>
+                      ) : (
+                        <>
+                          <BookOpen size={15} className="text-[var(--signal)] shrink-0" />
+                          <span className="font-bold text-[var(--ink)] text-sm">
+                            Todas as Fichas
+                          </span>
+                        </>
+                      )}
+                      <span className="rounded-full bg-[var(--signal-soft)] text-[var(--signal)] font-bold font-mono text-[11px] px-2.5 py-0.5 border border-[var(--signal)]/20 shrink-0">
+                        {questoesFiltradas.length}{" "}
+                        {questoesFiltradas.length === 1 ? "ficha" : "fichas"}
+                      </span>
+                    </div>
+
+                    {disciplinaFiltro !== "todas" && (
+                      <button
+                        type="button"
+                        onClick={() => setDisciplinaFiltro("todas")}
+                        className="text-xs font-semibold text-[var(--signal)] hover:underline inline-flex items-center gap-1 shrink-0"
+                      >
+                        ← Ver todas as pastas
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Grid Contínuo sem buracos laterais */}
+                  <div
+                    className={
+                      viewMode === "grid"
+                        ? "grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-3 sm:gap-3.5"
+                        : "space-y-2.5"
+                    }
+                  >
+                    {questoesFiltradas.map(renderCard)}
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
         </div>
       )}
 
