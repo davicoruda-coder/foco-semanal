@@ -500,7 +500,7 @@ export function CadernoList({
           </div>
 
           {/* Toggle Grade / Lista, Botão Filtros e CTA */}
-          <div className="flex items-center justify-between sm:justify-end gap-2 shrink-0">
+          <div className="flex w-full sm:w-auto items-center justify-between sm:justify-end gap-2 shrink-0 min-w-0">
             {/* Grupo de Controles de Visualização: Filtros + Grade/Lista unidos */}
             <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
               {/* Botão de Filtros Expansível */}
@@ -563,16 +563,18 @@ export function CadernoList({
               </div>
             </div>
 
-            {/* Ação Primária: Anotar no Caderno com texto completo */}
+            {/* Ação Primária: Anotar no Caderno (responsivo: '+ Anotar' no mobile para não estourar a tela, completo no desktop) */}
             {onNewQuestao && (
               <button
                 type="button"
                 onClick={onNewQuestao}
                 className="inline-flex items-center gap-1.5 rounded-[var(--radius-btn)] bg-[var(--signal)] text-white hover:brightness-110 px-2.5 sm:px-3 py-1.5 text-xs sm:text-sm font-semibold shadow-xs transition active:scale-95 shrink-0 whitespace-nowrap"
-                title="Registrar novo erro, chute ou dúvida"
+                title="Registrar novo erro, chute ou dúvida no caderno"
               >
-                <Plus size={15} strokeWidth={2.2} />
-                <span>Anotar no Caderno</span>
+                <Plus size={14} strokeWidth={2.5} className="shrink-0" />
+                <span>
+                  Anotar<span className="hidden sm:inline"> no Caderno</span>
+                </span>
               </button>
             )}
           </div>
