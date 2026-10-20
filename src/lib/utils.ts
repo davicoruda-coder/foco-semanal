@@ -439,7 +439,7 @@ export function isSubjectDoneToday(
 /**
  * Constrói uma sequência ponderada com intercalação inteligente (fair interleaving).
  * Evita repetições consecutivas da mesma matéria distribuindo as matérias de maior peso
- * proporcionalmente ao longo do ciclo.
+ * proporcionalmente ao longo do ciclo com máximo espaçamento circular.
  */
 export function buildInterleavedWeightedSequence<T extends Subject>(
   base: T[],
@@ -483,49 +483,126 @@ export function buildInterleavedWeightedSequence<T extends Subject>(
     return Array(w).fill(s);
   }
 
-  const counts = new Map<string, number>();
-  let totalCount = 0;
+  const totalSlots = base.reduce(
+    (acc, s) => acc + Math.max(1, s.weight ?? 1),
+    0,
+  );
+  if (totalSlots === 0) return [];
 
-  for (const s of base) {
+  const slots = new Array<T | null>(totalSlots).fill(null);
+
+  // Separa matérias com peso > 1 (pesadas) e peso === 1 (leves)
+  const heavy = base.filter((s) => (s.weight ?? 1) > 1);
+  const light = base.filter((s) => (s.weight ?? 1) <= 1);
+
+  // Ordena matérias pesadas por peso decrescente; empates mantêm a ordem base
+  heavy.sort((a, b) => (b.weight ?? 1) - (a.weight ?? 1));
+
+  // Posiciona matérias pesadas com espaçamento circular uniforme
+  for (const s of heavy) {
     const w = Math.max(1, s.weight ?? 1);
-    counts.set(s.id, w);
-    totalCount += w;
-  }
+    const stride = totalSlots / w;
 
-  if (totalCount === 0) return [];
+    let bestMinDistance = -1;
+    let bestPositions: number[] | null = null;
 
-  const result: T[] = [];
-  let lastId: string | null = null;
+    for (let o = 0; o < totalSlots; o++) {
+      const positions: number[] = [];
+      let valid = true;
 
-  while (totalCount > 0) {
-    const available = base.filter((s) => (counts.get(s.id) ?? 0) > 0);
-    if (available.length === 0) break;
+      for (let k = 0; k < w; k++) {
+        const pos = Math.round(o + k * stride) % totalSlots;
+        if (slots[pos] !== null) {
+          valid = false;
+          break;
+        }
+        positions.push(pos);
+      }
 
-    // Prioriza matérias diferentes da anterior para garantir alternância
-    const nonConsecutive = available.filter((s) => s.id !== lastId);
-    const candidates = nonConsecutive.length > 0 ? nonConsecutive : available;
+      if (valid) {
+        let minNeighborDist = Infinity;
+        for (const p of positions) {
+          for (let d = 1; d < totalSlots; d++) {
+            const left = (p - d + totalSlots) % totalSlots;
+            const right = (p + d) % totalSlots;
+            if (slots[left] !== null || slots[right] !== null) {
+              if (d < minNeighborDist) minNeighborDist = d;
+              break;
+            }
+          }
+        }
+        if (minNeighborDist === Infinity) minNeighborDist = totalSlots;
 
-    // Escolhe a matéria com maior contagem restante para manter espaçamento uniforme;
-    // em caso de empate, mantém a ordem original da lista base
-    let best = candidates[0];
-    let bestCount = counts.get(best.id) ?? 0;
-
-    for (let i = 1; i < candidates.length; i++) {
-      const c = candidates[i];
-      const count = counts.get(c.id) ?? 0;
-      if (count > bestCount) {
-        best = c;
-        bestCount = count;
+        if (minNeighborDist > bestMinDistance) {
+          bestMinDistance = minNeighborDist;
+          bestPositions = positions;
+        }
       }
     }
 
-    result.push(best);
-    counts.set(best.id, bestCount - 1);
-    totalCount--;
-    lastId = best.id;
+    // Se nenhuma grade perfeitamente regular coube sem colisões, distribui nos slots vazios disponíveis
+    if (!bestPositions) {
+      const emptySlots: number[] = [];
+      for (let i = 0; i < totalSlots; i++) {
+        if (slots[i] === null) emptySlots.push(i);
+      }
+      bestPositions = [];
+      const step = emptySlots.length / w;
+      for (let k = 0; k < w; k++) {
+        const idx = Math.floor(k * step);
+        bestPositions.push(emptySlots[idx]);
+      }
+    }
+
+    for (const p of bestPositions) {
+      slots[p] = s;
+    }
   }
 
-  return result;
+  // Preenche os slots restantes com as matérias leves na ordem base
+  let lightIdx = 0;
+  for (let i = 0; i < totalSlots; i++) {
+    if (slots[i] === null) {
+      if (lightIdx < light.length) {
+        slots[i] = light[lightIdx++];
+      } else {
+        slots[i] = base[0];
+      }
+    }
+  }
+
+  // Passagem de segurança: resolve duplicatas adjacentes caso a combinação de pesos force proximidade
+  const maxDistinct = new Set(base.map((s) => s.id)).size;
+  if (maxDistinct > 1) {
+    for (let pass = 0; pass < totalSlots * 2; pass++) {
+      let hadSwap = false;
+      for (let i = 0; i < totalSlots; i++) {
+        const next = (i + 1) % totalSlots;
+        if (slots[i]?.id === slots[next]?.id) {
+          for (let j = 0; j < totalSlots; j++) {
+            const prevJ = (j - 1 + totalSlots) % totalSlots;
+            const nextJ = (j + 1) % totalSlots;
+            if (
+              slots[j]?.id !== slots[i]?.id &&
+              slots[prevJ]?.id !== slots[i]?.id &&
+              slots[nextJ]?.id !== slots[i]?.id &&
+              slots[i]?.id !== slots[prevJ]?.id &&
+              slots[i]?.id !== slots[nextJ]?.id
+            ) {
+              const tmp = slots[next];
+              slots[next] = slots[j];
+              slots[j] = tmp;
+              hadSwap = true;
+              break;
+            }
+          }
+        }
+      }
+      if (!hadSwap) break;
+    }
+  }
+
+  return slots.filter((s): s is T => Boolean(s));
 }
 
 /**
