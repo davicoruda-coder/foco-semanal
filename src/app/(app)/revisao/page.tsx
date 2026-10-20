@@ -110,7 +110,7 @@ function RevisaoContent() {
             />
             {flashcardsDoDia.length > 0 && (
               <span
-                className="absolute -top-1 -right-2.5 sm:hidden grid min-w-3.5 h-3.5 place-items-center rounded-full px-0.5 text-[8px] font-bold font-mono-num leading-none shadow-xs bg-[var(--warn)] text-white dark:text-neutral-950"
+                className="absolute -top-1.5 -right-2.5 sm:hidden inline-flex min-w-[17px] h-[17px] items-center justify-center rounded-full px-1 text-[9px] font-bold font-mono-num leading-none shadow-xs bg-[var(--warn)] text-white dark:text-neutral-950"
               >
                 {flashcardsDoDia.length}
               </span>
@@ -120,7 +120,7 @@ function RevisaoContent() {
           <span className="hidden sm:inline whitespace-nowrap">Flashcards</span>
           {flashcardsDoDia.length > 0 && (
             <span
-              className="hidden sm:grid size-4 shrink-0 place-items-center rounded-full text-[9px] font-bold font-mono-num bg-[var(--warn)] text-white dark:text-neutral-950 shadow-2xs"
+              className="hidden sm:inline-flex items-center justify-center min-w-[19px] h-[19px] px-1.5 rounded-full text-[10px] font-bold font-mono-num leading-none bg-[var(--warn)] text-white dark:text-neutral-950 shadow-2xs"
             >
               {flashcardsDoDia.length}
             </span>
@@ -149,16 +149,16 @@ function RevisaoContent() {
               }`}
             />
             <span
-              className="absolute -top-1 -right-2 sm:hidden grid size-3.5 place-items-center rounded-full shadow-xs bg-[var(--signal)] text-white"
+              className="absolute -top-1.5 -right-2 sm:hidden inline-flex size-[17px] items-center justify-center rounded-full shadow-xs bg-[var(--signal)] text-white"
             >
-              <Bot size={9} strokeWidth={2.4} />
+              <Bot size={11} strokeWidth={2.3} />
             </span>
           </div>
           <span className="sm:hidden tracking-tight">Dúvidas</span>
           <span className="hidden sm:inline whitespace-nowrap">Tira-Dúvidas</span>
           <Bot
-            size={13}
-            className="hidden sm:inline-block shrink-0 text-[var(--signal)]"
+            size={15.5}
+            className="hidden sm:inline-block shrink-0 text-[var(--signal)] transition-transform group-hover:scale-110"
             strokeWidth={2.2}
           />
           {activeTab === "tira-duvidas" && (
