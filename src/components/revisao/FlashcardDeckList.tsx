@@ -220,7 +220,7 @@ export function FlashcardDeckList() {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-center gap-2 min-w-0">
               <h3 className="font-display text-base font-bold text-[var(--ink)] sm:text-lg">
-                Decks por Matéria
+                Decks
               </h3>
               <span className="rounded-full bg-[var(--mist)] px-2 py-0.5 text-xs font-mono font-semibold text-[color-mix(in_srgb,var(--ink)_60%,transparent)]">
                 {materias.length}
@@ -247,7 +247,7 @@ export function FlashcardDeckList() {
                   className="inline-flex items-center gap-1.5 rounded-[var(--radius-btn)] border border-[var(--line)] bg-[var(--surface)] px-3 py-1.5 text-xs sm:text-sm font-semibold text-[var(--signal)] shadow-sm hover:border-[var(--signal)] transition active:scale-95"
                 >
                   <Plus size={16} />
-                  <span>Nova Matéria</span>
+                  <span>Novo Deck</span>
                 </button>
               </div>
             )}
@@ -266,7 +266,7 @@ export function FlashcardDeckList() {
                   type="text"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="Buscar deck ou matéria..."
+                  placeholder="Buscar deck..."
                   className="w-full rounded-[var(--radius-btn)] border border-[var(--line)] bg-[var(--mist)] py-1.5 pl-8 pr-7 text-xs sm:text-sm text-[var(--ink)] outline-none transition placeholder:text-[color-mix(in_srgb,var(--ink)_40%,transparent)] focus:border-[var(--signal)] focus:bg-[var(--surface)]"
                 />
                 {searchTerm && (
@@ -339,7 +339,7 @@ export function FlashcardDeckList() {
           )}
         </div>
 
-        {/* Formulário de Nova Matéria */}
+        {/* Formulário de Novo Deck */}
         {showNewMateria && (
           <form
             onSubmit={handleCreateMateria}
@@ -347,7 +347,7 @@ export function FlashcardDeckList() {
           >
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold uppercase tracking-wider text-[var(--signal)]">
-                Cadastrar Matéria de Revisão
+                Cadastrar Novo Deck
               </span>
               <button
                 type="button"
@@ -367,7 +367,7 @@ export function FlashcardDeckList() {
                 autoFocus
                 value={newMateriaName}
                 onChange={(e) => setNewMateriaName(e.target.value)}
-                placeholder="Nome da matéria (ex: Português, RLM, TI...)"
+                placeholder="Nome do deck (ex: Português, RLM, Vocabulário, Fórmulas...)"
                 required
                 className="flex-1 rounded-[var(--radius-btn)] border border-[var(--line)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--ink)] outline-none focus:border-[var(--signal)]"
               />
@@ -377,7 +377,7 @@ export function FlashcardDeckList() {
                   disabled={savingMateria || !newMateriaName.trim()}
                   className="rounded-[var(--radius-btn)] bg-[var(--signal)] px-4 py-2 text-xs sm:text-sm font-semibold text-white transition hover:brightness-110 disabled:opacity-50"
                 >
-                  {savingMateria ? "Salvando..." : "Salvar Matéria"}
+                  {savingMateria ? "Salvando..." : "Salvar Deck"}
                 </button>
                 <button
                   type="button"
@@ -406,7 +406,7 @@ export function FlashcardDeckList() {
           </div>
         )}
 
-        {/* Grade de Matérias */}
+        {/* Grade de Decks */}
         {materias.length === 0 ? (
           <div className="surface rounded-[var(--radius)] border border-dashed border-[var(--line)] p-8 text-center space-y-3">
             <div className="grid size-12 place-items-center rounded-2xl bg-[var(--signal-soft)] text-[var(--signal)] mx-auto">
@@ -414,10 +414,10 @@ export function FlashcardDeckList() {
             </div>
             <div className="max-w-md mx-auto">
               <h4 className="font-display text-sm sm:text-base font-bold text-[var(--ink)]">
-                Nenhuma matéria cadastrada na revisão
+                Nenhum deck cadastrado
               </h4>
               <p className="mt-1 text-xs sm:text-sm text-[color-mix(in_srgb,var(--ink)_65%,transparent)] leading-relaxed">
-                Cadastre suas matérias para organizar seus flashcards em decks separados e treinar uma disciplina de cada vez.
+                Crie seus decks para organizar seus flashcards por disciplina ou tema e treinar com repetição espaçada.
               </p>
             </div>
             <button
@@ -425,7 +425,7 @@ export function FlashcardDeckList() {
               onClick={() => setShowNewMateria(true)}
               className="inline-flex items-center gap-1.5 rounded-[var(--radius-btn)] bg-[var(--signal)] px-4 py-2 text-xs sm:text-sm font-semibold text-white shadow-sm transition hover:brightness-110"
             >
-              <Plus size={16} /> Cadastrar primeira matéria
+              <Plus size={16} /> Criar primeiro deck
             </button>
           </div>
         ) : filteredMaterias.length === 0 ? (
@@ -440,10 +440,10 @@ export function FlashcardDeckList() {
               </h4>
               <p className="mt-1 text-xs text-[color-mix(in_srgb,var(--ink)_60%,transparent)] leading-relaxed">
                 {searchTerm && onlyWithPendingCards
-                  ? `Nenhuma matéria com o termo "${searchTerm}" possui cards para revisar hoje.`
+                  ? `Nenhum deck com o termo "${searchTerm}" possui cards para revisar hoje.`
                   : searchTerm
                   ? `Nenhum deck encontrado com o termo "${searchTerm}".`
-                  : "Nenhuma matéria possui flashcards agendados para revisão hoje."}
+                  : "Nenhum deck possui flashcards agendados para revisão hoje."}
               </p>
             </div>
             <button
@@ -499,7 +499,7 @@ export function FlashcardDeckList() {
                       <button
                         type="button"
                         onClick={() => handleDelete(materia)}
-                        title="Remover matéria da revisão"
+                        title="Remover deck"
                         className="text-[color-mix(in_srgb,var(--ink)_35%,transparent)] hover:text-[var(--warn)] p-1 transition"
                       >
                         <Trash2 size={15} />
@@ -547,7 +547,7 @@ export function FlashcardDeckList() {
                           type="button"
                           onClick={() => setManagingMateria(materia)}
                           title="Gerenciar, editar ou excluir flashcards"
-                          aria-label="Gerenciar flashcards desta matéria"
+                          aria-label="Gerenciar flashcards deste deck"
                           className="rounded-[var(--radius-btn)] border border-[var(--line)] bg-[var(--surface)] p-2 text-[color-mix(in_srgb,var(--ink)_65%,transparent)] hover:border-[var(--signal)] hover:text-[var(--signal)] hover:bg-[var(--mist)] transition shrink-0"
                         >
                           <SlidersHorizontal size={16} />
@@ -573,7 +573,7 @@ export function FlashcardDeckList() {
                           type="button"
                           onClick={() => setManagingMateria(materia)}
                           title="Gerenciar, editar ou excluir flashcards"
-                          aria-label="Gerenciar flashcards desta matéria"
+                          aria-label="Gerenciar flashcards deste deck"
                           className="rounded-[var(--radius-btn)] border border-[var(--line)] bg-[var(--surface)] p-2 text-[color-mix(in_srgb,var(--ink)_65%,transparent)] hover:border-[var(--signal)] hover:text-[var(--signal)] hover:bg-[var(--mist)] transition shrink-0"
                         >
                           <SlidersHorizontal size={16} />
@@ -605,8 +605,8 @@ export function FlashcardDeckList() {
       {/* Diálogo de confirmação de exclusão */}
       <ConfirmDialog
         open={pendingDeleteMateria !== null}
-        title="Remover matéria da revisão"
-        message={`Deseja remover a matéria "${pendingDeleteMateria?.nome}" da revisão? Seus flashcards serão preservados.`}
+        title="Remover deck"
+        message={`Deseja remover o deck "${pendingDeleteMateria?.nome}"? Seus flashcards serão preservados.`}
         confirmLabel="Remover"
         cancelLabel="Cancelar"
         confirmVariant="danger"
