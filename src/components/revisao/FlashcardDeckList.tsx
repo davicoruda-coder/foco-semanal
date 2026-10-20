@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   ArrowLeft,
   Bot,
@@ -12,6 +12,8 @@ import {
   Trash2,
   X,
   Zap,
+  Search,
+  RotateCcw,
 } from "lucide-react";
 import type { Flashcard, MateriaRevisao } from "@/lib/revisao/types";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
@@ -46,6 +48,49 @@ export function FlashcardDeckList() {
   const [managingMateria, setManagingMateria] = useState<MateriaRevisao | null>(
     null,
   );
+  const [searchTerm, setSearchTerm] = useState("");
+  const [onlyWithPendingCards, setOnlyWithPendingCards] = useState(false);
+
+  // Mapeamento de contagem de cards de hoje por matéria (acelera filtragem)
+  const materiaCountsHoje = useMemo(() => {
+    const map = new Map<string, number>();
+    (flashcardsDoDia || []).forEach((c) => {
+      const disc = (c.questao?.disciplina || c.disciplina || "").trim().toLowerCase();
+      if (disc) {
+        map.set(disc, (map.get(disc) || 0) + 1);
+      }
+    });
+    return map;
+  }, [flashcardsDoDia]);
+
+  // Quantidade de matérias que têm revisões pendentes agendadas para hoje
+  const materiasWithPendingCount = useMemo(() => {
+    let count = 0;
+    materias.forEach((m) => {
+      const nomeLower = (m.nome || "").trim().toLowerCase();
+      if ((materiaCountsHoje.get(nomeLower) || 0) > 0) {
+        count++;
+      }
+    });
+    return count;
+  }, [materias, materiaCountsHoje]);
+
+  // Filtragem rápida de matérias por nome e por pendência de hoje
+  const filteredMaterias = useMemo(() => {
+    return materias.filter((m) => {
+      const nomeLower = (m.nome || "").trim().toLowerCase();
+      if (onlyWithPendingCards && (materiaCountsHoje.get(nomeLower) || 0) === 0) {
+        return false;
+      }
+      if (searchTerm.trim()) {
+        const term = searchTerm.trim().toLowerCase();
+        if (!nomeLower.includes(term)) {
+          return false;
+        }
+      }
+      return true;
+    });
+  }, [materias, onlyWithPendingCards, searchTerm, materiaCountsHoje]);
 
   /* Criar nova matéria */
   async function handleCreateMateria(e: React.FormEvent) {
@@ -170,33 +215,126 @@ export function FlashcardDeckList() {
 
       {/* SEÇÃO: MATÉRIAS & DECKS ESPECÍFICOS */}
       <section className="space-y-4">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--line)] pb-3">
-          <h3 className="font-display text-base font-bold text-[var(--ink)] sm:text-lg">
-            Decks por Matéria
-          </h3>
+        {/* Cabeçalho da Seção com Título, Busca Rápida e Ações */}
+        <div className="space-y-3 border-b border-[var(--line)] pb-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-2 min-w-0">
+              <h3 className="font-display text-base font-bold text-[var(--ink)] sm:text-lg">
+                Decks por Matéria
+              </h3>
+              <span className="rounded-full bg-[var(--mist)] px-2 py-0.5 text-xs font-mono font-semibold text-[color-mix(in_srgb,var(--ink)_60%,transparent)]">
+                {materias.length}
+              </span>
+            </div>
 
-          {!showNewMateria && (
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => setShowAIGenerator(!showAIGenerator)}
-                className={`inline-flex items-center gap-1.5 rounded-[var(--radius-btn)] border px-3 py-1.5 text-xs sm:text-sm font-semibold shadow-xs transition ${
-                  showAIGenerator
-                    ? "border-[var(--signal)] bg-[var(--signal-soft)] text-[var(--signal)]"
-                    : "border-[color-mix(in_srgb,var(--signal)_35%,var(--line))] bg-[var(--surface)] text-[var(--signal)] hover:bg-[var(--signal-soft)] active:scale-95"
-                }`}
-              >
-                <Bot size={14} />
-                Gerar com IA
-              </button>
-              <button
-                type="button"
-                onClick={() => setShowNewMateria(true)}
-                className="inline-flex items-center gap-1.5 rounded-[var(--radius-btn)] border border-[var(--line)] bg-[var(--surface)] px-3 py-1.5 text-xs sm:text-sm font-semibold text-[var(--signal)] shadow-sm hover:border-[var(--signal)] transition"
-              >
-                <Plus size={16} />
-                Nova Matéria
-              </button>
+            {!showNewMateria && (
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setShowAIGenerator(!showAIGenerator)}
+                  className={`inline-flex items-center gap-1.5 rounded-[var(--radius-btn)] border px-3 py-1.5 text-xs sm:text-sm font-semibold shadow-xs transition ${
+                    showAIGenerator
+                      ? "border-[var(--signal)] bg-[var(--signal-soft)] text-[var(--signal)]"
+                      : "border-[color-mix(in_srgb,var(--signal)_35%,var(--line))] bg-[var(--surface)] text-[var(--signal)] hover:bg-[var(--signal-soft)] active:scale-95"
+                  }`}
+                >
+                  <Bot size={14} />
+                  <span>Gerar com IA</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowNewMateria(true)}
+                  className="inline-flex items-center gap-1.5 rounded-[var(--radius-btn)] border border-[var(--line)] bg-[var(--surface)] px-3 py-1.5 text-xs sm:text-sm font-semibold text-[var(--signal)] shadow-sm hover:border-[var(--signal)] transition active:scale-95"
+                >
+                  <Plus size={16} />
+                  <span>Nova Matéria</span>
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Barra de Busca e Filtro de Decks */}
+          {materias.length > 0 && (
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 pt-1">
+              {/* Campo de Busca Rápida */}
+              <div className="relative flex-1 max-w-full sm:max-w-xs">
+                <Search
+                  size={14}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-[color-mix(in_srgb,var(--ink)_45%,transparent)] pointer-events-none"
+                />
+                <input
+                  type="text"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="Buscar deck ou matéria..."
+                  className="w-full rounded-[var(--radius-btn)] border border-[var(--line)] bg-[var(--mist)] py-1.5 pl-8 pr-7 text-xs sm:text-sm text-[var(--ink)] outline-none transition placeholder:text-[color-mix(in_srgb,var(--ink)_40%,transparent)] focus:border-[var(--signal)] focus:bg-[var(--surface)]"
+                />
+                {searchTerm && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchTerm("")}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-[color-mix(in_srgb,var(--ink)_40%,transparent)] hover:text-[var(--ink)] p-0.5 cursor-pointer"
+                    title="Limpar busca"
+                  >
+                    <X size={13} />
+                  </button>
+                )}
+              </div>
+
+              {/* Filtro: Só com cards hoje */}
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setOnlyWithPendingCards((prev) => !prev)}
+                  aria-pressed={onlyWithPendingCards}
+                  className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition border cursor-pointer ${
+                    onlyWithPendingCards
+                      ? "bg-[var(--warn-soft)] text-[var(--warn)] border-[var(--warn)]/40 shadow-xs ring-1 ring-[var(--warn)]/20"
+                      : "bg-[var(--surface)] text-[color-mix(in_srgb,var(--ink)_70%,transparent)] border-[var(--line)] hover:border-[var(--line)]/80 hover:text-[var(--ink)]"
+                  }`}
+                  title={
+                    onlyWithPendingCards
+                      ? "Exibindo apenas decks com revisões hoje. Clique para ver todos."
+                      : "Filtrar para ver apenas decks que têm cards agendados para hoje"
+                  }
+                >
+                  <Zap
+                    size={13}
+                    className={
+                      onlyWithPendingCards
+                        ? "fill-current text-[var(--warn)]"
+                        : "text-[color-mix(in_srgb,var(--ink)_45%,transparent)]"
+                    }
+                  />
+                  <span>Só com cards hoje</span>
+                  {materiasWithPendingCount > 0 && (
+                    <span
+                      className={`rounded-full px-1.5 py-0.2 text-[10px] font-mono font-bold leading-none ${
+                        onlyWithPendingCards
+                          ? "bg-[var(--warn)] text-white"
+                          : "bg-[var(--mist)] text-[color-mix(in_srgb,var(--ink)_60%,transparent)]"
+                      }`}
+                    >
+                      {materiasWithPendingCount}
+                    </span>
+                  )}
+                </button>
+
+                {(searchTerm || onlyWithPendingCards) && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSearchTerm("");
+                      setOnlyWithPendingCards(false);
+                    }}
+                    className="inline-flex items-center gap-1 text-xs text-rose-500 hover:underline px-1 py-1 font-medium cursor-pointer"
+                    title="Limpar filtros"
+                  >
+                    <RotateCcw size={11} />
+                    Limpar
+                  </button>
+                )}
+              </div>
             </div>
           )}
         </div>
@@ -290,9 +428,38 @@ export function FlashcardDeckList() {
               <Plus size={16} /> Cadastrar primeira matéria
             </button>
           </div>
+        ) : filteredMaterias.length === 0 ? (
+          <div className="surface rounded-[var(--radius)] border border-dashed border-[var(--line)] p-8 text-center space-y-3">
+            <Search
+              size={32}
+              className="mx-auto text-[color-mix(in_srgb,var(--ink)_35%,transparent)]"
+            />
+            <div className="max-w-md mx-auto">
+              <h4 className="font-display text-sm sm:text-base font-bold text-[var(--ink)]">
+                Nenhum deck encontrado
+              </h4>
+              <p className="mt-1 text-xs text-[color-mix(in_srgb,var(--ink)_60%,transparent)] leading-relaxed">
+                {searchTerm && onlyWithPendingCards
+                  ? `Nenhuma matéria com o termo "${searchTerm}" possui cards para revisar hoje.`
+                  : searchTerm
+                  ? `Nenhum deck encontrado com o termo "${searchTerm}".`
+                  : "Nenhuma matéria possui flashcards agendados para revisão hoje."}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setSearchTerm("");
+                setOnlyWithPendingCards(false);
+              }}
+              className="inline-flex items-center gap-1.5 rounded-[var(--radius-btn)] border border-[var(--line)] bg-[var(--mist)] hover:bg-[var(--surface)] px-3 py-1.5 text-xs font-semibold text-[var(--ink)] transition cursor-pointer"
+            >
+              <RotateCcw size={12} /> Limpar filtros e ver todos
+            </button>
+          </div>
         ) : (
           <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-3">
-            {materias.map((materia) => {
+            {filteredMaterias.map((materia) => {
               const materiaNome = typeof materia?.nome === "string" ? materia.nome : "";
               const materiaNomeLower = materiaNome.toLowerCase();
 
