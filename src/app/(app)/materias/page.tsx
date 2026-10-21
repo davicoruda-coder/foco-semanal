@@ -199,28 +199,29 @@ function ProgressEditor({
   onSave: (p: ProgressTracker | undefined) => void;
   compact?: boolean;
 }) {
-  const [open, setOpen] = useState(Boolean(progress));
   const [customLabel, setCustomLabel] = useState("");
 
-  if (!open) {
+  if (!progress) {
     return (
       <button
         type="button"
         className={`btn text-sm ${compact ? "text-xs py-1" : ""}`}
-        onClick={() => setOpen(true)}
+        onClick={() =>
+          onSave({
+            unit_label: "Vídeo",
+            total: 1,
+            current: 0,
+            auto_detect: false,
+            auto_prefix: "",
+          })
+        }
       >
         <BarChart3 size={compact ? 13 : 15} strokeWidth={1.75} /> Ativar progresso do módulo
       </button>
     );
   }
 
-  const p: ProgressTracker = progress ?? {
-    unit_label: "Vídeo",
-    total: 1,
-    current: 0,
-    auto_detect: false,
-    auto_prefix: "",
-  };
+  const p = progress;
   const pct = progressPercent(p);
   const isCustomLabel = !PROGRESS_UNIT_LABELS.includes(p.unit_label as typeof PROGRESS_UNIT_LABELS[number]);
 
@@ -245,7 +246,6 @@ function ProgressEditor({
           aria-label="Desativar progresso"
           onClick={() => {
             onSave(undefined);
-            setOpen(false);
           }}
         >
           <X size={15} strokeWidth={2} />

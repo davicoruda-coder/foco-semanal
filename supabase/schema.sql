@@ -29,6 +29,10 @@ create table if not exists public.subjects (
   rotation jsonb,
   -- Ícone: preset:<id> | data URL | null
   icon text,
+  -- Recursos / links úteis: [{"id": "...", "title": "...", "url": "..."}]
+  recursos jsonb,
+  -- Progresso de módulo/curso: {"unit_label": "...", "total": 10, "current": 0, "auto_detect": false, "auto_prefix": ""}
+  progress jsonb,
   -- Ciclo ponderado: quantas vezes entra no ciclo e quantas vezes já cumpriu no ciclo atual
   weight int not null default 1,
   cycle_done int not null default 0,

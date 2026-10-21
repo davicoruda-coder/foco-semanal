@@ -284,9 +284,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
           sessionUser.user_metadata?.custom_avatar ||
           undefined,
       });
-      // Se a nuvem ainda não tiver as colunas de peso/ciclo (migration SQL pendente no Supabase),
-      // preserva o peso/ciclo que o usuário já configurou localmente em vez de resetar.
-      if (localSnapshot?.subjects?.length && (!loaded.dbHasWeight || !loaded.dbHasCycleDone)) {
+      // Se a nuvem ainda não tiver as colunas de peso/ciclo/progress (migration SQL pendente no Supabase),
+      // preserva o que o usuário já configurou localmente em vez de resetar.
+      if (
+        localSnapshot?.subjects?.length &&
+        (!loaded.dbHasWeight || !loaded.dbHasCycleDone || !loaded.dbHasProgress)
+      ) {
         const localById = new Map(localSnapshot.subjects.map((s) => [s.id, s]));
         loaded.data.subjects = loaded.data.subjects.map((s) => {
           const local = localById.get(s.id);
@@ -294,7 +297,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
           return {
             ...s,
             weight: !loaded.dbHasWeight && local.weight ? local.weight : s.weight,
-            cycle_done: !loaded.dbHasCycleDone && local.cycle_done !== undefined ? local.cycle_done : s.cycle_done,
+            cycle_done:
+              !loaded.dbHasCycleDone && local.cycle_done !== undefined
+                ? local.cycle_done
+                : s.cycle_done,
+            progress:
+              !loaded.dbHasProgress && local.progress
+                ? local.progress
+                : s.progress,
           };
         });
       }

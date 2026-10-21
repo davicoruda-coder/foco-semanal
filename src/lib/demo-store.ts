@@ -1,5 +1,5 @@
 import type { AppData } from "./types";
-import { normalizeRotation, normalizeExclusiveDays, normalizeSidebarTimerName, normalizeSidebarTimerMinutes, normalizeRecursos, resetDailyStatusIfNeeded } from "./utils";
+import { normalizeRotation, normalizeExclusiveDays, normalizeSidebarTimerName, normalizeSidebarTimerMinutes, normalizeRecursos, normalizeProgress, resetDailyStatusIfNeeded } from "./utils";
 import { parseSubjectIcon } from "./subject-icons";
 
 function id(_prefix: string) {
@@ -121,6 +121,7 @@ export function loadDemoData(): AppData {
         recursos: normalizeRecursos(s.recursos),
         weight,
         cycle_done,
+        progress: normalizeProgress(s.progress),
       };
     });
     const sorted = [...subjectsRaw]

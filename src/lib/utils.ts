@@ -776,6 +776,7 @@ export function normalizeRotation(raw: unknown): SubjectRotation | null {
       notes:
         typeof it.notes === "string" ? it.notes.slice(0, ROTATION_MAX_NOTES) : "",
       recursos: normalizeRecursos(it.recursos),
+      progress: normalizeProgress(it.progress),
     }))
     .filter((it) => it.name.trim().length > 0)
     .slice(0, ROTATION_MAX_ITEMS);

@@ -12,7 +12,7 @@ import type {
   ThemePref,
   WeekBlock,
 } from "@/lib/types";
-import { normalizeStudyDays, normalizeExclusiveDays, normalizeRotation, normalizeSidebarTimerName, normalizeSidebarTimerMinutes, normalizeRecursos, resetDailyStatusIfNeeded } from "@/lib/utils";
+import { normalizeStudyDays, normalizeExclusiveDays, normalizeRotation, normalizeSidebarTimerName, normalizeSidebarTimerMinutes, normalizeRecursos, normalizeProgress, resetDailyStatusIfNeeded } from "@/lib/utils";
 import { parseSubjectIcon } from "@/lib/subject-icons";
 
 type Client = SupabaseClient;
@@ -89,6 +89,7 @@ export async function loadCloudData(
   displayName: string | null;
   dbHasWeight?: boolean;
   dbHasCycleDone?: boolean;
+  dbHasProgress?: boolean;
   didDailyReset?: boolean;
   didSanitizeStatus?: boolean;
 }> {
@@ -203,6 +204,7 @@ export async function loadCloudData(
       rotation: normalizeRotation(s.rotation),
       icon: parseSubjectIcon(s.icon),
       recursos: normalizeRecursos(s.recursos),
+      progress: normalizeProgress(s.progress),
       weight,
       cycle_done,
     };
@@ -294,6 +296,7 @@ export async function loadCloudData(
     | undefined;
   const dbHasWeight = Boolean(firstSubject && "weight" in firstSubject);
   const dbHasCycleDone = Boolean(firstSubject && "cycle_done" in firstSubject);
+  const dbHasProgress = Boolean(firstSubject && "progress" in firstSubject);
 
   return {
     data: {
@@ -310,6 +313,7 @@ export async function loadCloudData(
     displayName: profileRes.data?.display_name ?? null,
     dbHasWeight,
     dbHasCycleDone,
+    dbHasProgress,
     didDailyReset,
     didSanitizeStatus,
   };
@@ -384,7 +388,7 @@ async function upsertCollection(
     if (isMissingColError) {
       let missingCol = extractMissingColumn(error.message);
       if (!missingCol && table === "subjects") {
-        const candidate = ["cycle_done", "weight", "recursos"].find(
+        const candidate = ["cycle_done", "weight", "recursos", "progress"].find(
           (c) => !droppedCols.has(c) && currentRows.some((r) => c in r),
         );
         if (candidate) missingCol = candidate;
@@ -475,6 +479,7 @@ export async function saveCloudData(
       rotation: normalizeRotation(s.rotation),
       icon: parseSubjectIcon(s.icon),
       recursos: normalizeRecursos(s.recursos),
+      progress: normalizeProgress(s.progress) ?? null,
       weight:
         typeof s.weight === "number" && s.weight >= 1
           ? Math.min(10, Math.floor(s.weight))
