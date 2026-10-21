@@ -241,9 +241,8 @@ export default function HojePage() {
       if (remainingBlock.length > 0) {
         return remainingBlock[0].id;
       }
-      const activeIds = new Set(
-        flow.block.slice(flow.currentIndex).map((s) => s.id),
-      );
+      // Todas as matérias do bloco ativo (incluindo as recém-estudadas no bloco) são excluídas da busca pelo próximo
+      const activeIds = new Set(flow.block.map((s) => s.id));
       const queue = buildWeightedCycleQueue(data.subjects, day);
       const nextInQueue = queue.find((q) => !activeIds.has(q.id));
       return nextInQueue?.id ?? null;

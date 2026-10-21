@@ -437,9 +437,17 @@ export function isSubjectDoneToday(
 }
 
 /**
- * Constrói uma sequência ponderada com intercalação inteligente (fair interleaving).
- * Evita repetições consecutivas da mesma matéria distribuindo as matérias de maior peso
- * proporcionalmente ao longo do ciclo com máximo espaçamento circular.
+ * Constrói uma sequência ponderada por rodadas com intercalação e anti-adjacência rigorosa.
+ *
+ * Princípios Fundamentais (Método de Ciclo de Estudos & Neurociência):
+ * 1. Prioridade de Rodada: Todas as matérias ativas do ciclo cumprem a Volta 1
+ *    antes de qualquer matéria iniciar a Volta 2. Nenhuma matéria pesada monopoliza
+ *    a fila deixando outras matérias para trás sem estudar.
+ * 2. Cool-Down & Anti-Adjacência: Matérias iguais nunca são colocadas consecutivamente.
+ *    Nas transições entre voltas, se a última matéria da volta anterior for igual à
+ *    primeira da volta seguinte, rotaciona a volta para manter máxima alternância.
+ * 3. Fila Restante Inteligente: A fila restante consome os blocos já cumpridos (cycle_done/ok)
+ *    de modo que quem tem menos voltas concluídas (menor cycle_done) venha primeiro.
  */
 export function buildInterleavedWeightedSequence<T extends Subject>(
   base: T[],
@@ -449,168 +457,92 @@ export function buildInterleavedWeightedSequence<T extends Subject>(
   } = {},
 ): T[] {
   if (base.length === 0) return [];
-
-  // Para a fila restante, consome da sequência intercalada completa da volta
-  // os blocos que já foram cumpridos (cycle_done/ok), preservando a ordem exata de alternância.
-  if (opts.remainingOnly) {
-    const fullSequence = buildInterleavedWeightedSequence(base, {
-      remainingOnly: false,
-      exclusive: opts.exclusive,
-    });
-    const doneCounts = new Map<string, number>();
-    for (const s of base) {
-      const isDone = isSubjectDoneToday(s, opts.exclusive);
-      const w = Math.max(1, s.weight ?? 1);
-      const done = isDone ? w : Math.min(w, Math.max(0, s.cycle_done ?? 0));
-      doneCounts.set(s.id, done);
-    }
-
-    const remaining: T[] = [];
-    for (const item of fullSequence) {
-      const done = doneCounts.get(item.id) ?? 0;
-      if (done > 0) {
-        doneCounts.set(item.id, done - 1);
-      } else {
-        remaining.push(item);
-      }
-    }
-    return remaining;
-  }
-
   if (base.length === 1) {
     const s = base[0];
     const w = Math.max(1, s.weight ?? 1);
-    return Array(w).fill(s);
+    const cd = Math.max(0, s.cycle_done ?? 0);
+    const isDone = isSubjectDoneToday(s, opts.exclusive);
+    const remainingPasses = isDone ? 0 : Math.max(0, w - cd);
+    const count = opts.remainingOnly ? remainingPasses : w;
+    return Array(count).fill(s);
   }
 
-  const totalSlots = base.reduce(
-    (acc, s) => acc + Math.max(1, s.weight ?? 1),
-    0,
+  const maxWeight = Math.min(
+    10,
+    Math.max(...base.map((s) => Math.max(1, s.weight ?? 1))),
   );
-  if (totalSlots === 0) return [];
 
-  const slots = new Array<T | null>(totalSlots).fill(null);
+  // Constrói o ciclo completo volta por volta (Volta 0 = 1ª passada, Volta 1 = 2ª passada, etc.)
+  const rounds: T[][] = [];
 
-  // Separa matérias com peso > 1 (pesadas) e peso === 1 (leves)
-  const heavy = base.filter((s) => (s.weight ?? 1) > 1);
-  const light = base.filter((s) => (s.weight ?? 1) <= 1);
+  for (let r = 0; r < maxWeight; r++) {
+    const roundSubs = base.filter((s) => Math.max(1, s.weight ?? 1) > r);
+    if (roundSubs.length === 0) continue;
+    rounds.push([...roundSubs]);
+  }
 
-  // Ordena matérias pesadas por peso decrescente; empates mantêm a ordem base
-  heavy.sort((a, b) => (b.weight ?? 1) - (a.weight ?? 1));
+  // Ajusta transições entre voltas para evitar que a última de uma volta seja idêntica à primeira da seguinte
+  for (let r = 0; r < rounds.length - 1; r++) {
+    const currRound = rounds[r];
+    const nextRound = rounds[r + 1];
+    if (currRound.length === 0 || nextRound.length === 0) continue;
 
-  // Posiciona matérias pesadas com espaçamento circular uniforme
-  for (const s of heavy) {
+    const lastId = currRound[currRound.length - 1].id;
+    const firstNextId = nextRound[0].id;
+
+    if (lastId === firstNextId) {
+      if (nextRound.length > 1) {
+        const diffIdx = nextRound.findIndex((s) => s.id !== lastId);
+        if (diffIdx > 0) {
+          rounds[r + 1] = [
+            ...nextRound.slice(diffIdx),
+            ...nextRound.slice(0, diffIdx),
+          ];
+          continue;
+        }
+      }
+      if (currRound.length > 1) {
+        const matchIdx = currRound.findIndex((s) => s.id === firstNextId);
+        if (matchIdx > 0) {
+          rounds[r] = [
+            ...currRound.slice(matchIdx),
+            ...currRound.slice(0, matchIdx),
+          ];
+        }
+      }
+    }
+  }
+
+  const fullSequence: T[] = [];
+  for (const r of rounds) {
+    fullSequence.push(...r);
+  }
+
+  if (!opts.remainingOnly) {
+    return fullSequence;
+  }
+
+  // Para a fila restante, consome exatamente as passagens cumpridas (cycle_done/ok)
+  // preservando a ordem por rodadas para que quem ainda não estudou hoje venha primeiro
+  const doneCounts = new Map<string, number>();
+  for (const s of base) {
+    const isDone = isSubjectDoneToday(s, opts.exclusive);
     const w = Math.max(1, s.weight ?? 1);
-    const stride = totalSlots / w;
+    const done = isDone ? w : Math.min(w, Math.max(0, s.cycle_done ?? 0));
+    doneCounts.set(s.id, done);
+  }
 
-    let bestMinDistance = -1;
-    let bestPositions: number[] | null = null;
-
-    for (let o = 0; o < totalSlots; o++) {
-      const positions: number[] = [];
-      let valid = true;
-
-      for (let k = 0; k < w; k++) {
-        const pos = Math.round(o + k * stride) % totalSlots;
-        if (slots[pos] !== null) {
-          valid = false;
-          break;
-        }
-        positions.push(pos);
-      }
-
-      if (valid) {
-        let minNeighborDist = Infinity;
-        for (const p of positions) {
-          for (let d = 1; d < totalSlots; d++) {
-            const left = (p - d + totalSlots) % totalSlots;
-            const right = (p + d) % totalSlots;
-            if (slots[left] !== null || slots[right] !== null) {
-              if (d < minNeighborDist) minNeighborDist = d;
-              break;
-            }
-          }
-        }
-        if (minNeighborDist === Infinity) minNeighborDist = totalSlots;
-
-        if (minNeighborDist > bestMinDistance) {
-          bestMinDistance = minNeighborDist;
-          bestPositions = positions;
-        }
-      }
-    }
-
-    // Se nenhuma grade perfeitamente regular coube sem colisões, distribui nos slots vazios disponíveis
-    if (!bestPositions) {
-      const emptySlots: number[] = [];
-      for (let i = 0; i < totalSlots; i++) {
-        if (slots[i] === null) emptySlots.push(i);
-      }
-      bestPositions = [];
-      const step = emptySlots.length / w;
-      for (let k = 0; k < w; k++) {
-        const idx = Math.floor(k * step);
-        bestPositions.push(emptySlots[idx]);
-      }
-    }
-
-    for (const p of bestPositions) {
-      slots[p] = s;
+  const remaining: T[] = [];
+  for (const item of fullSequence) {
+    const done = doneCounts.get(item.id) ?? 0;
+    if (done > 0) {
+      doneCounts.set(item.id, done - 1);
+    } else {
+      remaining.push(item);
     }
   }
 
-  // Preenche os slots restantes com as matérias leves na ordem base
-  let lightIdx = 0;
-  for (let i = 0; i < totalSlots; i++) {
-    if (slots[i] === null) {
-      if (lightIdx < light.length) {
-        slots[i] = light[lightIdx++];
-      } else {
-        slots[i] = base[0];
-      }
-    }
-  }
-
-  // Passagem de segurança: resolve duplicatas adjacentes caso a combinação de pesos force proximidade
-  const maxDistinct = new Set(base.map((s) => s.id)).size;
-  if (maxDistinct > 1) {
-    for (let pass = 0; pass < totalSlots * 3; pass++) {
-      let hadSwap = false;
-      for (let i = 0; i < totalSlots; i++) {
-        const next = (i + 1) % totalSlots;
-        if (slots[i]?.id === slots[next]?.id) {
-          for (let j = 0; j < totalSlots; j++) {
-            if (j === i || j === next) continue;
-            if (slots[j]?.id === slots[i]?.id) continue;
-
-            const prevNext = i;
-            const postNext = (next + 1) % totalSlots;
-            const prevJ = (j - 1 + totalSlots) % totalSlots;
-            const postJ = (j + 1) % totalSlots;
-
-            const validAtNext =
-              slots[j]?.id !== slots[prevNext]?.id &&
-              (postNext === j || slots[j]?.id !== slots[postNext]?.id);
-
-            const validAtJ =
-              (prevJ === next || slots[next]?.id !== slots[prevJ]?.id) &&
-              (postJ === next || slots[next]?.id !== slots[postJ]?.id);
-
-            if (validAtNext && validAtJ) {
-              const tmp = slots[next];
-              slots[next] = slots[j];
-              slots[j] = tmp;
-              hadSwap = true;
-              break;
-            }
-          }
-        }
-      }
-      if (!hadSwap) break;
-    }
-  }
-
-  return slots.filter((s): s is T => Boolean(s));
+  return remaining;
 }
 
 /**

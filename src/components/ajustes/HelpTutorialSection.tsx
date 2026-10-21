@@ -6,6 +6,7 @@ import {
   CalendarDays,
   ChevronDown,
   Flame,
+  GraduationCap,
   Layers,
   Lightbulb,
   RotateCw,
@@ -40,6 +41,24 @@ const TOPICS: TutorialTopic[] = [
       "Concluir antecipadamente: se terminar antes do timer acabar, basta clicar no botão de avançar (⏭) na barra de sessão para passar imediatamente para a próxima matéria.",
     ],
     tip: "Dê peso 2x ou 3x para matérias com maior grau de dificuldade, que você mais erra em exercícios ou que têm maior relevância nos seus objetivos (como provas, exames ou editais).",
+  },
+  {
+    id: "ciencia-ciclo",
+    icon: GraduationCap,
+    title: "Em que Estudos se Baseia o Ciclo do FocoHub?",
+    badge: "Base Científica",
+    summary:
+      "Fundamentado na Prática Intercalada (Rohrer & Taylor), Repetição Espaçada (Ebbinghaus) e Ciclos Ponderados.",
+    concept:
+      "O modelo do FocoHub rompe com o modelo ultrapassado de 'grade horária fixa' (que gera culpa e acúmulo de atrasos ao primeiro imprevisto). Nossa metodologia é fundamentada na psicologia cognitiva e na neurociência da aprendizagem, combinando pilares cientificamente comprovados para maximizar a retenção e reduzir a fadiga mental.",
+    steps: [
+      "Prática Intercalada (Interleaving Effect): Pesquisas em psicologia cognitiva (Doug Rohrer, Kelli Taylor e Robert Bjork) comprovam que alternar entre disciplinas diferentes desenvolve maior flexibilidade neural e retenção de longo prazo muito superior ao estudo massivo ou em bloco (horas seguidas da mesma matéria).",
+      "Efeito de Espaçamento (Spaced Practice): Descoberto por Hermann Ebbinghaus e validado por neurocientistas modernos, o princípio demonstra que revisitar um conteúdo após um intervalo (onde seu cérebro processou outras matérias) reativa as sinapses no momento exato em que a curva do esquecimento começaria a atuar.",
+      "Metodologia de Ciclos Ponderados de Alto Rendimento: Prática consagrada na preparação de candidatos para os concursos e vestibulares mais concorridos do país. O ciclo é um fluxo contínuo e sem horários rígidos: você nunca 'perde o dia' ou 'atrasa a matéria'; o ciclo simplesmente espera você retornar e continua exatamente de onde parou.",
+      "Algoritmo em Rodadas Justas: Matérias com maior peso (2x, 3x, 4x) ganham mais passagens, mas o algoritmo do FocoHub organiza o ciclo em rodadas. Isso significa que todas as matérias ativas cumprem a 1ª rodada antes que matérias de maior peso repitam sua vez, evitando repetições seguidas e respeitando o descanso cognitivo.",
+      "Fim da Fadiga de Decisão (Carga Cognitiva): Decidir 'o que estudar hoje' consome energia mental e estimula a procrastinação. O ciclo calcula e entrega a próxima matéria automaticamente, permitindo que 100% da sua energia seja direcionada ao aprendizado.",
+    ],
+    tip: "A neurociência recomenda sessões de 30 a 75 minutos por disciplina intercalada, seguidas por pausas ativas curtas (5 a 15 min). Durante a pausa, o cérebro realiza a consolidação das memórias em segundo plano.",
   },
   {
     id: "sessao",
