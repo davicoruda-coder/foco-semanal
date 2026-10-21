@@ -437,6 +437,77 @@ export function isSubjectDoneToday(
 }
 
 /**
+ * Intercala uma lista de matérias garantindo:
+ * 1. Anti-adjacência estrita: se houver mais de uma matéria distinta, nunca coloca a mesma matéria consecutivamente.
+ * 2. Espaçamento máximo para matérias com múltiplas passagens restantes (maior densidade).
+ * 3. Estabilidade e respeito à ordem natural do ciclo (mantendo a matéria atual da vez no topo quando viável).
+ */
+export function interleaveWithAntiAdjacency<T extends Subject>(
+  items: T[],
+  initialAvoidId?: string | null,
+): T[] {
+  if (items.length <= 1) return items;
+
+  const distinctIds = new Set(items.map((s) => s.id));
+  if (distinctIds.size <= 1) return items;
+
+  const itemMap = new Map<string, T>();
+  const counts = new Map<string, number>();
+  const firstSeenIndex = new Map<string, number>();
+
+  items.forEach((item, idx) => {
+    if (!itemMap.has(item.id)) {
+      itemMap.set(item.id, item);
+      firstSeenIndex.set(item.id, idx);
+    }
+    counts.set(item.id, (counts.get(item.id) ?? 0) + 1);
+  });
+
+  const result: T[] = [];
+  let lastId: string | null = initialAvoidId ?? null;
+
+  for (let step = 0; step < items.length; step++) {
+    const remainingSlots = items.length - step;
+    const available = Array.from(counts.entries()).filter(([, count]) => count > 0);
+    if (available.length === 0) break;
+
+    const nonAdjacent = available.filter(([id]) => id !== lastId);
+    const candidatePool = nonAdjacent.length > 0 ? nonAdjacent : available;
+
+    // Achar a frequência máxima entre os disponíveis
+    const maxFreq = Math.max(...candidatePool.map(([, count]) => count));
+
+    // Se alguém tiver frequência tão alta que precisa ser colocado AGORA para não colidir
+    // (ex: precisa de mais de metade dos slots restantes: freq >= Math.ceil(remainingSlots / 2))
+    const isUrgent = maxFreq >= Math.ceil(remainingSlots / 2);
+
+    candidatePool.sort((a, b) => {
+      // Se há urgência matemática para evitar colisões futuras, prioriza frequência máxima
+      if (isUrgent && b[1] !== a[1]) {
+        return b[1] - a[1];
+      }
+      // Se não há urgência, respeita a ordem natural de primeira aparição no ciclo
+      const idxA = firstSeenIndex.get(a[0]) ?? 0;
+      const idxB = firstSeenIndex.get(b[0]) ?? 0;
+      if (idxA !== idxB) {
+        return idxA - idxB;
+      }
+      return b[1] - a[1];
+    });
+
+    const chosenId = candidatePool[0][0];
+    counts.set(chosenId, (counts.get(chosenId) ?? 1) - 1);
+    const chosenItem = itemMap.get(chosenId);
+    if (chosenItem) {
+      result.push(chosenItem);
+    }
+    lastId = chosenId;
+  }
+
+  return result;
+}
+
+/**
  * Constrói uma sequência ponderada por rodadas com intercalação e anti-adjacência rigorosa.
  *
  * Princípios Fundamentais (Método de Ciclo de Estudos & Neurociência):
@@ -447,7 +518,8 @@ export function isSubjectDoneToday(
  *    Nas transições entre voltas, se a última matéria da volta anterior for igual à
  *    primeira da volta seguinte, rotaciona a volta para manter máxima alternância.
  * 3. Fila Restante Inteligente: A fila restante consome os blocos já cumpridos (cycle_done/ok)
- *    de modo que quem tem menos voltas concluídas (menor cycle_done) venha primeiro.
+ *    de modo que quem tem menos voltas concluídas (menor cycle_done) venha primeiro,
+ *    redistribuindo passagens pendentes de matérias com peso alto para NUNCA gerar repetições consecutivas.
  */
 export function buildInterleavedWeightedSequence<T extends Subject>(
   base: T[],
@@ -519,7 +591,7 @@ export function buildInterleavedWeightedSequence<T extends Subject>(
   }
 
   if (!opts.remainingOnly) {
-    return fullSequence;
+    return interleaveWithAntiAdjacency(fullSequence);
   }
 
   // Para a fila restante, consome exatamente as passagens cumpridas (cycle_done/ok)
@@ -542,7 +614,8 @@ export function buildInterleavedWeightedSequence<T extends Subject>(
     }
   }
 
-  return remaining;
+  const lastCompletedId = readLastCycleCompletedSubjectId();
+  return interleaveWithAntiAdjacency(remaining, lastCompletedId);
 }
 
 /**

@@ -758,21 +758,62 @@ export function AppProvider({ children }: { children: ReactNode }) {
             }
             // exclusive_status só via setSubjectStatus (mini-ciclo).
             delete (patch as { exclusive_status?: SubjectStatus }).exclusive_status;
+            const day = todayIndex();
+            const exclusiveCycle = isExclusiveCycleDay(prev.subjects, day);
+            const nextSubjects = prev.subjects.map((s) => {
+              if (s.id !== subject.id) return s;
+              const merged = { ...s, ...patch };
+              const w = Math.max(1, merged.weight ?? 1);
+              const cd = Math.max(0, merged.cycle_done ?? 0);
+              // Se peso aumentou e ainda não completou a meta: reverte para prox
+              const needsMore = cd < w && s.status === "ok";
+              const needsMoreExclusive = cd < w && s.exclusive_status === "ok";
+              // Se peso diminuiu e já atingiu a meta: avança para ok
+              const isSatisfied = cd >= w && s.status === "prox" && cd > 0;
+              const isSatisfiedExclusive =
+                cd >= w && s.exclusive_status === "prox" && cd > 0;
+
+              return {
+                ...merged,
+                status: needsMore ? "prox" : isSatisfied ? "ok" : s.status,
+                exclusive_status: needsMoreExclusive
+                  ? "prox"
+                  : isSatisfiedExclusive
+                    ? "ok"
+                    : s.exclusive_status,
+              };
+            });
+
+            // Se a alteração (redução de peso, desativação) completou todas as ativas:
+            const todayAfter = cycleSubjectsOnDay(nextSubjects, day);
+            const allCycleCompleted =
+              todayAfter.length > 0 &&
+              todayAfter.every((s) => isSubjectDoneToday(s, exclusiveCycle));
+
+            if (allCycleCompleted) {
+              const nextRound = incrementCycleRoundsToday(subject.id);
+              emitCycleComplete(nextRound);
+              const ids = new Set(todayAfter.map((s) => s.id));
+              const writeStatus = (s: Subject, next: SubjectStatus): Subject =>
+                exclusiveCycle
+                  ? { ...s, exclusive_status: next }
+                  : { ...s, status: next };
+              return {
+                ...prev,
+                subjects: nextSubjects.map((s) =>
+                  ids.has(s.id)
+                    ? {
+                        ...writeStatus(s, "prox"),
+                        cycle_done: 0,
+                      }
+                    : s,
+                ),
+              };
+            }
+
             return {
               ...prev,
-              subjects: prev.subjects.map((s) => {
-                if (s.id !== subject.id) return s;
-                const merged = { ...s, ...patch };
-                const w = Math.max(1, merged.weight ?? 1);
-                const cd = Math.max(0, merged.cycle_done ?? 0);
-                const fixStatus = w > 1 && cd < w && s.status === "ok";
-                const fixExclusive = w > 1 && cd < w && s.exclusive_status === "ok";
-                return {
-                  ...merged,
-                  status: fixStatus ? "prox" : s.status,
-                  exclusive_status: fixExclusive ? "prox" : s.exclusive_status,
-                };
-              }),
+              subjects: nextSubjects,
             };
           }
           const row: Subject = {
@@ -963,10 +1004,41 @@ export function AppProvider({ children }: { children: ReactNode }) {
       },
       deleteSubject: (id) => {
         void softDelete("subjects", [id]);
-        setData((prev) => ({
-          ...prev,
-          subjects: prev.subjects.filter((s) => s.id !== id),
-        }));
+        setData((prev) => {
+          const nextSubjects = prev.subjects.filter((s) => s.id !== id);
+          const day = todayIndex();
+          const exclusiveCycle = isExclusiveCycleDay(nextSubjects, day);
+          const todayAfter = cycleSubjectsOnDay(nextSubjects, day);
+          const allCycleCompleted =
+            todayAfter.length > 0 &&
+            todayAfter.every((s) => isSubjectDoneToday(s, exclusiveCycle));
+
+          if (allCycleCompleted) {
+            const nextRound = incrementCycleRoundsToday(id);
+            emitCycleComplete(nextRound);
+            const ids = new Set(todayAfter.map((s) => s.id));
+            const writeStatus = (s: Subject, next: SubjectStatus): Subject =>
+              exclusiveCycle
+                ? { ...s, exclusive_status: next }
+                : { ...s, status: next };
+            return {
+              ...prev,
+              subjects: nextSubjects.map((s) =>
+                ids.has(s.id)
+                  ? {
+                      ...writeStatus(s, "prox"),
+                      cycle_done: 0,
+                    }
+                  : s,
+              ),
+            };
+          }
+
+          return {
+            ...prev,
+            subjects: nextSubjects,
+          };
+        });
       },
       upsertWeekBlock: (block) => {
         setData((prev) => {

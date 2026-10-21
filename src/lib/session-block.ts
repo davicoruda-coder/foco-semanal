@@ -120,8 +120,8 @@ export function packStudyBlock(
       continue;
     }
 
-    // Se s for a mesma matéria que a anterior e houver matérias diferentes na fila:
-    if (hasMultipleSubjects && s.id === pack[pack.length - 1].id) {
+    // Se s for a mesma matéria que a anterior:
+    if (s.id === pack[pack.length - 1].id) {
       let foundAlt = false;
       for (let j = i + 1; j < queue.length; j++) {
         if (usedIndices.has(j)) continue;
@@ -141,7 +141,7 @@ export function packStudyBlock(
         if (sum >= targetMinutes) break;
         continue;
       }
-      // Se não encontrou alternativa que caiba no limite de tempo, encerra o bloco
+      // Se não encontrou alternativa diferente que caiba, encerra o bloco para nunca repetir a mesma matéria consecutivamente
       break;
     }
 
