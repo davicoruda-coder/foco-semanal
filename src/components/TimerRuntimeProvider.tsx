@@ -21,7 +21,7 @@ import {
 } from "@/lib/clock-interrupt";
 import { addFocusSeconds, commitFocusDisplaySnapshot } from "@/lib/focus-log";
 import { syncFocusLogWithCloud } from "@/lib/supabase/focus-sync";
-import { emitSubjectComplete } from "@/lib/study-flow-events";
+import { emitSubjectComplete, emitCycleComplete } from "@/lib/study-flow-events";
 import {
   cycleSubjectsOnDay,
   nextCycleSubjectId,
@@ -29,6 +29,18 @@ import {
   subjectUsesStopwatch,
   todayIndex,
 } from "@/lib/utils";
+import {
+  getTabId,
+  broadcastTabMessage,
+  subscribeTabMessages,
+  isCurrentTabLeader,
+  claimLeadership,
+  renewLeadership,
+  releaseLeadership,
+  claimTimerCompletion,
+  readLeaderRecord,
+  type TabSyncMessage,
+} from "@/lib/tab-sync";
 
 function usesStopwatchToday(
   sub: { id: string; is_free: boolean; exclusive_days: number[] | null },
@@ -297,6 +309,9 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
   /** Matérias pausadas junto com sessão/cronômetro — retomam no play. */
   const linkedPausedSubjectsRef = useRef<string[]>([]);
   const [, setTick] = useState(0);
+  const tabIdRef = useRef<string>("");
+  const isLeaderRef = useRef<boolean>(false);
+  const [, setLeaderTick] = useState(0);
 
   runtimeRef.current = runtime;
   stopwatchRef.current = stopwatch;
@@ -305,7 +320,174 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
   addStudySessionRef.current = addStudySession;
   subjectsRef.current = subjects;
 
+  const broadcastTimerState = useCallback(
+    (
+      nextRuntime?: Record<string, TimerRuntime>,
+      nextSw?: StopwatchState,
+      nextSubSw?: Record<string, StopwatchState>,
+      nextMode?: ClockMode,
+    ) => {
+      broadcastTabMessage({
+        type: "TIMER_STATE_SYNC",
+        senderId: tabIdRef.current,
+        runtime: nextRuntime ?? runtimeRef.current,
+        stopwatch: nextSw ?? stopwatchRef.current,
+        subjectStopwatches: nextSubSw ?? subjectStopwatchesRef.current,
+        mode: nextMode,
+        timestamp: Date.now(),
+      });
+    },
+    [],
+  );
+
+  // Coordenação de liderança entre abas: a aba ativa/em primeiro plano coordena o foco
+  useEffect(() => {
+    tabIdRef.current = getTabId();
+
+    const leader = readLeaderRecord();
+    if (!leader || leader.expiresAt < Date.now()) {
+      claimLeadership();
+      isLeaderRef.current = true;
+    } else {
+      isLeaderRef.current = leader.tabId === tabIdRef.current;
+      if (document.visibilityState === "visible") {
+        claimLeadership();
+        isLeaderRef.current = true;
+      }
+    }
+    setLeaderTick((n) => n + 1);
+
+    const intervalId = window.setInterval(() => {
+      if (isLeaderRef.current) {
+        renewLeadership();
+      } else {
+        const curLeader = readLeaderRecord();
+        const now = Date.now();
+        if (!curLeader || now > curLeader.expiresAt) {
+          claimLeadership();
+          isLeaderRef.current = true;
+          setLeaderTick((n) => n + 1);
+        }
+      }
+    }, 1200);
+
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") {
+        claimLeadership();
+        isLeaderRef.current = true;
+        setLeaderTick((n) => n + 1);
+      }
+    };
+
+    const onUnload = () => {
+      if (isLeaderRef.current) {
+        releaseLeadership();
+      }
+    };
+
+    document.addEventListener("visibilitychange", onVisibility);
+    window.addEventListener("pagehide", onUnload);
+    window.addEventListener("beforeunload", onUnload);
+
+    return () => {
+      window.clearInterval(intervalId);
+      document.removeEventListener("visibilitychange", onVisibility);
+      window.removeEventListener("pagehide", onUnload);
+      window.removeEventListener("beforeunload", onUnload);
+      if (isLeaderRef.current) {
+        releaseLeadership();
+      }
+    };
+  }, []);
+
+  // Escuta mensagens de outras abas e evento de storage
+  useEffect(() => {
+    const unsubscribe = subscribeTabMessages((msg: TabSyncMessage) => {
+      if (msg.senderId === tabIdRef.current) return;
+
+      if (msg.type === "TIMER_STATE_SYNC") {
+        if (msg.runtime) {
+          runtimeRef.current = msg.runtime;
+          setRuntime(msg.runtime);
+        }
+        if (msg.stopwatch) {
+          stopwatchRef.current = msg.stopwatch;
+          setStopwatch(msg.stopwatch);
+        }
+        if (msg.subjectStopwatches) {
+          subjectStopwatchesRef.current = msg.subjectStopwatches;
+          setSubjectStopwatches(msg.subjectStopwatches);
+        }
+        if (msg.mode) {
+          setModeState(msg.mode);
+        }
+      } else if (msg.type === "TIMER_COMPLETED") {
+        doneRef.current[msg.timerKey] = true;
+      } else if (msg.type === "SUBJECT_COMPLETE") {
+        emitSubjectComplete(msg.subjectId);
+      } else if (msg.type === "CYCLE_COMPLETE") {
+        emitCycleComplete(msg.round);
+      } else if (msg.type === "FOCUS_CREDIT_SYNC") {
+        focusCreditedCountdownRef.current = {
+          ...focusCreditedCountdownRef.current,
+          ...msg.countdowns,
+        };
+        focusCreditedStopwatchRef.current = {
+          ...focusCreditedStopwatchRef.current,
+          ...msg.stopwatches,
+        };
+      } else if (msg.type === "LEADER_CLAIM") {
+        if (msg.tabId !== tabIdRef.current) {
+          isLeaderRef.current = false;
+          setLeaderTick((n) => n + 1);
+        }
+      } else if (msg.type === "LEADER_RELEASE") {
+        if (msg.tabId !== tabIdRef.current) {
+          claimLeadership();
+          isLeaderRef.current = true;
+          setLeaderTick((n) => n + 1);
+        }
+      }
+    });
+
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === STORAGE_KEY && e.newValue) {
+        try {
+          const parsed = JSON.parse(e.newValue);
+          if (!sameRuntime(runtimeRef.current, parsed)) {
+            runtimeRef.current = parsed;
+            setRuntime(parsed);
+          }
+        } catch {}
+      } else if (e.key === STOPWATCH_KEY && e.newValue) {
+        try {
+          const parsed = JSON.parse(e.newValue);
+          stopwatchRef.current = parsed;
+          setStopwatch(parsed);
+        } catch {}
+      } else if (e.key === SUBJECT_SW_KEY && e.newValue) {
+        try {
+          const parsed = JSON.parse(e.newValue);
+          subjectStopwatchesRef.current = parsed;
+          setSubjectStopwatches(parsed);
+        } catch {}
+      } else if (e.key === MODE_KEY && e.newValue) {
+        if (e.newValue === "timers" || e.newValue === "stopwatch") {
+          setModeState(e.newValue);
+        }
+      }
+    };
+
+    window.addEventListener("storage", onStorage);
+
+    return () => {
+      unsubscribe();
+      window.removeEventListener("storage", onStorage);
+    };
+  }, []);
+
   const persistClocks = useCallback(() => {
+    if (!isLeaderRef.current) return;
     writeStored(runtimeRef.current);
     writeStopwatch(stopwatchRef.current);
     writeSubjectStopwatches(subjectStopwatchesRef.current);
@@ -375,7 +557,8 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
   const setMode = useCallback((next: ClockMode) => {
     setModeState(next);
     writeJson(MODE_KEY, next);
-  }, []);
+    broadcastTimerState(undefined, undefined, undefined, next);
+  }, [broadcastTimerState]);
 
   // Alinha runtime às definições só depois da conta/dados prontos (evita wipe por IDs temporários).
   useEffect(() => {
@@ -654,7 +837,28 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
    * - Cronômetro Livre: sincroniza pelo accumulatedMs real.
    */
   const flushFocusSeconds = useCallback(() => {
+    if (!isLeaderRef.current) return;
     let totalDelta = 0;
+
+    // Sincroniza referências salvas por outras abas
+    const storedCountdowns = readCreditedCountdowns();
+    for (const [k, v] of Object.entries(storedCountdowns)) {
+      if (
+        focusCreditedCountdownRef.current[k] == null ||
+        v < focusCreditedCountdownRef.current[k]
+      ) {
+        focusCreditedCountdownRef.current[k] = v;
+      }
+    }
+    const storedSw = readCreditedStopwatches();
+    for (const [k, v] of Object.entries(storedSw)) {
+      if (
+        focusCreditedStopwatchRef.current[k] == null ||
+        v > focusCreditedStopwatchRef.current[k]
+      ) {
+        focusCreditedStopwatchRef.current[k] = v;
+      }
+    }
 
     // 1. Countdown timers (matérias com tempo e temporizador da lateral)
     const currentRuntime = runtimeRef.current;
@@ -742,6 +946,14 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
       focusCreditedCountdownRef.current,
       focusCreditedStopwatchRef.current,
     );
+
+    broadcastTabMessage({
+      type: "FOCUS_CREDIT_SYNC",
+      senderId: tabIdRef.current,
+      countdowns: focusCreditedCountdownRef.current,
+      stopwatches: focusCreditedStopwatchRef.current,
+      timestamp: Date.now(),
+    });
   }, [sidebarTimerMinutes, sidebarTimerName]);
 
   useEffect(() => {
@@ -815,7 +1027,9 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
 
       if (changed) {
         runtimeRef.current = next;
-        writeStored(next);
+        if (isLeaderRef.current) {
+          writeStored(next);
+        }
         setRuntime(next);
       }
 
@@ -829,6 +1043,10 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
       for (const item of completedSubjects) {
         linkedPausedSubjectsRef.current =
           linkedPausedSubjectsRef.current.filter((id) => id !== item.key);
+        const endsAtOrNow = prev[item.key]?.endsAt || Date.now();
+        const canComplete = claimTimerCompletion(item.key, endsAtOrNow);
+        if (!canComplete) continue;
+
         playAlarmTone();
         notify("FocoHub", `${item.name} concluída`);
         const sid = subjectIdFromKey(item.key);
@@ -846,6 +1064,25 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
           completed: true,
         });
         emitSubjectComplete(sid);
+        broadcastTabMessage({
+          type: "TIMER_COMPLETED",
+          senderId: tabIdRef.current,
+          timerKey: item.key,
+          token: endsAtOrNow,
+          timestamp: Date.now(),
+        });
+        broadcastTabMessage({
+          type: "SUBJECT_COMPLETE",
+          senderId: tabIdRef.current,
+          subjectId: sid,
+          timestamp: Date.now(),
+        });
+        broadcastTabMessage({
+          type: "TIMER_STATE_SYNC",
+          senderId: tabIdRef.current,
+          runtime: next,
+          timestamp: Date.now(),
+        });
       }
     }, 1000);
 
@@ -884,7 +1121,9 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
 
       if (changed) {
         runtimeRef.current = next;
-        writeStored(next);
+        if (isLeaderRef.current) {
+          writeStored(next);
+        }
         setRuntime(next);
       }
 
@@ -898,6 +1137,10 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
       for (const item of completed) {
         linkedPausedSubjectsRef.current =
           linkedPausedSubjectsRef.current.filter((id) => id !== item.key);
+        const endsAtOrNow = prev[item.key]?.endsAt || Date.now();
+        const canComplete = claimTimerCompletion(item.key, endsAtOrNow);
+        if (!canComplete) continue;
+
         playAlarmTone();
         notify("FocoHub", `${item.name} concluída`);
         const sid = subjectIdFromKey(item.key);
@@ -915,6 +1158,19 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
           completed: true,
         });
         emitSubjectComplete(sid);
+        broadcastTabMessage({
+          type: "TIMER_COMPLETED",
+          senderId: tabIdRef.current,
+          timerKey: item.key,
+          token: endsAtOrNow,
+          timestamp: Date.now(),
+        });
+        broadcastTabMessage({
+          type: "SUBJECT_COMPLETE",
+          senderId: tabIdRef.current,
+          subjectId: sid,
+          timestamp: Date.now(),
+        });
       }
     }
 
@@ -976,28 +1232,40 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
         writeStored(updated);
         return updated;
       });
-      playAlarmTone();
-      notify("FocoHub", `${t.name} concluído`);
 
-      if (t.sort_order === 0) {
-        const day = todayIndex();
-        const nextId = nextCycleSubjectId(data.subjects, day);
-        const todaySubjects = cycleSubjectsOnDay(data.subjects, day);
-        const next =
-          (nextId ? data.subjects.find((s) => s.id === nextId) : null) ??
-          todaySubjects[0] ??
-          null;
-        if (next) {
-          const ended = new Date().toISOString();
-          addStudySession({
-            subject_id: next.id,
-            subject_name: next.name,
-            started_at: r.startedAt ?? ended,
-            ended_at: ended,
-            duration_minutes: t.minutes,
-            mode: "unica",
-            completed: true,
-          });
+      const endsAtOrNow = r.endsAt || Date.now();
+      const canComplete = claimTimerCompletion(t.id, endsAtOrNow);
+      if (canComplete) {
+        playAlarmTone();
+        notify("FocoHub", `${t.name} concluído`);
+        broadcastTabMessage({
+          type: "TIMER_COMPLETED",
+          senderId: tabIdRef.current,
+          timerKey: t.id,
+          token: endsAtOrNow,
+          timestamp: Date.now(),
+        });
+
+        if (t.sort_order === 0) {
+          const day = todayIndex();
+          const nextId = nextCycleSubjectId(data.subjects, day);
+          const todaySubjects = cycleSubjectsOnDay(data.subjects, day);
+          const next =
+            (nextId ? data.subjects.find((s) => s.id === nextId) : null) ??
+            todaySubjects[0] ??
+            null;
+          if (next) {
+            const ended = new Date().toISOString();
+            addStudySession({
+              subject_id: next.id,
+              subject_name: next.name,
+              started_at: r.startedAt ?? ended,
+              ended_at: ended,
+              duration_minutes: t.minutes,
+              mode: "unica",
+              completed: true,
+            });
+          }
         }
       }
     }
@@ -1026,12 +1294,24 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
           writeStored(updated);
           return updated;
         });
-        playAlarmTone();
-        notify("FocoHub", `${sidebarTimerName} concluído`);
-        flushFocusSeconds();
-        commitFocusDisplaySnapshot();
-        window.dispatchEvent(new Event("foco-focus-log"));
-        void syncFocusLogWithCloud();
+
+        const endsAtOrNow = sidebar.endsAt || Date.now();
+        const canComplete = claimTimerCompletion(SIDEBAR_TIMER_ID, endsAtOrNow);
+        if (canComplete) {
+          playAlarmTone();
+          notify("FocoHub", `${sidebarTimerName} concluído`);
+          broadcastTabMessage({
+            type: "TIMER_COMPLETED",
+            senderId: tabIdRef.current,
+            timerKey: SIDEBAR_TIMER_ID,
+            token: endsAtOrNow,
+            timestamp: Date.now(),
+          });
+          flushFocusSeconds();
+          commitFocusDisplaySnapshot();
+          window.dispatchEvent(new Event("foco-focus-log"));
+          void syncFocusLogWithCloud();
+        }
       }
     }
 
@@ -1069,27 +1349,45 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
         writeStored(updated);
         return updated;
       });
-      playAlarmTone();
-      notify("FocoHub", `${s.name} concluída`);
-      setSubjectStatus(s.id, "ok");
-      const sid = s.id;
-      const sub = subjectsRef.current.find((x) => x.id === sid);
-      const durationMin = Math.max(1, sub?.study_minutes ?? 25);
-      const nowIso = new Date().toISOString();
-      addStudySession({
-        subject_id: sid,
-        subject_name: s.name,
-        started_at: new Date(Date.now() - durationMin * 60000).toISOString(),
-        ended_at: nowIso,
-        duration_minutes: durationMin,
-        mode: "ciclo",
-        completed: true,
-      });
-      flushFocusSeconds();
-      commitFocusDisplaySnapshot();
-      window.dispatchEvent(new Event("foco-focus-log"));
-      void syncFocusLogWithCloud();
-      emitSubjectComplete(s.id);
+
+      const endsAtOrNow = r.endsAt || Date.now();
+      const canComplete = claimTimerCompletion(key, endsAtOrNow);
+      if (canComplete) {
+        playAlarmTone();
+        notify("FocoHub", `${s.name} concluída`);
+        setSubjectStatus(s.id, "ok");
+        const sid = s.id;
+        const sub = subjectsRef.current.find((x) => x.id === sid);
+        const durationMin = Math.max(1, sub?.study_minutes ?? 25);
+        const nowIso = new Date().toISOString();
+        addStudySession({
+          subject_id: sid,
+          subject_name: s.name,
+          started_at: new Date(Date.now() - durationMin * 60000).toISOString(),
+          ended_at: nowIso,
+          duration_minutes: durationMin,
+          mode: "ciclo",
+          completed: true,
+        });
+        flushFocusSeconds();
+        commitFocusDisplaySnapshot();
+        window.dispatchEvent(new Event("foco-focus-log"));
+        void syncFocusLogWithCloud();
+        emitSubjectComplete(s.id);
+        broadcastTabMessage({
+          type: "TIMER_COMPLETED",
+          senderId: tabIdRef.current,
+          timerKey: key,
+          token: endsAtOrNow,
+          timestamp: Date.now(),
+        });
+        broadcastTabMessage({
+          type: "SUBJECT_COMPLETE",
+          senderId: tabIdRef.current,
+          subjectId: s.id,
+          timestamp: Date.now(),
+        });
+      }
     }
   }, [
     runtime,
@@ -1247,6 +1545,7 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
           updated = pauseSidebarTimer(updated);
           writeStored(updated);
           writeHeartbeat();
+          broadcastTimerState(updated);
           return updated;
         }
 
@@ -1278,10 +1577,11 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
         if (willRun) updated = pauseSidebarTimer(updated);
         writeStored(updated);
         if (willRun) writeHeartbeat();
+        broadcastTimerState(updated);
         return updated;
       });
     },
-    [timers, showFlash, pauseLinkedSubjects, resumeLinkedSubjects, pauseSidebarTimer],
+    [timers, showFlash, pauseLinkedSubjects, resumeLinkedSubjects, pauseSidebarTimer, broadcastTimerState],
   );
 
   const resetTimer = useCallback(
@@ -1300,10 +1600,11 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
           },
         };
         writeStored(updated);
+        broadcastTimerState(updated);
         return updated;
       });
     },
-    [timers],
+    [timers, broadcastTimerState],
   );
 
   const secondsFor = useCallback(
@@ -1380,6 +1681,7 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
           linkedPausedSubjectsRef.current = [];
           runtimeRef.current = next;
           writeStored(next);
+          broadcastTimerState(next, undefined, subjectStopwatchesRef.current);
           return next;
         });
         return;
@@ -1450,10 +1752,11 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
           };
           const paused = pauseSidebarTimer(next);
           linkedPausedSubjectsRef.current =
-            linkedPausedSubjectsRef.current.filter((id) => id === key);
+            linkedPausedSubjectsRef.current.filter((id) => id !== key);
           runtimeRef.current = paused;
           writeStored(paused);
           writeHeartbeat();
+          broadcastTimerState(paused, undefined, subjectStopwatchesRef.current);
           return paused;
         }
 
@@ -1483,7 +1786,7 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
             startedAt: current.startedAt ?? new Date().toISOString(),
           };
           linkedPausedSubjectsRef.current =
-            linkedPausedSubjectsRef.current.filter((id) => id === key);
+            linkedPausedSubjectsRef.current.filter((id) => id !== key);
         } else {
           next[key] = {
             secondsLeft: left,
@@ -1506,10 +1809,11 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
           window.dispatchEvent(new Event("foco-focus-log"));
           void syncFocusLogWithCloud();
         }
+        broadcastTimerState(stored, undefined, subjectStopwatchesRef.current);
         return stored;
       });
     },
-    [subjects, showFlash, pauseSidebarTimer, flushFocusSeconds],
+    [subjects, showFlash, pauseSidebarTimer, flushFocusSeconds, broadcastTimerState],
   );
 
   const addSubjectTimerSeconds = useCallback(
@@ -1572,10 +1876,11 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
         runtimeRef.current = paused;
         writeStored(paused);
         writeHeartbeat();
+        broadcastTimerState(paused, undefined, subjectStopwatchesRef.current);
         return paused;
       });
     },
-    [subjects, showFlash, pauseSidebarTimer],
+    [subjects, showFlash, pauseSidebarTimer, broadcastTimerState],
   );
 
   const resetSubjectTimer = useCallback(
@@ -1598,6 +1903,7 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
             focusCreditedCountdownRef.current,
             focusCreditedStopwatchRef.current,
           );
+          broadcastTimerState(undefined, undefined, next);
           return next;
         });
         return;
@@ -1624,10 +1930,11 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
         };
         runtimeRef.current = updated;
         writeStored(updated);
+        broadcastTimerState(updated, undefined, subjectStopwatchesRef.current);
         return updated;
       });
     },
-    [subjects, flushFocusSeconds],
+    [subjects, flushFocusSeconds, broadcastTimerState],
   );
 
   const secondsForSubject = useCallback(
@@ -1673,16 +1980,18 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
         : resumeLinkedSubjects(prev);
       if (!wasRunning) updated = pauseSidebarTimer(updated);
       if (updated !== prev) writeStored(updated);
+      broadcastTimerState(updated, stopwatchRef.current);
       return updated;
     });
-  }, [showFlash, pauseLinkedSubjects, resumeLinkedSubjects, pauseSidebarTimer]);
+  }, [showFlash, pauseLinkedSubjects, resumeLinkedSubjects, pauseSidebarTimer, broadcastTimerState]);
 
   const resetStopwatch = useCallback(() => {
     const next = DEFAULT_STOPWATCH;
     delete focusCreditedStopwatchRef.current["__sidebar_sw"];
     writeStopwatch(next);
     setStopwatch(next);
-  }, []);
+    broadcastTimerState(undefined, next);
+  }, [broadcastTimerState]);
 
   const secondsForSidebar = liveSeconds(
     runtime[SIDEBAR_TIMER_ID],
@@ -1735,6 +2044,7 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
         });
         writeStored(updated);
         writeHeartbeat();
+        broadcastTimerState(updated, stopwatchRef.current, subjectStopwatchesRef.current);
         return updated;
       }
       const willRun = !current.running;
@@ -1758,9 +2068,10 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
       if (willRun) updated = pauseOthersForSidebar(updated);
       writeStored(updated);
       if (willRun) writeHeartbeat();
+      broadcastTimerState(updated, stopwatchRef.current, subjectStopwatchesRef.current);
       return updated;
     });
-  }, [showFlash, sidebarTimerMinutes, pauseOthersForSidebar]);
+  }, [showFlash, sidebarTimerMinutes, pauseOthersForSidebar, broadcastTimerState]);
 
   const resetSidebarTimer = useCallback(() => {
     doneRef.current[SIDEBAR_TIMER_ID] = false;
@@ -1777,9 +2088,10 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
         },
       };
       writeStored(updated);
+      broadcastTimerState(updated);
       return updated;
     });
-  }, [sidebarTimerMinutes]);
+  }, [sidebarTimerMinutes, broadcastTimerState]);
 
   const value = useMemo(
     () => ({

@@ -36,6 +36,7 @@ import {
   writePersistedStudyFlow,
   type StudyFlowPhase,
 } from "@/lib/study-flow-persist";
+import { claimTimerCompletion } from "@/lib/tab-sync";
 import type { Subject } from "@/lib/types";
 import {
   buildFullWeightedCycle,
@@ -498,17 +499,23 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
 
     advancingRef.current = true;
     const nextIdx = idx + 1;
+    const canPlayAudio = claimTimerCompletion(`flow_advance_${current.id}`, Date.now());
+
     if (nextIdx < subjects.length) {
-      playTransitionTone();
-      notify("FocoHub", `${current.name} concluída — anote se quiser`);
+      if (canPlayAudio) {
+        playTransitionTone();
+        notify("FocoHub", `${current.name} concluída — anote se quiser`);
+      }
       setPhase("subject_notes");
       advancingRef.current = false;
     } else {
-      playSessionEndTone();
-      notify(
-        "FocoHub",
-        `Bloco concluído · ${blockTotalMinutes(subjects)} min`,
-      );
+      if (canPlayAudio) {
+        playSessionEndTone();
+        notify(
+          "FocoHub",
+          `Bloco concluído · ${blockTotalMinutes(subjects)} min`,
+        );
+      }
       setPhase("block_done");
       advancingRef.current = false;
     }
@@ -600,14 +607,31 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
       const detail = (ev as CustomEvent<{ round: number }>).detail;
       const round = detail?.round ?? 1;
       setCycleRoundCompleted(round);
-      playCycleEndTone();
+      if (claimTimerCompletion(`flow_cycle_${round}`, Date.now())) {
+        playCycleEndTone();
+      }
+    }
+
+    function onStorage(e: StorageEvent) {
+      if (e.key === "foco_semanal_study_flow_v1" && e.newValue) {
+        try {
+          const saved = readPersistedStudyFlow();
+          if (saved.day === todayIndex()) {
+            setPhase(saved.phase);
+            setCurrentIndex(saved.currentIndex);
+            setRestEndsAt(saved.restEndsAt);
+          }
+        } catch {}
+      }
     }
 
     window.addEventListener(SUBJECT_COMPLETE_EVENT, onComplete);
     window.addEventListener(CYCLE_COMPLETE_EVENT, onCycleComplete);
+    window.addEventListener("storage", onStorage);
     return () => {
       window.removeEventListener(SUBJECT_COMPLETE_EVENT, onComplete);
       window.removeEventListener(CYCLE_COMPLETE_EVENT, onCycleComplete);
+      window.removeEventListener("storage", onStorage);
     };
   }, [advanceAfterComplete]);
 

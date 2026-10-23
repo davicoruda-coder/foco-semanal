@@ -566,6 +566,22 @@ export function AppProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
+  // Sincroniza dados com outras abas abertas quando uma altera matérias/sessões/ciclo
+  useEffect(() => {
+    function onStorage(e: StorageEvent) {
+      if (e.key === "foco_semanal_data_v1" && e.newValue) {
+        if (!pendingSaveRef.current && !saveInFlightRef.current) {
+          try {
+            const fresh = loadDemoData();
+            setDataState(fresh);
+          } catch {}
+        }
+      }
+    }
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, []);
+
   const setTheme = useCallback(
     (next: ThemePref) => {
       setThemePrefState(next);
