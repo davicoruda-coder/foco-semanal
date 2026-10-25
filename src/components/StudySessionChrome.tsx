@@ -18,6 +18,7 @@ import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { AutoGrowTextarea } from "@/components/AutoGrowTextarea";
 import { useApp } from "@/components/AppProvider";
 import { useStudyFlow } from "@/components/StudyFlowProvider";
+import { useTimerRuntime } from "@/components/TimerRuntimeProvider";
 import type { RotationItem, Subject, SubjectResource } from "@/lib/types";
 import {
   isExclusiveSoloDay,
@@ -124,6 +125,7 @@ function ExtraTimePrompt({
 /** CTA / status da sessão — fica dentro do card Ciclo de Estudos. */
 export function StudySessionBar() {
   const flow = useStudyFlow();
+  const { requestPlay } = useTimerRuntime();
   const { data } = useApp();
   const day = todayIndex();
   const exclusiveSoloToday = isExclusiveSoloDay(data.subjects, day);
@@ -251,7 +253,12 @@ export function StudySessionBar() {
         <button
           type="button"
           disabled={!flow.canStart}
-          onClick={flow.startSession}
+          onClick={() => {
+            requestPlay({
+              targetName: "a Sessão de Estudos",
+              onPlay: flow.startSession,
+            });
+          }}
           className="flex w-full items-center justify-between gap-3 rounded-[var(--radius-btn)] bg-[var(--signal)] px-3.5 py-2.5 text-left text-white shadow-[var(--shadow-sm)] transition enabled:hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-45 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/80 md:px-4 md:py-3"
         >
           <span className="min-w-0">
@@ -290,9 +297,16 @@ export function StudySessionBar() {
         />
         <button
           type="button"
-          onClick={
-            flow.phase === "running" ? flow.pauseSession : flow.resumeSession
-          }
+          onClick={() => {
+            if (flow.phase === "running") {
+              flow.pauseSession();
+            } else {
+              requestPlay({
+                targetName: "a Sessão de Estudos",
+                onPlay: flow.resumeSession,
+              });
+            }
+          }}
           className="grid size-8 shrink-0 place-items-center rounded-full bg-[var(--signal)] text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--signal)]"
           title={flow.phase === "running" ? "Pausar sessão" : "Retomar sessão"}
           aria-label={

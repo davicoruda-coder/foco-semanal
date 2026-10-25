@@ -460,6 +460,7 @@ export function SessionClock({
     secondsForSidebar,
     sidebarTimerName,
     sidebarTimerMinutes,
+    requestPlay,
   } = useTimerRuntime();
 
   const timers = useMemo(
@@ -534,7 +535,17 @@ export function SessionClock({
         flashKey={
           flash?.id === SIDEBAR_TIMER_ID ? flash.key : undefined
         }
-        onToggle={toggleSidebarTimer}
+        onToggle={() => {
+          if (sidebarRunning) {
+            toggleSidebarTimer();
+          } else {
+            requestPlay({
+              targetId: SIDEBAR_TIMER_ID,
+              targetName: sidebarTimerName || "o Temporizador Geral",
+              onPlay: toggleSidebarTimer,
+            });
+          }
+        }}
         onReset={resetSidebarTimer}
       />
     );
@@ -560,7 +571,17 @@ export function SessionClock({
         paused={swPaused}
         flash={flash?.id === "stopwatch" ? flash.kind : null}
         flashKey={flash?.id === "stopwatch" ? flash.key : undefined}
-        onToggle={toggleStopwatch}
+        onToggle={() => {
+          if (stopwatch.running) {
+            toggleStopwatch();
+          } else {
+            requestPlay({
+              targetId: "sidebar_stopwatch",
+              targetName: "o Cronômetro Geral",
+              onPlay: toggleStopwatch,
+            });
+          }
+        }}
         onReset={resetStopwatch}
       />
     );
@@ -657,7 +678,17 @@ export function SessionClock({
         dense={dense}
         flash={flash?.id === t.id ? flash.kind : null}
         flashKey={flash?.id === t.id ? flash.key : undefined}
-        onToggle={() => toggleTimer(t.id)}
+        onToggle={() => {
+          if (running) {
+            toggleTimer(t.id);
+          } else {
+            requestPlay({
+              targetId: t.id,
+              targetName: `o Temporizador (${t.name})`,
+              onPlay: () => toggleTimer(t.id),
+            });
+          }
+        }}
         onReset={() => resetTimer(t.id)}
       />
     );
@@ -786,7 +817,25 @@ export function SessionClock({
           <div className="flex items-center gap-1">
             <button
               type="button"
-              onClick={showStopwatch ? toggleStopwatch : toggleSidebarTimer}
+              onClick={() => {
+                const isRunning = showStopwatch ? stopwatch.running : sidebarRunning;
+                if (isRunning) {
+                  if (showStopwatch) toggleStopwatch();
+                  else toggleSidebarTimer();
+                } else if (showStopwatch) {
+                  requestPlay({
+                    targetId: "sidebar_stopwatch",
+                    targetName: "o Cronômetro Geral",
+                    onPlay: toggleStopwatch,
+                  });
+                } else {
+                  requestPlay({
+                    targetId: SIDEBAR_TIMER_ID,
+                    targetName: sidebarTimerName || "o Temporizador Geral",
+                    onPlay: toggleSidebarTimer,
+                  });
+                }
+              }}
               className="grid size-6 place-items-center rounded-full bg-[var(--signal)] text-white hover:brightness-110 transition active:scale-95 shadow-xs"
               title={(showStopwatch ? stopwatch.running : sidebarRunning) ? "Pausar" : "Continuar"}
             >

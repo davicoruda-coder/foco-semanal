@@ -10,6 +10,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { useApp } from "@/components/AppProvider";
 import { ensureNotificationPermission, notify, playAlarmTone } from "@/lib/audio";
 import {
@@ -71,6 +72,18 @@ export type StopwatchState = {
   accumulatedMs: number;
 };
 
+export type ActiveTimerInfo = {
+  id: string;
+  name: string;
+  type: "timer" | "stopwatch";
+};
+
+export type RequestPlayParams = {
+  targetId?: string;
+  targetName: string;
+  onPlay: () => void;
+};
+
 type TimerRuntimeContextValue = {
   mode: ClockMode;
   setMode: (mode: ClockMode) => void;
@@ -99,6 +112,8 @@ type TimerRuntimeContextValue = {
   sidebarTimerMinutes: number;
   /** Relógios já lidos do aparelho. */
   clocksReady: boolean;
+  getActiveRunningTimer: (excludeId?: string) => ActiveTimerInfo | null;
+  requestPlay: (params: RequestPlayParams) => void;
 };
 
 const STORAGE_KEY = "foco_semanal_timer_runtime_v1";
@@ -1633,6 +1648,12 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
           const next: Record<string, StopwatchState> = { ...prev };
 
           if (willRun) {
+            setStopwatch((prevSw) => {
+              if (!prevSw.running) return prevSw;
+              const nextSw = pauseStopwatchState(prevSw);
+              writeStopwatch(nextSw);
+              return nextSw;
+            });
             for (const [id, s] of Object.entries(prev)) {
               if (id === subjectId || !s.running) continue;
               next[id] = pauseStopwatchState(s);
@@ -1699,6 +1720,12 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
       const willStart = !currentRuntime.running;
 
       if (willStart) {
+        setStopwatch((prevSw) => {
+          if (!prevSw.running) return prevSw;
+          const nextSw = pauseStopwatchState(prevSw);
+          writeStopwatch(nextSw);
+          return nextSw;
+        });
         setSubjectStopwatches((prev) => {
           let changed = false;
           const next: Record<string, StopwatchState> = { ...prev };
@@ -1825,6 +1852,13 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
       const minutes = Math.max(1, sub.study_minutes ?? 25);
       doneRef.current[key] = false;
       showFlash(key, "play");
+
+      setStopwatch((prevSw) => {
+        if (!prevSw.running) return prevSw;
+        const nextSw = pauseStopwatchState(prevSw);
+        writeStopwatch(nextSw);
+        return nextSw;
+      });
 
       setSubjectStopwatches((prev) => {
         let changed = false;
@@ -1974,6 +2008,21 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
       if (willRun) writeHeartbeat();
       return next;
     });
+    if (!wasRunning) {
+      setSubjectStopwatches((prev) => {
+        let changed = false;
+        const next: Record<string, StopwatchState> = { ...prev };
+        for (const [id, s] of Object.entries(prev)) {
+          if (!s.running) continue;
+          next[id] = pauseStopwatchState(s);
+          changed = true;
+        }
+        if (!changed) return prev;
+        subjectStopwatchesRef.current = next;
+        writeSubjectStopwatches(next);
+        return next;
+      });
+    }
     setRuntime((prev) => {
       let updated = wasRunning
         ? pauseLinkedSubjects(prev)
@@ -2093,6 +2142,93 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
     });
   }, [sidebarTimerMinutes, broadcastTimerState]);
 
+  const [conflictState, setConflictState] = useState<{
+    activeTimer: ActiveTimerInfo;
+    targetName: string;
+    onPlay: () => void;
+  } | null>(null);
+
+  const getActiveRunningTimer = useCallback(
+    (excludeId?: string): ActiveTimerInfo | null => {
+      // 1. Cronômetro da lateral
+      if (stopwatchRef.current.running && excludeId !== "sidebar_stopwatch") {
+        return {
+          id: "sidebar_stopwatch",
+          name: "Cronômetro Geral",
+          type: "stopwatch",
+        };
+      }
+
+      // 2. Temporizador da lateral
+      const sidebar = runtimeRef.current[SIDEBAR_TIMER_ID];
+      if (sidebar?.running && excludeId !== SIDEBAR_TIMER_ID) {
+        return {
+          id: SIDEBAR_TIMER_ID,
+          name: sidebarTimerName || "Temporizador Geral",
+          type: "timer",
+        };
+      }
+
+      // 3. Cronômetros livres por matéria
+      for (const [sid, sw] of Object.entries(subjectStopwatchesRef.current)) {
+        if (
+          sw.running &&
+          excludeId !== `sub_sw:${sid}` &&
+          excludeId !== subjectTimerKey(sid)
+        ) {
+          const sub = subjectsRef.current.find((s) => s.id === sid);
+          return {
+            id: `sub_sw:${sid}`,
+            name: sub ? `Cronômetro (${sub.name})` : "Cronômetro de Matéria",
+            type: "stopwatch",
+          };
+        }
+      }
+
+      // 4. Temporizadores regressivos de matérias e avulsos
+      for (const [id, r] of Object.entries(runtimeRef.current)) {
+        if (!r.running || id === excludeId) continue;
+        if (isSubjectTimerKey(id)) {
+          const sid = subjectIdFromKey(id);
+          if (excludeId === `sub_sw:${sid}`) continue;
+          const sub = subjectsRef.current.find((s) => s.id === sid);
+          return {
+            id,
+            name: sub ? `Temporizador (${sub.name})` : "Temporizador de Matéria",
+            type: "timer",
+          };
+        }
+        if (id !== SIDEBAR_TIMER_ID) {
+          const t = timers.find((item) => item.id === id);
+          return {
+            id,
+            name: t?.name || "Temporizador",
+            type: "timer",
+          };
+        }
+      }
+
+      return null;
+    },
+    [sidebarTimerName, subjectTimerKey, timers],
+  );
+
+  const requestPlay = useCallback(
+    ({ targetId, targetName, onPlay }: RequestPlayParams) => {
+      const active = getActiveRunningTimer(targetId);
+      if (!active) {
+        onPlay();
+        return;
+      }
+      setConflictState({
+        activeTimer: active,
+        targetName,
+        onPlay,
+      });
+    },
+    [getActiveRunningTimer],
+  );
+
   const value = useMemo(
     () => ({
       mode,
@@ -2118,6 +2254,8 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
       sidebarTimerName,
       sidebarTimerMinutes,
       clocksReady: ready,
+      getActiveRunningTimer,
+      requestPlay,
     }),
     [
       mode,
@@ -2142,12 +2280,30 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
       sidebarTimerName,
       sidebarTimerMinutes,
       ready,
+      getActiveRunningTimer,
+      requestPlay,
     ],
   );
 
   return (
     <TimerRuntimeContext.Provider value={value}>
       {children}
+      <ConfirmDialog
+        open={conflictState !== null}
+        title="Tempo já em andamento"
+        message={`Não é possível ter duas contagens de tempo ao mesmo tempo.\n\nO ${conflictState?.activeTimer.name ?? "tempo atual"} já está contando.\n\nDeseja pausá-lo e iniciar ${conflictState?.targetName ?? "este tempo"}?`}
+        confirmLabel="Pausar atual e iniciar"
+        cancelLabel="Manter atual"
+        confirmVariant="signal"
+        onConfirm={() => {
+          const fn = conflictState?.onPlay;
+          setConflictState(null);
+          fn?.();
+        }}
+        onCancel={() => {
+          setConflictState(null);
+        }}
+      />
     </TimerRuntimeContext.Provider>
   );
 }

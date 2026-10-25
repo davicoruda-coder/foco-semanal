@@ -47,7 +47,7 @@ export function ConfirmDialog({
       <h2 id="confirm-title" className="font-display text-xl font-semibold">
         {snap.title}
       </h2>
-      <p className="mt-2 text-sm text-[color-mix(in_srgb,var(--ink)_70%,transparent)] leading-relaxed">
+      <p className="mt-2 text-sm text-[color-mix(in_srgb,var(--ink)_70%,transparent)] leading-relaxed whitespace-pre-line">
         {snap.message}
       </p>
       <div className="mt-6 flex items-center justify-end gap-2.5">

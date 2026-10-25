@@ -36,6 +36,7 @@ export function SubjectTimerControls({
     resetSubjectTimer,
     secondsForSubject,
     subjectStopwatches,
+    requestPlay,
   } = useTimerRuntime();
   const { allowSubjectPlay, sessionActive } = useStudyFlow();
 
@@ -77,10 +78,20 @@ export function SubjectTimerControls({
         disabled={!playAllowed}
         onClick={() => {
           if (!playAllowed) return;
-          if (!running) {
-            playSessionStartTone();
+          if (running) {
+            toggleSubjectTimer(subjectId);
+          } else {
+            requestPlay({
+              targetId: isFree ? `sub_sw:${subjectId}` : key,
+              targetName: isFree
+                ? `o Cronômetro (${name})`
+                : `o Temporizador (${name})`,
+              onPlay: () => {
+                playSessionStartTone();
+                toggleSubjectTimer(subjectId);
+              },
+            });
           }
-          toggleSubjectTimer(subjectId);
         }}
         title={
           !playAllowed
