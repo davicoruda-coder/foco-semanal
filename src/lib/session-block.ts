@@ -100,9 +100,6 @@ export function packStudyBlock(
 ): Subject[] {
   if (queue.length === 0) return [];
 
-  const distinctIds = new Set(queue.map((s) => s.id));
-  const hasMultipleSubjects = distinctIds.size > 1;
-
   const pack: Subject[] = [];
   let sum = 0;
   const usedIndices = new Set<number>();

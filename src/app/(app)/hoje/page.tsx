@@ -7,11 +7,14 @@ import { readPersistedStudyFlow } from "@/lib/study-flow-persist";
 import {
   BookMarked,
   CalendarDays,
+  CheckCircle2,
   ChevronDown,
   ChevronRight,
   ChevronUp,
   Pencil,
   RotateCcw,
+  Sparkles,
+  Trophy,
 } from "lucide-react";
 import { useApp } from "@/components/AppProvider";
 import { useStudyFlow } from "@/components/StudyFlowProvider";
@@ -24,6 +27,7 @@ import {
   isExclusiveSoloDay,
   freeRowClass,
   formatSubjectFocusList,
+  getCycleRoundProgress,
   isSubjectDoneToday,
   normalizeRotation,
   rotationJustStudied,
@@ -260,6 +264,16 @@ export default function HojePage() {
     day,
   ]);
 
+  const cycleProgress = useMemo(
+    () => getCycleRoundProgress(data.subjects, day),
+    [data.subjects, day],
+  );
+
+  const nextSubjectName = useMemo(() => {
+    if (!queueHeadId) return null;
+    return data.subjects.find((s) => s.id === queueHeadId)?.name ?? null;
+  }, [queueHeadId, data.subjects]);
+
   const weekDays = DAYS.map((name, i) => ({ name, i }));
 
   const { visibleSubjects, hiddenDone, hiddenPending } = useMemo(() => {
@@ -428,6 +442,58 @@ export default function HojePage() {
                 </Link>
               </div>
             </div>
+
+            {/* Indicador Visual da Rodada do Ciclo */}
+            {cycleProgress.totalPasses > 0 && (
+              <div className="border-b border-[var(--line)] bg-[color-mix(in_srgb,var(--signal)_4%,var(--surface))] px-3.5 py-3 md:px-5">
+                <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+                  <div className="flex items-center gap-2">
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-[color-mix(in_srgb,var(--signal)_14%,transparent)] px-2.5 py-0.5 text-xs font-bold text-[var(--signal)]">
+                      <Sparkles size={12} strokeWidth={2.5} />
+                      Rodada {cycleProgress.currentRound}
+                    </span>
+                    {cycleProgress.completedRoundsToday > 0 && (
+                      <span className="inline-flex items-center gap-1 text-[11px] font-medium text-[color-mix(in_srgb,var(--ink)_65%,transparent)]">
+                        <Trophy size={12} className="text-amber-500" />
+                        {cycleProgress.completedRoundsToday} {cycleProgress.completedRoundsToday === 1 ? "rodada concluída" : "rodadas concluídas"} hoje
+                      </span>
+                    )}
+                  </div>
+                  <div className="font-medium text-[color-mix(in_srgb,var(--ink)_75%,transparent)]">
+                    <span className="font-semibold text-[var(--ink)]">{cycleProgress.donePasses}</span> de{" "}
+                    <span className="font-semibold text-[var(--ink)]">{cycleProgress.totalPasses}</span> estudos ({cycleProgress.percent}%)
+                  </div>
+                </div>
+
+                <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-[var(--mist)]">
+                  <div
+                    className="h-full rounded-full bg-[var(--signal)] transition-all duration-500 ease-out"
+                    style={{ width: `${cycleProgress.percent}%` }}
+                  />
+                </div>
+
+                <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-[11px] text-[color-mix(in_srgb,var(--ink)_60%,transparent)]">
+                  {cycleProgress.isComplete ? (
+                    <span className="inline-flex items-center gap-1 font-semibold text-[var(--signal)]">
+                      <CheckCircle2 size={13} strokeWidth={2.2} />
+                      Rodada {cycleProgress.currentRound} concluída! Nova rodada pronta para iniciar.
+                    </span>
+                  ) : nextSubjectName ? (
+                    <span>
+                      Próxima da vez:{" "}
+                      <strong className="font-semibold text-[var(--ink)]">
+                        {nextSubjectName}
+                      </strong>
+                    </span>
+                  ) : (
+                    <span>Ciclo em andamento</span>
+                  )}
+                  <span className="text-[10px] opacity-75">
+                    Intercalação uniforme ativa
+                  </span>
+                </div>
+              </div>
+            )}
 
             {(exclusiveSoloToday || exclusiveCycleToday) &&
             exclusiveTodayList.length > 0 ? (

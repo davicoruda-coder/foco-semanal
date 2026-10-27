@@ -508,18 +508,105 @@ export function interleaveWithAntiAdjacency<T extends Subject>(
 }
 
 /**
- * Constrói uma sequência ponderada por rodadas com intercalação e anti-adjacência rigorosa.
+ * Distribui as aparições de cada matéria uniformemente ao longo do ciclo,
+ * respeitando anti-adjacência estrita (nunca a mesma matéria consecutiva).
+ *
+ * Usa posicionamento ideal com offset fracionário para garantir que matérias
+ * com peso > 1 fiquem espaçadas entre as demais, em vez de acumuladas no final.
+ *
+ * Ex. com Proj(w=2), Py(w=2), Ing(w=1), Rev(w=1), Fac(w=1):
+ * → Proj → Py → Ing → Proj → Rev → Py → Fac
+ * (passadas extras distribuídas, nunca ping-pong no final)
+ */
+export function distributeUniformly<T extends Subject>(
+  base: T[],
+  initialAvoidId?: string | null,
+): T[] {
+  if (base.length === 0) return [];
+  if (base.length === 1) {
+    const s = base[0];
+    const w = Math.min(10, Math.max(1, s.weight ?? 1));
+    return Array(w).fill(s);
+  }
+
+  const totalSlots = base.reduce(
+    (sum, s) => sum + Math.min(10, Math.max(1, s.weight ?? 1)),
+    0,
+  );
+  if (totalSlots === 0) return [];
+
+  const distinctIds = new Set(base.map((s) => s.id));
+  if (distinctIds.size <= 1) {
+    return Array(totalSlots).fill(base[0]);
+  }
+
+  // Estado de cada matéria: passadas restantes e posição ideal fracionária.
+  // O offset inicial espalha os pontos de partida uniformemente ao longo do espaçamento,
+  // garantindo que as aparições de diferentes matérias não colidam.
+  const state = base.map((s, idx) => {
+    const w = Math.min(10, Math.max(1, s.weight ?? 1));
+    const spacing = totalSlots / w;
+    return {
+      subject: s,
+      remaining: w,
+      spacing,
+      nextIdealPos: (idx / base.length) * spacing,
+      orderIdx: idx,
+    };
+  });
+
+  const result: T[] = [];
+  let lastId: string | null = initialAvoidId ?? null;
+
+  for (let pos = 0; pos < totalSlots; pos++) {
+    const available = state.filter((s) => s.remaining > 0);
+    if (available.length === 0) break;
+
+    const nonAdj = available.filter((s) => s.subject.id !== lastId);
+    const pool = nonAdj.length > 0 ? nonAdj : available;
+
+    // Escolhe a matéria mais "atrasada" (overdue) em relação à sua posição ideal.
+    // Matérias já atrasadas são priorizadas; entre as que não estão atrasadas, a que
+    // tem a posição ideal mais próxima vem primeiro. Empate desfeito por ordem no ciclo.
+    pool.sort((a, b) => {
+      const overdueA = pos - a.nextIdealPos;
+      const overdueB = pos - b.nextIdealPos;
+
+      // Ambas atrasadas: a mais atrasada primeiro
+      if (overdueA >= -0.001 && overdueB >= -0.001) {
+        if (Math.abs(overdueA - overdueB) > 0.001) return overdueB - overdueA;
+        return a.orderIdx - b.orderIdx;
+      }
+      // Uma atrasada e outra não: a atrasada primeiro
+      if (overdueA >= -0.001) return -1;
+      if (overdueB >= -0.001) return 1;
+      // Nenhuma atrasada: a que tem ideal mais próximo primeiro
+      if (Math.abs(a.nextIdealPos - b.nextIdealPos) > 0.001) {
+        return a.nextIdealPos - b.nextIdealPos;
+      }
+      return a.orderIdx - b.orderIdx;
+    });
+
+    const chosen = pool[0];
+    result.push(chosen.subject);
+    chosen.remaining--;
+    chosen.nextIdealPos += chosen.spacing;
+    lastId = chosen.subject.id;
+  }
+
+  return result;
+}
+
+/**
+ * Constrói uma sequência ponderada com distribuição uniforme e anti-adjacência rigorosa.
  *
  * Princípios Fundamentais (Método de Ciclo de Estudos & Neurociência):
- * 1. Prioridade de Rodada: Todas as matérias ativas do ciclo cumprem a Volta 1
- *    antes de qualquer matéria iniciar a Volta 2. Nenhuma matéria pesada monopoliza
- *    a fila deixando outras matérias para trás sem estudar.
- * 2. Cool-Down & Anti-Adjacência: Matérias iguais nunca são colocadas consecutivamente.
- *    Nas transições entre voltas, se a última matéria da volta anterior for igual à
- *    primeira da volta seguinte, rotaciona a volta para manter máxima alternância.
- * 3. Fila Restante Inteligente: A fila restante consome os blocos já cumpridos (cycle_done/ok)
- *    de modo que quem tem menos voltas concluídas (menor cycle_done) venha primeiro,
- *    redistribuindo passagens pendentes de matérias com peso alto para NUNCA gerar repetições consecutivas.
+ * 1. Distribuição Uniforme: Passadas extras de matérias com peso > 1 são distribuídas
+ *    uniformemente entre as demais matérias, garantindo intercalação ampla e contínua.
+ *    Nenhuma matéria pesada fica acumulada no final do ciclo.
+ * 2. Anti-Adjacência Estrita: Matérias iguais nunca são colocadas consecutivamente.
+ * 3. Fila Restante Inteligente: Calcula as passadas pendentes (weight - cycle_done) e
+ *    redistribui uniformemente, mantendo anti-adjacência com a última matéria concluída.
  */
 export function buildInterleavedWeightedSequence<T extends Subject>(
   base: T[],
@@ -539,68 +626,22 @@ export function buildInterleavedWeightedSequence<T extends Subject>(
     return Array(count).fill(s);
   }
 
-  const maxWeight = Math.min(
-    10,
-    Math.max(...base.map((s) => Math.max(1, s.weight ?? 1))),
-  );
-
-  // Constrói o ciclo completo volta por volta (Volta 0 = 1ª passada, Volta 1 = 2ª passada, etc.)
-  const rounds: T[][] = [];
-
-  for (let r = 0; r < maxWeight; r++) {
-    const roundSubs = base.filter((s) => Math.max(1, s.weight ?? 1) > r);
-    if (roundSubs.length === 0) continue;
-    rounds.push([...roundSubs]);
-  }
-
-  // Ajusta transições entre voltas para evitar que a última de uma volta seja idêntica à primeira da seguinte
-  for (let r = 0; r < rounds.length - 1; r++) {
-    const currRound = rounds[r];
-    const nextRound = rounds[r + 1];
-    if (currRound.length === 0 || nextRound.length === 0) continue;
-
-    const lastId = currRound[currRound.length - 1].id;
-    const firstNextId = nextRound[0].id;
-
-    if (lastId === firstNextId) {
-      if (nextRound.length > 1) {
-        const diffIdx = nextRound.findIndex((s) => s.id !== lastId);
-        if (diffIdx > 0) {
-          rounds[r + 1] = [
-            ...nextRound.slice(diffIdx),
-            ...nextRound.slice(0, diffIdx),
-          ];
-          continue;
-        }
-      }
-      if (currRound.length > 1) {
-        const matchIdx = currRound.findIndex((s) => s.id === firstNextId);
-        if (matchIdx > 0) {
-          rounds[r] = [
-            ...currRound.slice(matchIdx),
-            ...currRound.slice(0, matchIdx),
-          ];
-        }
-      }
-    }
-  }
-
-  const fullSequence: T[] = [];
-  for (const r of rounds) {
-    fullSequence.push(...r);
-  }
+  const lastCompletedId = readLastCycleCompletedSubjectId();
 
   if (!opts.remainingOnly) {
-    return interleaveWithAntiAdjacency(fullSequence);
+    return distributeUniformly(base, lastCompletedId);
   }
 
-  // Para a fila restante, consome exatamente as passagens cumpridas (cycle_done/ok)
-  // preservando a ordem por rodadas para que quem ainda não estudou hoje venha primeiro
+  // Sequência completa distribuída idealmente
+  const fullSequence = distributeUniformly(base, lastCompletedId);
+
+  // Para a fila restante: consome as passadas já cumpridas diretamente da sequência ideal
   const doneCounts = new Map<string, number>();
   for (const s of base) {
     const isDone = isSubjectDoneToday(s, opts.exclusive);
     const w = Math.max(1, s.weight ?? 1);
-    const done = isDone ? w : Math.min(w, Math.max(0, s.cycle_done ?? 0));
+    const cd = Math.max(0, s.cycle_done ?? 0);
+    const done = isDone ? w : Math.min(w, cd);
     doneCounts.set(s.id, done);
   }
 
@@ -614,8 +655,17 @@ export function buildInterleavedWeightedSequence<T extends Subject>(
     }
   }
 
-  const lastCompletedId = readLastCycleCompletedSubjectId();
-  return interleaveWithAntiAdjacency(remaining, lastCompletedId);
+  // Cool-down na fila restante: se a cabeça da fila restante for idêntica à matéria
+  // recém-concluída e houver alternativas, move a primeira alternativa para o topo
+  if (remaining.length > 1 && remaining[0].id === lastCompletedId) {
+    const diffIdx = remaining.findIndex((s) => s.id !== lastCompletedId);
+    if (diffIdx > 0) {
+      const alt = remaining.splice(diffIdx, 1)[0];
+      remaining.unshift(alt);
+    }
+  }
+
+  return remaining;
 }
 
 /**
@@ -984,6 +1034,52 @@ export function incrementCycleRoundsToday(lastCompletedSubjectId?: string): numb
 export function stampCycleDate(): void {
   if (typeof window === "undefined") return;
   localStorage.setItem(CYCLE_DATE_KEY, todayDateStr());
+}
+
+export interface CycleRoundProgress {
+  currentRound: number;
+  completedRoundsToday: number;
+  totalPasses: number;
+  donePasses: number;
+  percent: number;
+  isComplete: boolean;
+}
+
+/**
+ * Calcula o progresso exato da rodada atual do ciclo para feedback visual.
+ */
+export function getCycleRoundProgress(
+  subjects: Subject[],
+  day: number,
+): CycleRoundProgress {
+  const active = cycleSubjectsOnDay(subjects, day);
+  const exclusive = isExclusiveCycleDay(subjects, day);
+  const totalPasses = active.reduce(
+    (sum, s) => sum + Math.max(1, s.weight ?? 1),
+    0,
+  );
+  const donePasses = active.reduce((sum, s) => {
+    const w = Math.max(1, s.weight ?? 1);
+    if (isSubjectDoneToday(s, exclusive)) return sum + w;
+    const cd = Math.min(w, Math.max(0, s.cycle_done ?? 0));
+    return sum + cd;
+  }, 0);
+
+  const completedRoundsToday = readCycleRoundsToday();
+  const percent =
+    totalPasses > 0
+      ? Math.min(100, Math.round((donePasses / totalPasses) * 100))
+      : 0;
+  const isComplete = totalPasses > 0 && donePasses >= totalPasses;
+
+  return {
+    currentRound: completedRoundsToday + 1,
+    completedRoundsToday,
+    totalPasses,
+    donePasses,
+    percent,
+    isComplete,
+  };
 }
 
 // ---------------------------------------------------------------------------
