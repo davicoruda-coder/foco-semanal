@@ -444,11 +444,6 @@ export function FlashcardPlayer({
             : "border-[var(--line)] bg-[var(--surface)] hover:border-[var(--signal)]"
         }`}
       >
-        <div className="absolute right-3.5 top-3.5 flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-medium text-[color-mix(in_srgb,var(--ink)_50%,transparent)] bg-[var(--mist)]/70 group-hover:text-[var(--signal)] group-hover:bg-[var(--mist)] transition">
-          <RotateCw size={11} className="transition-transform duration-300 group-hover:rotate-180" />
-          <span>{isFlipped ? "Ver Frente" : "Virar card"}</span>
-        </div>
-
         {!isFlipped ? (
           /* Frente */
           <div className="w-full flex flex-col items-center justify-center my-auto py-2">
@@ -697,11 +692,6 @@ export function FlashcardPlayer({
                       : "border-white/15 bg-neutral-900/85 hover:border-[var(--signal)]/50"
                   }`}
                 >
-                  <div className="absolute top-3.5 right-3.5 flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium text-neutral-400 bg-white/5 sm:hidden">
-                    <RotateCw size={12} />
-                    <span>{isFlipped ? "Ver Frente" : "Virar card"}</span>
-                  </div>
-
                   {!isFlipped ? (
                     /* Frente Ampliada */
                     <div className="flex flex-col items-center justify-center space-y-4 w-full my-auto text-center">
