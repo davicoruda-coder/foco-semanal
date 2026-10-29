@@ -5,7 +5,6 @@ import {
   ArrowLeft,
   Bot,
   Layers,
-  Pencil,
   Plus,
   SlidersHorizontal,
   Sparkles,
@@ -141,6 +140,15 @@ export function FlashcardDeckList() {
               return {
                 ...prev,
                 cards: (prev.cards || []).filter((c) => c.id !== deletedId),
+              };
+            });
+          }}
+          onCardUpdated={(updated) => {
+            setActiveDeck((prev) => {
+              if (!prev) return null;
+              return {
+                ...prev,
+                cards: (prev.cards || []).map((c) => (c.id === updated.id ? updated : c)),
               };
             });
           }}

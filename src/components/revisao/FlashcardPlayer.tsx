@@ -6,6 +6,7 @@ import { createPortal } from "react-dom";
 import {
   Maximize2,
   Minimize2,
+  Pencil,
   RotateCw,
   Sparkles,
   Trash2,
@@ -18,6 +19,7 @@ import {
 import { useRevisao } from "./RevisaoProvider";
 import { FormattedRuleText } from "./FormattedRuleText";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { FlashcardQuickEditModal } from "./FlashcardQuickEditModal";
 
 interface RatingOptionConfig {
   id: RespostaRevisao;
@@ -125,13 +127,20 @@ export function FlashcardPlayer({
   materiaNome,
   onFinish,
   onCardDeleted,
+  onCardUpdated,
 }: {
   cards?: Flashcard[];
   materiaNome?: string;
   onFinish?: () => void;
   onCardDeleted?: (cardId: string) => void;
+  onCardUpdated?: (card: Flashcard) => void;
 }) {
-  const { flashcardsDoDia, responderFlashcard, deleteFlashcard } = useRevisao();
+  const {
+    flashcardsDoDia,
+    responderFlashcard,
+    deleteFlashcard,
+    updateFlashcard,
+  } = useRevisao();
   const [mounted, setMounted] = useState(false);
   const [deletedIds, setDeletedIds] = useState<string[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -139,6 +148,7 @@ export function FlashcardPlayer({
   const [submitting, setSubmitting] = useState(false);
   const [selectedRating, setSelectedRating] = useState<RespostaRevisao | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [isImmersiveMode, setIsImmersiveMode] = useState(false);
 
@@ -239,11 +249,33 @@ export function FlashcardPlayer({
     }
   };
 
+  const handleSaveCard = async (
+    cardId: string,
+    updates: {
+      frente: string;
+      verso: string;
+      frente_imagem_url: string | null;
+      verso_imagem_url: string | null;
+    },
+  ): Promise<boolean> => {
+    const ok = await updateFlashcard(cardId, updates);
+    if (ok) {
+      setSessionCards((prev) =>
+        prev.map((c) => (c.id === cardId ? { ...c, ...updates } : c)),
+      );
+      if (currentCard && currentCard.id === cardId) {
+        onCardUpdated?.({ ...currentCard, ...updates });
+      }
+    }
+    return ok;
+  };
+
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       if (
         isCompleted ||
         showDeleteConfirm ||
+        showEditModal ||
         !currentCard ||
         e.target instanceof HTMLInputElement ||
         e.target instanceof HTMLTextAreaElement
@@ -255,6 +287,15 @@ export function FlashcardPlayer({
         e.preventDefault();
         setIsImmersiveMode(false);
         return;
+      }
+
+      // Atalho rápido 'E' para editar o flashcard atual sem perder o fluxo
+      if ((e.key === "e" || e.key === "E") && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        if (!submitting) {
+          e.preventDefault();
+          setShowEditModal(true);
+          return;
+        }
       }
 
       if (e.code === "Space") {
@@ -279,7 +320,15 @@ export function FlashcardPlayer({
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isCompleted, isFlipped, submitting, showDeleteConfirm, isImmersiveMode, currentCard]);
+  }, [
+    isCompleted,
+    isFlipped,
+    submitting,
+    showDeleteConfirm,
+    showEditModal,
+    isImmersiveMode,
+    currentCard,
+  ]);
 
   if (isCompleted || !currentCard) {
     return (
@@ -345,6 +394,19 @@ export function FlashcardPlayer({
             <Maximize2 size={14} className="text-[var(--signal)] shrink-0" />
             <span className="hidden sm:inline">Modo Foco</span>
             <span className="sm:hidden">Foco</span>
+          </button>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowEditModal(true);
+            }}
+            title="Editar flashcard (E)"
+            aria-label="Editar flashcard"
+            className="inline-flex items-center gap-1.5 rounded-[var(--radius-tag)] border border-[color-mix(in_srgb,var(--line)_80%,transparent)] bg-[var(--surface)] px-2.5 h-[30px] text-xs font-medium text-[color-mix(in_srgb,var(--ink)_75%,transparent)] transition hover:border-[var(--signal)] hover:bg-[var(--signal-soft)]/20 hover:text-[var(--signal)] active:scale-95 cursor-pointer shadow-xs touch-manipulation"
+          >
+            <Pencil size={13} className="shrink-0 text-[color-mix(in_srgb,var(--ink)_60%,transparent)]" />
+            <span>Editar</span>
           </button>
           <button
             type="button"
@@ -511,6 +573,14 @@ export function FlashcardPlayer({
         }}
       />
 
+      {/* Modal de edição rápida durante o estudo */}
+      <FlashcardQuickEditModal
+        open={showEditModal}
+        card={currentCard}
+        onClose={() => setShowEditModal(false)}
+        onSave={handleSaveCard}
+      />
+
       {/* Modo Treino Ampliado / Foco Imersivo (Portal) */}
       {isImmersiveMode &&
         mounted &&
@@ -581,6 +651,18 @@ export function FlashcardPlayer({
                     >
                       <RotateCw size={13} />
                       <span>{isFlipped ? "Ver Frente" : "Virar card"}</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowEditModal(true);
+                      }}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-white/15 bg-white/10 px-2.5 py-1 text-xs font-medium text-neutral-200 hover:bg-white/20 hover:text-white transition cursor-pointer"
+                      title="Editar este flashcard (E)"
+                    >
+                      <Pencil size={13} />
+                      <span className="hidden sm:inline">Editar</span>
                     </button>
                     <button
                       type="button"
