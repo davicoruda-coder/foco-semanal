@@ -106,6 +106,24 @@ export default function AjudaPage() {
                 </kbd>
               </div>
               <div className="flex items-center justify-between rounded-md border border-[var(--line)]/50 bg-[var(--mist)]/40 px-2 py-1">
+                <span>Editar Flashcard</span>
+                <kbd className="rounded border border-[var(--line)] bg-[var(--surface)] px-1.5 py-0.5 font-mono text-[10px] font-semibold text-[var(--ink)]">
+                  E
+                </kbd>
+              </div>
+              <div className="flex items-center justify-between rounded-md border border-[var(--line)]/50 bg-[var(--mist)]/40 px-2 py-1">
+                <span>Salvar Edição do Card</span>
+                <span className="flex items-center gap-1 font-mono text-[10px] font-semibold">
+                  <kbd className="rounded border border-[var(--line)] bg-[var(--surface)] px-1.5 py-0.5 text-[var(--ink)]">
+                    Ctrl
+                  </kbd>
+                  <span>+</span>
+                  <kbd className="rounded border border-[var(--line)] bg-[var(--surface)] px-1.5 py-0.5 text-[var(--ink)]">
+                    Enter
+                  </kbd>
+                </span>
+              </div>
+              <div className="flex items-center justify-between rounded-md border border-[var(--line)]/50 bg-[var(--mist)]/40 px-2 py-1">
                 <span>Colar Print no Card</span>
                 <kbd className="rounded border border-[var(--line)] bg-[var(--surface)] px-1.5 py-0.5 font-mono text-[10px] font-semibold text-[var(--ink)]">
                   Ctrl + V
