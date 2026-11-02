@@ -898,6 +898,7 @@ export default function MateriasPage() {
   /** Rascunho local: permite abrir “Dias da semana” antes de marcar algum dia. */
   const [freqDrafts, setFreqDrafts] = useState<Record<string, DraftFreq>>({});
   const [minutesDraft, setMinutesDraft] = useState<Record<string, string>>({});
+  const [editingMinutesId, setEditingMinutesId] = useState<string | null>(null);
   const [pendingDelete, setPendingDelete] = useState<{
     id: string;
     name: string;
@@ -1267,10 +1268,68 @@ export default function MateriasPage() {
                   onClick={() => toggleExpanded(s.id)}
                 >
                   {!free && (
-                    <span className="inline-flex items-center gap-1 rounded-md bg-[color-mix(in_srgb,var(--ink)_5%,transparent)] px-2 py-0.5 font-medium">
-                      <Clock size={11} className="opacity-60" />
-                      <span>{s.study_minutes ?? 25} min</span>
-                    </span>
+                    editingMinutesId === s.id ? (
+                      <div
+                        className="inline-flex items-center gap-1 rounded-md bg-[var(--surface)] border border-[var(--signal)] px-1.5 py-0.5 shadow-xs"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <Clock size={11} className="text-[var(--signal)] shrink-0" />
+                        <input
+                          type="number"
+                          min={1}
+                          max={999}
+                          autoFocus
+                          className="w-12 bg-transparent text-center font-mono-num font-semibold text-xs text-[var(--ink)] focus:outline-none"
+                          value={minutesDraft[s.id] ?? String(s.study_minutes ?? 25)}
+                          onChange={(e) =>
+                            setMinutesDraft((prev) => ({
+                              ...prev,
+                              [s.id]: e.target.value,
+                            }))
+                          }
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" || e.key === "Escape") {
+                              e.currentTarget.blur();
+                            }
+                          }}
+                          onBlur={() => {
+                            const next = parseMinutes(
+                              minutesDraft[s.id] ?? String(s.study_minutes ?? 25),
+                              s.study_minutes ?? 25,
+                            );
+                            setMinutesDraft((prev) => {
+                              const copy = { ...prev };
+                              delete copy[s.id];
+                              return copy;
+                            });
+                            setEditingMinutesId(null);
+                            if (next !== (s.study_minutes ?? 25)) {
+                              upsertSubject({ ...s, study_minutes: next });
+                            }
+                          }}
+                        />
+                        <span className="text-[10px] opacity-70 pr-0.5">min</span>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setEditingMinutesId(s.id);
+                          setMinutesDraft((prev) => ({
+                            ...prev,
+                            [s.id]: String(s.study_minutes ?? 25),
+                          }));
+                        }}
+                        className="group inline-flex items-center gap-1 rounded-md bg-[color-mix(in_srgb,var(--ink)_5%,transparent)] hover:bg-[var(--signal-soft)] hover:text-[var(--signal)] border border-transparent hover:border-[var(--signal)]/30 px-2 py-0.5 font-medium transition cursor-pointer"
+                        title="Clique para alterar o tempo desta matéria"
+                        aria-label="Alterar tempo de estudo da matéria"
+                      >
+                        <Clock size={11} className="opacity-60 group-hover:text-[var(--signal)]" />
+                        <span>{s.study_minutes ?? 25} min</span>
+                        <Pencil size={9} className="opacity-0 group-hover:opacity-75 transition-opacity -ml-0.5 text-[var(--signal)]" />
+                      </button>
+                    )
                   )}
 
                   {(s.weight ?? 1) > 1 && (
@@ -1389,43 +1448,127 @@ export default function MateriasPage() {
                   {/* Tempo & Peso */}
                   <div className={`space-y-4 transition-opacity ${!isActive ? "opacity-60" : ""}`}>
                     {!free && (
-                      <div>
-                        <p className="mb-1.5 text-xs font-medium uppercase tracking-wider opacity-50">
-                          Tempo de estudo
-                        </p>
-                        <label className="flex items-center gap-2 text-sm">
-                          <input
-                            className="input w-20 py-1.5 text-center font-mono-num"
-                            type="number"
-                            min={1}
-                            max={999}
-                            inputMode="numeric"
-                            value={
-                              minutesDraft[s.id] ?? String(s.study_minutes ?? 25)
-                            }
-                            onChange={(e) =>
-                              setMinutesDraft((prev) => ({
-                                ...prev,
-                                [s.id]: e.target.value,
-                              }))
-                            }
-                            onBlur={() => {
-                              const next = parseMinutes(
-                                minutesDraft[s.id] ?? String(s.study_minutes ?? 25),
-                                s.study_minutes ?? 25,
-                              );
-                              setMinutesDraft((prev) => {
-                                const copy = { ...prev };
-                                delete copy[s.id];
-                                return copy;
-                              });
-                              if (next !== (s.study_minutes ?? 25)) {
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="text-xs font-medium uppercase tracking-wider opacity-50">
+                            Tempo de estudo
+                          </p>
+                          <span className="text-[11px] opacity-55">
+                            Duração de cada bloco desta matéria
+                          </span>
+                        </div>
+
+                        <div className="flex flex-wrap items-center gap-3">
+                          {/* Campo numérico com largura fixa, botões -/+ e suporte a Enter */}
+                          <div className="flex items-center rounded-lg border border-[var(--line)] bg-[var(--surface)] p-1 shadow-2xs">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const cur = s.study_minutes ?? 25;
+                                const next = Math.max(1, cur - 5);
+                                setMinutesDraft((prev) => {
+                                  const copy = { ...prev };
+                                  delete copy[s.id];
+                                  return copy;
+                                });
                                 upsertSubject({ ...s, study_minutes: next });
-                              }
-                            }}
-                          />
-                          <span className="opacity-55 text-xs">minutos por sessão</span>
-                        </label>
+                              }}
+                              className="size-7 flex items-center justify-center rounded-md hover:bg-[var(--mist)] text-[var(--ink)] active:scale-95 transition cursor-pointer text-sm font-bold"
+                              title="Diminuir 5 minutos"
+                              aria-label="Diminuir 5 minutos"
+                            >
+                              -
+                            </button>
+                            <div className="flex items-center px-1">
+                              <input
+                                className="w-14 bg-transparent py-1 text-center font-mono-num font-semibold text-sm sm:text-base text-[var(--ink)] focus:outline-none"
+                                type="number"
+                                min={1}
+                                max={999}
+                                inputMode="numeric"
+                                value={
+                                  minutesDraft[s.id] ?? String(s.study_minutes ?? 25)
+                                }
+                                onChange={(e) =>
+                                  setMinutesDraft((prev) => ({
+                                    ...prev,
+                                    [s.id]: e.target.value,
+                                  }))
+                                }
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter") {
+                                    e.currentTarget.blur();
+                                  }
+                                }}
+                                onBlur={() => {
+                                  const next = parseMinutes(
+                                    minutesDraft[s.id] ?? String(s.study_minutes ?? 25),
+                                    s.study_minutes ?? 25,
+                                  );
+                                  setMinutesDraft((prev) => {
+                                    const copy = { ...prev };
+                                    delete copy[s.id];
+                                    return copy;
+                                  });
+                                  if (next !== (s.study_minutes ?? 25)) {
+                                    upsertSubject({ ...s, study_minutes: next });
+                                  }
+                                }}
+                              />
+                              <span className="text-xs font-medium text-[color-mix(in_srgb,var(--ink)_60%,transparent)] pr-1">
+                                min
+                              </span>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const cur = s.study_minutes ?? 25;
+                                const next = Math.min(999, cur + 5);
+                                setMinutesDraft((prev) => {
+                                  const copy = { ...prev };
+                                  delete copy[s.id];
+                                  return copy;
+                                });
+                                upsertSubject({ ...s, study_minutes: next });
+                              }}
+                              className="size-7 flex items-center justify-center rounded-md hover:bg-[var(--mist)] text-[var(--ink)] active:scale-95 transition cursor-pointer text-sm font-bold"
+                              title="Aumentar 5 minutos"
+                              aria-label="Aumentar 5 minutos"
+                            >
+                              +
+                            </button>
+                          </div>
+
+                          {/* Pílulas de atalho rápido */}
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            {[15, 20, 25, 30, 40, 50, 60].map((mins) => {
+                              const isCurrent = (s.study_minutes ?? 25) === mins;
+                              return (
+                                <button
+                                  key={mins}
+                                  type="button"
+                                  onClick={() => {
+                                    if (isCurrent) return;
+                                    setMinutesDraft((prev) => {
+                                      const copy = { ...prev };
+                                      delete copy[s.id];
+                                      return copy;
+                                    });
+                                    upsertSubject({ ...s, study_minutes: mins });
+                                  }}
+                                  className={`rounded-full px-2.5 py-1 text-xs font-medium transition cursor-pointer ${
+                                    isCurrent
+                                      ? "bg-[var(--signal)] text-white shadow-2xs font-semibold"
+                                      : "bg-[var(--surface)] border border-[var(--line)] text-[color-mix(in_srgb,var(--ink)_70%,transparent)] hover:border-[var(--signal)] hover:text-[var(--ink)] hover:bg-[var(--mist)]"
+                                  }`}
+                                  title={`Definir para ${mins} minutos`}
+                                >
+                                  {mins}m
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
                       </div>
                     )}
 

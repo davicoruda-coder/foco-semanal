@@ -323,6 +323,7 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
   const subjectsRef = useRef(subjects);
   /** Matérias pausadas junto com sessão/cronômetro — retomam no play. */
   const linkedPausedSubjectsRef = useRef<string[]>([]);
+  const prevSubjectMinutesRef = useRef<Record<string, number>>({});
   const [, setTick] = useState(0);
   const tabIdRef = useRef<string>("");
   const isLeaderRef = useRef<boolean>(false);
@@ -657,11 +658,17 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
         (s) => s.active !== false && !usesStopwatchToday(s, subjects),
       );
       const activeIds = new Set(timedSubjects.map((s) => s.id));
+      const prevMinutesMap = prevSubjectMinutesRef.current;
+
       for (const s of timedSubjects) {
         const key = subjectTimerKey(s.id);
         const minutes = Math.max(1, s.study_minutes ?? 25);
         const full = minutes * 60;
         const existing = prev[key];
+        const prevDefinedMinutes = prevMinutesMap[s.id];
+        prevMinutesMap[s.id] = minutes;
+        const minutesChanged =
+          prevDefinedMinutes !== undefined && prevDefinedMinutes !== minutes;
 
         if (!existing) {
           next[key] = {
@@ -670,6 +677,19 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
             endsAt: null,
             startedAt: null,
           };
+          continue;
+        }
+
+        // Se o tempo da matéria foi alterado nas configurações e o timer não está rodando,
+        // sincroniza imediatamente com a nova duração definida.
+        if (minutesChanged && !existing.running) {
+          next[key] = {
+            secondsLeft: full,
+            running: false,
+            endsAt: null,
+            startedAt: null,
+          };
+          doneRef.current[key] = false;
           continue;
         }
 
