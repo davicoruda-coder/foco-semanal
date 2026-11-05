@@ -39,10 +39,13 @@ import {
 import { claimTimerCompletion } from "@/lib/tab-sync";
 import type { Subject } from "@/lib/types";
 import {
+  buildExtraSessionQueue,
   buildFullWeightedCycle,
   buildWeightedCycleQueue,
   cycleSubjectsOnDay,
   isExclusiveCycleDay,
+  recordLastCycleCompletedSubjectId,
+  rotateToAvoidAdjacent,
   todayIndex,
 } from "@/lib/utils";
 
@@ -61,6 +64,12 @@ type StudyFlowContextValue = {
   refreshSettings: () => void;
   saveSettings: (next: BlockRangeSettings) => void;
   canStart: boolean;
+  /** Indica se a sessão atual em execução é uma Sessão Extra. */
+  isExtraSession: boolean;
+  /** Modal de Sessão Extra aberto? */
+  isExtraModalOpen: boolean;
+  openExtraSessionModal: () => void;
+  closeExtraSessionModal: () => void;
   /** Todo o ciclo de hoje foi concluído (todas as matérias estão Ok) */
   cycleCompleted: boolean;
   /** Número da volta que acabou de ser concluída (ex: 1, 2) para aviso comemorativo */
@@ -69,6 +78,12 @@ type StudyFlowContextValue = {
   /** Play individual permitido? (sessão ativa → só a matéria atual) */
   allowSubjectPlay: (subjectId: string) => boolean;
   startSession: () => void;
+  /** Inicia Sessão Extra para dias sem grade ou estudo focado. */
+  startExtraSession: (
+    mode: "cycle" | "custom",
+    selectedSubjectIds?: string[],
+    options?: { allSelected?: boolean },
+  ) => void;
   pauseSession: () => void;
   resumeSession: () => void;
   /** Zera o bloco atual e recomeça do início. */
@@ -87,14 +102,6 @@ type StudyFlowContextValue = {
 };
 
 const StudyFlowContext = createContext<StudyFlowContextValue | null>(null);
-
-function rotateToAvoidAdjacent(list: Subject[], avoidId?: string | null): Subject[] {
-  if (!avoidId || list.length <= 1) return list;
-  if (list[0].id !== avoidId) return list;
-  const firstDifferentIdx = list.findIndex((s) => s.id !== avoidId);
-  if (firstDifferentIdx < 0) return list;
-  return [...list.slice(firstDifferentIdx), ...list.slice(0, firstDifferentIdx)];
-}
 
 function todayQueue(subjects: Subject[]): Subject[] {
   const day = todayIndex();
@@ -159,6 +166,13 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [restEndsAt, setRestEndsAt] = useState<number | null>(null);
   const [cycleRoundCompleted, setCycleRoundCompleted] = useState<number | null>(null);
+  const [isExtraSession, setIsExtraSession] = useState<boolean>(() => {
+    const saved = readPersistedStudyFlow();
+    return Boolean(saved.isExtraSession);
+  });
+  const [isExtraModalOpen, setIsExtraModalOpen] = useState(false);
+  const openExtraSessionModal = useCallback(() => setIsExtraModalOpen(true), []);
+  const closeExtraSessionModal = useCallback(() => setIsExtraModalOpen(false), []);
   const [hydrated, setHydrated] = useState(false);
   const [, setTick] = useState(0);
 
@@ -227,6 +241,7 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
     setCurrentIndex(idx);
     setPhase(saved.phase);
     setRestEndsAt(null);
+    setIsExtraSession(Boolean(saved.isExtraSession));
     if (saved.phase === "running") {
       resumeAfterHydrateRef.current = true;
     }
@@ -259,8 +274,9 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
       currentIndex,
       restEndsAt,
       day: todayIndex(),
+      isExtraSession,
     });
-  }, [hydrated, phase, block, currentIndex, restEndsAt]);
+  }, [hydrated, phase, block, currentIndex, restEndsAt, isExtraSession]);
 
   const refreshSettings = useCallback(() => {
     setSettings(
@@ -387,6 +403,7 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
     }
 
     advancingRef.current = false;
+    setIsExtraSession(false);
     setBlock(packed);
     setCurrentIndex(0);
     setPhase("running");
@@ -394,6 +411,55 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
     startSubjectAt(0, packed);
     playSessionStartTone();
   }, [data.subjects, settings, startSubjectAt, resetCycleToday, setSubjectStatus]);
+
+  const startExtraSession = useCallback(
+    (
+      mode: "cycle" | "custom",
+      selectedSubjectIds?: string[],
+      options?: { allSelected?: boolean },
+    ) => {
+      setCycleRoundCompleted(null);
+      const queue = buildExtraSessionQueue(
+        data.subjects ?? [],
+        mode,
+        selectedSubjectIds,
+      );
+      if (queue.length === 0) return;
+
+      let packed: Subject[];
+      if (mode === "custom" && (options?.allSelected || (selectedSubjectIds && selectedSubjectIds.length > 0))) {
+        // Se usuário escolheu matérias manualmente, roda a sequência selecionada
+        packed = queue;
+      } else {
+        packed = packStudyBlock(
+          queue,
+          settings.minMinutes,
+          settings.maxMinutes,
+          settings.targetMinutes,
+        );
+      }
+      if (packed.length === 0) return;
+
+      // Garante que matérias incluídas no bloco a ser iniciado não permaneçam com status "ok"
+      for (const s of packed) {
+        const live = (data.subjects ?? []).find((x) => x.id === s.id);
+        if (live?.status === "ok") {
+          setSubjectStatus(s.id, "prox");
+        }
+      }
+
+      advancingRef.current = false;
+      setIsExtraSession(true);
+      setIsExtraModalOpen(false);
+      setBlock(packed);
+      setCurrentIndex(0);
+      setPhase("running");
+      setRestEndsAt(null);
+      startSubjectAt(0, packed);
+      playSessionStartTone();
+    },
+    [data.subjects, settings, startSubjectAt, setSubjectStatus],
+  );
 
   const pauseSession = useCallback(() => {
     if (phaseRef.current !== "running") return;
@@ -484,6 +550,7 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
     setBlock([]);
     setCurrentIndex(0);
     setRestEndsAt(null);
+    setIsExtraSession(false);
     advancingRef.current = false;
   }, [isClockRunning, toggleSubjectTimer]);
 
@@ -498,6 +565,7 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
     if (!current || current.id !== subjectId) return;
 
     advancingRef.current = true;
+    recordLastCycleCompletedSubjectId(current.id);
     const nextIdx = idx + 1;
     const canPlayAudio = claimTimerCompletion(`flow_advance_${current.id}`, Date.now());
 
@@ -528,6 +596,7 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
     const current = blockRef.current[indexRef.current];
     if (!current) return;
     if (isClockRunning(current.id, current.is_free)) toggleSubjectTimer(current.id);
+    recordLastCycleCompletedSubjectId(current.id);
     setSubjectStatus(current.id, "ok");
     const durationMin = Math.max(1, current.study_minutes ?? 25);
     const nowIso = new Date().toISOString();
@@ -586,12 +655,14 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
   const endRestEarly = useCallback(() => {
     setCycleRoundCompleted(null);
     setRestEndsAt(null);
+    setIsExtraSession(false);
     setPhase("idle");
   }, []);
 
   const dismissRestDone = useCallback(() => {
     setCycleRoundCompleted(null);
     setRestEndsAt(null);
+    setIsExtraSession(false);
     setPhase("idle");
   }, []);
 
@@ -708,11 +779,16 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
       refreshSettings,
       saveSettings,
       canStart,
+      isExtraSession,
+      isExtraModalOpen,
+      openExtraSessionModal,
+      closeExtraSessionModal,
       cycleCompleted,
       cycleRoundCompleted,
       sessionActive,
       allowSubjectPlay,
       startSession,
+      startExtraSession,
       pauseSession,
       resumeSession,
       resetSession,
@@ -738,11 +814,16 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
       refreshSettings,
       saveSettings,
       canStart,
+      isExtraSession,
+      isExtraModalOpen,
+      openExtraSessionModal,
+      closeExtraSessionModal,
       cycleCompleted,
       cycleRoundCompleted,
       sessionActive,
       allowSubjectPlay,
       startSession,
+      startExtraSession,
       pauseSession,
       resumeSession,
       resetSession,

@@ -19,6 +19,8 @@ export type PersistedStudyFlow = {
   restEndsAt: number | null;
   /** Dia da semana (0=Seg…6=Dom) em que a sessão foi gravada. */
   day: number;
+  /** Indica se o bloco em execução foi iniciado como Sessão Extra. */
+  isExtraSession?: boolean;
 };
 
 const PHASES: StudyFlowPhase[] = [
@@ -39,6 +41,7 @@ function idleState(): PersistedStudyFlow {
     currentIndex: 0,
     restEndsAt: null,
     day: todayIndex(),
+    isExtraSession: false,
   };
 }
 
@@ -86,6 +89,7 @@ export function readPersistedStudyFlow(): PersistedStudyFlow {
         typeof parsed.day === "number" && parsed.day >= 0 && parsed.day <= 6
           ? parsed.day
           : todayIndex(),
+      isExtraSession: Boolean(parsed.isExtraSession),
     };
   } catch {
     return idleState();

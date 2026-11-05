@@ -48,6 +48,7 @@ import { SessionClock } from "@/components/SessionClock";
 import { FocusTodayCard } from "@/components/FocusTodayCard";
 import { MonthCalendarDialog } from "@/components/MonthCalendar";
 import { AutoGrowTextarea } from "@/components/AutoGrowTextarea";
+import { ExtraSessionModal } from "@/components/ExtraSessionModal";
 import { StudySessionBar } from "@/components/StudySessionChrome";
 import { SessionSubjectClock } from "@/components/SessionSubjectClock";
 import { SubjectIcon } from "@/components/SubjectIcon";
@@ -170,9 +171,30 @@ export default function HojePage() {
     [data.subjects, day],
   );
 
+  const hasActiveCycleSubjects = useMemo(
+    () => (data.subjects ?? []).some((s) => s.active && !s.is_free),
+    [data.subjects],
+  );
+
   const subjects = useMemo(() => {
-    const base = [...subjectsOnDay(data.subjects, day)];
-    const queue = buildWeightedCycleQueue(data.subjects, day);
+    const daySubjects = subjectsOnDay(data.subjects, day);
+    const baseMap = new Map<string, Subject>(daySubjects.map((s) => [s.id, s]));
+
+    // Se há sessão ativa (ex: Sessão Extra) e faltam matérias do bloco ativo na lista,
+    // injeta as matérias do bloco para que apareçam na tela com seus cards e timers
+    if (flow.sessionActive && flow.block.length > 0) {
+      for (const b of flow.block) {
+        if (!baseMap.has(b.id)) {
+          const live = (data.subjects ?? []).find((s) => s.id === b.id) ?? b;
+          baseMap.set(b.id, live);
+        }
+      }
+    }
+
+    const base = Array.from(baseMap.values());
+    const queue = flow.isExtraSession
+      ? flow.block.slice(flow.currentIndex)
+      : buildWeightedCycleQueue(data.subjects, day);
 
     // Se há uma sessão ativa ou bloco em preview, as matérias do bloco têm prioridade máxima na ordem de estudo
     const activeBlockIds = flow.sessionActive
@@ -233,6 +255,7 @@ export default function HojePage() {
     data.subjects,
     day,
     flow.sessionActive,
+    flow.isExtraSession,
     flow.block,
     flow.currentIndex,
     flow.previewBlock,
@@ -247,7 +270,9 @@ export default function HojePage() {
       }
       // Todas as matérias do bloco ativo (incluindo as recém-estudadas no bloco) são excluídas da busca pelo próximo
       const activeIds = new Set(flow.block.map((s) => s.id));
-      const queue = buildWeightedCycleQueue(data.subjects, day);
+      const queue = flow.isExtraSession
+        ? []
+        : buildWeightedCycleQueue(data.subjects, day);
       const nextInQueue = queue.find((q) => !activeIds.has(q.id));
       return nextInQueue?.id ?? null;
     }
@@ -257,6 +282,7 @@ export default function HojePage() {
     return nextCycleSubjectId(data.subjects, day);
   }, [
     flow.sessionActive,
+    flow.isExtraSession,
     flow.block,
     flow.currentIndex,
     flow.previewBlock,
@@ -264,10 +290,22 @@ export default function HojePage() {
     day,
   ]);
 
-  const cycleProgress = useMemo(
-    () => getCycleRoundProgress(data.subjects, day),
-    [data.subjects, day],
-  );
+  const cycleProgress = useMemo(() => {
+    if (flow.isExtraSession && flow.block.length > 0) {
+      const totalPasses = flow.block.length;
+      const donePasses = Math.min(totalPasses, flow.currentIndex);
+      const percent = Math.min(100, Math.round((donePasses / totalPasses) * 100));
+      return {
+        currentRound: 1,
+        completedRoundsToday: 0,
+        totalPasses,
+        donePasses,
+        percent,
+        isComplete: donePasses >= totalPasses,
+      };
+    }
+    return getCycleRoundProgress(data.subjects, day);
+  }, [data.subjects, day, flow.isExtraSession, flow.block, flow.currentIndex]);
 
   const nextSubjectName = useMemo(() => {
     if (!queueHeadId) return null;
@@ -450,7 +488,9 @@ export default function HojePage() {
                   <div className="flex items-center gap-2">
                     <span className="inline-flex items-center gap-1.5 rounded-full bg-[color-mix(in_srgb,var(--signal)_14%,transparent)] px-2.5 py-0.5 text-xs font-bold text-[var(--signal)]">
                       <Sparkles size={12} strokeWidth={2.5} />
-                      Rodada {cycleProgress.currentRound}
+                      {flow.isExtraSession
+                        ? "Sessão Extra"
+                        : `Rodada ${cycleProgress.currentRound}`}
                     </span>
                     {cycleProgress.completedRoundsToday > 0 && (
                       <span className="inline-flex items-center gap-1 text-[11px] font-medium text-[color-mix(in_srgb,var(--ink)_65%,transparent)]">
@@ -632,15 +672,45 @@ export default function HojePage() {
                 );
               })}
               {subjects.length === 0 && (
-                <p className="px-2 py-8 text-center text-sm opacity-55">
-                  Nenhuma matéria para hoje —{" "}
-                  <Link
-                    href="/materias"
-                    className="text-[var(--signal)]"
-                  >
-                    gerenciar
-                  </Link>
-                </p>
+                hasActiveCycleSubjects ? (
+                  <div className="rounded-2xl border border-[var(--line)] bg-[color-mix(in_srgb,var(--signal)_4%,var(--surface))] p-5 text-center shadow-2xs my-1">
+                    <div className="mx-auto flex size-11 items-center justify-center rounded-2xl bg-[var(--signal)] text-white shadow-xs mb-3">
+                      <Sparkles size={20} />
+                    </div>
+                    <h3 className="text-sm font-semibold tracking-tight text-[var(--ink)]">
+                      Sem matérias programadas para hoje
+                    </h3>
+                    <p className="mx-auto mt-1 max-w-xs text-xs text-[color-mix(in_srgb,var(--ink)_70%,transparent)] leading-relaxed">
+                      Hoje é um dia livre na sua grade semanal. Deseja adiantar seus estudos ou praticar matérias pendentes?
+                    </p>
+                    <div className="mt-4 flex flex-col gap-2">
+                      <button
+                        type="button"
+                        onClick={flow.openExtraSessionModal}
+                        className="flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--signal)] px-4 py-2.5 text-xs font-semibold text-white shadow-sm transition hover:opacity-95 active:scale-[0.99]"
+                      >
+                        <Sparkles size={14} />
+                        Iniciar Sessão Extra
+                      </button>
+                      <Link
+                        href="/materias"
+                        className="text-xs font-medium text-[color-mix(in_srgb,var(--ink)_70%,transparent)] hover:text-[var(--ink)] hover:underline"
+                      >
+                        Ajustar grade semanal →
+                      </Link>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="px-2 py-8 text-center text-sm opacity-55">
+                    Nenhuma matéria para hoje —{" "}
+                    <Link
+                      href="/materias"
+                      className="text-[var(--signal)]"
+                    >
+                      gerenciar
+                    </Link>
+                  </p>
+                )
               )}
               {hasHidden && (
                 <button
@@ -825,14 +895,46 @@ export default function HojePage() {
                   })}
                   {subjects.length === 0 && (
                     <tr>
-                      <td colSpan={3} className="px-5 py-8 text-sm opacity-55">
-                        Nenhuma matéria para hoje —{" "}
-                        <Link
-                          href="/materias"
-                          className="text-[var(--signal)]"
-                        >
-                          gerenciar
-                        </Link>
+                      <td colSpan={3} className="px-5 py-6 text-sm">
+                        {hasActiveCycleSubjects ? (
+                          <div className="rounded-2xl border border-[var(--line)] bg-[color-mix(in_srgb,var(--signal)_4%,var(--surface))] p-8 text-center shadow-2xs">
+                            <div className="mx-auto flex size-12 items-center justify-center rounded-2xl bg-[var(--signal)] text-white shadow-xs mb-3">
+                              <Sparkles size={24} />
+                            </div>
+                            <h3 className="text-base font-semibold tracking-tight text-[var(--ink)]">
+                              Sem matérias programadas para hoje
+                            </h3>
+                            <p className="mx-auto mt-1 max-w-sm text-xs text-[color-mix(in_srgb,var(--ink)_70%,transparent)] leading-relaxed">
+                              Hoje é um dia livre na sua grade semanal. Deseja adiantar seus estudos ou praticar matérias pendentes sem alterar suas configurações?
+                            </p>
+                            <div className="mt-5 flex items-center justify-center gap-3">
+                              <button
+                                type="button"
+                                onClick={flow.openExtraSessionModal}
+                                className="flex items-center gap-2 rounded-xl bg-[var(--signal)] px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:opacity-95 active:scale-[0.99]"
+                              >
+                                <Sparkles size={16} />
+                                Iniciar Sessão Extra
+                              </button>
+                              <Link
+                                href="/materias"
+                                className="text-xs font-medium text-[color-mix(in_srgb,var(--ink)_70%,transparent)] hover:text-[var(--ink)] hover:underline"
+                              >
+                                Ajustar grade semanal →
+                              </Link>
+                            </div>
+                          </div>
+                        ) : (
+                          <p className="text-center opacity-55">
+                            Nenhuma matéria para hoje —{" "}
+                            <Link
+                              href="/materias"
+                              className="text-[var(--signal)]"
+                            >
+                              gerenciar
+                            </Link>
+                          </p>
+                        )}
                       </td>
                     </tr>
                   )}
@@ -882,6 +984,11 @@ export default function HojePage() {
           </div>
         </aside>
       </div>
+
+      <ExtraSessionModal
+        open={flow.isExtraModalOpen}
+        onClose={flow.closeExtraSessionModal}
+      />
     </div>
   );
 }

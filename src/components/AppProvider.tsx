@@ -46,6 +46,7 @@ import {
   isSubjectDoneToday,
   incrementCycleRoundsToday,
   clearLastCycleCompletedSubjectId,
+  recordLastCycleCompletedSubjectId,
 } from "@/lib/utils";
 import { emitCycleComplete } from "@/lib/study-flow-events";
 import { parseSubjectIcon } from "@/lib/subject-icons";
@@ -922,6 +923,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           }
 
           // Conclusão de uma rodada da matéria
+          recordLastCycleCompletedSubjectId(id);
           const currentDone = Math.max(0, target.cycle_done ?? 0);
           const weight = Math.max(1, target.weight ?? 1);
           const nextDone = currentDone + 1;
@@ -941,13 +943,32 @@ export function AppProvider({ children }: { children: ReactNode }) {
           // Verifica se todas as matérias ativas do ciclo de hoje completaram seus pesos ou foram concluídas
           const todayAfter = cycleSubjectsOnDay(updatedSubjects, day);
           const allCycleCompleted =
-            todayAfter.length > 0 &&
-            todayAfter.every((s) => isSubjectDoneToday(s, exclusiveCycle));
+            todayAfter.length > 0
+              ? todayAfter.every((s) => isSubjectDoneToday(s, exclusiveCycle))
+              : (() => {
+                  const globalActive = updatedSubjects.filter(
+                    (s) => s.active && !s.is_free,
+                  );
+                  return (
+                    globalActive.length > 0 &&
+                    globalActive.every((s) => isSubjectDoneToday(s, false))
+                  );
+                })();
 
           if (allCycleCompleted) {
             const nextRound = incrementCycleRoundsToday(id);
             emitCycleComplete(nextRound);
-            return { ...prev, subjects: restartToday(updatedSubjects) };
+            return {
+              ...prev,
+              subjects:
+                todayAfter.length > 0
+                  ? restartToday(updatedSubjects)
+                  : updatedSubjects.map((s) =>
+                      s.active && !s.is_free
+                        ? { ...writeStatus(s, "prox"), cycle_done: 0 }
+                        : s,
+                    ),
+            };
           }
 
           return { ...prev, subjects: updatedSubjects };

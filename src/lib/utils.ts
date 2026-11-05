@@ -706,6 +706,64 @@ export function buildFullWeightedCycle<T extends Subject>(
   });
 }
 
+/**
+ * Constrói a fila da Sessão Extra quando não há matérias programadas para o dia:
+ * - "cycle": Roda o ciclo global contínuo com as próximas matérias pendentes e seus pesos.
+ * - "custom": Intercala uniformemente apenas as matérias selecionadas pelo usuário, respeitando seus pesos e anti-adjacência.
+ */
+export function buildExtraSessionQueue<T extends Subject>(
+  subjects: T[],
+  mode: "cycle" | "custom",
+  selectedSubjectIds?: string[],
+): T[] {
+  if (mode === "cycle") {
+    const rawBase = subjects
+      .filter((s) => s.active && !s.is_free)
+      .sort((a, b) => a.cycle_order - b.cycle_order);
+    if (rawBase.length === 0) return [];
+
+    const base = rotateCycleBase(rawBase);
+    const remaining = buildInterleavedWeightedSequence(base, {
+      remainingOnly: true,
+      exclusive: false,
+    });
+    const fullCycle = buildInterleavedWeightedSequence(base, {
+      remainingOnly: false,
+      exclusive: false,
+    });
+
+    if (fullCycle.length === 0) return remaining;
+
+    if (remaining.length === 0) {
+      const cycle1 = fullCycle;
+      const last1 = cycle1[cycle1.length - 1]?.id;
+      const cycle2 = rotateToAvoidAdjacent(fullCycle, last1);
+      const last2 = cycle2[cycle2.length - 1]?.id;
+      const cycle3 = rotateToAvoidAdjacent(fullCycle, last2);
+      return [...cycle1, ...cycle2, ...cycle3];
+    }
+
+    const lastRemId = remaining[remaining.length - 1]?.id;
+    const cycle1 = rotateToAvoidAdjacent(fullCycle, lastRemId);
+    const last1 = cycle1[cycle1.length - 1]?.id;
+    const cycle2 = rotateToAvoidAdjacent(fullCycle, last1);
+
+    return [...remaining, ...cycle1, ...cycle2];
+  }
+
+  // mode === "custom"
+  if (!selectedSubjectIds || selectedSubjectIds.length === 0) return [];
+  const selectedSet = new Set(selectedSubjectIds);
+  const selectedBase = subjects
+    .filter((s) => s.active && !s.is_free && selectedSet.has(s.id))
+    .sort((a, b) => a.cycle_order - b.cycle_order);
+
+  if (selectedBase.length === 0) return [];
+
+  const lastCompletedId = readLastCycleCompletedSubjectId();
+  return distributeUniformly(selectedBase, lastCompletedId);
+}
+
 /** Id da próxima matéria do ciclo de hoje (cabeça da fila intercalada). */
 export function nextCycleSubjectId(
   subjects: Subject[],
@@ -972,10 +1030,23 @@ export function readLastCycleCompletedSubjectId(): string | null {
     const raw = localStorage.getItem(CYCLE_ROUNDS_KEY);
     if (!raw) return null;
     const parsed: CycleRoundsStored = JSON.parse(raw);
-    if (parsed.date !== todayDateStr()) return null;
     return typeof parsed.lastCompletedId === "string" ? parsed.lastCompletedId : null;
   } catch {
     return null;
+  }
+}
+
+export function recordLastCycleCompletedSubjectId(id: string | null): void {
+  if (typeof window === "undefined") return;
+  try {
+    const raw = localStorage.getItem(CYCLE_ROUNDS_KEY);
+    const parsed: CycleRoundsStored = raw
+      ? JSON.parse(raw)
+      : { date: todayDateStr(), rounds: 0 };
+    parsed.lastCompletedId = id;
+    localStorage.setItem(CYCLE_ROUNDS_KEY, JSON.stringify(parsed));
+  } catch {
+    // no-op
   }
 }
 
@@ -985,7 +1056,6 @@ export function clearLastCycleCompletedSubjectId(): void {
     const raw = localStorage.getItem(CYCLE_ROUNDS_KEY);
     if (!raw) return;
     const parsed: CycleRoundsStored = JSON.parse(raw);
-    if (parsed.date !== todayDateStr()) return;
     localStorage.setItem(
       CYCLE_ROUNDS_KEY,
       JSON.stringify({ ...parsed, lastCompletedId: null }),
@@ -993,6 +1063,20 @@ export function clearLastCycleCompletedSubjectId(): void {
   } catch {
     // no-op
   }
+}
+
+/**
+ * Rotaciona uma lista de matérias para evitar que a primeira matéria seja igual à avoidId.
+ */
+export function rotateToAvoidAdjacent<T extends Subject>(
+  list: T[],
+  avoidId?: string | null,
+): T[] {
+  if (!avoidId || list.length <= 1) return list;
+  if (list[0].id !== avoidId) return list;
+  const firstDifferentIdx = list.findIndex((s) => s.id !== avoidId);
+  if (firstDifferentIdx < 0) return list;
+  return [...list.slice(firstDifferentIdx), ...list.slice(0, firstDifferentIdx)];
 }
 
 /**

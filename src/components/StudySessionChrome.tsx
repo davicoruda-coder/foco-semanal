@@ -10,6 +10,7 @@ import {
   Play,
   RotateCcw,
   SkipForward,
+  Sparkles,
   Trophy,
   X,
 } from "lucide-react";
@@ -248,12 +249,21 @@ export function StudySessionBar() {
 
   if (flow.phase === "idle") {
     if (exclusiveSoloToday) return null;
+    const hasActiveCycleSubjects = (data.subjects ?? []).some(
+      (s) => s.active && !s.is_free,
+    );
+    const isExtraSessionCandidate = !flow.canStart && hasActiveCycleSubjects;
+
     return (
       <div className="border-b border-[var(--line)] px-4 py-3 md:px-5">
         <button
           type="button"
-          disabled={!flow.canStart}
+          disabled={!flow.canStart && !isExtraSessionCandidate}
           onClick={() => {
+            if (isExtraSessionCandidate) {
+              flow.openExtraSessionModal();
+              return;
+            }
             requestPlay({
               targetName: "a Sessão de Estudos",
               onPlay: flow.startSession,
@@ -262,22 +272,33 @@ export function StudySessionBar() {
           className="flex w-full items-center justify-between gap-3 rounded-[var(--radius-btn)] bg-[var(--signal)] px-3.5 py-2.5 text-left text-white shadow-[var(--shadow-sm)] transition enabled:hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-45 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/80 md:px-4 md:py-3"
         >
           <span className="min-w-0">
-            <span className="block text-sm font-semibold tracking-tight md:text-[15px]">
-              Iniciar sessão
+            <span className="flex items-center gap-1.5 text-sm font-semibold tracking-tight md:text-[15px]">
+              {isExtraSessionCandidate && (
+                <Sparkles size={15} className="shrink-0 text-amber-200" />
+              )}
+              {isExtraSessionCandidate
+                ? "Iniciar Sessão Extra"
+                : "Iniciar sessão"}
             </span>
             <span className="mt-0.5 block truncate text-xs text-white/80">
               {flow.canStart
                 ? flow.previewSummary
-                : "Nenhuma matéria com tempo na fila"}
+                : isExtraSessionCandidate
+                  ? "Dia sem matérias na grade · toque para escolher matérias"
+                  : "Nenhuma matéria cadastrada"}
             </span>
           </span>
           <span className="grid size-9 shrink-0 place-items-center rounded-full bg-white/20 md:size-10">
-            <Play
-              size={16}
-              fill="currentColor"
-              strokeWidth={0}
-              className="translate-x-px"
-            />
+            {isExtraSessionCandidate ? (
+              <Sparkles size={16} fill="currentColor" strokeWidth={0} />
+            ) : (
+              <Play
+                size={16}
+                fill="currentColor"
+                strokeWidth={0}
+                className="translate-x-px"
+              />
+            )}
           </span>
         </button>
       </div>
