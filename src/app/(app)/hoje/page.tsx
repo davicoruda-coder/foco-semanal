@@ -307,11 +307,6 @@ export default function HojePage() {
     return getCycleRoundProgress(data.subjects, day);
   }, [data.subjects, day, flow.isExtraSession, flow.block, flow.currentIndex]);
 
-  const nextSubjectName = useMemo(() => {
-    if (!queueHeadId) return null;
-    return data.subjects.find((s) => s.id === queueHeadId)?.name ?? null;
-  }, [queueHeadId, data.subjects]);
-
   const weekDays = DAYS.map((name, i) => ({ name, i }));
 
   const { visibleSubjects, hiddenDone, hiddenPending } = useMemo(() => {
@@ -481,56 +476,41 @@ export default function HojePage() {
               </div>
             </div>
 
-            {/* Indicador Visual da Rodada do Ciclo */}
+            {/* Indicador Visual da Rodada do Ciclo (Compacto & Direto) */}
             {cycleProgress.totalPasses > 0 && (
-              <div className="border-b border-[var(--line)] bg-[color-mix(in_srgb,var(--signal)_4%,var(--surface))] px-3.5 py-3 md:px-5">
-                <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+              <div className="border-b border-[var(--line)] bg-[color-mix(in_srgb,var(--signal)_3%,var(--surface))] px-3.5 py-2.5 md:px-5">
+                <div className="flex items-center justify-between gap-2 text-xs">
                   <div className="flex items-center gap-2">
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-[color-mix(in_srgb,var(--signal)_14%,transparent)] px-2.5 py-0.5 text-xs font-bold text-[var(--signal)]">
-                      <Sparkles size={12} strokeWidth={2.5} />
+                    <span className="inline-flex items-center gap-1 rounded-full bg-[color-mix(in_srgb,var(--signal)_14%,transparent)] px-2 py-0.5 text-[11px] font-bold text-[var(--signal)]">
+                      <Sparkles size={11} strokeWidth={2.5} />
                       {flow.isExtraSession
                         ? "Sessão Extra"
                         : `Rodada ${cycleProgress.currentRound}`}
                     </span>
                     {cycleProgress.completedRoundsToday > 0 && (
                       <span className="inline-flex items-center gap-1 text-[11px] font-medium text-[color-mix(in_srgb,var(--ink)_65%,transparent)]">
-                        <Trophy size={12} className="text-amber-500" />
-                        {cycleProgress.completedRoundsToday} {cycleProgress.completedRoundsToday === 1 ? "rodada concluída" : "rodadas concluídas"} hoje
+                        <Trophy size={11} className="text-amber-500" />
+                        {cycleProgress.completedRoundsToday} {cycleProgress.completedRoundsToday === 1 ? "concluída hoje" : "concluídas hoje"}
+                      </span>
+                    )}
+                    {cycleProgress.isComplete && (
+                      <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
+                        <CheckCircle2 size={12} strokeWidth={2.2} />
+                        Concluída
                       </span>
                     )}
                   </div>
-                  <div className="font-medium text-[color-mix(in_srgb,var(--ink)_75%,transparent)]">
+                  <div className="text-[11px] font-medium text-[color-mix(in_srgb,var(--ink)_70%,transparent)] font-mono-num">
                     <span className="font-semibold text-[var(--ink)]">{cycleProgress.donePasses}</span> de{" "}
-                    <span className="font-semibold text-[var(--ink)]">{cycleProgress.totalPasses}</span> estudos ({cycleProgress.percent}%)
+                    <span className="font-semibold text-[var(--ink)]">{cycleProgress.totalPasses}</span> ({cycleProgress.percent}%)
                   </div>
                 </div>
 
-                <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-[var(--mist)]">
+                <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-[var(--mist)]">
                   <div
                     className="h-full rounded-full bg-[var(--signal)] transition-all duration-500 ease-out"
                     style={{ width: `${cycleProgress.percent}%` }}
                   />
-                </div>
-
-                <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-[11px] text-[color-mix(in_srgb,var(--ink)_60%,transparent)]">
-                  {cycleProgress.isComplete ? (
-                    <span className="inline-flex items-center gap-1 font-semibold text-[var(--signal)]">
-                      <CheckCircle2 size={13} strokeWidth={2.2} />
-                      Rodada {cycleProgress.currentRound} concluída! Nova rodada pronta para iniciar.
-                    </span>
-                  ) : nextSubjectName ? (
-                    <span>
-                      Próxima da vez:{" "}
-                      <strong className="font-semibold text-[var(--ink)]">
-                        {nextSubjectName}
-                      </strong>
-                    </span>
-                  ) : (
-                    <span>Ciclo em andamento</span>
-                  )}
-                  <span className="text-[10px] opacity-75">
-                    Intercalação uniforme ativa
-                  </span>
                 </div>
               </div>
             )}
