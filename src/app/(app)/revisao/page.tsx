@@ -5,9 +5,9 @@ import Link from "next/link";
 import {
   BookMarked,
   Bot,
-  BrainCircuit,
   ChevronRight,
   Layers,
+  ListChecks,
   MessageCircleQuestion,
   X,
 } from "lucide-react";
@@ -164,7 +164,7 @@ function RevisaoContent() {
               : "text-[color-mix(in_srgb,var(--ink)_55%,transparent)] hover:text-[var(--ink)]"
           }`}
         >
-          <BrainCircuit
+          <ListChecks
             size={16}
             className={`shrink-0 transition-colors ${
               activeTab === "quiz"
