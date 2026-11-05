@@ -27,7 +27,6 @@ import {
   isExclusiveSoloDay,
   freeRowClass,
   formatSubjectFocusList,
-  getCycleRoundProgress,
   isSubjectDoneToday,
   normalizeRotation,
   rotationJustStudied,
@@ -290,23 +289,6 @@ export default function HojePage() {
     day,
   ]);
 
-  const cycleProgress = useMemo(() => {
-    if (flow.isExtraSession && flow.block.length > 0) {
-      const totalPasses = flow.block.length;
-      const donePasses = Math.min(totalPasses, flow.currentIndex);
-      const percent = Math.min(100, Math.round((donePasses / totalPasses) * 100));
-      return {
-        currentRound: 1,
-        completedRoundsToday: 0,
-        totalPasses,
-        donePasses,
-        percent,
-        isComplete: donePasses >= totalPasses,
-      };
-    }
-    return getCycleRoundProgress(data.subjects, day);
-  }, [data.subjects, day, flow.isExtraSession, flow.block, flow.currentIndex]);
-
   const weekDays = DAYS.map((name, i) => ({ name, i }));
 
   const { visibleSubjects, hiddenDone, hiddenPending } = useMemo(() => {
@@ -475,45 +457,6 @@ export default function HojePage() {
                 </Link>
               </div>
             </div>
-
-            {/* Indicador Visual da Rodada do Ciclo (Compacto & Direto) */}
-            {cycleProgress.totalPasses > 0 && (
-              <div className="border-b border-[var(--line)] bg-[color-mix(in_srgb,var(--signal)_3%,var(--surface))] px-3.5 py-2.5 md:px-5">
-                <div className="flex items-center justify-between gap-2 text-xs">
-                  <div className="flex items-center gap-2">
-                    <span className="inline-flex items-center gap-1 rounded-full bg-[color-mix(in_srgb,var(--signal)_14%,transparent)] px-2 py-0.5 text-[11px] font-bold text-[var(--signal)]">
-                      <Sparkles size={11} strokeWidth={2.5} />
-                      {flow.isExtraSession
-                        ? "Sessão Extra"
-                        : `Rodada ${cycleProgress.currentRound}`}
-                    </span>
-                    {cycleProgress.completedRoundsToday > 0 && (
-                      <span className="inline-flex items-center gap-1 text-[11px] font-medium text-[color-mix(in_srgb,var(--ink)_65%,transparent)]">
-                        <Trophy size={11} className="text-amber-500" />
-                        {cycleProgress.completedRoundsToday} {cycleProgress.completedRoundsToday === 1 ? "concluída hoje" : "concluídas hoje"}
-                      </span>
-                    )}
-                    {cycleProgress.isComplete && (
-                      <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
-                        <CheckCircle2 size={12} strokeWidth={2.2} />
-                        Concluída
-                      </span>
-                    )}
-                  </div>
-                  <div className="text-[11px] font-medium text-[color-mix(in_srgb,var(--ink)_70%,transparent)] font-mono-num">
-                    <span className="font-semibold text-[var(--ink)]">{cycleProgress.donePasses}</span> de{" "}
-                    <span className="font-semibold text-[var(--ink)]">{cycleProgress.totalPasses}</span> ({cycleProgress.percent}%)
-                  </div>
-                </div>
-
-                <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-[var(--mist)]">
-                  <div
-                    className="h-full rounded-full bg-[var(--signal)] transition-all duration-500 ease-out"
-                    style={{ width: `${cycleProgress.percent}%` }}
-                  />
-                </div>
-              </div>
-            )}
 
             {(exclusiveSoloToday || exclusiveCycleToday) &&
             exclusiveTodayList.length > 0 ? (
