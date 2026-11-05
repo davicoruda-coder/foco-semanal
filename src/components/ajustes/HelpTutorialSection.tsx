@@ -130,6 +130,25 @@ const TOPICS: TutorialTopic[] = [
     tip: "Atalhos no computador: cole prints com Ctrl+V. Na revisão de cards, tecle Espaço para virar/mostrar resposta, 1 a 4 para classificar a recordação, e E para abrir a edição rápida (salve com Ctrl+Enter). No celular, os botões são compactos e intuitivos ao toque. Consulte as Métricas para reforçar sua teoria.",
   },
   {
+    id: "quiz-ia",
+    icon: Sparkles,
+    title: "Quiz Inteligente com IA (Testing Effect)",
+    badge: "Fixação & IA",
+    summary: "Gere questões inéditas a partir de resumos, PDFs, prints ou da sua própria base de erros.",
+    concept:
+      "A ciência da aprendizagem comprova que fazer testes práticos (Testing Effect / Active Recall) retém até 3x mais conhecimento do que a releitura passiva. O Quiz Inteligente gera questões focadas com feedback imediato e explicação comentada.",
+    steps: [
+      "3 Origens de Conteúdo: gere simulados a partir de (1) Base Interna com seus erros anotados e flashcards difíceis, (2) Texto/Resumo colado, ou (3) Ficheiro (PDF ou Prints/Fotos).",
+      "Leitor Otimizado de PDF: extração de texto 100% no navegador. Para documentos com mais de 8 páginas, selecione o intervalo de até 8 páginas desejado (com teto de segurança de até 20.000 caracteres) para manter as questões cirúrgicas e sem alucinações.",
+      "Otimização de Fotos e Prints: envie até 2 imagens de apostilas ou esquemas. O sistema comprime automaticamente no seu dispositivo em Full HD para gerar com velocidade máxima e mínimo consumo de dados.",
+      "Formatos Disponíveis: escolha entre Múltipla Escolha (4 alternativas) ou Certo/Errado (Estilo Cespe/Cebraspe), com 3, 5 ou 10 questões.",
+      "Feedback Imediato & Explicação: ao tocar na alternativa, você descobre na hora se acertou (verde) ou errou (vermelho), acompanhado da justificativa pedagógica completa.",
+      "Ponte Direta para Fixação: ao errar uma questão, clique diretamente em '+ Caderno de Erros' ou '+ Criar Flashcard' para salvar o ponto fraco sem sair da tela.",
+      "Histórico de Desempenho: ao finalizar, confira seu percentual de acertos e tempo. O tempo de estudo é computado no seu histórico geral automaticamente.",
+    ],
+    tip: "Resolva um quiz de 3 ou 5 questões logo após ler um resumo ou teoria. O esforço imediato de recuperação ativa consolida a memória de longo prazo.",
+  },
+  {
     id: "agenda",
     icon: CalendarDays,
     title: "Agenda & Grade Semanal",

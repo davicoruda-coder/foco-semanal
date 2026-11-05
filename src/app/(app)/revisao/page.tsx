@@ -8,6 +8,7 @@ import {
   ChevronRight,
   Layers,
   MessageCircleQuestion,
+  Sparkles,
   X,
 } from "lucide-react";
 import { FlashcardsIcon } from "@/components/FlashcardsIcon";
@@ -18,8 +19,12 @@ import { QuickCaptureForm } from "@/components/revisao/QuickCaptureForm";
 import { FlashcardDeckList } from "@/components/revisao/FlashcardDeckList";
 import { AIFlashcardGenerator } from "@/components/revisao/AIFlashcardGenerator";
 import { TiraDuvidas } from "@/components/revisao/TiraDuvidas";
+import { QuizCreatorModal } from "@/components/revisao/QuizCreatorModal";
+import { QuizRunner } from "@/components/revisao/QuizRunner";
+import { QuizTabContent } from "@/components/revisao/QuizTabContent";
+import type { QuizSession } from "@/lib/revisao/quiz-types";
 
-type TabId = "caderno" | "flashcards" | "tira-duvidas";
+type TabId = "caderno" | "flashcards" | "quiz" | "tira-duvidas";
 
 function RevisaoContent() {
   const { reloadQuestoes, reloadFlashcards, flashcardsDoDia, moduloAtivo } =
@@ -29,10 +34,30 @@ function RevisaoContent() {
   const [showAIModal, setShowAIModal] = useState(false);
   const [aiInitialData, setAiInitialData] = useState<{ text?: string; disciplina?: string }>({});
 
+  const [showQuizModal, setShowQuizModal] = useState(false);
+  const [activeQuizSession, setActiveQuizSession] = useState<QuizSession | null>(null);
+
   useEffect(() => {
     reloadQuestoes();
     reloadFlashcards();
   }, [reloadQuestoes, reloadFlashcards]);
+
+  if (activeQuizSession) {
+    return (
+      <QuizRunner
+        session={activeQuizSession}
+        onExit={() => setActiveQuizSession(null)}
+        onRestart={() => {
+          setActiveQuizSession({
+            ...activeQuizSession,
+            userAnswers: {},
+            correctCount: 0,
+            completedAt: undefined,
+          });
+        }}
+      />
+    );
+  }
 
   if (!moduloAtivo) {
     return (
@@ -64,7 +89,7 @@ function RevisaoContent() {
       {/* Navegação de Abas do Módulo - Abas Limpas com Linha Indicadora Ativa (Padrão Linear / Vercel) */}
       <nav
         aria-label="Abas de Fixação Ativa"
-        className="grid grid-cols-3 sm:flex sm:items-center gap-1 sm:gap-6 border-b border-[color-mix(in_srgb,var(--line)_70%,transparent)]"
+        className="grid grid-cols-4 sm:flex sm:items-center gap-1 sm:gap-6 border-b border-[color-mix(in_srgb,var(--line)_70%,transparent)]"
       >
         <button
           type="button"
@@ -132,6 +157,30 @@ function RevisaoContent() {
 
         <button
           type="button"
+          onClick={() => setActiveTab("quiz")}
+          className={`group relative flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 px-2 sm:px-1 py-2 sm:py-3 text-[11px] sm:text-sm font-semibold transition-colors ${
+            activeTab === "quiz"
+              ? "text-[var(--ink)]"
+              : "text-[color-mix(in_srgb,var(--ink)_55%,transparent)] hover:text-[var(--ink)]"
+          }`}
+        >
+          <Sparkles
+            size={16}
+            className={`shrink-0 transition-colors ${
+              activeTab === "quiz"
+                ? "text-[var(--signal)]"
+                : "text-[color-mix(in_srgb,var(--ink)_45%,transparent)] group-hover:text-[var(--signal)]"
+            }`}
+          />
+          <span className="sm:hidden tracking-tight">Quiz</span>
+          <span className="hidden sm:inline whitespace-nowrap">Quiz IA</span>
+          {activeTab === "quiz" && (
+            <span className="absolute inset-x-0 -bottom-px h-[2.5px] rounded-full bg-[var(--signal)]" />
+          )}
+        </button>
+
+        <button
+          type="button"
           onClick={() => setActiveTab("tira-duvidas")}
           className={`group relative flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 px-2 sm:px-1 py-2 sm:py-3 text-[11px] sm:text-sm font-semibold transition-colors ${
             activeTab === "tira-duvidas"
@@ -178,7 +227,30 @@ function RevisaoContent() {
         />
       )}
       {activeTab === "flashcards" && <FlashcardDeckList />}
+      {activeTab === "quiz" && (
+        <QuizTabContent
+          onStartNewQuiz={() => setShowQuizModal(true)}
+          onPlayQuiz={(session) => {
+            setActiveQuizSession({
+              ...session,
+              userAnswers: {},
+              correctCount: 0,
+              completedAt: undefined,
+            });
+          }}
+        />
+      )}
       {activeTab === "tira-duvidas" && <TiraDuvidas />}
+
+      {/* Modal de Criação de Quiz Inteligente com IA */}
+      <QuizCreatorModal
+        open={showQuizModal}
+        onClose={() => setShowQuizModal(false)}
+        onQuizReady={(newQuiz) => {
+          setShowQuizModal(false);
+          setActiveQuizSession(newQuiz);
+        }}
+      />
 
       {/* Modal de Captura Rápida com DialogFrame e Header Fixo */}
       <DialogFrame
