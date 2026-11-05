@@ -27,7 +27,6 @@ import {
   isExclusiveSoloDay,
   freeRowClass,
   formatSubjectFocusList,
-  getCycleRoundProgress,
   isSubjectDoneToday,
   normalizeRotation,
   rotationJustStudied,
@@ -289,23 +288,6 @@ export default function HojePage() {
     data.subjects,
     day,
   ]);
-
-  const cycleProgress = useMemo(() => {
-    if (flow.isExtraSession && flow.block.length > 0) {
-      const totalPasses = flow.block.length;
-      const donePasses = Math.min(totalPasses, flow.currentIndex);
-      const percent = Math.min(100, Math.round((donePasses / totalPasses) * 100));
-      return {
-        currentRound: 1,
-        completedRoundsToday: 0,
-        totalPasses,
-        donePasses,
-        percent,
-        isComplete: donePasses >= totalPasses,
-      };
-    }
-    return getCycleRoundProgress(data.subjects, day);
-  }, [data.subjects, day, flow.isExtraSession, flow.block, flow.currentIndex]);
 
   const weekDays = DAYS.map((name, i) => ({ name, i }));
 
@@ -653,32 +635,23 @@ export default function HojePage() {
                   </p>
                 )
               )}
-              {(hasHidden || (showFullCycle && cycleProgress.totalPasses > 0)) && (
-                <div className="mt-1 flex items-center justify-between gap-2 px-1 pt-1">
-                  {hasHidden ? (
-                    <button
-                      onClick={() => setShowFullCycle(!showFullCycle)}
-                      className="inline-flex items-center gap-1 rounded-full bg-[color-mix(in_srgb,var(--ink)_8%,transparent)] px-3 py-1.5 text-xs font-medium text-[color-mix(in_srgb,var(--ink)_70%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--ink)_12%,transparent)] hover:text-[var(--ink)]"
-                    >
-                      {showFullCycle ? (
-                        <>
-                          <ChevronUp size={13} strokeWidth={2} />
-                          Ver menos
-                        </>
-                      ) : (
-                        <>
-                          <ChevronDown size={13} strokeWidth={2} />
-                          Ver mais
-                        </>
-                      )}
-                    </button>
-                  ) : <div />}
-                  {showFullCycle && cycleProgress.totalPasses > 0 && (
-                    <span className="text-[11px] font-medium font-mono-num text-[color-mix(in_srgb,var(--ink)_60%,transparent)]">
-                      Ciclo: <strong className="font-semibold text-[var(--ink)]">{cycleProgress.percent}%</strong>
-                    </span>
+              {hasHidden && (
+                <button
+                  onClick={() => setShowFullCycle(!showFullCycle)}
+                  className="mt-1 inline-flex items-center gap-1 rounded-full bg-[color-mix(in_srgb,var(--ink)_8%,transparent)] px-3 py-1.5 text-xs font-medium text-[color-mix(in_srgb,var(--ink)_70%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--ink)_12%,transparent)] hover:text-[var(--ink)]"
+                >
+                  {showFullCycle ? (
+                    <>
+                      <ChevronUp size={13} strokeWidth={2} />
+                      Ver menos
+                    </>
+                  ) : (
+                    <>
+                      <ChevronDown size={13} strokeWidth={2} />
+                      Ver todas ({subjects.length})
+                    </>
                   )}
-                </div>
+                </button>
               )}
             </div>
 
@@ -890,31 +863,24 @@ export default function HojePage() {
                   )}
                 </tbody>
               </table>
-              {(hasHidden || (showFullCycle && cycleProgress.totalPasses > 0)) && (
-                <div className="flex items-center justify-between px-5 pb-3 pt-1">
-                  {hasHidden ? (
-                    <button
-                      onClick={() => setShowFullCycle(!showFullCycle)}
-                      className="inline-flex items-center gap-1 rounded-full bg-[color-mix(in_srgb,var(--ink)_8%,transparent)] px-2.5 py-1 text-xs font-medium text-[color-mix(in_srgb,var(--ink)_70%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--ink)_12%,transparent)] hover:text-[var(--ink)]"
-                    >
-                      {showFullCycle ? (
-                        <>
-                          <ChevronUp size={13} strokeWidth={2} />
-                          Ver menos
-                        </>
-                      ) : (
-                        <>
-                          <ChevronDown size={13} strokeWidth={2} />
-                          Ver mais
-                        </>
-                      )}
-                    </button>
-                  ) : <div />}
-                  {showFullCycle && cycleProgress.totalPasses > 0 && (
-                    <span className="text-xs font-medium font-mono-num text-[color-mix(in_srgb,var(--ink)_60%,transparent)]">
-                      Ciclo: <strong className="font-semibold text-[var(--ink)]">{cycleProgress.percent}%</strong>
-                    </span>
-                  )}
+              {hasHidden && (
+                <div className="px-5 pb-3 pt-1">
+                  <button
+                    onClick={() => setShowFullCycle(!showFullCycle)}
+                    className="inline-flex items-center gap-1 rounded-full bg-[color-mix(in_srgb,var(--ink)_8%,transparent)] px-2.5 py-1 text-xs font-medium text-[color-mix(in_srgb,var(--ink)_70%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--ink)_12%,transparent)] hover:text-[var(--ink)]"
+                  >
+                    {showFullCycle ? (
+                      <>
+                        <ChevronUp size={13} strokeWidth={2} />
+                        Ver menos
+                      </>
+                    ) : (
+                      <>
+                        <ChevronDown size={13} strokeWidth={2} />
+                        Ver todas ({subjects.length})
+                      </>
+                    )}
+                  </button>
                 </div>
               )}
             </div>
