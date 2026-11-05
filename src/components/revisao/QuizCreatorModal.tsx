@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import {
   BookMarked,
+  BrainCircuit,
   Check,
   ChevronDown,
   FileText,
@@ -289,7 +290,7 @@ export function QuizCreatorModal({
       <div className="flex items-center justify-between border-b border-[var(--line)] bg-[color-mix(in_srgb,var(--signal)_6%,var(--surface))] px-5 py-3.5">
         <div className="flex items-center gap-2.5">
           <span className="grid size-8 place-items-center rounded-xl bg-[var(--signal)] text-white shadow-xs">
-            <Sparkles size={16} />
+            <BrainCircuit size={16} />
           </span>
           <h2
             id="quiz-creator-title"

@@ -131,7 +131,7 @@ const TOPICS: TutorialTopic[] = [
   },
   {
     id: "quiz-ia",
-    icon: Sparkles,
+    icon: BrainCircuit,
     title: "Quiz Inteligente com IA (Testing Effect)",
     badge: "Fixação & IA",
     summary: "Gere questões inéditas a partir de resumos, PDFs, prints ou da sua própria base de erros.",

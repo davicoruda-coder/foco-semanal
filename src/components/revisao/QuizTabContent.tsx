@@ -93,7 +93,7 @@ export function QuizTabContent({ onStartNewQuiz, onPlayQuiz }: QuizTabContentPro
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div className="flex items-center gap-2">
           <div className="grid size-8 place-items-center rounded-lg bg-[color-mix(in_srgb,var(--signal)_15%,var(--surface))] text-[var(--signal)]">
-            <Sparkles size={16} />
+            <BrainCircuit size={16} />
           </div>
           <div>
             <h2 className="text-sm sm:text-base font-bold text-[var(--ink)]">
@@ -170,7 +170,7 @@ export function QuizTabContent({ onStartNewQuiz, onPlayQuiz }: QuizTabContentPro
       {sessions.length === 0 ? (
         <div className="rounded-[var(--radius)] border border-[var(--line)] bg-[var(--surface)] p-8 text-center space-y-3">
           <div className="mx-auto grid size-12 place-items-center rounded-2xl bg-[color-mix(in_srgb,var(--signal)_12%,var(--surface))] text-[var(--signal)]">
-            <Sparkles size={24} />
+            <BrainCircuit size={24} />
           </div>
           <div>
             <h3 className="text-sm font-bold text-[var(--ink)]">

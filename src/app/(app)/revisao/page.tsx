@@ -5,10 +5,10 @@ import Link from "next/link";
 import {
   BookMarked,
   Bot,
+  BrainCircuit,
   ChevronRight,
   Layers,
   MessageCircleQuestion,
-  Sparkles,
   X,
 } from "lucide-react";
 import { FlashcardsIcon } from "@/components/FlashcardsIcon";
@@ -164,7 +164,7 @@ function RevisaoContent() {
               : "text-[color-mix(in_srgb,var(--ink)_55%,transparent)] hover:text-[var(--ink)]"
           }`}
         >
-          <Sparkles
+          <BrainCircuit
             size={16}
             className={`shrink-0 transition-colors ${
               activeTab === "quiz"

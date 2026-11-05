@@ -54,3 +54,4 @@ export function deleteQuizSession(id: string): void {
   const filtered = all.filter((s) => s.id !== id);
   safeSet(JSON.stringify(filtered));
 }
+

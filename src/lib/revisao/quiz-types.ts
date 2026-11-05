@@ -26,3 +26,4 @@ export interface QuizSession {
   correctCount: number;
   scorePercentage: number;
 }
+
