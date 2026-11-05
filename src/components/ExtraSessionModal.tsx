@@ -125,7 +125,7 @@ export function ExtraSessionModal({ open, onClose }: ExtraSessionModalProps) {
               Iniciar Sessão Extra
             </h2>
             <p className="text-xs text-[color-mix(in_srgb,var(--ink)_65%,transparent)]">
-              Estude fora da grade sem alterar suas configurações semanais
+              Estude fora da grade sem alterar suas regras semanais
             </p>
           </div>
         </div>
@@ -164,19 +164,18 @@ export function ExtraSessionModal({ open, onClose }: ExtraSessionModalProps) {
             }`}
           >
             <CheckSquare size={15} />
-            Selecionar Matérias
+            Escolher Matérias
           </button>
         </div>
 
-        {/* MODO 1: Continuar Ciclo Atual */}
+        {/* MODO 1: Continuar Ciclo */}
         {mode === "cycle" && (
           <div className="space-y-3.5">
             <div className="rounded-xl border border-[var(--line)] bg-[color-mix(in_srgb,var(--signal)_4%,var(--surface))] p-3.5 text-xs text-[color-mix(in_srgb,var(--ink)_80%,transparent)] leading-relaxed">
               <p className="font-semibold text-[var(--signal)] flex items-center gap-1.5 mb-1">
-                <Sparkles size={14} /> Ciclo Contínuo Inteligente
+                <Sparkles size={14} /> Continuar Ciclo
               </p>
-              Aproveita a fila ativa já calculada e roda as próximas matérias pendentes da vez,
-              mantendo a regra de intercalação e anti-adjacência sem tocar na sua grade semanal.
+              Segue o fluxo normal da fila (pega a próxima da vez, roda a intercalação e avança os contadores) sem alterar suas regras semanais.
             </div>
 
             <div>
@@ -230,12 +229,19 @@ export function ExtraSessionModal({ open, onClose }: ExtraSessionModalProps) {
           </div>
         )}
 
-        {/* MODO 2: Selecionar Matérias para Agora */}
+        {/* MODO 2: Escolher Matérias */}
         {mode === "custom" && (
           <div className="space-y-4">
+            <div className="rounded-xl border border-[var(--line)] bg-[color-mix(in_srgb,var(--signal)_4%,var(--surface))] p-3.5 text-xs text-[color-mix(in_srgb,var(--ink)_80%,transparent)] leading-relaxed">
+              <p className="font-semibold text-[var(--signal)] flex items-center gap-1.5 mb-1">
+                <CheckSquare size={14} /> Escolher Matérias
+              </p>
+              Uma lista simples de checkboxes com as matérias ativas para você marcar apenas o que quer rodar naquele momento.
+            </div>
+
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold uppercase tracking-wider text-[color-mix(in_srgb,var(--ink)_60%,transparent)]">
-                Escolha o que estudar hoje
+                Escolha o que estudar agora
               </span>
               <div className="flex items-center gap-2">
                 <button

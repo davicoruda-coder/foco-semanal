@@ -678,10 +678,10 @@ export default function HojePage() {
                       <Sparkles size={20} />
                     </div>
                     <h3 className="text-sm font-semibold tracking-tight text-[var(--ink)]">
-                      Sem matérias programadas para hoje
+                      Hoje não há matérias programadas
                     </h3>
                     <p className="mx-auto mt-1 max-w-xs text-xs text-[color-mix(in_srgb,var(--ink)_70%,transparent)] leading-relaxed">
-                      Hoje é um dia livre na sua grade semanal. Deseja adiantar seus estudos ou praticar matérias pendentes?
+                      Deseja fazer uma sessão extra agora?
                     </p>
                     <div className="mt-4 flex flex-col gap-2">
                       <button
@@ -902,10 +902,10 @@ export default function HojePage() {
                               <Sparkles size={24} />
                             </div>
                             <h3 className="text-base font-semibold tracking-tight text-[var(--ink)]">
-                              Sem matérias programadas para hoje
+                              Hoje não há matérias programadas
                             </h3>
                             <p className="mx-auto mt-1 max-w-sm text-xs text-[color-mix(in_srgb,var(--ink)_70%,transparent)] leading-relaxed">
-                              Hoje é um dia livre na sua grade semanal. Deseja adiantar seus estudos ou praticar matérias pendentes sem alterar suas configurações?
+                              Deseja fazer uma sessão extra agora?
                             </p>
                             <div className="mt-5 flex items-center justify-center gap-3">
                               <button

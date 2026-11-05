@@ -284,7 +284,7 @@ export function StudySessionBar() {
               {flow.canStart
                 ? flow.previewSummary
                 : isExtraSessionCandidate
-                  ? "Dia sem matérias na grade · toque para escolher matérias"
+                  ? "Hoje não há matérias programadas · Iniciar Sessão Extra"
                   : "Nenhuma matéria cadastrada"}
             </span>
           </span>
