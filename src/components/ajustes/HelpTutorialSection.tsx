@@ -79,6 +79,23 @@ const TOPICS: TutorialTopic[] = [
     tip: "Você pode personalizar a duração de foco de cada matéria, o descanso e as matérias por sessão em Ajustes. O temporizador/cronômetro da barra lateral no computador funciona como relógio livre para tarefas avulsas (redações, exercícios, simulados) e não avança o ciclo automaticamente.",
   },
   {
+    id: "sessao-extra",
+    icon: Sparkles,
+    title: "Sessão Extra (Dias Sem Matérias na Grade)",
+    badge: "Dias Livres",
+    summary: "Estude fora da sua grade semanal sem afetar suas configurações.",
+    concept:
+      "Quando o dia atual não tiver matérias agendadas na grade semanal (ou for um dia livre), o FocoHub permite abrir uma Sessão Extra com total flexibilidade e duas opções simples.",
+    steps: [
+      "Ao abrir a tela Hoje em um dia sem grade, clique no botão 'Iniciar Sessão Extra'.",
+      "Opção 1 - Continuar Ciclo: segue o fluxo normal da fila global (pega a próxima da vez, roda a intercalação e avança os contadores) sem alterar suas regras semanais de dias.",
+      "Opção 2 - Escolher Matérias: exibe uma lista simples de checkboxes com as matérias ativas para você marcar apenas o que quer rodar naquele momento.",
+      "Intercalação Automática Inteligente: mesmo ao escolher um subconjunto de matérias avulsas, o sistema reorganiza dinamicamente as disciplinas aplicando a intercalação balanceada e a regra de anti-adjacência do FocoHub.",
+      "Cálculo e Continuidade: os blocos concluídos computam tempo, progresso da rodada e histórico normalmente. No dia seguinte, a grade semanal leva em conta o que foi estudado para manter o ciclo sempre contínuo.",
+    ],
+    tip: "A Sessão Extra é ideal para adiantar matérias nos fins de semana ou em feriados, sem precisar alterar sua grade semanal em Matérias.",
+  },
+  {
     id: "rodizio",
     icon: Layers,
     title: "Rodízio Interno de Disciplinas",
