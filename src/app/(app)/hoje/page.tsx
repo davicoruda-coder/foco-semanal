@@ -675,8 +675,7 @@ export default function HojePage() {
                   ) : <div />}
                   {cycleProgress.totalPasses > 0 && (
                     <span className="text-[11px] font-medium font-mono-num text-[color-mix(in_srgb,var(--ink)_60%,transparent)]">
-                      <strong className="font-semibold text-[var(--ink)]">{cycleProgress.donePasses}</strong> de{" "}
-                      <strong className="font-semibold text-[var(--ink)]">{cycleProgress.totalPasses}</strong> ({cycleProgress.percent}%)
+                      Ciclo: <strong className="font-semibold text-[var(--ink)]">{cycleProgress.percent}%</strong>
                     </span>
                   )}
                 </div>
@@ -913,8 +912,7 @@ export default function HojePage() {
                   ) : <div />}
                   {cycleProgress.totalPasses > 0 && (
                     <span className="text-xs font-medium font-mono-num text-[color-mix(in_srgb,var(--ink)_60%,transparent)]">
-                      <strong className="font-semibold text-[var(--ink)]">{cycleProgress.donePasses}</strong> de{" "}
-                      <strong className="font-semibold text-[var(--ink)]">{cycleProgress.totalPasses}</strong> ({cycleProgress.percent}%)
+                      Ciclo: <strong className="font-semibold text-[var(--ink)]">{cycleProgress.percent}%</strong>
                     </span>
                   )}
                 </div>
