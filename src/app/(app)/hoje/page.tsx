@@ -653,7 +653,7 @@ export default function HojePage() {
                   </p>
                 )
               )}
-              {(hasHidden || cycleProgress.totalPasses > 0) && (
+              {(hasHidden || (showFullCycle && cycleProgress.totalPasses > 0)) && (
                 <div className="mt-1 flex items-center justify-between gap-2 px-1 pt-1">
                   {hasHidden ? (
                     <button
@@ -673,7 +673,7 @@ export default function HojePage() {
                       )}
                     </button>
                   ) : <div />}
-                  {cycleProgress.totalPasses > 0 && (
+                  {showFullCycle && cycleProgress.totalPasses > 0 && (
                     <span className="text-[11px] font-medium font-mono-num text-[color-mix(in_srgb,var(--ink)_60%,transparent)]">
                       Ciclo: <strong className="font-semibold text-[var(--ink)]">{cycleProgress.percent}%</strong>
                     </span>
@@ -890,7 +890,7 @@ export default function HojePage() {
                   )}
                 </tbody>
               </table>
-              {(hasHidden || cycleProgress.totalPasses > 0) && (
+              {(hasHidden || (showFullCycle && cycleProgress.totalPasses > 0)) && (
                 <div className="flex items-center justify-between px-5 pb-3 pt-1">
                   {hasHidden ? (
                     <button
@@ -910,7 +910,7 @@ export default function HojePage() {
                       )}
                     </button>
                   ) : <div />}
-                  {cycleProgress.totalPasses > 0 && (
+                  {showFullCycle && cycleProgress.totalPasses > 0 && (
                     <span className="text-xs font-medium font-mono-num text-[color-mix(in_srgb,var(--ink)_60%,transparent)]">
                       Ciclo: <strong className="font-semibold text-[var(--ink)]">{cycleProgress.percent}%</strong>
                     </span>
