@@ -648,7 +648,7 @@ export default function HojePage() {
                   ) : (
                     <>
                       <ChevronDown size={13} strokeWidth={2} />
-                      Ver todas ({subjects.length})
+                      Ver todas
                     </>
                   )}
                 </button>
@@ -877,7 +877,7 @@ export default function HojePage() {
                     ) : (
                       <>
                         <ChevronDown size={13} strokeWidth={2} />
-                        Ver todas ({subjects.length})
+                        Ver todas
                       </>
                     )}
                   </button>
