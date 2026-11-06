@@ -1785,7 +1785,7 @@ export default function MateriasPage() {
                           type="button"
                           className={`btn inline-flex items-center gap-1.5 transition ${
                             isFcPaused
-                              ? "border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-400 hover:bg-amber-500/20"
+                              ? "border-slate-500/30 bg-slate-500/10 text-slate-700 dark:text-slate-300 dark:border-slate-600/50 hover:bg-slate-500/20"
                               : "text-[color-mix(in_srgb,var(--ink)_75%,transparent)] hover:text-[var(--ink)]"
                           }`}
                           onClick={() => {
@@ -1806,7 +1806,7 @@ export default function MateriasPage() {
                         >
                           {isFcPaused ? (
                             <>
-                              <Pause size={14} strokeWidth={2.5} className="text-amber-600 dark:text-amber-400" />
+                              <Pause size={14} strokeWidth={2.5} className="text-slate-500 dark:text-slate-400" />
                               <span>Flashcards pausados</span>
                             </>
                           ) : (
@@ -1835,7 +1835,7 @@ export default function MateriasPage() {
                         </p>
                       )}
                       {isFcPaused && (
-                        <p className="text-[11px] text-amber-700/80 dark:text-amber-400/80">
+                        <p className="text-[11px] text-slate-600 dark:text-slate-400">
                           ⏸️ Revisões de flashcards de <strong>{s.name}</strong> pausadas (não aparecem no Deck Global do Fixar).
                         </p>
                       )}

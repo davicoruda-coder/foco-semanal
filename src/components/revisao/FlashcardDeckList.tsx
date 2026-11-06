@@ -502,12 +502,22 @@ export function FlashcardDeckList() {
               return (
                 <div
                   key={materia.id}
-                  className="surface rounded-[var(--radius)] border border-[var(--line)] p-4 sm:p-5 flex flex-col justify-between gap-4 transition hover:border-[color-mix(in_srgb,var(--signal)_35%,var(--line))] shadow-[var(--shadow-xs)]"
+                  className={`surface rounded-[var(--radius)] border p-4 sm:p-5 flex flex-col justify-between gap-4 transition shadow-[var(--shadow-xs)] ${
+                    isPaused
+                      ? "border-[color-mix(in_srgb,var(--line)_70%,transparent)] bg-[color-mix(in_srgb,var(--mist)_25%,var(--surface))]"
+                      : "border-[var(--line)] hover:border-[color-mix(in_srgb,var(--signal)_35%,var(--line))]"
+                  }`}
                 >
                   <div>
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex items-center gap-2.5">
-                        <div className="grid size-9 shrink-0 place-items-center rounded-xl bg-[var(--signal-soft)] text-[var(--signal)]">
+                        <div
+                          className={`grid size-9 shrink-0 place-items-center rounded-xl transition ${
+                            isPaused
+                              ? "bg-slate-500/10 text-slate-500 dark:bg-slate-800/80 dark:text-slate-400"
+                              : "bg-[var(--signal-soft)] text-[var(--signal)]"
+                          }`}
+                        >
                           <Layers size={18} />
                         </div>
                         <h4 className="font-display font-semibold text-base text-[var(--ink)] truncate max-w-[150px] sm:max-w-[180px]" title={materia.nome}>
@@ -525,10 +535,10 @@ export function FlashcardDeckList() {
                               : "Pausar revisões diárias deste deck (não aparecerá no Deck Global nem no contador de pendências)"
                           }
                           aria-label={isPaused ? "Retomar deck" : "Pausar deck"}
-                          className={`p-1.5 rounded-lg transition ${
+                          className={`p-1.5 rounded-lg border transition ${
                             isPaused
-                              ? "bg-amber-500/15 text-amber-700 dark:text-amber-400 hover:bg-amber-500/25"
-                              : "text-[color-mix(in_srgb,var(--ink)_35%,transparent)] hover:text-amber-600 dark:hover:text-amber-400 hover:bg-[var(--mist)]"
+                              ? "bg-slate-500/10 border-slate-500/20 text-slate-600 dark:bg-slate-800/80 dark:border-slate-700/60 dark:text-slate-300 hover:border-[var(--signal)]/40 hover:text-[var(--signal)] hover:bg-[var(--signal-soft)]"
+                              : "border-transparent text-[color-mix(in_srgb,var(--ink)_35%,transparent)] hover:text-slate-600 dark:hover:text-slate-300 hover:bg-[var(--mist)]"
                           }`}
                         >
                           {isPaused ? <Play size={14} className="fill-current" /> : <Pause size={14} />}
@@ -547,10 +557,10 @@ export function FlashcardDeckList() {
 
                     <div className="mt-4 flex flex-wrap items-center gap-2 text-xs">
                       {isPaused ? (
-                        <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 font-semibold text-[11px] bg-amber-500/15 border border-amber-500/30 text-amber-700 dark:text-amber-400">
+                        <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 font-semibold text-[11px] bg-slate-500/10 border border-slate-500/20 text-slate-700 dark:bg-slate-800/80 dark:border-slate-700/60 dark:text-slate-300">
                           <Pause size={10} strokeWidth={2.5} /> Pausado
                           {cardsAgendadosHoje.length > 0 && (
-                            <span className="font-normal opacity-85 ml-0.5">· {cardsAgendadosHoje.length} em espera</span>
+                            <span className="font-normal text-slate-500 dark:text-slate-400 ml-0.5">· {cardsAgendadosHoje.length} em espera</span>
                           )}
                         </span>
                       ) : (
