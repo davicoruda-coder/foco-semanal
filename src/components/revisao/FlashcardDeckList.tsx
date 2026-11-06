@@ -5,6 +5,8 @@ import {
   ArrowLeft,
   Bot,
   Layers,
+  Pause,
+  Play,
   Plus,
   SlidersHorizontal,
   Sparkles,
@@ -37,6 +39,8 @@ export function FlashcardDeckList() {
     materias,
     addMateria,
     deleteMateria,
+    isDeckPaused,
+    togglePauseDeck,
   } = useRevisao();
 
   const [activeDeck, setActiveDeck] = useState<ActiveDeckState>(null);
@@ -470,13 +474,20 @@ export function FlashcardDeckList() {
             {filteredMaterias.map((materia) => {
               const materiaNome = typeof materia?.nome === "string" ? materia.nome : "";
               const materiaNomeLower = materiaNome.toLowerCase();
+              const isPaused = isDeckPaused(materiaNome);
+              const hoje = new Date().toISOString().slice(0, 10);
 
-              // Cards de hoje desta matéria (caderno ou IA)
-              const cardsHoje = (flashcardsDoDia || []).filter((c) => {
+              // Cards agendados para hoje ou antes desta matéria (mesmo se pausado)
+              const cardsAgendadosHoje = (allFlashcards || []).filter((c) => {
                 const discQ = typeof c?.questao?.disciplina === "string" ? c.questao.disciplina.toLowerCase() : "";
                 const discF = typeof c?.disciplina === "string" ? c.disciplina.toLowerCase() : "";
-                return (discQ && discQ === materiaNomeLower) || (discF && discF === materiaNomeLower);
+                const matchesDisc = (discQ && discQ === materiaNomeLower) || (discF && discF === materiaNomeLower);
+                if (!matchesDisc) return false;
+                return !c.proxima_revisao || c.proxima_revisao <= hoje;
               });
+
+              // Cards ativos de hoje (se pausado, fica vazio para não computar pendência diária)
+              const cardsHoje = isPaused ? [] : cardsAgendadosHoje;
 
               // Todos os cards desta matéria (caderno ou IA)
               const cardsTotal = (allFlashcards || []).filter((c) => {
@@ -499,33 +510,62 @@ export function FlashcardDeckList() {
                         <div className="grid size-9 shrink-0 place-items-center rounded-xl bg-[var(--signal-soft)] text-[var(--signal)]">
                           <Layers size={18} />
                         </div>
-                        <h4 className="font-display font-semibold text-base text-[var(--ink)] truncate max-w-[170px] sm:max-w-[200px]" title={materia.nome}>
+                        <h4 className="font-display font-semibold text-base text-[var(--ink)] truncate max-w-[150px] sm:max-w-[180px]" title={materia.nome}>
                           {materia.nome}
                         </h4>
                       </div>
 
-                      <button
-                        type="button"
-                        onClick={() => handleDelete(materia)}
-                        title="Remover deck"
-                        className="text-[color-mix(in_srgb,var(--ink)_35%,transparent)] hover:text-[var(--warn)] p-1 transition"
-                      >
-                        <Trash2 size={15} />
-                      </button>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => void togglePauseDeck(materiaNome)}
+                          title={
+                            isPaused
+                              ? "Retomar revisões diárias deste deck"
+                              : "Pausar revisões diárias deste deck (não aparecerá no Deck Global nem no contador de pendências)"
+                          }
+                          aria-label={isPaused ? "Retomar deck" : "Pausar deck"}
+                          className={`p-1.5 rounded-lg transition ${
+                            isPaused
+                              ? "bg-amber-500/15 text-amber-700 dark:text-amber-400 hover:bg-amber-500/25"
+                              : "text-[color-mix(in_srgb,var(--ink)_35%,transparent)] hover:text-amber-600 dark:hover:text-amber-400 hover:bg-[var(--mist)]"
+                          }`}
+                        >
+                          {isPaused ? <Play size={14} className="fill-current" /> : <Pause size={14} />}
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => handleDelete(materia)}
+                          title="Remover deck"
+                          className="text-[color-mix(in_srgb,var(--ink)_35%,transparent)] hover:text-[var(--warn)] p-1.5 rounded-lg hover:bg-[var(--mist)] transition"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
                     </div>
 
                     <div className="mt-4 flex flex-wrap items-center gap-2 text-xs">
-                      <span
-                        className={`rounded-full px-2.5 py-0.5 font-semibold text-[11px] ${
-                          hasCardsHoje
-                            ? "bg-[var(--warn-soft)] text-[var(--warn)] border border-[var(--warn)]/20"
-                            : "bg-[var(--mist)] text-[color-mix(in_srgb,var(--ink)_50%,transparent)]"
-                        }`}
-                      >
-                        {hasCardsHoje
-                          ? `${cardsHoje.length} para hoje`
-                          : "0 para hoje"}
-                      </span>
+                      {isPaused ? (
+                        <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 font-semibold text-[11px] bg-amber-500/15 border border-amber-500/30 text-amber-700 dark:text-amber-400">
+                          <Pause size={10} strokeWidth={2.5} /> Pausado
+                          {cardsAgendadosHoje.length > 0 && (
+                            <span className="font-normal opacity-85 ml-0.5">· {cardsAgendadosHoje.length} em espera</span>
+                          )}
+                        </span>
+                      ) : (
+                        <span
+                          className={`rounded-full px-2.5 py-0.5 font-semibold text-[11px] ${
+                            hasCardsHoje
+                              ? "bg-[var(--warn-soft)] text-[var(--warn)] border border-[var(--warn)]/20"
+                              : "bg-[var(--mist)] text-[color-mix(in_srgb,var(--ink)_50%,transparent)]"
+                          }`}
+                        >
+                          {hasCardsHoje
+                            ? `${cardsHoje.length} para hoje`
+                            : "0 para hoje"}
+                        </span>
+                      )}
 
                       <span className="text-[11px] text-[color-mix(in_srgb,var(--ink)_55%,transparent)] font-medium">
                         {cardsTotal.length} {cardsTotal.length === 1 ? "card total" : "cards no total"}
@@ -534,7 +574,34 @@ export function FlashcardDeckList() {
                   </div>
 
                   <div className="pt-3 border-t border-[var(--line)]/50 space-y-2">
-                    {hasCardsHoje ? (
+                    {isPaused ? (
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setActiveDeck({
+                              id: materia.id,
+                              title: `${materia.nome} (Prática Livre)`,
+                              materiaNome: materia.nome,
+                              cards: cardsTotal,
+                            })
+                          }
+                          disabled={cardsTotal.length === 0}
+                          className="flex-1 rounded-[var(--radius-btn)] border border-[var(--line)] bg-[var(--surface)] py-2 text-xs sm:text-sm font-semibold text-[var(--ink)] transition hover:bg-[var(--mist)] hover:text-[var(--signal)] active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
+                        >
+                          Praticar Todos ({cardsTotal.length})
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setManagingMateria(materia)}
+                          title="Gerenciar, editar ou excluir flashcards"
+                          aria-label="Gerenciar flashcards deste deck"
+                          className="rounded-[var(--radius-btn)] border border-[var(--line)] bg-[var(--surface)] p-2 text-[color-mix(in_srgb,var(--ink)_65%,transparent)] hover:border-[var(--signal)] hover:text-[var(--signal)] hover:bg-[var(--mist)] transition shrink-0"
+                        >
+                          <SlidersHorizontal size={16} />
+                        </button>
+                      </div>
+                    ) : hasCardsHoje ? (
                       <div className="flex items-center gap-2">
                         <button
                           type="button"

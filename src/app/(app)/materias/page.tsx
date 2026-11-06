@@ -25,6 +25,11 @@ import { SubjectIcon } from "@/components/SubjectIcon";
 import { SubjectIconPicker } from "@/components/SubjectIconPicker";
 import { newId } from "@/lib/demo-store";
 import {
+  getPausedDeckNames,
+  isDeckPaused,
+  setDeckPaused,
+} from "@/lib/revisao/revisao-store";
+import {
   DAYS,
   STATUS_LABEL,
   type ProgressTracker,
@@ -903,6 +908,27 @@ export default function MateriasPage() {
     id: string;
     name: string;
   } | null>(null);
+  const [pausedDecks, setPausedDecks] = useState<string[]>(() => {
+    return typeof window !== "undefined" ? getPausedDeckNames() : [];
+  });
+
+  useEffect(() => {
+    const handlePausedChanged = (e: Event) => {
+      const custom = e as CustomEvent<{ pausedDecks: string[] }>;
+      if (Array.isArray(custom.detail?.pausedDecks)) {
+        setPausedDecks(custom.detail.pausedDecks);
+      } else {
+        setPausedDecks(getPausedDeckNames());
+      }
+    };
+    window.addEventListener("foco-paused-decks-changed", handlePausedChanged);
+    return () => {
+      window.removeEventListener(
+        "foco-paused-decks-changed",
+        handlePausedChanged,
+      );
+    };
+  }, []);
 
   useEffect(() => {
     if (!pendingDelete) return;
@@ -1150,6 +1176,7 @@ export default function MateriasPage() {
           const currentRotItem = rot ? rot.items[rot.index] ?? rot.items[0] : null;
           const exclusiveDays = normalizeExclusiveDays(s.exclusive_days) ?? [];
           const customStudyDays = normalizeStudyDays(s.study_days);
+          const isFcPaused = isDeckPaused(s.name, pausedDecks);
 
           return (
             <li
@@ -1727,41 +1754,91 @@ export default function MateriasPage() {
                     </div>
                   ) : (
                     /* Ações do Rodapé da Matéria */
-                    <div className="flex flex-wrap items-center gap-2 border-t border-[var(--line)]/60 pt-3">
-                      <button
-                        type="button"
-                        className={`btn inline-flex items-center gap-1.5 transition ${
-                          isActive
-                            ? "text-[color-mix(in_srgb,var(--ink)_75%,transparent)] hover:text-[var(--ink)]"
-                            : "btn-primary shadow-sm"
-                        }`}
-                        onClick={() => upsertSubject({ ...s, active: !isActive })}
-                        title={
-                          isActive
-                            ? "Pausar matéria (não aparecerá no ciclo até ser reativada)"
-                            : "Reativar matéria no ciclo"
-                        }
-                      >
-                        {isActive ? (
-                          <>
-                            <Pause size={14} strokeWidth={2} /> Pausar matéria
-                          </>
-                        ) : (
-                          <>
-                            <Play size={14} strokeWidth={2.5} fill="currentColor" /> Ativar matéria
-                          </>
-                        )}
-                      </button>
+                    <div className="flex flex-col gap-2 border-t border-[var(--line)]/60 pt-3">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <button
+                          type="button"
+                          className={`btn inline-flex items-center gap-1.5 transition ${
+                            isActive
+                              ? "text-[color-mix(in_srgb,var(--ink)_75%,transparent)] hover:text-[var(--ink)]"
+                              : "btn-primary shadow-sm"
+                          }`}
+                          onClick={() => upsertSubject({ ...s, active: !isActive })}
+                          title={
+                            isActive
+                              ? "Pausar matéria (não aparecerá no ciclo até ser reativada)"
+                              : "Reativar matéria no ciclo"
+                          }
+                        >
+                          {isActive ? (
+                            <>
+                              <Pause size={14} strokeWidth={2} /> Pausar matéria
+                            </>
+                          ) : (
+                            <>
+                              <Play size={14} strokeWidth={2.5} fill="currentColor" /> Ativar matéria
+                            </>
+                          )}
+                        </button>
 
-                      <button
-                        type="button"
-                        className="btn ml-auto text-[var(--warn)] hover:bg-[var(--warn-soft)]"
-                        onClick={() =>
-                          setPendingDelete({ id: s.id, name: s.name })
-                        }
-                      >
-                        <Trash2 size={15} strokeWidth={1.75} /> Excluir
-                      </button>
+                        <button
+                          type="button"
+                          className={`btn inline-flex items-center gap-1.5 transition ${
+                            isFcPaused
+                              ? "border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-400 hover:bg-amber-500/20"
+                              : "text-[color-mix(in_srgb,var(--ink)_75%,transparent)] hover:text-[var(--ink)]"
+                          }`}
+                          onClick={() => {
+                            const next = !isFcPaused;
+                            void setDeckPaused(s.name, next);
+                            const rot = normalizeRotation(s.rotation);
+                            if (rot && Array.isArray(rot.items)) {
+                              rot.items.forEach((it) => {
+                                if (it.name) void setDeckPaused(it.name, next);
+                              });
+                            }
+                          }}
+                          title={
+                            isFcPaused
+                              ? "Flashcards desta matéria estão pausados (não aparecem no Fixar diário). Clique para retomar."
+                              : "Pausar revisões de flashcards desta matéria (não aparecerão no Fixar diário até retomar)"
+                          }
+                        >
+                          {isFcPaused ? (
+                            <>
+                              <Pause size={14} strokeWidth={2.5} className="text-amber-600 dark:text-amber-400" />
+                              <span>Flashcards pausados</span>
+                            </>
+                          ) : (
+                            <>
+                              <Sparkles size={14} strokeWidth={2} className="text-[var(--signal)]" />
+                              <span>Pausar flashcards</span>
+                            </>
+                          )}
+                        </button>
+
+                        <button
+                          type="button"
+                          className="btn ml-auto text-[var(--warn)] hover:bg-[var(--warn-soft)]"
+                          onClick={() =>
+                            setPendingDelete({ id: s.id, name: s.name })
+                          }
+                        >
+                          <Trash2 size={15} strokeWidth={1.75} /> Excluir
+                        </button>
+                      </div>
+
+                      {/* Dica contextual quando a matéria está pausada */}
+                      {!isActive && !isFcPaused && (
+                        <p className="text-[11px] text-amber-700/80 dark:text-amber-400/80">
+                          💡 Matéria pausada no ciclo. Você também pode pausar as revisões diárias de flashcards no botão acima se quiser tirar as pendências do Fixar.
+                        </p>
+                      )}
+                      {isFcPaused && (
+                        <p className="text-[11px] text-amber-700/80 dark:text-amber-400/80">
+                          ⏸️ Revisões de flashcards de <strong>{s.name}</strong> pausadas (não aparecem no Deck Global do Fixar).
+                        </p>
+                      )}
                     </div>
                   )}
                 </div>

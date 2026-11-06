@@ -338,23 +338,56 @@ export async function getFlashcardsDoDia(): Promise<
 }
 
 /** Retorna apenas o total de flashcards agendados para hoje ou anterior (consulta leve de contagem). */
-export async function getFlashcardsCountDoDia(): Promise<number> {
+export async function getFlashcardsCountDoDia(
+  pausedDeckNames?: string[],
+): Promise<number> {
   const auth = await getAuthedClient();
   if (!auth) return 0;
 
   const hoje = new Date().toISOString().slice(0, 10);
-  const { count, error } = await auth.supabase
+  const paused = pausedDeckNames ?? getPausedDeckNames();
+
+  if (paused.length === 0) {
+    const { count, error } = await auth.supabase
+      .from("flashcards")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", auth.userId)
+      .lte("proxima_revisao", hoje);
+
+    if (error) {
+      console.warn("[revisao] count flashcards do dia:", error);
+      return 0;
+    }
+
+    return count ?? 0;
+  }
+
+  // Quando há decks pausados, buscamos apenas as disciplinas dos cards agendados hoje
+  const { data, error } = await auth.supabase
     .from("flashcards")
-    .select("id", { count: "exact", head: true })
+    .select("disciplina, questoes_caderno(disciplina)")
     .eq("user_id", auth.userId)
     .lte("proxima_revisao", hoje);
 
-  if (error) {
-    console.warn("[revisao] count flashcards do dia:", error);
+  if (error || !data) {
+    console.warn("[revisao] count flashcards filtrando pausados:", error);
     return 0;
   }
 
-  return count ?? 0;
+  const pausedSet = new Set(paused.map((p) => p.toLowerCase()));
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const activeCount = (data as any[]).filter((c) => {
+    const discQ =
+      typeof c?.questoes_caderno?.disciplina === "string"
+        ? c.questoes_caderno.disciplina.trim().toLowerCase()
+        : "";
+    const discF =
+      typeof c?.disciplina === "string" ? c.disciplina.trim().toLowerCase() : "";
+    const name = discF || discQ;
+    return !name || !pausedSet.has(name);
+  }).length;
+
+  return activeCount;
 }
 
 /** Lista todos os flashcards, opcionalmente filtrados por disciplina/banca. */
@@ -795,6 +828,90 @@ export async function deleteMateriaRevisao(id: string): Promise<void> {
       console.warn("[revisao] delete materia supabase:", err);
     }
   }
+}
+
+/* ------------------------------------------------------------------ */
+/*  Decks com Revisão Diária Pausada                                  */
+/* ------------------------------------------------------------------ */
+
+export const LOCAL_STORAGE_KEY_PAUSED_DECKS = "foco_revisao_decks_pausados_v1";
+
+/** Retorna lista de nomes (em minúsculo) de decks com revisões diárias pausadas */
+export function getPausedDeckNames(): string[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = localStorage.getItem(LOCAL_STORAGE_KEY_PAUSED_DECKS);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed)
+      ? parsed.map((s: string) => String(s).trim().toLowerCase()).filter(Boolean)
+      : [];
+  } catch {
+    return [];
+  }
+}
+
+/** Verifica se determinado deck/matéria está pausado */
+export function isDeckPaused(materiaNome?: string | null, customList?: string[]): boolean {
+  if (!materiaNome) return false;
+  const list = customList ?? getPausedDeckNames();
+  const lower = materiaNome.trim().toLowerCase();
+  return list.includes(lower);
+}
+
+/** Pausa ou retoma as revisões diárias de um deck e sincroniza localmente e na nuvem */
+export async function setDeckPaused(
+  materiaNome: string,
+  paused: boolean,
+): Promise<string[]> {
+  const trimmed = materiaNome.trim().toLowerCase();
+  if (!trimmed) return getPausedDeckNames();
+
+  const current = getPausedDeckNames();
+  const set = new Set(current);
+  if (paused) {
+    set.add(trimmed);
+  } else {
+    set.delete(trimmed);
+  }
+  const updated = Array.from(set);
+
+  if (typeof window !== "undefined") {
+    try {
+      localStorage.setItem(
+        LOCAL_STORAGE_KEY_PAUSED_DECKS,
+        JSON.stringify(updated),
+      );
+      window.dispatchEvent(
+        new CustomEvent("foco-paused-decks-changed", {
+          detail: { pausedDecks: updated },
+        }),
+      );
+    } catch {}
+  }
+
+  // Sincroniza em segundo plano no perfil Supabase
+  void (async () => {
+    try {
+      const auth = await getAuthedClient();
+      if (!auth) return;
+      const perfil = await ensurePerfil();
+      const modulos = perfil?.modulos_ativos ?? { revisao: true };
+      await auth.supabase
+        .from("perfis")
+        .update({
+          modulos_ativos: {
+            ...modulos,
+            decks_pausados: updated,
+          },
+        })
+        .eq("user_id", auth.userId);
+    } catch (err) {
+      console.warn("[revisao] sync paused decks supabase:", err);
+    }
+  })();
+
+  return updated;
 }
 
 /* ------------------------------------------------------------------ */

@@ -117,6 +117,12 @@ type RevisaoContextValue = {
   ) => Promise<Flashcard | null>;
   reloadFlashcards: () => Promise<void>;
 
+  // Decks Pausados
+  pausedDecks: Set<string>;
+  isDeckPaused: (nome?: string | null) => boolean;
+  togglePauseDeck: (nome: string) => Promise<boolean>;
+  setDeckPaused: (nome: string, paused: boolean) => Promise<void>;
+
   // Matérias
   materias: MateriaRevisao[];
   materiasLoading: boolean;
@@ -167,7 +173,7 @@ export function RevisaoProvider({ children }: { children: ReactNode }) {
   const [perfil, setPerfil] = useState<PerfilUsuario | null>(null);
   const [questoes, setQuestoes] = useState<QuestaoCaderno[]>([]);
   const [questoesLoading, setQuestoesLoading] = useState(false);
-  const [flashcardsDoDia, setFlashcardsDoDia] = useState<
+  const [allFlashcardsDoDia, setAllFlashcardsDoDia] = useState<
     (Flashcard & { questao?: QuestaoCaderno })[]
   >([]);
   const [allFlashcards, setAllFlashcards] = useState<
@@ -175,6 +181,16 @@ export function RevisaoProvider({ children }: { children: ReactNode }) {
   >([]);
   const [flashcardsLoading, setFlashcardsLoading] = useState(false);
   const [flashcardsLoaded, setFlashcardsLoaded] = useState(false);
+  const [pausedDecks, setPausedDecks] = useState<Set<string>>(() => {
+    return new Set(revisaoStore.getPausedDeckNames());
+  });
+
+  const flashcardsDoDia = useMemo(() => {
+    return allFlashcardsDoDia.filter((c) => {
+      const disc = (c.questao?.disciplina || c.disciplina || "").trim().toLowerCase();
+      return !disc || !pausedDecks.has(disc);
+    });
+  }, [allFlashcardsDoDia, pausedDecks]);
   const [materias, setMaterias] = useState<MateriaRevisao[]>([]);
   const [materiasLoading, setMateriasLoading] = useState(false);
   const [stats, setStats] = useState<RevisaoStats | null>(null);
@@ -296,14 +312,38 @@ export function RevisaoProvider({ children }: { children: ReactNode }) {
     );
   }, [materias, appData?.subjects, questoes, allFlashcards, hiddenNames]);
 
-  /* ---- Boot: carregar perfil ---- */
+  /* ---- Boot: carregar perfil e decks pausados ---- */
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
         const store = revisaoStore;
         const p = await store.ensurePerfil();
-        if (!cancelled) setPerfil(p);
+        if (!cancelled) {
+          setPerfil(p);
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const cloudPaused = (p?.modulos_ativos as any)?.decks_pausados;
+          if (Array.isArray(cloudPaused) && cloudPaused.length > 0) {
+            const currentLocal = store.getPausedDeckNames();
+            const merged = Array.from(
+              new Set([
+                ...currentLocal,
+                ...cloudPaused.map((s: string) =>
+                  String(s).trim().toLowerCase(),
+                ),
+              ]),
+            );
+            if (typeof window !== "undefined") {
+              try {
+                localStorage.setItem(
+                  store.LOCAL_STORAGE_KEY_PAUSED_DECKS,
+                  JSON.stringify(merged),
+                );
+              } catch {}
+            }
+            setPausedDecks(new Set(merged));
+          }
+        }
       } catch (err) {
         console.warn("[revisao] boot perfil:", err);
       } finally {
@@ -314,6 +354,52 @@ export function RevisaoProvider({ children }: { children: ReactNode }) {
       cancelled = true;
     };
   }, []);
+
+  // Ouvinte de sincronização de decks pausados (entre abas ou com tela de matérias)
+  useEffect(() => {
+    const handlePausedChanged = (e: Event) => {
+      const custom = e as CustomEvent<{ pausedDecks: string[] }>;
+      if (Array.isArray(custom.detail?.pausedDecks)) {
+        setPausedDecks(new Set(custom.detail.pausedDecks));
+      } else {
+        setPausedDecks(new Set(revisaoStore.getPausedDeckNames()));
+      }
+    };
+    window.addEventListener("foco-paused-decks-changed", handlePausedChanged);
+    return () => {
+      window.removeEventListener(
+        "foco-paused-decks-changed",
+        handlePausedChanged,
+      );
+    };
+  }, []);
+
+  const isDeckPaused = useCallback(
+    (nome?: string | null) => {
+      if (!nome) return false;
+      return pausedDecks.has(nome.trim().toLowerCase());
+    },
+    [pausedDecks],
+  );
+
+  const togglePauseDeck = useCallback(
+    async (nome: string) => {
+      const trimmed = nome.trim().toLowerCase();
+      const next = !pausedDecks.has(trimmed);
+      const updated = await revisaoStore.setDeckPaused(nome, next);
+      setPausedDecks(new Set(updated));
+      return next;
+    },
+    [pausedDecks],
+  );
+
+  const handleSetDeckPaused = useCallback(
+    async (nome: string, paused: boolean) => {
+      const updated = await revisaoStore.setDeckPaused(nome, paused);
+      setPausedDecks(new Set(updated));
+    },
+    [],
+  );
 
   /* ---- Caderno ---- */
   const reloadQuestoes = useCallback(async (filters?: CadernoFilters) => {
@@ -351,7 +437,7 @@ export function RevisaoProvider({ children }: { children: ReactNode }) {
               (c: Flashcard) => !c.proxima_revisao || c.proxima_revisao <= hoje,
             );
             if (novosHoje.length > 0) {
-              setFlashcardsDoDia((prev) => [...novosHoje, ...prev]);
+              setAllFlashcardsDoDia((prev) => [...novosHoje, ...prev]);
             }
           }
           return {
@@ -394,7 +480,7 @@ export function RevisaoProvider({ children }: { children: ReactNode }) {
       const store = revisaoStore;
       await store.deleteQuestao(id);
       setQuestoes((prev) => prev.filter((q) => q.id !== id));
-      setFlashcardsDoDia((prev) => prev.filter((f) => f.questao_id !== id));
+      setAllFlashcardsDoDia((prev) => prev.filter((f) => f.questao_id !== id));
     } catch (err) {
       console.warn("[revisao] delete questao:", err);
     }
@@ -409,7 +495,7 @@ export function RevisaoProvider({ children }: { children: ReactNode }) {
         store.getFlashcardsDoDia(),
         store.listFlashcards(),
       ]);
-      setFlashcardsDoDia(dia);
+      setAllFlashcardsDoDia(dia);
       setAllFlashcards(todos);
       setFlashcardsLoaded(true);
     } catch (err) {
@@ -511,7 +597,7 @@ export function RevisaoProvider({ children }: { children: ReactNode }) {
             : f,
         ),
       );
-      setFlashcardsDoDia((prev) => prev.filter((f) => f.id !== id));
+      setAllFlashcardsDoDia((prev) => prev.filter((f) => f.id !== id));
 
       try {
         const store = revisaoStore;
@@ -540,7 +626,7 @@ export function RevisaoProvider({ children }: { children: ReactNode }) {
           setAllFlashcards((prev) =>
             prev.map((f) => (f.id === id ? { ...f, ...updates } : f)),
           );
-          setFlashcardsDoDia((prev) =>
+          setAllFlashcardsDoDia((prev) =>
             prev.map((f) => (f.id === id ? { ...f, ...updates } : f)),
           );
         }
@@ -560,7 +646,7 @@ export function RevisaoProvider({ children }: { children: ReactNode }) {
         const ok = await store.deleteFlashcard(id);
         if (ok) {
           setAllFlashcards((prev) => prev.filter((f) => f.id !== id));
-          setFlashcardsDoDia((prev) => prev.filter((f) => f.id !== id));
+          setAllFlashcardsDoDia((prev) => prev.filter((f) => f.id !== id));
         }
         return ok;
       } catch (err) {
@@ -603,7 +689,7 @@ export function RevisaoProvider({ children }: { children: ReactNode }) {
         );
         if (card) {
           setAllFlashcards((prev) => [card, ...prev]);
-          setFlashcardsDoDia((prev) => [card, ...prev]);
+          setAllFlashcardsDoDia((prev) => [card, ...prev]);
           void reloadStats();
         }
         return card;
@@ -665,7 +751,7 @@ export function RevisaoProvider({ children }: { children: ReactNode }) {
             (c: Flashcard) => !c.proxima_revisao || c.proxima_revisao <= hoje,
           );
           if (novosHoje.length > 0) {
-            setFlashcardsDoDia((prev) => [...novosHoje, ...prev]);
+            setAllFlashcardsDoDia((prev) => [...novosHoje, ...prev]);
           }
         }
 
@@ -728,6 +814,10 @@ export function RevisaoProvider({ children }: { children: ReactNode }) {
     deleteFlashcard: handleDeleteFlashcard,
     addFlashcardManual: handleAddFlashcardManual,
     reloadFlashcards,
+    pausedDecks,
+    isDeckPaused,
+    togglePauseDeck,
+    setDeckPaused: handleSetDeckPaused,
     materias: combinedMaterias,
     materiasLoading,
     addMateria: handleAddMateria,

@@ -86,6 +86,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     };
 
     window.addEventListener("foco-flashcards-count-changed", handleCountEvent);
+    window.addEventListener("foco-paused-decks-changed", fetchCount);
     window.addEventListener("focus", fetchCount);
 
     return () => {
@@ -94,6 +95,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         "foco-flashcards-count-changed",
         handleCountEvent,
       );
+      window.removeEventListener("foco-paused-decks-changed", fetchCount);
       window.removeEventListener("focus", fetchCount);
     };
   }, [ready, user, revisaoActive]);
