@@ -208,6 +208,7 @@ type SessionClusterItem = {
   durationMinutes: number;
   timeRange: string;
   type: string;
+  extraMinutes?: number;
 };
 
 type SessionCluster = {
@@ -224,9 +225,13 @@ type SessionCluster = {
   subjectName: string;
   items: SessionClusterItem[];
   dateStr?: string;
+  extraMinutes?: number;
 };
 
-function clusterSessions(sessions: StudySession[]): SessionCluster[] {
+function clusterSessions(
+  sessions: StudySession[],
+  subjectsMap?: Map<string, number>,
+): SessionCluster[] {
   if (!sessions || sessions.length === 0) return [];
 
   // 1. Agrupa por data para garantir que nunca misturamos dias distintos
@@ -261,6 +266,9 @@ function clusterSessions(sessions: StudySession[]): SessionCluster[] {
       const prevInfo = getSessionTypeInfo(prevSess);
       const currInfo = getSessionTypeInfo(sess);
 
+      const isSameSubject =
+        prevSess.subject_name.trim().toLowerCase() === sess.subject_name.trim().toLowerCase();
+
       // Ambas do ciclo ou do mesmo tipo estruturado
       const canGroupTypes =
         (prevInfo.type === "ciclo" && currInfo.type === "ciclo") ||
@@ -273,8 +281,13 @@ function clusterSessions(sessions: StudySession[]): SessionCluster[] {
       const currStartMs = new Date(sess.started_at).getTime();
       const gapMinutes = (currStartMs - prevEndMs) / 60000;
 
-      // Se o intervalo entre as matérias for de até 12 min (pausa entre matérias do bloco), agrupa
-      if (canGroupTypes && gapMinutes >= -5 && gapMinutes <= 12) {
+      // Se for a mesma matéria com sobreposição de ajuste (-35min) ou sequência próxima (até 15min), agrupa
+      // Se forem matérias diferentes do ciclo, agrupa com tolerância de sobreposição leve (-15min) até pausa (15min)
+      const shouldGroup =
+        (isSameSubject && canGroupTypes && gapMinutes >= -35 && gapMinutes <= 15) ||
+        (!isSameSubject && canGroupTypes && gapMinutes >= -15 && gapMinutes <= 15);
+
+      if (shouldGroup) {
         currentGroup.push(sess);
       } else {
         rawClusters.push(currentGroup);
@@ -290,22 +303,75 @@ function clusterSessions(sessions: StudySession[]): SessionCluster[] {
       const first = group[0];
       const last = group[group.length - 1];
       const totalMinutes = group.reduce((acc, s) => acc + (s.duration_minutes || 0), 0);
-      const isSingle = group.length === 1;
+
+      const getCleanName = (name: string) =>
+        name.endsWith(" (Flashcards)") ? name.replace(" (Flashcards)", "") : name;
+
+      // Identifica nomes distintos de matérias no grupo
+      const distinctNames = Array.from(
+        new Set(group.map((s) => getCleanName(s.subject_name).trim().toLowerCase())),
+      );
+
+      // É matéria única quando todas as sessões do grupo pertencem à mesma matéria
+      // (ex: estudou 1 matéria e finalizou estudos, mesmo com acréscimo de tempo ou repetição)
+      const isSingle = distinctNames.length === 1;
 
       const firstInfo = getSessionTypeInfo(first);
-      const cleanFirstName = first.subject_name.endsWith(" (Flashcards)")
-        ? first.subject_name.replace(" (Flashcards)", "")
-        : first.subject_name;
+      const cleanFirstName = getCleanName(first.subject_name);
 
-      const items: SessionClusterItem[] = group.map((s) => ({
-        id: s.id,
-        subjectName: s.subject_name.endsWith(" (Flashcards)")
-          ? s.subject_name.replace(" (Flashcards)", "")
-          : s.subject_name,
-        durationMinutes: s.duration_minutes,
-        timeRange: formatSessionTimeRange(s.started_at, s.ended_at, s.duration_minutes),
-        type: getSessionTypeInfo(s).label,
+      // Consolida itens repetidos da mesma matéria para a lista
+      const consolidatedMap = new Map<
+        string,
+        {
+          id: string;
+          subjectName: string;
+          durationMinutes: number;
+          extraMinutes: number;
+          types: string[];
+        }
+      >();
+
+      for (const s of group) {
+        const cleanName = getCleanName(s.subject_name);
+        const key = cleanName.toLowerCase();
+        const defaultMin =
+          (s.subject_id ? subjectsMap?.get(s.subject_id) : undefined) ??
+          subjectsMap?.get(key) ??
+          25;
+        const explicitExtra = s.extra_minutes ?? 0;
+        const duration = s.duration_minutes || 0;
+        const derivedExtra =
+          explicitExtra > 0
+            ? explicitExtra
+            : duration > defaultMin
+            ? duration - defaultMin
+            : 0;
+
+        const existing = consolidatedMap.get(key);
+        if (!existing) {
+          consolidatedMap.set(key, {
+            id: s.id,
+            subjectName: cleanName,
+            durationMinutes: duration,
+            extraMinutes: derivedExtra,
+            types: [getSessionTypeInfo(s).label],
+          });
+        } else {
+          existing.durationMinutes += duration;
+          existing.extraMinutes += derivedExtra > 0 ? derivedExtra : duration;
+        }
+      }
+
+      const items: SessionClusterItem[] = Array.from(consolidatedMap.values()).map((it) => ({
+        id: it.id,
+        subjectName: it.subjectName,
+        durationMinutes: it.durationMinutes,
+        extraMinutes: it.extraMinutes > 0 ? it.extraMinutes : undefined,
+        timeRange: "",
+        type: it.types[0] || "Ciclo",
       }));
+
+      const totalExtraMinutes = items.reduce((acc, it) => acc + (it.extraMinutes || 0), 0);
 
       const timeRange = formatSessionTimeRange(
         first.started_at,
@@ -317,10 +383,10 @@ function clusterSessions(sessions: StudySession[]): SessionCluster[] {
         id: `cluster_${first.id}_${idx}`,
         type: firstInfo.type,
         typeLabel: isSingle
-          ? firstInfo.label
-          : firstInfo.type === "ciclo"
-          ? "Sessão de Ciclo"
-          : `${firstInfo.label} (${group.length})`,
+          ? firstInfo.type === "ciclo"
+            ? "Matéria Única"
+            : firstInfo.label
+          : "Sessão em Bloco",
         badgeClasses: firstInfo.badgeClasses,
         icon: firstInfo.icon,
         startedAt: first.started_at,
@@ -331,6 +397,7 @@ function clusterSessions(sessions: StudySession[]): SessionCluster[] {
         subjectName: cleanFirstName,
         items,
         dateStr: k ? k.slice(5).replace("-", "/") : undefined,
+        extraMinutes: totalExtraMinutes > 0 ? totalExtraMinutes : undefined,
       };
     });
 
@@ -352,7 +419,7 @@ function SessionClusterCard({
 
   if (cluster.isSingle) {
     return (
-      <div className="flex items-center justify-between gap-3 p-3 rounded-xl border border-[var(--line)] bg-[var(--surface)] hover:bg-[color-mix(in_srgb,var(--surface)_75%,var(--mist))] transition-colors">
+      <div className="flex items-center justify-between gap-3 p-3 sm:p-3.5 rounded-xl border border-[var(--line)] bg-[var(--surface)] hover:bg-[color-mix(in_srgb,var(--surface)_75%,var(--mist))] transition-all">
         <div className="flex items-center gap-3 min-w-0">
           <div className={`grid size-9 shrink-0 place-items-center rounded-lg border ${cluster.badgeClasses}`}>
             <Icon size={16} strokeWidth={2.2} />
@@ -362,9 +429,14 @@ function SessionClusterCard({
               <span className="font-semibold text-xs sm:text-sm text-[var(--ink)] truncate max-w-[200px] sm:max-w-xs">
                 {cluster.subjectName}
               </span>
-              <span className={`inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-full border ${cluster.badgeClasses}`}>
+              <span className="inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[var(--mist)] text-[color-mix(in_srgb,var(--ink)_75%,transparent)] border border-[var(--line)]">
                 {cluster.typeLabel}
               </span>
+              {cluster.extraMinutes ? (
+                <span className="inline-flex items-center gap-0.5 text-[10px] font-semibold px-1.5 py-0.5 rounded-md bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/25">
+                  +{cluster.extraMinutes}m extra
+                </span>
+              ) : null}
             </div>
             <div className="flex items-center gap-1.5 mt-0.5 text-[11px] text-[color-mix(in_srgb,var(--ink)_55%,transparent)] font-mono-num">
               <Clock size={12} className="shrink-0 opacity-70" />
@@ -376,11 +448,11 @@ function SessionClusterCard({
           </div>
         </div>
         <div className="shrink-0 text-right">
-          <span className="font-mono-num font-semibold text-xs sm:text-sm text-[var(--signal)]">
+          <span className="font-mono-num font-semibold text-xs sm:text-sm text-[var(--ink)]">
             {cluster.totalMinutes} min
           </span>
-          <div className="text-[10px] text-[color-mix(in_srgb,var(--ink)_45%,transparent)] uppercase tracking-wide">
-            concluído
+          <div className="text-[10px] font-medium text-[color-mix(in_srgb,var(--ink)_45%,transparent)] uppercase tracking-wide">
+            {cluster.type === "ciclo" ? "finalizada" : "concluído"}
           </div>
         </div>
       </div>
@@ -388,20 +460,25 @@ function SessionClusterCard({
   }
 
   return (
-    <div className="p-3 sm:p-3.5 rounded-xl border border-[var(--line)] bg-[var(--surface)] hover:border-[color-mix(in_srgb,var(--signal)_35%,var(--line))] transition-all space-y-2.5">
+    <div className="p-3 sm:p-3.5 rounded-xl border border-[color-mix(in_srgb,var(--signal)_28%,var(--line))] bg-[color-mix(in_srgb,var(--signal)_4.5%,var(--surface))] hover:border-[color-mix(in_srgb,var(--signal)_45%,var(--line))] transition-all space-y-2.5 shadow-[0_2px_10px_-4px_color-mix(in_srgb,var(--signal)_12%,transparent)]">
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">
-          <div className={`grid size-9 shrink-0 place-items-center rounded-lg border ${cluster.badgeClasses}`}>
+          <div className="grid size-9 shrink-0 place-items-center rounded-lg bg-[var(--signal-soft)] text-[var(--signal)] border border-[color-mix(in_srgb,var(--signal)_25%,transparent)]">
             <Icon size={16} strokeWidth={2.2} />
           </div>
           <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="font-semibold text-xs sm:text-sm text-[var(--ink)]">
+              <span className="font-semibold text-xs sm:text-sm text-[var(--ink)] tracking-tight">
                 {cluster.typeLabel}
               </span>
-              <span className="inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[var(--signal-soft)] text-[var(--signal)]">
+              <span className="inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[var(--signal-soft)] text-[var(--signal)] border border-[color-mix(in_srgb,var(--signal)_20%,transparent)]">
                 {cluster.items.length} matérias no bloco
               </span>
+              {cluster.extraMinutes ? (
+                <span className="inline-flex items-center gap-0.5 text-[10px] font-semibold px-1.5 py-0.5 rounded-md bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/25">
+                  +{cluster.extraMinutes}m extra
+                </span>
+              ) : null}
             </div>
             <div className="flex items-center gap-1.5 mt-0.5 text-[11px] text-[color-mix(in_srgb,var(--ink)_55%,transparent)] font-mono-num">
               <Clock size={12} className="shrink-0 opacity-70" />
@@ -414,30 +491,35 @@ function SessionClusterCard({
         </div>
 
         <div className="shrink-0 text-right">
-          <span className="font-mono-num font-semibold text-xs sm:text-sm text-[var(--signal)]">
+          <span className="font-mono-num font-bold text-xs sm:text-sm text-[var(--signal)]">
             {cluster.totalMinutes} min
           </span>
-          <div className="text-[10px] text-[color-mix(in_srgb,var(--ink)_45%,transparent)] uppercase tracking-wide">
+          <div className="text-[10px] font-semibold text-[color-mix(in_srgb,var(--signal)_75%,var(--ink))] uppercase tracking-wide">
             bloco completo
           </div>
         </div>
       </div>
 
-      <div className="flex items-center gap-1.5 flex-wrap pt-2 border-t border-[var(--line)]/50 text-xs">
+      <div className="flex items-center gap-1.5 flex-wrap pt-2 border-t border-[color-mix(in_srgb,var(--signal)_15%,var(--line))] text-xs">
         <span className="text-[10px] uppercase font-bold tracking-wider text-[color-mix(in_srgb,var(--ink)_50%,transparent)]">
           Matérias:
         </span>
         {cluster.items.map((it, idx) => (
           <span
             key={it.id}
-            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[var(--mist)] border border-[var(--line)]/60 text-xs text-[var(--ink)]"
+            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[var(--surface)] border border-[color-mix(in_srgb,var(--signal)_20%,var(--line))] text-xs text-[var(--ink)] shadow-2xs"
           >
             <span className="font-medium">{it.subjectName}</span>
             <span className="font-mono-num font-semibold text-[11px] text-[var(--signal)]">
               {it.durationMinutes}m
             </span>
+            {it.extraMinutes ? (
+              <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-1 py-0.2 rounded">
+                +{it.extraMinutes}m
+              </span>
+            ) : null}
             {idx < cluster.items.length - 1 && (
-              <span className="text-[color-mix(in_srgb,var(--ink)_40%,transparent)] ml-0.5">+</span>
+              <span className="text-[color-mix(in_srgb,var(--ink)_40%,transparent)] ml-0.5 font-bold">+</span>
             )}
           </span>
         ))}
@@ -870,6 +952,16 @@ function EstatisticasContent() {
     });
   }, [periodSessions, sessionFilter]);
 
+  // Mapa de durações planejadas de matérias para detecção precisa de acréscimo de tempo extra
+  const subjectsMap = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const s of data.subjects ?? []) {
+      map.set(s.id, s.study_minutes ?? 25);
+      map.set(s.name.trim().toLowerCase(), s.study_minutes ?? 25);
+    }
+    return map;
+  }, [data.subjects]);
+
   // Agrupamento para a visão Semanal (Segunda a Domingo com subtotais, sessões e clusters)
   const weekGroupedSessions = useMemo(() => {
     if (range !== "semana") return [];
@@ -883,7 +975,7 @@ function EstatisticasContent() {
       const daySessionsList = filteredSessions.filter(
         (s) => getSessionDateKey(s.started_at) === dayKey,
       );
-      const dayClusters = clusterSessions(daySessionsList);
+      const dayClusters = clusterSessions(daySessionsList, subjectsMap);
       const dayRounds = readCycleRoundsForDate(dayKey);
       const totalDayMinutes = daySessionsList.reduce((acc, s) => acc + (s.duration_minutes || 0), 0);
       const isToday = dayKey === dateKey();
@@ -901,17 +993,17 @@ function EstatisticasContent() {
         isToday,
       };
     });
-  }, [range, week, filteredSessions]);
+  }, [range, week, filteredSessions, subjectsMap]);
 
   // Clusters para visão de Dia único e períodos longos (Mês/Ano)
   const dayClusters = useMemo(
-    () => clusterSessions(filteredSessions),
-    [filteredSessions],
+    () => clusterSessions(filteredSessions, subjectsMap),
+    [filteredSessions, subjectsMap],
   );
 
   const periodClusters = useMemo(
-    () => clusterSessions(filteredSessions),
-    [filteredSessions],
+    () => clusterSessions(filteredSessions, subjectsMap),
+    [filteredSessions, subjectsMap],
   );
 
   // Controle inteligente de dias abertos/fechados na Semana

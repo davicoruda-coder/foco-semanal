@@ -58,6 +58,10 @@ export type TimerRuntime = {
   startedAt: string | null;
   /** Ajuda a remarcar o estado se o id do timer mudar (local → nuvem). */
   sortOrder?: number;
+  /** Indica se esta execução é uma extensão de tempo extra (+2m, +5m, etc.) */
+  isExtension?: boolean;
+  /** Minutos extras que foram adicionados para esta extensão */
+  extensionMinutes?: number;
 };
 
 type FlashKind = "play" | "pause";
@@ -1087,7 +1091,11 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
         const sid = subjectIdFromKey(item.key);
         setSubjectStatusRef.current(sid, "ok");
         const sub = subjectsRef.current.find((s) => s.id === sid);
-        const durationMin = Math.max(1, sub?.study_minutes ?? 25);
+        const isExt = Boolean(prev[item.key]?.isExtension);
+        const extMin = prev[item.key]?.extensionMinutes ?? 0;
+        const durationMin = isExt && extMin > 0
+          ? extMin
+          : Math.max(1, sub?.study_minutes ?? 25);
         const nowIso = new Date().toISOString();
         addStudySessionRef.current({
           subject_id: sid,
@@ -1097,6 +1105,7 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
           duration_minutes: durationMin,
           mode: "ciclo",
           completed: true,
+          extra_minutes: isExt && extMin > 0 ? extMin : undefined,
         });
         emitSubjectComplete(sid);
         broadcastTabMessage({
@@ -1181,7 +1190,11 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
         const sid = subjectIdFromKey(item.key);
         setSubjectStatusRef.current(sid, "ok");
         const sub = subjectsRef.current.find((s) => s.id === sid);
-        const durationMin = Math.max(1, sub?.study_minutes ?? 25);
+        const isExt = Boolean(prev[item.key]?.isExtension);
+        const extMin = prev[item.key]?.extensionMinutes ?? 0;
+        const durationMin = isExt && extMin > 0
+          ? extMin
+          : Math.max(1, sub?.study_minutes ?? 25);
         const nowIso = new Date().toISOString();
         addStudySessionRef.current({
           subject_id: sid,
@@ -1191,6 +1204,7 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
           duration_minutes: durationMin,
           mode: "ciclo",
           completed: true,
+          extra_minutes: isExt && extMin > 0 ? extMin : undefined,
         });
         emitSubjectComplete(sid);
         broadcastTabMessage({
@@ -1393,7 +1407,11 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
         setSubjectStatus(s.id, "ok");
         const sid = s.id;
         const sub = subjectsRef.current.find((x) => x.id === sid);
-        const durationMin = Math.max(1, sub?.study_minutes ?? 25);
+        const isExt = Boolean(r.isExtension);
+        const extMin = r.extensionMinutes ?? 0;
+        const durationMin = isExt && extMin > 0
+          ? extMin
+          : Math.max(1, sub?.study_minutes ?? 25);
         const nowIso = new Date().toISOString();
         addStudySession({
           subject_id: sid,
@@ -1403,6 +1421,7 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
           duration_minutes: durationMin,
           mode: "ciclo",
           completed: true,
+          extra_minutes: isExt && extMin > 0 ? extMin : undefined,
         });
         flushFocusSeconds();
         commitFocusDisplaySnapshot();
@@ -1917,11 +1936,14 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
           };
         }
 
+        const addedMin = Math.max(1, Math.round(seconds / 60));
         next[key] = {
           secondsLeft: newSecondsLeft,
           running: true,
           endsAt: Date.now() + newSecondsLeft * 1000,
           startedAt: current?.startedAt ?? new Date().toISOString(),
+          isExtension: true,
+          extensionMinutes: (current?.extensionMinutes ?? 0) + addedMin,
         };
 
         const paused = pauseSidebarTimer(next);

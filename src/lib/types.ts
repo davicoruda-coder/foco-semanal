@@ -151,6 +151,7 @@ export interface StudySession {
   duration_minutes: number;
   mode: SessionMode;
   completed: boolean;
+  extra_minutes?: number;
 }
 
 export interface SessionSettings {
