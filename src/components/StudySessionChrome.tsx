@@ -13,6 +13,7 @@ import {
   Sparkles,
   Trophy,
   X,
+  Zap,
 } from "lucide-react";
 import { DialogFrame } from "@/components/DialogFrame";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
@@ -193,7 +194,11 @@ export function StudySessionBar() {
     } else if (action === "reset") {
       flow.resetSession();
     } else if (action === "finish") {
-      flow.chooseFinish();
+      if (flow.isIntensiveSession) {
+        flow.finishIntensiveMode();
+      } else {
+        flow.chooseFinish();
+      }
     }
   }
 
@@ -221,6 +226,17 @@ export function StudySessionBar() {
       };
     }
     if (confirmAction === "finish") {
+      if (flow.isIntensiveSession) {
+        return {
+          title: "Encerrar Modo Intensivo?",
+          message: currentName
+            ? `O estudo de "${currentName}" será computado no ciclo de hoje e o ciclo avançará para a próxima matéria. Deseja encerrar o Modo Intensivo?`
+            : "A matéria estudada será computada no ciclo de hoje e o ciclo avançará para a próxima matéria. Deseja encerrar o Modo Intensivo?",
+          confirmLabel: "Encerrar Intensivo",
+          cancelLabel: "Continuar estudando",
+          confirmVariant: "danger" as const,
+        };
+      }
       return {
         title: "Encerrar sessão de estudos?",
         message:
@@ -237,7 +253,7 @@ export function StudySessionBar() {
       cancelLabel: "Cancelar",
       confirmVariant: "warn" as const,
     };
-  }, [confirmAction, currentLive?.name]);
+  }, [confirmAction, currentLive?.name, flow.isIntensiveSession]);
 
   if (
     flow.phase !== "idle" &&
@@ -255,7 +271,7 @@ export function StudySessionBar() {
     const isExtraSessionCandidate = !flow.canStart && hasActiveCycleSubjects;
 
     return (
-      <div className="border-b border-[var(--line)] px-4 py-3 md:px-5">
+      <div className="border-b border-[var(--line)] px-4 py-3 md:px-5 space-y-2">
         <button
           type="button"
           disabled={!flow.canStart && !isExtraSessionCandidate}
@@ -269,7 +285,7 @@ export function StudySessionBar() {
               onPlay: flow.startSession,
             });
           }}
-          className="flex w-full items-center justify-between gap-3 rounded-[var(--radius-btn)] bg-[var(--signal)] px-3.5 py-2.5 text-left text-white shadow-[var(--shadow-sm)] transition enabled:hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-45 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/80 md:px-4 md:py-3"
+          className="flex w-full items-center justify-between gap-3 rounded-[var(--radius-btn)] bg-[var(--signal)] px-3.5 py-2.5 text-left text-white shadow-[var(--shadow-sm)] transition enabled:hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-45 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/80 md:px-4 md:py-3 cursor-pointer"
         >
           <span className="min-w-0">
             <span className="flex items-center gap-1.5 text-sm font-semibold tracking-tight md:text-[15px]">
@@ -301,6 +317,20 @@ export function StudySessionBar() {
             )}
           </span>
         </button>
+
+        {hasActiveCycleSubjects && (
+          <div className="flex items-center justify-end pt-0.5">
+            <button
+              type="button"
+              onClick={flow.openIntensiveModal}
+              className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold text-amber-700 dark:text-amber-300 hover:bg-amber-500/10 active:scale-95 transition border border-amber-500/25 bg-amber-500/5 cursor-pointer"
+              title="Estudar apenas 1 matéria com tempo dedicado"
+            >
+              <Zap size={13} className="fill-current text-amber-600 dark:text-amber-400" />
+              <span>Modo Intensivo (1 matéria)</span>
+            </button>
+          </div>
+        )}
       </div>
     );
   }
@@ -346,9 +376,16 @@ export function StudySessionBar() {
           )}
         </button>
         <div className="min-w-0 flex-1">
-          <p className="truncate text-[13px] font-semibold text-[var(--signal)]">
-            {flow.phase === "paused" ? "Sessão pausada" : "Em sessão"}
-          </p>
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <p className="truncate text-[13px] font-semibold text-[var(--signal)]">
+              {flow.phase === "paused" ? "Sessão pausada" : "Em sessão"}
+            </p>
+            {flow.isIntensiveSession && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-bold text-amber-700 dark:text-amber-300 border border-amber-500/30">
+                <Zap size={10} className="fill-current text-amber-600 dark:text-amber-400" /> Modo Intensivo
+              </span>
+            )}
+          </div>
           <p className="truncate text-[11px] text-[color-mix(in_srgb,var(--ink)_55%,transparent)]">
             {flow.blockSummary}
           </p>
@@ -570,15 +607,27 @@ export function StudySessionChrome() {
         cardClassName="surface w-full max-w-md p-6 shadow-[var(--shadow-lg)]"
       >
         <div className="flex items-start gap-3.5">
-          <div className="grid size-11 shrink-0 place-items-center rounded-2xl bg-[var(--signal-soft)] text-[var(--signal)] ring-1 ring-[var(--signal)]/25 shadow-2xs">
-            <Trophy size={22} strokeWidth={2.2} />
+          <div
+            className={`grid size-11 shrink-0 place-items-center rounded-2xl ring-1 shadow-2xs ${
+              flow.isIntensiveSession
+                ? "bg-amber-500/15 text-amber-600 dark:text-amber-400 ring-amber-500/25"
+                : "bg-[var(--signal-soft)] text-[var(--signal)] ring-[var(--signal)]/25"
+            }`}
+          >
+            {flow.isIntensiveSession ? (
+              <Zap size={22} className="fill-current" />
+            ) : (
+              <Trophy size={22} strokeWidth={2.2} />
+            )}
           </div>
           <div className="min-w-0 flex-1 pt-0.5">
             <h2 id="block-done-title" className="font-display text-xl font-bold tracking-tight text-[var(--ink)]">
-              Bloco concluído
+              {flow.isIntensiveSession ? "Bloco Intensivo Concluído" : "Bloco concluído"}
             </h2>
             <p className="mt-1 text-xs text-[color-mix(in_srgb,var(--ink)_65%,transparent)] leading-relaxed">
-              {flow.blockSummary}. Excelente rendimento! O que deseja fazer agora?
+              {flow.isIntensiveSession
+                ? `${flow.blockSummary}. Foco concluído com sucesso nesta matéria! O que deseja fazer agora?`
+                : `${flow.blockSummary}. Excelente rendimento! O que deseja fazer agora?`}
             </p>
           </div>
         </div>
@@ -618,20 +667,51 @@ export function StudySessionChrome() {
         />
 
         <div className="mt-5 flex flex-col gap-2">
-          <button
-            type="button"
-            className="btn btn-primary w-full py-3 text-sm font-semibold tracking-wide flex items-center justify-center gap-2 cursor-pointer"
-            onClick={() => afterNotesThen(flow.chooseRest)}
-          >
-            <span>Descansar ({flow.settings.restMinutes} min)</span>
-          </button>
-          <button
-            type="button"
-            className="w-full py-2.5 text-xs sm:text-sm font-medium text-[color-mix(in_srgb,var(--ink)_60%,transparent)] hover:text-[var(--ink)] hover:bg-[var(--mist)] rounded-[var(--radius-btn)] transition flex items-center justify-center gap-1.5 cursor-pointer"
-            onClick={() => afterNotesThen(flow.chooseFinish)}
-          >
-            <span>Finalizar estudos</span>
-          </button>
+          {flow.isIntensiveSession ? (
+            <>
+              <button
+                type="button"
+                className="btn btn-primary w-full py-3 text-sm font-semibold tracking-wide flex items-center justify-center gap-2 cursor-pointer bg-amber-500 hover:bg-amber-600 border-amber-600 text-white"
+                onClick={() => afterNotesThen(flow.chooseContinue)}
+              >
+                <Zap size={15} className="fill-current" />
+                <span>
+                  Continuar Intensivo (Mais {flow.intensiveDurationMinutes ?? flow.settings.targetMinutes} min)
+                </span>
+              </button>
+              <button
+                type="button"
+                className="w-full py-2.5 text-xs sm:text-sm font-medium text-[var(--signal)] hover:bg-[color-mix(in_srgb,var(--signal)_8%,var(--surface))] rounded-[var(--radius-btn)] border border-[color-mix(in_srgb,var(--signal)_25%,transparent)] transition flex items-center justify-center gap-1.5 cursor-pointer"
+                onClick={() => afterNotesThen(flow.chooseRest)}
+              >
+                <span>Descansar ({flow.settings.restMinutes} min)</span>
+              </button>
+              <button
+                type="button"
+                className="w-full py-2.5 text-xs sm:text-sm font-medium text-[color-mix(in_srgb,var(--ink)_60%,transparent)] hover:text-[var(--ink)] hover:bg-[var(--mist)] rounded-[var(--radius-btn)] transition flex items-center justify-center gap-1.5 cursor-pointer"
+                onClick={() => afterNotesThen(flow.finishIntensiveMode)}
+              >
+                <span>Encerrar Intensivo e Voltar ao Ciclo</span>
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                type="button"
+                className="btn btn-primary w-full py-3 text-sm font-semibold tracking-wide flex items-center justify-center gap-2 cursor-pointer"
+                onClick={() => afterNotesThen(flow.chooseRest)}
+              >
+                <span>Descansar ({flow.settings.restMinutes} min)</span>
+              </button>
+              <button
+                type="button"
+                className="w-full py-2.5 text-xs sm:text-sm font-medium text-[color-mix(in_srgb,var(--ink)_60%,transparent)] hover:text-[var(--ink)] hover:bg-[var(--mist)] rounded-[var(--radius-btn)] transition flex items-center justify-center gap-1.5 cursor-pointer"
+                onClick={() => afterNotesThen(flow.chooseFinish)}
+              >
+                <span>Finalizar estudos</span>
+              </button>
+            </>
+          )}
         </div>
       </DialogFrame>
 

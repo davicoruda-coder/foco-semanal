@@ -21,6 +21,12 @@ export type PersistedStudyFlow = {
   day: number;
   /** Indica se o bloco em execução foi iniciado como Sessão Extra. */
   isExtraSession?: boolean;
+  /** Indica se o bloco em execução foi iniciado como Modo Intensivo. */
+  isIntensiveSession?: boolean;
+  /** Id da matéria sendo estudada no Modo Intensivo. */
+  intensiveSubjectId?: string | null;
+  /** Duração em minutos escolhida para o Modo Intensivo. */
+  intensiveDurationMinutes?: number;
 };
 
 const PHASES: StudyFlowPhase[] = [
@@ -42,6 +48,9 @@ function idleState(): PersistedStudyFlow {
     restEndsAt: null,
     day: todayIndex(),
     isExtraSession: false,
+    isIntensiveSession: false,
+    intensiveSubjectId: null,
+    intensiveDurationMinutes: undefined,
   };
 }
 
@@ -90,6 +99,13 @@ export function readPersistedStudyFlow(): PersistedStudyFlow {
           ? parsed.day
           : todayIndex(),
       isExtraSession: Boolean(parsed.isExtraSession),
+      isIntensiveSession: Boolean(parsed.isIntensiveSession),
+      intensiveSubjectId:
+        typeof parsed.intensiveSubjectId === "string" ? parsed.intensiveSubjectId : null,
+      intensiveDurationMinutes:
+        typeof parsed.intensiveDurationMinutes === "number" && parsed.intensiveDurationMinutes > 0
+          ? Math.floor(parsed.intensiveDurationMinutes)
+          : undefined,
     };
   } catch {
     return idleState();

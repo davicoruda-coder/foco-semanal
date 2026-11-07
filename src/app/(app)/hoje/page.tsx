@@ -43,7 +43,7 @@ import { SubjectResources } from "@/components/SubjectResources";
 import { SubjectProgressBar } from "@/components/SubjectProgressBar";
 import { ReminderWatcher } from "@/components/ReminderWatcher";
 import { ReminderBoard } from "@/components/ReminderBoard";
-import { SessionClock } from "@/components/SessionClock";
+import { IntensiveSessionModal } from "@/components/IntensiveSessionModal";
 import { FocusTodayCard } from "@/components/FocusTodayCard";
 import { MonthCalendarDialog } from "@/components/MonthCalendar";
 import { AutoGrowTextarea } from "@/components/AutoGrowTextarea";
@@ -889,9 +889,6 @@ export default function HojePage() {
           {/* Ferramentas compactas — mobile/tablet (aba Estudo) */}
           <div className="surface overflow-hidden lg:hidden">
             <FocusTodayCard compact embedded />
-            <div className="border-t border-[var(--line)]">
-              <SessionClock variant="livre" compact />
-            </div>
           </div>
         </div>
 
@@ -901,9 +898,6 @@ export default function HojePage() {
           </div>
           <div className="surface overflow-hidden p-0">
             <FocusTodayCard embedded />
-            <div className="border-t border-[var(--line)]">
-              <SessionClock layout="stack" variant="livre" embedded />
-            </div>
           </div>
         </aside>
       </div>
@@ -911,6 +905,10 @@ export default function HojePage() {
       <ExtraSessionModal
         open={flow.isExtraModalOpen}
         onClose={flow.closeExtraSessionModal}
+      />
+      <IntensiveSessionModal
+        open={flow.isIntensiveModalOpen}
+        onClose={flow.closeIntensiveModal}
       />
     </div>
   );

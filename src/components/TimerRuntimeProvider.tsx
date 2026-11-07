@@ -62,6 +62,8 @@ export type TimerRuntime = {
   isExtension?: boolean;
   /** Minutos extras que foram adicionados para esta extensão */
   extensionMinutes?: number;
+  /** Minutos customizados para a sessão (ex: Modo Intensivo com tempo personalizado) */
+  customMinutes?: number;
 };
 
 type FlashKind = "play" | "pause";
@@ -99,7 +101,7 @@ type TimerRuntimeContextValue = {
   /** Chave de runtime: `sub:{subjectId}` */
   subjectTimerKey: (subjectId: string) => string;
   toggleSubjectTimer: (subjectId: string) => void;
-  resetSubjectTimer: (subjectId: string) => void;
+  resetSubjectTimer: (subjectId: string, overrideMinutes?: number) => void;
   /** Adiciona tempo extra (em segundos) e coloca o timer da matéria para rodar. */
   addSubjectTimerSeconds: (subjectId: string, seconds: number) => void;
   secondsForSubject: (subjectId: string) => number;
@@ -1095,7 +1097,7 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
         const extMin = prev[item.key]?.extensionMinutes ?? 0;
         const durationMin = isExt && extMin > 0
           ? extMin
-          : Math.max(1, sub?.study_minutes ?? 25);
+          : (prev[item.key]?.customMinutes ?? Math.max(1, sub?.study_minutes ?? 25));
         const nowIso = new Date().toISOString();
         addStudySessionRef.current({
           subject_id: sid,
@@ -1194,7 +1196,7 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
         const extMin = prev[item.key]?.extensionMinutes ?? 0;
         const durationMin = isExt && extMin > 0
           ? extMin
-          : Math.max(1, sub?.study_minutes ?? 25);
+          : (prev[item.key]?.customMinutes ?? Math.max(1, sub?.study_minutes ?? 25));
         const nowIso = new Date().toISOString();
         addStudySessionRef.current({
           subject_id: sid,
@@ -1411,7 +1413,7 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
         const extMin = r.extensionMinutes ?? 0;
         const durationMin = isExt && extMin > 0
           ? extMin
-          : Math.max(1, sub?.study_minutes ?? 25);
+          : (r.customMinutes ?? Math.max(1, sub?.study_minutes ?? 25));
         const nowIso = new Date().toISOString();
         addStudySession({
           subject_id: sid,
@@ -1960,7 +1962,7 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
   );
 
   const resetSubjectTimer = useCallback(
-    (subjectId: string) => {
+    (subjectId: string, overrideMinutes?: number) => {
       flushFocusSeconds();
 
       const key = subjectTimerKey(subjectId);
@@ -1985,7 +1987,7 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      const minutes = Math.max(1, sub.study_minutes ?? 25);
+      const minutes = overrideMinutes ?? Math.max(1, sub.study_minutes ?? 25);
       doneRef.current[key] = false;
       linkedPausedSubjectsRef.current =
         linkedPausedSubjectsRef.current.filter((id) => id !== key);
@@ -2002,6 +2004,7 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
             running: false,
             endsAt: null,
             startedAt: null,
+            customMinutes: overrideMinutes,
           },
         };
         runtimeRef.current = updated;
@@ -2022,8 +2025,9 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
             1000,
         );
       }
-      const minutes = Math.max(1, sub?.study_minutes ?? 25);
-      return liveSeconds(runtime[subjectTimerKey(subjectId)], minutes);
+      const itemKey = subjectTimerKey(subjectId);
+      const minutes = runtime[itemKey]?.customMinutes ?? Math.max(1, sub?.study_minutes ?? 25);
+      return liveSeconds(runtime[itemKey], minutes);
     },
     [runtime, subjects, subjectStopwatches],
   );
