@@ -1890,7 +1890,7 @@ function EstatisticasContent() {
               onClick={() => setReportModalOpen(true)}
             >
               <Download size={15} strokeWidth={2} />
-              <span>Personalizar & Baixar PDF</span>
+              <span>Gerar Relatório PDF</span>
             </button>
 
             <button
