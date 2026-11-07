@@ -1,11 +1,14 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Calendar,
+  Check,
   CheckCircle2,
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
+  ChevronUp,
   Clock,
   Download,
   History,
@@ -14,6 +17,7 @@ import {
   Plus,
   RefreshCw,
   RotateCcw,
+  Search,
   Sparkles,
   X,
 } from "lucide-react";
@@ -212,6 +216,34 @@ export default function EstatisticasPage() {
   const [addHint, setAddHint] = useState<string | null>(null);
   const [metricaView, setMetricaView] = useState<"foco" | "diagnostico">("foco");
   const [sessionFilter, setSessionFilter] = useState<"todos" | "ciclo" | "flashcards" | "quiz_livre">("todos");
+
+  // Filtros e visualização do card de Tempo por Matéria
+  const [selectedSubjectFilter, setSelectedSubjectFilter] = useState<string | null>(null);
+  const [subjectDropdownOpen, setSubjectDropdownOpen] = useState(false);
+  const [subjectSearchQuery, setSubjectSearchQuery] = useState("");
+  const [showAllSubjects, setShowAllSubjects] = useState(false);
+  const subjectDropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!subjectDropdownOpen) return;
+    function handleClickOutside(e: MouseEvent) {
+      if (
+        subjectDropdownRef.current &&
+        !subjectDropdownRef.current.contains(e.target as Node)
+      ) {
+        setSubjectDropdownOpen(false);
+      }
+    }
+    function handleEscape(e: KeyboardEvent) {
+      if (e.key === "Escape") setSubjectDropdownOpen(false);
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    window.addEventListener("keydown", handleEscape);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      window.removeEventListener("keydown", handleEscape);
+    };
+  }, [subjectDropdownOpen]);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -444,6 +476,54 @@ export default function EstatisticasPage() {
     return aggregatePeriodSubjects(log, periodDayKeys);
   }, [log, periodDayKeys]);
 
+  // Matérias cadastradas no sistema que não tiveram estudo registrado no período
+  const registeredZeroSubjects = useMemo(() => {
+    const studiedNames = new Set(subjectBreakdown.map((s) => s.name.toLowerCase().trim()));
+    return (data.subjects ?? [])
+      .filter((s) => s.active !== false && !studiedNames.has(s.name.toLowerCase().trim()))
+      .map((s) => ({
+        name: s.name,
+        seconds: 0,
+        percentage: 0,
+      }))
+      .sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
+  }, [data.subjects, subjectBreakdown]);
+
+  // Filtro de busca de matérias no popover do seletor
+  const studiedMatches = useMemo(() => {
+    const q = subjectSearchQuery.toLowerCase().trim();
+    if (!q) return subjectBreakdown;
+    return subjectBreakdown.filter((s) => s.name.toLowerCase().includes(q));
+  }, [subjectBreakdown, subjectSearchQuery]);
+
+  const zeroMatches = useMemo(() => {
+    const q = subjectSearchQuery.toLowerCase().trim();
+    if (!q) return registeredZeroSubjects;
+    return registeredZeroSubjects.filter((s) => s.name.toLowerCase().includes(q));
+  }, [registeredZeroSubjects, subjectSearchQuery]);
+
+  // Lista a ser exibida no modo "Todas" (Top 5 recolhível para manter o visual limpo)
+  const displayedSubjects = useMemo(() => {
+    if (showAllSubjects || subjectBreakdown.length <= 5) {
+      return subjectBreakdown;
+    }
+    return subjectBreakdown.slice(0, 5);
+  }, [subjectBreakdown, showAllSubjects]);
+
+  // Detalhes da matéria selecionada em modo isolado (Foco na Matéria)
+  const selectedSubjectItem = useMemo(() => {
+    if (!selectedSubjectFilter) return null;
+    const inBreakdown = subjectBreakdown.find(
+      (s) => s.name.toLowerCase().trim() === selectedSubjectFilter.toLowerCase().trim(),
+    );
+    if (inBreakdown) return inBreakdown;
+    const inZero = registeredZeroSubjects.find(
+      (s) => s.name.toLowerCase().trim() === selectedSubjectFilter.toLowerCase().trim(),
+    );
+    if (inZero) return inZero;
+    return { name: selectedSubjectFilter, seconds: 0, percentage: 0 };
+  }, [selectedSubjectFilter, subjectBreakdown, registeredZeroSubjects]);
+
   const selectedDateKey = dateKey(referenceDate);
 
   // Rodadas completas do ciclo no período atual
@@ -468,6 +548,16 @@ export default function EstatisticasPage() {
       })
       .sort((a, b) => new Date(b.started_at).getTime() - new Date(a.started_at).getTime());
   }, [data.study_sessions, periodDayKeys]);
+
+  // Sessões da matéria selecionada para o resumo
+  const selectedSubjectSessions = useMemo(() => {
+    if (!selectedSubjectFilter) return [];
+    const target = selectedSubjectFilter.toLowerCase().trim();
+    return periodSessions.filter((s) => {
+      const sName = s.subject_name.toLowerCase().trim();
+      return sName === target || sName.startsWith(target) || sName.includes(target);
+    });
+  }, [selectedSubjectFilter, periodSessions]);
 
   // Contadores para as abas de filtro
   const sessionCounts = useMemo(() => {
@@ -691,7 +781,7 @@ export default function EstatisticasPage() {
 
       <h1 className="sr-only">Métricas de Desempenho e Foco</h1>
 
-      {/* Top Controls: Seletor de Módulo (Tempo de Foco | Diagnóstico de Erros) e Status */}
+      {/* Top Controls: Seletor de Módulo (Tempo & Atividades | Diagnóstico de Erros) e Status */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-[color-mix(in_srgb,var(--line)_70%,transparent)]">
         {/* Seletor Segmentado de Visualização em Abas Limpas */}
         <nav
@@ -716,7 +806,7 @@ export default function EstatisticasPage() {
                   : "text-[color-mix(in_srgb,var(--ink)_45%,transparent)] group-hover:text-[var(--signal)]"
               }`}
             />
-            <span className="truncate">Tempo de Foco</span>
+            <span className="truncate">Tempo & Atividades</span>
             {metricaView === "foco" && (
               <span className="absolute inset-x-0 -bottom-px h-[2.5px] rounded-full bg-[var(--signal)]" />
             )}
@@ -903,7 +993,7 @@ export default function EstatisticasPage() {
 
           {/* Distribuição por Matéria no Período */}
           <section className="surface p-5 sm:p-6 shadow-xs space-y-4">
-            <div className="flex items-center justify-between border-b border-[var(--line)]/60 pb-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[var(--line)]/60 pb-3">
               <div>
                 <h3 className="text-xs font-semibold uppercase tracking-wider text-[var(--signal)]">
                   Tempo por Matéria no Período
@@ -912,38 +1002,257 @@ export default function EstatisticasPage() {
                   Discriminação do foco dedicado a cada disciplina e atividade
                 </p>
               </div>
-            </div>
 
-            {subjectBreakdown.length === 0 ? (
-              <p className="text-xs text-[color-mix(in_srgb,var(--ink)_45%,transparent)] py-2">
-                Nenhum tempo discriminado por matéria neste período. Conforme você estuda as matérias do ciclo, o progresso individual aparecerá aqui.
-              </p>
-            ) : (
-              <div className="space-y-3 pt-1">
-                {subjectBreakdown.map((item) => (
-                  <div key={item.name} className="space-y-1.5">
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="font-semibold text-[var(--ink)] truncate max-w-[200px] sm:max-w-xs">
-                        {item.name}
-                      </span>
-                      <div className="flex items-center gap-2 font-mono-num shrink-0">
-                        <span className="font-semibold text-[var(--ink)]">
-                          {formatFocusDuration(item.seconds)}
-                        </span>
-                        <span className="text-[11px] font-medium text-[color-mix(in_srgb,var(--ink)_50%,transparent)] w-10 text-right">
-                          {item.percentage}%
-                        </span>
-                      </div>
-                    </div>
-                    <div className="h-2 w-full overflow-hidden rounded-full bg-[color-mix(in_srgb,var(--ink)_8%,transparent)]">
-                      <div
-                        className="h-full rounded-full bg-[var(--signal)] transition-all duration-300"
-                        style={{ width: `${item.percentage}%` }}
+              {/* Seletor de Matéria com Popover e Busca */}
+              <div className="relative" ref={subjectDropdownRef}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSubjectDropdownOpen((prev) => !prev);
+                    setSubjectSearchQuery("");
+                  }}
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-semibold shadow-2xs transition active:scale-95 cursor-pointer ${
+                    selectedSubjectFilter
+                      ? "bg-[color-mix(in_srgb,var(--signal)_12%,var(--surface))] border-[color-mix(in_srgb,var(--signal)_35%,var(--line))] text-[var(--signal)]"
+                      : "bg-[var(--surface)] hover:bg-[var(--mist)] border-[var(--line)] text-[var(--ink)]"
+                  }`}
+                  aria-haspopup="listbox"
+                  aria-expanded={subjectDropdownOpen}
+                >
+                  <span className="truncate max-w-[130px] sm:max-w-[200px]">
+                    {selectedSubjectFilter ? selectedSubjectFilter : `Todas as matérias (${subjectBreakdown.length})`}
+                  </span>
+                  <ChevronDown size={14} className="shrink-0 opacity-70" />
+                </button>
+
+                {subjectDropdownOpen && (
+                  <div className="absolute right-0 top-full mt-1.5 w-72 sm:w-80 rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-2.5 shadow-xl z-30 space-y-2 animate-in fade-in-0 zoom-in-95 duration-100">
+                    <div className="relative">
+                      <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[color-mix(in_srgb,var(--ink)_45%,transparent)] pointer-events-none" />
+                      <input
+                        type="text"
+                        placeholder="Buscar matéria..."
+                        value={subjectSearchQuery}
+                        onChange={(e) => setSubjectSearchQuery(e.target.value)}
+                        className="w-full rounded-lg bg-[var(--mist)] pl-8 pr-3 py-1.5 text-xs text-[var(--ink)] placeholder:text-[color-mix(in_srgb,var(--ink)_45%,transparent)] border border-transparent focus:border-[var(--signal)] outline-none transition"
+                        autoFocus
                       />
                     </div>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedSubjectFilter(null);
+                        setSubjectDropdownOpen(false);
+                      }}
+                      className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-semibold text-left transition cursor-pointer ${
+                        !selectedSubjectFilter
+                          ? "bg-[color-mix(in_srgb,var(--signal)_12%,transparent)] text-[var(--signal)]"
+                          : "hover:bg-[var(--mist)] text-[var(--ink)]"
+                      }`}
+                    >
+                      <span>Todas as matérias ({subjectBreakdown.length})</span>
+                      {!selectedSubjectFilter && <Check size={14} className="text-[var(--signal)]" />}
+                    </button>
+
+                    <div className="max-h-60 overflow-y-auto divide-y divide-[var(--line)]/30 pr-0.5 space-y-2">
+                      {/* Lista com tempo */}
+                      <div className="space-y-1 pt-1">
+                        <p className="px-2 text-[10px] font-bold uppercase tracking-wider text-[color-mix(in_srgb,var(--ink)_50%,transparent)]">
+                          Com estudo no período ({studiedMatches.length})
+                        </p>
+                        {studiedMatches.length === 0 ? (
+                          <p className="px-2 py-1 text-[11px] text-[color-mix(in_srgb,var(--ink)_45%,transparent)] italic">
+                            Nenhuma matéria encontrada.
+                          </p>
+                        ) : (
+                          studiedMatches.map((sub) => {
+                            const isSelected = selectedSubjectFilter?.toLowerCase().trim() === sub.name.toLowerCase().trim();
+                            return (
+                              <button
+                                key={sub.name}
+                                type="button"
+                                onClick={() => {
+                                  setSelectedSubjectFilter(sub.name);
+                                  setSubjectDropdownOpen(false);
+                                }}
+                                className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs transition cursor-pointer text-left ${
+                                  isSelected
+                                    ? "bg-[color-mix(in_srgb,var(--signal)_12%,transparent)] text-[var(--signal)] font-semibold"
+                                    : "hover:bg-[var(--mist)] text-[var(--ink)]"
+                                }`}
+                              >
+                                <span className="truncate pr-2">{sub.name}</span>
+                                <span className="font-mono-num text-[11px] font-semibold text-[color-mix(in_srgb,var(--ink)_70%,transparent)] shrink-0">
+                                  {formatFocusDuration(sub.seconds)}
+                                </span>
+                              </button>
+                            );
+                          })
+                        )}
+                      </div>
+
+                      {/* Lista cadastradas com 0 min */}
+                      {zeroMatches.length > 0 && (
+                        <div className="space-y-1 pt-2">
+                          <p className="px-2 text-[10px] font-bold uppercase tracking-wider text-[color-mix(in_srgb,var(--ink)_50%,transparent)]">
+                            Cadastradas no sistema ({zeroMatches.length})
+                          </p>
+                          {zeroMatches.map((sub) => {
+                            const isSelected = selectedSubjectFilter?.toLowerCase().trim() === sub.name.toLowerCase().trim();
+                            return (
+                              <button
+                                key={sub.name}
+                                type="button"
+                                onClick={() => {
+                                  setSelectedSubjectFilter(sub.name);
+                                  setSubjectDropdownOpen(false);
+                                }}
+                                className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs transition cursor-pointer text-left ${
+                                  isSelected
+                                    ? "bg-[color-mix(in_srgb,var(--signal)_12%,transparent)] text-[var(--signal)] font-semibold"
+                                    : "hover:bg-[var(--mist)] text-[color-mix(in_srgb,var(--ink)_65%,transparent)]"
+                                }`}
+                              >
+                                <span className="truncate pr-2">{sub.name}</span>
+                                <span className="text-[10px] font-medium px-1.5 py-0.2 rounded bg-[var(--mist)] text-[color-mix(in_srgb,var(--ink)_50%,transparent)] shrink-0">
+                                  0 min
+                                </span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
                   </div>
-                ))}
+                )}
               </div>
+            </div>
+
+            {/* Conteúdo: Modo Foco na Matéria Selecionada */}
+            {selectedSubjectItem && (
+              <div className="space-y-3.5 pt-1">
+                <div className="p-4 rounded-xl border border-[color-mix(in_srgb,var(--signal)_35%,var(--line))] bg-[color-mix(in_srgb,var(--signal)_6%,var(--surface))] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="space-y-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-sm sm:text-base text-[var(--ink)] truncate">
+                        {selectedSubjectItem.name}
+                      </span>
+                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[color-mix(in_srgb,var(--signal)_15%,transparent)] text-[var(--signal)]">
+                        Foco selecionado
+                      </span>
+                    </div>
+                    <p className="text-xs text-[color-mix(in_srgb,var(--ink)_60%,transparent)]">
+                      {selectedSubjectItem.seconds > 0
+                        ? `Representa ${selectedSubjectItem.percentage}% do seu tempo total de estudo no período.`
+                        : "Nenhum tempo registrado para esta matéria no período selecionado."}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-4 shrink-0">
+                    <div className="text-right">
+                      <div className="text-lg font-bold font-mono-num text-[var(--signal)]">
+                        {formatFocusDuration(selectedSubjectItem.seconds)}
+                      </div>
+                      <div className="text-[10px] text-[color-mix(in_srgb,var(--ink)_50%,transparent)] uppercase tracking-wider">
+                        {selectedSubjectSessions.length} {selectedSubjectSessions.length === 1 ? "sessão" : "sessões"}
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedSubjectFilter(null)}
+                      className="p-1.5 rounded-lg border border-[var(--line)] bg-[var(--surface)] hover:bg-[var(--mist)] text-[color-mix(in_srgb,var(--ink)_70%,transparent)] hover:text-[var(--ink)] text-xs font-medium transition cursor-pointer"
+                      title="Voltar a ver todas as matérias"
+                    >
+                      <X size={16} />
+                    </button>
+                  </div>
+                </div>
+
+                <div className="h-2 w-full overflow-hidden rounded-full bg-[color-mix(in_srgb,var(--ink)_8%,transparent)]">
+                  <div
+                    className="h-full rounded-full bg-[var(--signal)] transition-all duration-300"
+                    style={{ width: `${selectedSubjectItem.percentage}%` }}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between pt-1 text-xs">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedSubjectFilter(null)}
+                    className="text-xs font-semibold text-[var(--signal)] hover:underline inline-flex items-center gap-1 cursor-pointer"
+                  >
+                    ← Voltar a ver todas as matérias
+                  </button>
+                  <span className="text-[11px] text-[color-mix(in_srgb,var(--ink)_50%,transparent)]">
+                    {selectedSubjectSessions.length} {selectedSubjectSessions.length === 1 ? "registro encontrado" : "registros encontrados"}
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {/* Conteúdo: Modo Normal (Todas as Matérias com Top 5 + Ver Mais) */}
+            {!selectedSubjectFilter && (
+              <>
+                {subjectBreakdown.length === 0 ? (
+                  <p className="text-xs text-[color-mix(in_srgb,var(--ink)_45%,transparent)] py-2">
+                    Nenhum tempo discriminado por matéria neste período. Conforme você estuda as matérias do ciclo, o progresso individual aparecerá aqui.
+                  </p>
+                ) : (
+                  <div className="space-y-3 pt-1">
+                    {displayedSubjects.map((item) => (
+                      <div key={item.name} className="space-y-1.5 group">
+                        <div className="flex items-center justify-between text-xs">
+                          <button
+                            type="button"
+                            onClick={() => setSelectedSubjectFilter(item.name)}
+                            className="font-semibold text-[var(--ink)] hover:text-[var(--signal)] transition text-left truncate max-w-[200px] sm:max-w-xs cursor-pointer inline-flex items-center gap-1.5"
+                            title={`Filtrar apenas ${item.name}`}
+                          >
+                            <span className="truncate">{item.name}</span>
+                          </button>
+                          <div className="flex items-center gap-2 font-mono-num shrink-0">
+                            <span className="font-semibold text-[var(--ink)]">
+                              {formatFocusDuration(item.seconds)}
+                            </span>
+                            <span className="text-[11px] font-medium text-[color-mix(in_srgb,var(--ink)_50%,transparent)] w-10 text-right">
+                              {item.percentage}%
+                            </span>
+                          </div>
+                        </div>
+                        <div className="h-2 w-full overflow-hidden rounded-full bg-[color-mix(in_srgb,var(--ink)_8%,transparent)]">
+                          <div
+                            className="h-full rounded-full bg-[var(--signal)] transition-all duration-300"
+                            style={{ width: `${item.percentage}%` }}
+                          />
+                        </div>
+                      </div>
+                    ))}
+
+                    {/* Botão expansor quando há mais de 5 matérias */}
+                    {subjectBreakdown.length > 5 && (
+                      <div className="pt-2 text-center border-t border-[var(--line)]/40">
+                        <button
+                          type="button"
+                          onClick={() => setShowAllSubjects((prev) => !prev)}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[var(--mist)] hover:bg-[color-mix(in_srgb,var(--surface)_70%,var(--mist))] border border-[var(--line)] text-xs font-semibold text-[var(--ink)] shadow-2xs transition active:scale-95 cursor-pointer"
+                        >
+                          {showAllSubjects ? (
+                            <>
+                              <ChevronUp size={14} />
+                              <span>Recolher para Top 5</span>
+                            </>
+                          ) : (
+                            <>
+                              <ChevronDown size={14} />
+                              <span>Ver todas as {subjectBreakdown.length} matérias</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </>
             )}
           </section>
 
