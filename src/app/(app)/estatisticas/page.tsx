@@ -13,6 +13,8 @@ import {
   Download,
   History,
   Layers,
+  LayoutGrid,
+  List,
   PieChart,
   Plus,
   RefreshCw,
@@ -563,6 +565,8 @@ function EstatisticasContent() {
   const [metricaView, setMetricaView] = useState<"foco" | "diagnostico">("foco");
   const [sessionFilter, setSessionFilter] = useState<"todos" | "ciclo" | "flashcards" | "quiz_livre">("todos");
   const [openDays, setOpenDays] = useState<Record<string, boolean>>({});
+  const [timelineViewMode, setTimelineViewMode] = useState<"abas" | "lista">("abas");
+  const [selectedDayKey, setSelectedDayKey] = useState<string | null>(null);
 
   // Estatísticas de Flashcards e Domínio
   const flashcardDominioCount = useMemo(() => {
@@ -1046,6 +1050,46 @@ function EstatisticasContent() {
       next[d.key] = nextState;
     });
     setOpenDays(next);
+  };
+
+  // Dia ativo na visualização em abas da semana
+  const activeDayKey = useMemo(() => {
+    if (selectedDayKey && weekGroupedSessions.some((d) => d.key === selectedDayKey)) {
+      return selectedDayKey;
+    }
+    const todayKey = dateKey();
+    const hasToday = weekGroupedSessions.some((d) => d.key === todayKey);
+    if (hasToday) return todayKey;
+
+    const activeDays = weekGroupedSessions.filter((d) => d.sessions.length > 0 || d.rounds > 0);
+    if (activeDays.length > 0) {
+      return activeDays[activeDays.length - 1].key;
+    }
+    return weekGroupedSessions[0]?.key ?? todayKey;
+  }, [selectedDayKey, weekGroupedSessions]);
+
+  const activeDayGroup = useMemo(() => {
+    return weekGroupedSessions.find((d) => d.key === activeDayKey) ?? weekGroupedSessions[0];
+  }, [weekGroupedSessions, activeDayKey]);
+
+  const activeDayIndex = useMemo(() => {
+    return weekGroupedSessions.findIndex((d) => d.key === activeDayKey);
+  }, [weekGroupedSessions, activeDayKey]);
+
+  const goToPrevDay = () => {
+    if (activeDayIndex > 0) {
+      setSelectedDayKey(weekGroupedSessions[activeDayIndex - 1].key);
+    } else {
+      setReferenceDate((date) => shiftPeriod(date, "semana", -1));
+    }
+  };
+
+  const goToNextDay = () => {
+    if (activeDayIndex >= 0 && activeDayIndex < weekGroupedSessions.length - 1) {
+      setSelectedDayKey(weekGroupedSessions[activeDayIndex + 1].key);
+    } else {
+      setReferenceDate((date) => shiftPeriod(date, "semana", 1));
+    }
   };
 
   async function downloadReport() {
@@ -1955,9 +1999,40 @@ function EstatisticasContent() {
                 </p>
               </div>
 
-              {/* Filtro por tipo de atividade e controles quando há sessões */}
+              {/* Controles de visualização, navegação e filtros */}
               <div className="flex items-center gap-2 flex-wrap">
-                {range === "semana" && filteredSessions.length > 0 && (
+                {range === "semana" && (
+                  <div className="inline-flex items-center p-0.5 rounded-lg bg-[var(--mist)] border border-[var(--line)]/50 text-xs">
+                    <button
+                      type="button"
+                      onClick={() => setTimelineViewMode("abas")}
+                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold transition cursor-pointer ${
+                        timelineViewMode === "abas"
+                          ? "bg-[var(--surface)] text-[var(--ink)] shadow-2xs"
+                          : "text-[color-mix(in_srgb,var(--ink)_60%,transparent)] hover:text-[var(--ink)]"
+                      }`}
+                      title="Visualizar dia a dia em abas"
+                    >
+                      <LayoutGrid size={13} />
+                      <span className="hidden sm:inline">Por dia</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setTimelineViewMode("lista")}
+                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold transition cursor-pointer ${
+                        timelineViewMode === "lista"
+                          ? "bg-[var(--surface)] text-[var(--ink)] shadow-2xs"
+                          : "text-[color-mix(in_srgb,var(--ink)_60%,transparent)] hover:text-[var(--ink)]"
+                      }`}
+                      title="Visualizar todos os dias da semana em lista contínua"
+                    >
+                      <List size={13} />
+                      <span className="hidden sm:inline">Semana toda</span>
+                    </button>
+                  </div>
+                )}
+
+                {range === "semana" && timelineViewMode === "lista" && filteredSessions.length > 0 && (
                   <button
                     type="button"
                     onClick={toggleAllDays}
@@ -2071,9 +2146,9 @@ function EstatisticasContent() {
               </div>
             )}
 
-            {/* Conteúdo: Visão SEMANA com Sanfona Inteligente e Agrupamento em Blocos */}
+            {/* Conteúdo: Visão SEMANA */}
             {range === "semana" && (
-              <div className="space-y-3">
+              <div className="space-y-3.5">
                 {filteredSessions.length === 0 ? (
                   <div className="rounded-xl border border-dashed border-[var(--line)] p-6 text-center text-xs text-[color-mix(in_srgb,var(--ink)_50%,transparent)] space-y-1.5">
                     <Calendar size={24} className="mx-auto opacity-40 mb-2" />
@@ -2082,77 +2157,227 @@ function EstatisticasContent() {
                       Conforme você cumpre o ciclo ou treina seus flashcards ao longo dos dias, cada dia da semana exibirá sua linha do tempo aqui.
                     </p>
                   </div>
-                ) : (
-                  weekGroupedSessions.map((dayGroup) => {
-                    const hasActivity = dayGroup.sessions.length > 0 || dayGroup.rounds > 0;
-                    if (!hasActivity) return null;
-                    const open = isDayOpen(dayGroup.key);
+                ) : timelineViewMode === "abas" ? (
+                  /* Modo 1: Quadro com Abas Diárias */
+                  <div className="space-y-3">
+                    {/* Barra de 7 Abas Semanais */}
+                    <div className="grid grid-cols-7 gap-1 sm:gap-2 p-1.5 rounded-2xl bg-[var(--mist)]/75 border border-[var(--line)]/60 select-none">
+                      {weekGroupedSessions.map((dayGroup, idx) => {
+                        const isSelected = dayGroup.key === activeDayKey;
+                        const hasFocus = (dayGroup.focusSeconds || dayGroup.totalMinutes * 60) > 0;
+                        const shortDay = ["SEG", "TER", "QUA", "QUI", "SEX", "SÁB", "DOM"][idx];
 
-                    return (
-                      <div
-                        key={dayGroup.key}
-                        className="rounded-xl border border-[var(--line)]/80 bg-[var(--surface)] overflow-hidden shadow-2xs transition-all"
-                      >
-                        {/* Cabeçalho Colapsável com Seta */}
-                        <button
-                          type="button"
-                          onClick={() => toggleDay(dayGroup.key)}
-                          className="w-full flex items-center justify-between p-3.5 hover:bg-[var(--mist)]/70 transition-colors cursor-pointer text-left select-none"
-                        >
-                          <div className="flex items-center gap-2.5 flex-wrap min-w-0">
-                            <span className="text-[color-mix(in_srgb,var(--ink)_50%,transparent)] shrink-0">
-                              {open ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-                            </span>
-                            <span className="text-xs font-bold text-[var(--ink)] uppercase tracking-wider">
-                              {dayGroup.dayName}
-                            </span>
-                            <span className="text-[11px] text-[color-mix(in_srgb,var(--ink)_50%,transparent)] font-mono-num">
-                              {dayGroup.dateStr}
-                            </span>
-                            {dayGroup.isToday && (
-                              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[var(--signal)] text-white shadow-2xs">
+                        return (
+                          <button
+                            key={dayGroup.key}
+                            type="button"
+                            onClick={() => setSelectedDayKey(dayGroup.key)}
+                            className={`group relative flex flex-col items-center justify-between py-2 sm:py-2.5 px-1 sm:px-2 rounded-xl transition-all cursor-pointer text-center ${
+                              isSelected
+                                ? "bg-[var(--surface)] text-[var(--ink)] shadow-[0_2px_8px_-2px_color-mix(in_srgb,var(--signal)_25%,transparent)] ring-1.5 ring-[var(--signal)] border border-transparent font-semibold"
+                                : "text-[color-mix(in_srgb,var(--ink)_65%,transparent)] hover:text-[var(--ink)] hover:bg-[var(--surface)]/70 border border-transparent"
+                            }`}
+                          >
+                            <div className="flex flex-col items-center gap-0.5 w-full">
+                              <span
+                                className={`text-[10px] sm:text-xs font-bold tracking-wider ${
+                                  isSelected
+                                    ? "text-[var(--signal)]"
+                                    : "text-[color-mix(in_srgb,var(--ink)_60%,transparent)]"
+                                }`}
+                              >
+                                {shortDay}
+                              </span>
+                              <span className="text-[10px] sm:text-[11px] font-mono-num opacity-75">
+                                {dayGroup.dateStr}
+                              </span>
+                            </div>
+
+                            {dayGroup.isToday ? (
+                              <span className="mt-1 text-[9px] font-bold px-1.5 py-0.2 rounded-full bg-[var(--signal)] text-white shadow-2xs leading-tight">
+                                Hoje
+                              </span>
+                            ) : dayGroup.rounds > 0 ? (
+                              <span className="mt-1 text-[9px] font-bold px-1.5 py-0.2 rounded-full bg-[color-mix(in_srgb,var(--signal)_18%,transparent)] text-[var(--signal)] inline-flex items-center gap-0.5">
+                                <RefreshCw size={8} strokeWidth={2.5} /> {dayGroup.rounds}c
+                              </span>
+                            ) : (
+                              <div className="h-4" />
+                            )}
+
+                            <div className="mt-1 w-full pt-1 border-t border-[var(--line)]/40 flex items-center justify-center">
+                              {hasFocus ? (
+                                <span
+                                  className={`text-[10px] sm:text-[11px] font-mono-num font-semibold truncate ${
+                                    isSelected
+                                      ? "text-[var(--signal)]"
+                                      : "text-[color-mix(in_srgb,var(--ink)_80%,transparent)]"
+                                  }`}
+                                >
+                                  {formatFocusDuration(dayGroup.focusSeconds || dayGroup.totalMinutes * 60)}
+                                </span>
+                              ) : (
+                                <span className="text-[10px] sm:text-[11px] font-mono-num text-[color-mix(in_srgb,var(--ink)_30%,transparent)]">
+                                  —
+                                </span>
+                              )}
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {/* Quadro do Dia Selecionado */}
+                    {activeDayGroup && (
+                      <div className="rounded-2xl border border-[var(--line)]/80 bg-[var(--surface)] p-4 sm:p-5 shadow-xs space-y-3.5">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[var(--line)]/60">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <div className="flex items-center gap-1">
+                              <button
+                                type="button"
+                                onClick={goToPrevDay}
+                                className="p-1.5 rounded-lg hover:bg-[var(--mist)] text-[color-mix(in_srgb,var(--ink)_60%,transparent)] hover:text-[var(--ink)] transition cursor-pointer"
+                                title="Dia anterior"
+                                aria-label="Dia anterior"
+                              >
+                                <ChevronLeft size={16} />
+                              </button>
+                              <h4 className="text-xs sm:text-sm font-bold text-[var(--ink)] uppercase tracking-wider">
+                                {activeDayGroup.dayName} {activeDayGroup.dateStr}
+                              </h4>
+                              <button
+                                type="button"
+                                onClick={goToNextDay}
+                                className="p-1.5 rounded-lg hover:bg-[var(--mist)] text-[color-mix(in_srgb,var(--ink)_60%,transparent)] hover:text-[var(--ink)] transition cursor-pointer"
+                                title="Próximo dia"
+                                aria-label="Próximo dia"
+                              >
+                                <ChevronRight size={16} />
+                              </button>
+                            </div>
+
+                            {activeDayGroup.isToday && (
+                              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[var(--signal)] text-white shadow-2xs">
                                 Hoje
                               </span>
                             )}
-                            {dayGroup.rounds > 0 && (
+
+                            {activeDayGroup.rounds > 0 && (
                               <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[color-mix(in_srgb,var(--signal)_15%,transparent)] text-[var(--signal)] border border-[color-mix(in_srgb,var(--signal)_25%,transparent)] inline-flex items-center gap-1">
-                                <RefreshCw size={10} strokeWidth={2.3} /> {dayGroup.rounds} {dayGroup.rounds === 1 ? "ciclo concluído" : "ciclos concluídos"}
+                                <RefreshCw size={10} strokeWidth={2.3} /> {activeDayGroup.rounds} {activeDayGroup.rounds === 1 ? "ciclo concluído" : "ciclos concluídos"}
                               </span>
                             )}
                           </div>
 
                           <div className="flex items-center gap-3 shrink-0">
-                            <span className="text-[11px] text-[color-mix(in_srgb,var(--ink)_55%,transparent)] hidden sm:inline">
-                              {dayGroup.clusters.length} {dayGroup.clusters.length === 1 ? "bloco" : "blocos"}
-                              {dayGroup.sessions.length > dayGroup.clusters.length && (
-                                <span className="text-[10px] opacity-75"> ({dayGroup.sessions.length} matérias)</span>
+                            <span className="text-xs text-[color-mix(in_srgb,var(--ink)_55%,transparent)]">
+                              {activeDayGroup.clusters.length} {activeDayGroup.clusters.length === 1 ? "bloco" : "blocos"}
+                              {activeDayGroup.sessions.length > activeDayGroup.clusters.length && (
+                                <span className="opacity-75"> ({activeDayGroup.sessions.length} matérias)</span>
                               )}
                             </span>
-                            <span className="text-xs font-mono-num font-semibold text-[var(--signal)]">
-                              {formatFocusDuration(dayGroup.focusSeconds || dayGroup.totalMinutes * 60)}
+                            <span className="text-xs sm:text-sm font-mono-num font-bold text-[var(--signal)]">
+                              {formatFocusDuration(activeDayGroup.focusSeconds || activeDayGroup.totalMinutes * 60)}
                             </span>
                           </div>
-                        </button>
+                        </div>
 
-                        {/* Conteúdo do Dia quando expandido */}
-                        {open && (
-                          <div className="p-3.5 pt-0 border-t border-[var(--line)]/50 bg-[color-mix(in_srgb,var(--surface)_50%,var(--mist))]">
-                            {dayGroup.clusters.length === 0 ? (
-                              <p className="text-[11px] text-[color-mix(in_srgb,var(--ink)_45%,transparent)] italic py-2">
-                                Sem sessões individuais registradas (rodada concluída).
-                              </p>
-                            ) : (
-                              <div className="space-y-2 pt-2.5">
-                                {dayGroup.clusters.map((cluster) => (
-                                  <SessionClusterCard key={cluster.id} cluster={cluster} />
-                                ))}
-                              </div>
-                            )}
+                        {activeDayGroup.clusters.length === 0 ? (
+                          <div className="py-8 text-center text-xs text-[color-mix(in_srgb,var(--ink)_50%,transparent)] space-y-2">
+                            <div className="grid size-11 mx-auto place-items-center rounded-2xl bg-[var(--mist)] text-[color-mix(in_srgb,var(--ink)_45%,transparent)]">
+                              <Clock size={20} className="opacity-70" />
+                            </div>
+                            <p className="font-semibold text-xs sm:text-sm text-[var(--ink)]">
+                              Nenhuma sessão registrada em {activeDayGroup.dayName} ({activeDayGroup.dateStr})
+                            </p>
+                            <p className="max-w-sm mx-auto text-xs opacity-75">
+                              {activeDayGroup.isToday
+                                ? "Você ainda não registrou blocos de estudo hoje. Que tal iniciar uma matéria no ciclo?"
+                                : "Nenhum bloco ou sessão individual registrada nesta data."}
+                            </p>
+                          </div>
+                        ) : (
+                          <div className="space-y-2">
+                            {activeDayGroup.clusters.map((cluster) => (
+                              <SessionClusterCard key={cluster.id} cluster={cluster} />
+                            ))}
                           </div>
                         )}
                       </div>
-                    );
-                  })
+                    )}
+                  </div>
+                ) : (
+                  /* Modo 2: Lista Completa em Acordeons Empilhados */
+                  <div className="space-y-3">
+                    {weekGroupedSessions.map((dayGroup) => {
+                      const hasActivity = dayGroup.sessions.length > 0 || dayGroup.rounds > 0;
+                      if (!hasActivity) return null;
+                      const open = isDayOpen(dayGroup.key);
+
+                      return (
+                        <div
+                          key={dayGroup.key}
+                          className="rounded-xl border border-[var(--line)]/80 bg-[var(--surface)] overflow-hidden shadow-2xs transition-all"
+                        >
+                          <button
+                            type="button"
+                            onClick={() => toggleDay(dayGroup.key)}
+                            className="w-full flex items-center justify-between p-3.5 hover:bg-[var(--mist)]/70 transition-colors cursor-pointer text-left select-none"
+                          >
+                            <div className="flex items-center gap-2.5 flex-wrap min-w-0">
+                              <span className="text-[color-mix(in_srgb,var(--ink)_50%,transparent)] shrink-0">
+                                {open ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                              </span>
+                              <span className="text-xs font-bold text-[var(--ink)] uppercase tracking-wider">
+                                {dayGroup.dayName}
+                              </span>
+                              <span className="text-[11px] text-[color-mix(in_srgb,var(--ink)_50%,transparent)] font-mono-num">
+                                {dayGroup.dateStr}
+                              </span>
+                              {dayGroup.isToday && (
+                                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[var(--signal)] text-white shadow-2xs">
+                                  Hoje
+                                </span>
+                              )}
+                              {dayGroup.rounds > 0 && (
+                                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[color-mix(in_srgb,var(--signal)_15%,transparent)] text-[var(--signal)] border border-[color-mix(in_srgb,var(--signal)_25%,transparent)] inline-flex items-center gap-1">
+                                  <RefreshCw size={10} strokeWidth={2.3} /> {dayGroup.rounds} {dayGroup.rounds === 1 ? "ciclo concluído" : "ciclos concluídos"}
+                                </span>
+                              )}
+                            </div>
+
+                            <div className="flex items-center gap-3 shrink-0">
+                              <span className="text-[11px] text-[color-mix(in_srgb,var(--ink)_55%,transparent)] hidden sm:inline">
+                                {dayGroup.clusters.length} {dayGroup.clusters.length === 1 ? "bloco" : "blocos"}
+                                {dayGroup.sessions.length > dayGroup.clusters.length && (
+                                  <span className="text-[10px] opacity-75"> ({dayGroup.sessions.length} matérias)</span>
+                                )}
+                              </span>
+                              <span className="text-xs font-mono-num font-semibold text-[var(--signal)]">
+                                {formatFocusDuration(dayGroup.focusSeconds || dayGroup.totalMinutes * 60)}
+                              </span>
+                            </div>
+                          </button>
+
+                          {open && (
+                            <div className="p-3.5 pt-0 border-t border-[var(--line)]/50 bg-[color-mix(in_srgb,var(--surface)_50%,var(--mist))]">
+                              {dayGroup.clusters.length === 0 ? (
+                                <p className="text-[11px] text-[color-mix(in_srgb,var(--ink)_45%,transparent)] italic py-2">
+                                  Sem sessões individuais registradas (rodada concluída).
+                                </p>
+                              ) : (
+                                <div className="space-y-2 pt-2.5">
+                                  {dayGroup.clusters.map((cluster) => (
+                                    <SessionClusterCard key={cluster.id} cluster={cluster} />
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
                 )}
               </div>
             )}
