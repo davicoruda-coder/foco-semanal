@@ -11,11 +11,21 @@ export type FocusReportRow = {
   seconds: number;
 };
 
-type FocusReportOptions = {
+export type FocusReportSessionRow = {
+  subjectName: string;
+  timeRange: string;
+  durationMinutes: number;
+  type: string;
+  dateStr?: string;
+};
+
+export type FocusReportOptions = {
   period: string;
   totalSeconds: number;
   rows: FocusReportRow[];
   subjectRows?: FocusReportSubjectRow[];
+  sessionRows?: FocusReportSessionRow[];
+  completedCycleRounds?: number;
   filename: string;
 };
 
@@ -25,6 +35,8 @@ export async function downloadFocusReport({
   totalSeconds,
   rows,
   subjectRows,
+  sessionRows,
+  completedCycleRounds = 0,
   filename,
 }: FocusReportOptions): Promise<void> {
   const { jsPDF } = await import("jspdf");
@@ -66,16 +78,36 @@ export async function downloadFocusReport({
     52,
   );
 
-  // Card do Tempo Total
+  // Card do Tempo Total e Ciclos Concluídos
+  const hasRounds = completedCycleRounds > 0;
+  const cardWidth = hasRounds ? (pageWidth - margin * 2 - 6) / 2 : pageWidth - margin * 2;
+
   doc.setFillColor(244, 243, 255);
-  doc.roundedRect(margin, 59, pageWidth - margin * 2, 19, 3, 3, "F");
+  doc.roundedRect(margin, 59, cardWidth, 19, 3, 3, "F");
   doc.setTextColor(95, 96, 108);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(8);
   doc.text("TEMPO TOTAL", margin + 5, 66);
   doc.setTextColor(22, 23, 31);
-  doc.setFontSize(15);
+  doc.setFontSize(14);
   doc.text(formatFocusDuration(totalSeconds), margin + 5, 73);
+
+  if (hasRounds) {
+    const roundX = margin + cardWidth + 6;
+    doc.setFillColor(238, 242, 255);
+    doc.roundedRect(roundX, 59, cardWidth, 19, 3, 3, "F");
+    doc.setTextColor(95, 96, 108);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8);
+    doc.text("CICLOS COMPLETOS", roundX + 5, 66);
+    doc.setTextColor(79, 70, 229);
+    doc.setFontSize(14);
+    doc.text(
+      `${completedCycleRounds} ${completedCycleRounds === 1 ? "volta finalizada" : "voltas finalizadas"}`,
+      roundX + 5,
+      73,
+    );
+  }
 
   let y = 87;
 
@@ -183,6 +215,61 @@ export async function downloadFocusReport({
     );
     y += 8;
   });
+
+  // 3. Tabela: Diário de Sessões e Histórico (Ciclos, Flashcards, Temporizador)
+  if (sessionRows && sessionRows.length > 0) {
+    if (y + 18 > pageHeight - 17) {
+      doc.addPage();
+      y = 18;
+    } else {
+      y += 4;
+    }
+
+    doc.setTextColor(63, 58, 99);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    doc.text("DIÁRIO DE SESSÕES & HISTÓRICO", margin, y);
+    y += 4;
+
+    function drawSessionHeader() {
+      doc.setFillColor(232, 230, 252);
+      doc.rect(margin, y, pageWidth - margin * 2, 8, "F");
+      doc.setTextColor(63, 58, 99);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(8);
+      doc.text("HORÁRIO", margin + 4, y + 5.5);
+      doc.text("MATÉRIA / ATIVIDADE", margin + 38, y + 5.5);
+      doc.text("TIPO", margin + 115, y + 5.5);
+      doc.text("DURAÇÃO", pageWidth - margin - 4, y + 5.5, { align: "right" });
+      y += 8;
+    }
+
+    drawSessionHeader();
+
+    sessionRows.forEach((s, idx) => {
+      if (y + 8 > pageHeight - 17) {
+        doc.addPage();
+        y = 18;
+        drawSessionHeader();
+      }
+
+      if (idx % 2 === 1) {
+        doc.setFillColor(248, 248, 251);
+        doc.rect(margin, y, pageWidth - margin * 2, 8, "F");
+      }
+
+      doc.setTextColor(42, 43, 52);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8.5);
+      const timeLabel = s.dateStr ? `${s.dateStr} ${s.timeRange}` : s.timeRange;
+      doc.text(timeLabel, margin + 4, y + 5.5);
+      doc.text(s.subjectName.slice(0, 38), margin + 38, y + 5.5);
+      doc.text(s.type, margin + 115, y + 5.5);
+      doc.setFont("helvetica", "bold");
+      doc.text(`${s.durationMinutes} min`, pageWidth - margin - 4, y + 5.5, { align: "right" });
+      y += 8;
+    });
+  }
 
   const pages = doc.getNumberOfPages();
   for (let page = 1; page <= pages; page += 1) {

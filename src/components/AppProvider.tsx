@@ -1257,8 +1257,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
           ...prev,
           study_sessions: [
             { ...session, id: newId("sess") },
-            ...prev.study_sessions,
-          ],
+            ...(prev.study_sessions || []),
+          ].slice(0, 500),
         })),
       exportBackup,
       importBackup,

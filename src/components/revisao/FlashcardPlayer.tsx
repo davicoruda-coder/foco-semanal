@@ -1,7 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
   Maximize2,
@@ -17,6 +17,9 @@ import {
   corNivelDominio,
 } from "@/lib/revisao/spaced-repetition";
 import { useRevisao } from "./RevisaoProvider";
+import { useApp } from "@/components/AppProvider";
+import { addFocusSeconds, commitFocusDisplaySnapshot } from "@/lib/focus-log";
+import { syncFocusLogWithCloud } from "@/lib/supabase/focus-sync";
 import { FormattedRuleText } from "./FormattedRuleText";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { FlashcardQuickEditModal } from "./FlashcardQuickEditModal";
@@ -141,6 +144,7 @@ export function FlashcardPlayer({
     deleteFlashcard,
     updateFlashcard,
   } = useRevisao();
+  const { addStudySession, user } = useApp();
   const [mounted, setMounted] = useState(false);
   const [deletedIds, setDeletedIds] = useState<string[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -151,6 +155,11 @@ export function FlashcardPlayer({
   const [showEditModal, setShowEditModal] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [isImmersiveMode, setIsImmersiveMode] = useState(false);
+
+  // Registro automático da sessão de estudo e tempo de foco
+  const startTimeRef = useRef(Date.now());
+  const answeredCountRef = useRef(0);
+  const sessionLoggedRef = useRef(false);
 
   useEffect(() => {
     setMounted(true);
@@ -200,6 +209,56 @@ export function FlashcardPlayer({
   const isCompleted =
     !deck || deck.length === 0 || currentIndex >= deck.length || !currentCard;
 
+  const logSessionOnce = useCallback(() => {
+    if (sessionLoggedRef.current) return;
+    if (answeredCountRef.current < 1) return;
+    sessionLoggedRef.current = true;
+
+    const elapsedSeconds = Math.max(30, Math.round((Date.now() - startTimeRef.current) / 1000));
+    const elapsedMinutes = Math.max(1, Math.round(elapsedSeconds / 60));
+    const finalSubjectName = subjectName ? `${subjectName} (Flashcards)` : "Flashcards";
+    const now = new Date();
+    const startIso = new Date(startTimeRef.current).toISOString();
+    const endIso = now.toISOString();
+
+    try {
+      addStudySession({
+        subject_id: null,
+        subject_name: finalSubjectName,
+        duration_minutes: elapsedMinutes,
+        started_at: startIso,
+        ended_at: endIso,
+        mode: "unica",
+        completed: true,
+      });
+    } catch (err) {
+      console.warn("[FlashcardPlayer] Falha ao registrar StudySession:", err);
+    }
+
+    try {
+      const nextLog = addFocusSeconds(elapsedSeconds, now, finalSubjectName);
+      commitFocusDisplaySnapshot(nextLog);
+      window.dispatchEvent(new Event("foco-focus-log"));
+      if (user) {
+        void syncFocusLogWithCloud();
+      }
+    } catch (err) {
+      console.warn("[FlashcardPlayer] Falha ao registrar FocusLog:", err);
+    }
+  }, [subjectName, addStudySession, user]);
+
+  useEffect(() => {
+    if (isCompleted && answeredCountRef.current > 0) {
+      logSessionOnce();
+    }
+  }, [isCompleted, logSessionOnce]);
+
+  useEffect(() => {
+    return () => {
+      logSessionOnce();
+    };
+  }, [logSessionOnce]);
+
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
@@ -213,6 +272,7 @@ export function FlashcardPlayer({
     const cardId = currentCard.id;
     const nivelAtual = (currentCard.nivel_dominio ?? 0) as 0 | 1 | 2 | 3;
 
+    answeredCountRef.current += 1;
     setSelectedRating(resposta);
     setSubmitting(true);
 

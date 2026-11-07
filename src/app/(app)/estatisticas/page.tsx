@@ -2,14 +2,19 @@
 
 import { useEffect, useMemo, useState } from "react";
 import {
+  Calendar,
+  CheckCircle2,
   ChevronLeft,
   ChevronRight,
   Clock,
   Download,
+  History,
+  Layers,
   PieChart,
   Plus,
   RefreshCw,
   RotateCcw,
+  Sparkles,
   X,
 } from "lucide-react";
 import { useApp } from "@/components/AppProvider";
@@ -46,6 +51,7 @@ import {
   syncFocusLogWithCloud,
 } from "@/lib/supabase/focus-sync";
 import { DAYS, type StudySession } from "@/lib/types";
+import { getSessionDateKey, readCycleRoundsForDate } from "@/lib/utils";
 
 type Range = "dia" | "semana" | "mes" | "ano";
 
@@ -131,6 +137,61 @@ function shiftPeriod(date: Date, range: Range, amount: number): Date {
   return next;
 }
 
+function formatSessionTimeRange(startedAt: string, endedAt: string | null, durationMinutes: number) {
+  const start = new Date(startedAt);
+  const startStr = isNaN(start.getTime())
+    ? "--:--"
+    : start.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+
+  let endStr = "";
+  if (endedAt) {
+    const end = new Date(endedAt);
+    if (!isNaN(end.getTime())) {
+      endStr = end.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+    }
+  }
+  if (!endStr && !isNaN(start.getTime()) && durationMinutes > 0) {
+    const endCalc = new Date(start.getTime() + durationMinutes * 60000);
+    endStr = endCalc.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+  }
+
+  return endStr ? `${startStr} → ${endStr}` : startStr;
+}
+
+function getSessionTypeInfo(sess: StudySession) {
+  const nameLower = (sess.subject_name || "").toLowerCase();
+  if (nameLower.includes("flashcard")) {
+    return {
+      type: "flashcards" as const,
+      label: "Flashcards",
+      icon: Sparkles,
+      badgeClasses: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/20",
+    };
+  }
+  if (nameLower.includes("quiz")) {
+    return {
+      type: "quiz" as const,
+      label: "Quiz IA",
+      icon: CheckCircle2,
+      badgeClasses: "bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/20",
+    };
+  }
+  if (sess.mode === "ciclo") {
+    return {
+      type: "ciclo" as const,
+      label: "Ciclo",
+      icon: RefreshCw,
+      badgeClasses: "bg-[color-mix(in_srgb,var(--signal)_12%,transparent)] text-[var(--signal)] border-[color-mix(in_srgb,var(--signal)_25%,transparent)]",
+    };
+  }
+  return {
+    type: "livre" as const,
+    label: "Temporizador",
+    icon: Clock,
+    badgeClasses: "bg-[color-mix(in_srgb,var(--ink)_8%,transparent)] text-[color-mix(in_srgb,var(--ink)_70%,transparent)] border-[color-mix(in_srgb,var(--line)_60%,transparent)]",
+  };
+}
+
 export default function EstatisticasPage() {
   const { user, data } = useApp();
   const { runtime, stopwatch, subjectStopwatches } = useTimerRuntime();
@@ -150,6 +211,7 @@ export default function EstatisticasPage() {
   );
   const [addHint, setAddHint] = useState<string | null>(null);
   const [metricaView, setMetricaView] = useState<"foco" | "diagnostico">("foco");
+  const [sessionFilter, setSessionFilter] = useState<"todos" | "ciclo" | "flashcards" | "quiz_livre">("todos");
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -383,12 +445,85 @@ export default function EstatisticasPage() {
   }, [log, periodDayKeys]);
 
   const selectedDateKey = dateKey(referenceDate);
-  const daySessions = useMemo(() => {
-    return (data.study_sessions ?? []).filter((s: StudySession) => {
-      if (!s.started_at) return false;
-      return s.started_at.startsWith(selectedDateKey);
+
+  // Rodadas completas do ciclo no período atual
+  const cycleRoundsPeriod = useMemo(() => {
+    if (range === "dia") {
+      return readCycleRoundsForDate(selectedDateKey);
+    }
+    if (range === "semana") {
+      return week.reduce((acc, d) => acc + readCycleRoundsForDate(d.key), 0);
+    }
+    return periodDayKeys.reduce((acc, k) => acc + readCycleRoundsForDate(k), 0);
+  }, [range, selectedDateKey, week, periodDayKeys]);
+
+  // Todas as sessões de estudo que caem nos dias do período selecionado
+  const periodSessions = useMemo(() => {
+    const dayKeySet = new Set(periodDayKeys);
+    return (data.study_sessions ?? [])
+      .filter((s: StudySession) => {
+        if (!s.started_at) return false;
+        const k = getSessionDateKey(s.started_at);
+        return dayKeySet.has(k);
+      })
+      .sort((a, b) => new Date(b.started_at).getTime() - new Date(a.started_at).getTime());
+  }, [data.study_sessions, periodDayKeys]);
+
+  // Contadores para as abas de filtro
+  const sessionCounts = useMemo(() => {
+    let ciclo = 0;
+    let flashcards = 0;
+    let quiz_livre = 0;
+    for (const s of periodSessions) {
+      const type = getSessionTypeInfo(s).type;
+      if (type === "ciclo") ciclo++;
+      else if (type === "flashcards") flashcards++;
+      else quiz_livre++;
+    }
+    return { total: periodSessions.length, ciclo, flashcards, quiz_livre };
+  }, [periodSessions]);
+
+  // Sessões filtradas pelo usuário (Todos / Ciclo / Flashcards / Quiz & Outros)
+  const filteredSessions = useMemo(() => {
+    if (sessionFilter === "todos") return periodSessions;
+    return periodSessions.filter((s) => {
+      const type = getSessionTypeInfo(s).type;
+      if (sessionFilter === "ciclo") return type === "ciclo";
+      if (sessionFilter === "flashcards") return type === "flashcards";
+      return type === "quiz" || type === "livre";
     });
-  }, [data.study_sessions, selectedDateKey]);
+  }, [periodSessions, sessionFilter]);
+
+  // Agrupamento para a visão Semanal (Segunda a Domingo com subtotais e sessões)
+  const weekGroupedSessions = useMemo(() => {
+    if (range !== "semana") return [];
+    return week.map((dayItem, index) => {
+      const dayKey = dayItem.key;
+      const dayName = DAYS[index];
+      const shortFormattedDate = new Intl.DateTimeFormat("pt-BR", {
+        day: "2-digit",
+        month: "2-digit",
+      }).format(dayItem.date);
+      const daySessionsList = filteredSessions.filter(
+        (s) => getSessionDateKey(s.started_at) === dayKey,
+      );
+      const dayRounds = readCycleRoundsForDate(dayKey);
+      const totalDayMinutes = daySessionsList.reduce((acc, s) => acc + (s.duration_minutes || 0), 0);
+      const isToday = dayKey === dateKey();
+
+      return {
+        key: dayKey,
+        dayName,
+        dateStr: shortFormattedDate,
+        date: dayItem.date,
+        sessions: daySessionsList,
+        rounds: dayRounds,
+        totalMinutes: totalDayMinutes,
+        focusSeconds: dayItem.seconds,
+        isToday,
+      };
+    });
+  }, [range, week, filteredSessions]);
 
   async function downloadReport() {
     setDownloadingReport(true);
@@ -398,6 +533,14 @@ export default function EstatisticasPage() {
         totalSeconds: headline,
         rows: report.rows,
         subjectRows: subjectBreakdown,
+        sessionRows: periodSessions.map((s) => ({
+          subjectName: s.subject_name,
+          timeRange: formatSessionTimeRange(s.started_at, s.ended_at, s.duration_minutes),
+          durationMinutes: s.duration_minutes,
+          type: getSessionTypeInfo(s).label,
+          dateStr: range !== "dia" ? getSessionDateKey(s.started_at).slice(5).replace("-", "/") : undefined,
+        })),
+        completedCycleRounds: cycleRoundsPeriod,
         filename: report.filename,
       });
     } catch (error) {
@@ -804,31 +947,335 @@ export default function EstatisticasPage() {
             )}
           </section>
 
-          {/* Sessões Concluídas no Dia (quando na visão Dia) */}
-          {range === "dia" && daySessions.length > 0 && (
-            <section className="surface p-5 sm:p-6 shadow-xs space-y-3">
-              <h3 className="text-xs font-semibold uppercase tracking-wider opacity-60">
-                Sessões Concluídas no Dia
-              </h3>
-              <div className="divide-y divide-[var(--line)]/40 text-xs">
-                {daySessions.map((sess: StudySession) => (
-                  <div key={sess.id} className="py-2.5 flex items-center justify-between">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <span className="font-semibold text-[var(--ink)] truncate">
-                        {sess.subject_name}
+          {/* Linha do Tempo & Diário de Estudos do Período */}
+          <section className="surface p-5 sm:p-6 shadow-xs space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[var(--line)]/60 pb-3.5">
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-xs font-semibold uppercase tracking-wider text-[var(--signal)]">
+                    Linha do Tempo & Diário de Estudos
+                  </h3>
+                  <span className="text-[10px] font-mono-num font-semibold px-2 py-0.5 rounded-full bg-[color-mix(in_srgb,var(--signal)_12%,transparent)] text-[var(--signal)]">
+                    {sessionCounts.total} {sessionCounts.total === 1 ? "sessão" : "sessões"}
+                  </span>
+                </div>
+                <p className="text-xs text-[color-mix(in_srgb,var(--ink)_55%,transparent)] mt-0.5">
+                  Registro cronológico de matérias, horários exatos, ciclos e flashcards
+                </p>
+              </div>
+
+              {/* Filtro por tipo de atividade quando há sessões */}
+              {sessionCounts.total > 0 && (
+                <div className="flex items-center gap-1 overflow-x-auto pb-1 sm:pb-0 text-xs">
+                  <button
+                    type="button"
+                    onClick={() => setSessionFilter("todos")}
+                    className={`px-2.5 py-1 rounded-lg font-medium transition cursor-pointer text-xs shrink-0 ${
+                      sessionFilter === "todos"
+                        ? "bg-[var(--signal)] text-white shadow-2xs font-semibold"
+                        : "bg-[var(--mist)] text-[color-mix(in_srgb,var(--ink)_70%,transparent)] hover:text-[var(--ink)]"
+                    }`}
+                  >
+                    Todos ({sessionCounts.total})
+                  </button>
+                  {sessionCounts.ciclo > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setSessionFilter("ciclo")}
+                      className={`px-2.5 py-1 rounded-lg font-medium transition cursor-pointer text-xs shrink-0 ${
+                        sessionFilter === "ciclo"
+                          ? "bg-[var(--signal)] text-white shadow-2xs font-semibold"
+                          : "bg-[var(--mist)] text-[color-mix(in_srgb,var(--ink)_70%,transparent)] hover:text-[var(--ink)]"
+                      }`}
+                    >
+                      Ciclos ({sessionCounts.ciclo})
+                    </button>
+                  )}
+                  {sessionCounts.flashcards > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setSessionFilter("flashcards")}
+                      className={`px-2.5 py-1 rounded-lg font-medium transition cursor-pointer text-xs shrink-0 ${
+                        sessionFilter === "flashcards"
+                          ? "bg-[var(--signal)] text-white shadow-2xs font-semibold"
+                          : "bg-[var(--mist)] text-[color-mix(in_srgb,var(--ink)_70%,transparent)] hover:text-[var(--ink)]"
+                      }`}
+                    >
+                      Flashcards ({sessionCounts.flashcards})
+                    </button>
+                  )}
+                  {sessionCounts.quiz_livre > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setSessionFilter("quiz_livre")}
+                      className={`px-2.5 py-1 rounded-lg font-medium transition cursor-pointer text-xs shrink-0 ${
+                        sessionFilter === "quiz_livre"
+                          ? "bg-[var(--signal)] text-white shadow-2xs font-semibold"
+                          : "bg-[var(--mist)] text-[color-mix(in_srgb,var(--ink)_70%,transparent)] hover:text-[var(--ink)]"
+                      }`}
+                    >
+                      Quiz / Outros ({sessionCounts.quiz_livre})
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Destaque de Rodadas do Ciclo Concluídas */}
+            {cycleRoundsPeriod > 0 && (
+              <div className="flex items-center justify-between p-3.5 rounded-xl border border-[color-mix(in_srgb,var(--signal)_30%,var(--line))] bg-[color-mix(in_srgb,var(--signal)_6%,var(--surface))] shadow-2xs">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="grid size-9 shrink-0 place-items-center rounded-lg bg-[var(--signal)] text-white shadow-2xs">
+                    <RefreshCw size={17} strokeWidth={2.3} />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-xs font-bold uppercase tracking-wider text-[var(--signal)]">
+                        Rodada do Ciclo Finalizada
                       </span>
-                      <span className="text-[10px] text-[color-mix(in_srgb,var(--ink)_45%,transparent)]">
-                        {new Date(sess.started_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[color-mix(in_srgb,var(--signal)_18%,transparent)] text-[var(--signal)]">
+                        {cycleRoundsPeriod} {cycleRoundsPeriod === 1 ? "volta completa" : "voltas completas"}
                       </span>
                     </div>
-                    <span className="font-mono-num font-semibold text-[var(--signal)] shrink-0">
-                      {sess.duration_minutes} min
-                    </span>
+                    <p className="text-xs text-[color-mix(in_srgb,var(--ink)_70%,transparent)] mt-0.5 truncate">
+                      {range === "dia"
+                        ? "Todas as matérias ativas do ciclo foram concluídas nesta data."
+                        : `O ciclo de estudos completou ${cycleRoundsPeriod} ${cycleRoundsPeriod === 1 ? "volta inteira" : "voltas inteiras"} nesta semana.`}
+                    </p>
                   </div>
-                ))}
+                </div>
               </div>
-            </section>
-          )}
+            )}
+
+            {/* Conteúdo: Visão DIA */}
+            {range === "dia" && (
+              <div className="space-y-2.5">
+                {filteredSessions.length === 0 ? (
+                  <div className="rounded-xl border border-dashed border-[var(--line)] p-6 text-center text-xs text-[color-mix(in_srgb,var(--ink)_50%,transparent)] space-y-1.5">
+                    <History size={24} className="mx-auto opacity-40 mb-2" />
+                    <p className="font-semibold text-[var(--ink)]">Nenhuma sessão registrada nesta data</p>
+                    <p className="max-w-md mx-auto">
+                      As matérias estudadas no ciclo, treinos de flashcards e quizzes concluídos serão listados aqui automaticamente com seus horários e duração.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {filteredSessions.map((sess) => {
+                      const info = getSessionTypeInfo(sess);
+                      const Icon = info.icon;
+                      const timeRange = formatSessionTimeRange(
+                        sess.started_at,
+                        sess.ended_at,
+                        sess.duration_minutes,
+                      );
+                      const cleanName = sess.subject_name.endsWith(" (Flashcards)")
+                        ? sess.subject_name.replace(" (Flashcards)", "")
+                        : sess.subject_name;
+
+                      return (
+                        <div
+                          key={sess.id}
+                          className="flex items-center justify-between gap-3 p-3 rounded-xl border border-[var(--line)] bg-[var(--surface)] hover:bg-[color-mix(in_srgb,var(--surface)_75%,var(--mist))] transition-colors"
+                        >
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className={`grid size-9 shrink-0 place-items-center rounded-lg border ${info.badgeClasses}`}>
+                              <Icon size={16} strokeWidth={2.2} />
+                            </div>
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="font-semibold text-xs sm:text-sm text-[var(--ink)] truncate max-w-[180px] sm:max-w-xs">
+                                  {cleanName}
+                                </span>
+                                <span className={`inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-full border ${info.badgeClasses}`}>
+                                  {info.label}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-1.5 mt-0.5 text-[11px] text-[color-mix(in_srgb,var(--ink)_55%,transparent)]">
+                                <Clock size={12} className="shrink-0 opacity-70" />
+                                <span className="font-mono-num">{timeRange}</span>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="shrink-0 text-right">
+                            <span className="font-mono-num font-semibold text-xs sm:text-sm text-[var(--signal)]">
+                              {sess.duration_minutes} min
+                            </span>
+                            <div className="text-[10px] text-[color-mix(in_srgb,var(--ink)_45%,transparent)] uppercase tracking-wide">
+                              concluído
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Conteúdo: Visão SEMANA */}
+            {range === "semana" && (
+              <div className="space-y-4">
+                {filteredSessions.length === 0 ? (
+                  <div className="rounded-xl border border-dashed border-[var(--line)] p-6 text-center text-xs text-[color-mix(in_srgb,var(--ink)_50%,transparent)] space-y-1.5">
+                    <Calendar size={24} className="mx-auto opacity-40 mb-2" />
+                    <p className="font-semibold text-[var(--ink)]">Nenhuma sessão registrada nesta semana</p>
+                    <p className="max-w-md mx-auto">
+                      Conforme você cumpre o ciclo ou treina seus flashcards ao longo dos dias, cada dia da semana exibirá sua linha do tempo aqui.
+                    </p>
+                  </div>
+                ) : (
+                  weekGroupedSessions.map((dayGroup) => {
+                    const hasActivity = dayGroup.sessions.length > 0 || dayGroup.rounds > 0;
+                    if (!hasActivity) return null;
+
+                    return (
+                      <div
+                        key={dayGroup.key}
+                        className="rounded-xl border border-[var(--line)]/80 bg-[color-mix(in_srgb,var(--surface)_50%,var(--mist))] p-3.5 space-y-2.5"
+                      >
+                        <div className="flex items-center justify-between border-b border-[var(--line)]/60 pb-2">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-xs font-bold text-[var(--ink)] uppercase tracking-wider">
+                              {dayGroup.dayName}
+                            </span>
+                            <span className="text-[11px] text-[color-mix(in_srgb,var(--ink)_50%,transparent)] font-mono-num">
+                              {dayGroup.dateStr}
+                            </span>
+                            {dayGroup.isToday && (
+                              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[var(--signal)] text-white shadow-2xs">
+                                Hoje
+                              </span>
+                            )}
+                            {dayGroup.rounds > 0 && (
+                              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[color-mix(in_srgb,var(--signal)_15%,transparent)] text-[var(--signal)] border border-[color-mix(in_srgb,var(--signal)_25%,transparent)] inline-flex items-center gap-1">
+                                <RefreshCw size={10} strokeWidth={2.3} /> {dayGroup.rounds} {dayGroup.rounds === 1 ? "ciclo concluído" : "ciclos concluídos"}
+                              </span>
+                            )}
+                          </div>
+                          <span className="text-xs font-mono-num font-semibold text-[var(--signal)] shrink-0">
+                            {formatFocusDuration(dayGroup.focusSeconds || dayGroup.totalMinutes * 60)}
+                          </span>
+                        </div>
+
+                        {dayGroup.sessions.length === 0 ? (
+                          <p className="text-[11px] text-[color-mix(in_srgb,var(--ink)_45%,transparent)] italic py-1">
+                            Sem sessões individuais registradas (rodada concluída).
+                          </p>
+                        ) : (
+                          <div className="space-y-1.5">
+                            {dayGroup.sessions.map((sess) => {
+                              const info = getSessionTypeInfo(sess);
+                              const Icon = info.icon;
+                              const timeRange = formatSessionTimeRange(
+                                sess.started_at,
+                                sess.ended_at,
+                                sess.duration_minutes,
+                              );
+                              const cleanName = sess.subject_name.endsWith(" (Flashcards)")
+                                ? sess.subject_name.replace(" (Flashcards)", "")
+                                : sess.subject_name;
+
+                              return (
+                                <div
+                                  key={sess.id}
+                                  className="flex items-center justify-between gap-3 p-2.5 rounded-lg border border-[var(--line)] bg-[var(--surface)] hover:bg-[color-mix(in_srgb,var(--surface)_80%,var(--mist))] transition-colors"
+                                >
+                                  <div className="flex items-center gap-2.5 min-w-0">
+                                    <div className={`grid size-7 shrink-0 place-items-center rounded-md border ${info.badgeClasses}`}>
+                                      <Icon size={13} strokeWidth={2.2} />
+                                    </div>
+                                    <div className="min-w-0">
+                                      <div className="flex items-center gap-1.5 flex-wrap">
+                                        <span className="font-semibold text-xs text-[var(--ink)] truncate max-w-[170px] sm:max-w-xs">
+                                          {cleanName}
+                                        </span>
+                                        <span className={`inline-flex items-center text-[9px] font-semibold px-1.5 py-0.2 rounded-full border ${info.badgeClasses}`}>
+                                          {info.label}
+                                        </span>
+                                      </div>
+                                      <div className="flex items-center gap-1 mt-0.5 text-[10px] text-[color-mix(in_srgb,var(--ink)_50%,transparent)] font-mono-num">
+                                        <Clock size={11} className="shrink-0 opacity-70" />
+                                        <span>{timeRange}</span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <span className="font-mono-num font-semibold text-xs text-[var(--signal)] shrink-0">
+                                    {sess.duration_minutes} min
+                                  </span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            )}
+
+            {/* Conteúdo: Visão MÊS ou ANO */}
+            {(range === "mes" || range === "ano") && (
+              <div className="space-y-3">
+                {filteredSessions.length === 0 ? (
+                  <div className="rounded-xl border border-dashed border-[var(--line)] p-6 text-center text-xs text-[color-mix(in_srgb,var(--ink)_50%,transparent)] space-y-1.5">
+                    <History size={24} className="mx-auto opacity-40 mb-2" />
+                    <p className="font-semibold text-[var(--ink)]">Nenhuma sessão registrada neste período</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <p className="text-[11px] text-[color-mix(in_srgb,var(--ink)_55%,transparent)]">
+                      Exibindo as sessões mais recentes deste período:
+                    </p>
+                    {filteredSessions.slice(0, 30).map((sess) => {
+                      const info = getSessionTypeInfo(sess);
+                      const Icon = info.icon;
+                      const timeRange = formatSessionTimeRange(
+                        sess.started_at,
+                        sess.ended_at,
+                        sess.duration_minutes,
+                      );
+                      const sessDate = getSessionDateKey(sess.started_at);
+                      const formattedDate = sessDate ? sessDate.slice(5).replace("-", "/") : "";
+                      const cleanName = sess.subject_name.endsWith(" (Flashcards)")
+                        ? sess.subject_name.replace(" (Flashcards)", "")
+                        : sess.subject_name;
+
+                      return (
+                        <div
+                          key={sess.id}
+                          className="flex items-center justify-between gap-3 p-2.5 rounded-lg border border-[var(--line)] bg-[var(--surface)] hover:bg-[color-mix(in_srgb,var(--surface)_75%,var(--mist))] transition-colors"
+                        >
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <div className={`grid size-8 shrink-0 place-items-center rounded-lg border ${info.badgeClasses}`}>
+                              <Icon size={14} strokeWidth={2.2} />
+                            </div>
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <span className="font-semibold text-xs text-[var(--ink)] truncate max-w-[170px] sm:max-w-xs">
+                                  {cleanName}
+                                </span>
+                                <span className={`inline-flex items-center text-[10px] font-semibold px-1.5 py-0.2 rounded-full border ${info.badgeClasses}`}>
+                                  {info.label}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-2 mt-0.5 text-[10px] text-[color-mix(in_srgb,var(--ink)_50%,transparent)] font-mono-num">
+                                <span className="font-semibold text-[var(--ink)]/80">{formattedDate}</span>
+                                <span>{timeRange}</span>
+                              </div>
+                            </div>
+                          </div>
+                          <span className="font-mono-num font-semibold text-xs text-[var(--signal)] shrink-0">
+                            {sess.duration_minutes} min
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+          </section>
         </div>
 
         {/* Coluna Lateral de Ações e Avisos */}

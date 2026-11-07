@@ -1004,6 +1004,7 @@ export function resetDailyStatusIfNeeded<T extends Subject>(
 }
 
 const CYCLE_ROUNDS_KEY = "foco_semanal_cycle_rounds_v1";
+const CYCLE_ROUNDS_HISTORY_KEY = "foco_semanal_cycle_rounds_history_v1";
 
 interface CycleRoundsStored {
   date: string;
@@ -1021,6 +1022,39 @@ export function readCycleRoundsToday(): number {
     return Number(parsed.rounds) || 0;
   } catch {
     return 0;
+  }
+}
+
+/** Lê quantas rodadas do ciclo foram concluídas em uma data específica ("YYYY-MM-DD"). */
+export function readCycleRoundsForDate(dateStr: string): number {
+  if (typeof window === "undefined" || !dateStr) return 0;
+  try {
+    const raw = localStorage.getItem(CYCLE_ROUNDS_HISTORY_KEY);
+    if (raw) {
+      const parsed: Record<string, number> = JSON.parse(raw);
+      if (typeof parsed[dateStr] === "number") return parsed[dateStr];
+    }
+  } catch {
+    // fallback
+  }
+  if (dateStr === todayDateStr()) {
+    return readCycleRoundsToday();
+  }
+  return 0;
+}
+
+/** Extrai a chave de data no fuso local ("YYYY-MM-DD") de forma resiliente a fusos e strings ISO. */
+export function getSessionDateKey(startedAt?: string | null): string {
+  if (!startedAt) return "";
+  try {
+    const d = new Date(startedAt);
+    if (isNaN(d.getTime())) return startedAt.slice(0, 10);
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
+  } catch {
+    return startedAt.slice(0, 10);
   }
 }
 
@@ -1100,14 +1134,23 @@ export function incrementCycleRoundsToday(lastCompletedSubjectId?: string): numb
   try {
     const current = readCycleRoundsToday();
     const next = current + 1;
+    const today = todayDateStr();
     localStorage.setItem(
       CYCLE_ROUNDS_KEY,
       JSON.stringify({
-        date: todayDateStr(),
+        date: today,
         rounds: next,
         lastCompletedId: lastCompletedSubjectId ?? null,
       }),
     );
+    try {
+      const rawHist = localStorage.getItem(CYCLE_ROUNDS_HISTORY_KEY);
+      const parsedHist: Record<string, number> = rawHist ? JSON.parse(rawHist) : {};
+      parsedHist[today] = next;
+      localStorage.setItem(CYCLE_ROUNDS_HISTORY_KEY, JSON.stringify(parsedHist));
+    } catch {
+      // no-op
+    }
     return next;
   } catch {
     return 1;
