@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 import { ArrowRight, Check, Clock, Layers, Sparkles, X, Zap } from "lucide-react";
 import { DialogFrame } from "@/components/DialogFrame";
 import { useApp } from "@/components/AppProvider";
@@ -29,18 +29,23 @@ export function IntensiveSessionModal({ open, onClose }: IntensiveSessionModalPr
   const [selectedSubjectIds, setSelectedSubjectIds] = useState<string[]>([]);
   const [durationType, setDurationType] = useState<"default" | "custom">("default");
   const [customMinutes, setCustomMinutes] = useState<number>(30);
+  const wasOpenRef = useRef(false);
 
-  // Inicializa com a próxima matéria do ciclo quando o modal abre
+  // Inicializa com a próxima matéria do ciclo apenas quando o modal abre (evita reset ao marcar múltiplas)
   useEffect(() => {
-    if (!open) return;
-    const day = todayIndex();
-    const nextId = nextCycleSubjectId(data.subjects ?? [], day);
-    if (nextId && activeSubjects.some((s) => s.id === nextId)) {
-      setSelectedSubjectIds([nextId]);
-    } else if (activeSubjects.length > 0 && selectedSubjectIds.length === 0) {
-      setSelectedSubjectIds([activeSubjects[0].id]);
+    if (open && !wasOpenRef.current) {
+      const day = todayIndex();
+      const nextId = nextCycleSubjectId(data.subjects ?? [], day);
+      if (nextId && activeSubjects.some((s) => s.id === nextId)) {
+        setSelectedSubjectIds([nextId]);
+      } else if (activeSubjects.length > 0) {
+        setSelectedSubjectIds([activeSubjects[0].id]);
+      } else {
+        setSelectedSubjectIds([]);
+      }
     }
-  }, [open, data.subjects, activeSubjects, selectedSubjectIds.length]);
+    wasOpenRef.current = open;
+  }, [open, data.subjects, activeSubjects]);
 
   const toggleSubject = (id: string) => {
     setSelectedSubjectIds((prev) => {
@@ -174,7 +179,7 @@ export function IntensiveSessionModal({ open, onClose }: IntensiveSessionModalPr
           </label>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-            {/* Duração Padrão dos Ajustes */}
+            {/* Duração Padrão */}
             <button
               type="button"
               onClick={() => setDurationType("default")}
@@ -186,19 +191,16 @@ export function IntensiveSessionModal({ open, onClose }: IntensiveSessionModalPr
             >
               <div className="flex items-center justify-between w-full">
                 <span className="text-xs font-semibold text-[var(--ink)]">
-                  Padrão dos Ajustes
+                  Tempo Padrão
                 </span>
                 <span className="rounded-full bg-emerald-500/12 px-1.5 py-0.5 text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
                   Recomendado
                 </span>
               </div>
-              <div className="flex items-center gap-1.5 text-base font-bold text-[var(--signal)]">
-                <Clock size={15} />
+              <div className="flex items-center gap-1.5 text-base font-bold text-[var(--signal)] mt-0.5">
+                <Clock size={16} />
                 <span>{flow.settings.targetMinutes} min</span>
               </div>
-              <span className="text-[11px] text-[color-mix(in_srgb,var(--ink)_55%,transparent)]">
-                Tempo configurado em Ajustes
-              </span>
             </button>
 
             {/* Duração Personalizada */}
@@ -213,19 +215,16 @@ export function IntensiveSessionModal({ open, onClose }: IntensiveSessionModalPr
             >
               <div className="flex items-center justify-between w-full">
                 <span className="text-xs font-semibold text-[var(--ink)]">
-                  Personalizar tempo
+                  Personalizado
                 </span>
                 <span className="text-[10px] font-medium text-[color-mix(in_srgb,var(--ink)_50%,transparent)]">
                   1 a 180 min
                 </span>
               </div>
-              <div className="flex items-center gap-1.5 text-base font-bold text-amber-600 dark:text-amber-400">
-                <Clock size={15} />
+              <div className="flex items-center gap-1.5 text-base font-bold text-amber-600 dark:text-amber-400 mt-0.5">
+                <Clock size={16} />
                 <span>{customMinutes || 30} min</span>
               </div>
-              <span className="text-[11px] text-[color-mix(in_srgb,var(--ink)_55%,transparent)]">
-                Defina o tempo desejado
-              </span>
             </button>
           </div>
 
@@ -284,7 +283,7 @@ export function IntensiveSessionModal({ open, onClose }: IntensiveSessionModalPr
         <div className="flex items-start gap-2.5 rounded-[var(--radius-tag)] border border-blue-500/20 bg-blue-500/8 dark:bg-blue-950/30 p-3 text-xs text-blue-900 dark:text-blue-200">
           <Sparkles size={15} className="shrink-0 text-blue-600 dark:text-blue-400 mt-0.5" />
           <p className="leading-relaxed">
-            Ao encerrar o Modo Intensivo, a(s) matéria(s) estudada(s) ficarão registradas como concluídas no ciclo de hoje, e o ciclo avançará para a matéria seguinte para não repetir o conteúdo recém-estudado.
+            Ao encerrar o Modo Intensivo, a(s) matéria(s) estudada(s) avançam no ciclo de hoje, evitando repetições imediatas.
           </p>
         </div>
 
