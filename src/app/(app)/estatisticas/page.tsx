@@ -202,6 +202,250 @@ function getSessionTypeInfo(sess: StudySession) {
   };
 }
 
+type SessionClusterItem = {
+  id: string;
+  subjectName: string;
+  durationMinutes: number;
+  timeRange: string;
+  type: string;
+};
+
+type SessionCluster = {
+  id: string;
+  type: "ciclo" | "flashcards" | "quiz" | "livre";
+  typeLabel: string;
+  badgeClasses: string;
+  icon: typeof RefreshCw;
+  startedAt: string;
+  endedAt: string | null;
+  timeRange: string;
+  totalMinutes: number;
+  isSingle: boolean;
+  subjectName: string;
+  items: SessionClusterItem[];
+  dateStr?: string;
+};
+
+function clusterSessions(sessions: StudySession[]): SessionCluster[] {
+  if (!sessions || sessions.length === 0) return [];
+
+  // 1. Agrupa por data para garantir que nunca misturamos dias distintos
+  const byDate: Record<string, StudySession[]> = {};
+  for (const s of sessions) {
+    const k = getSessionDateKey(s.started_at);
+    if (!byDate[k]) byDate[k] = [];
+    byDate[k].push(s);
+  }
+
+  // 2. Ordena as datas mais recentes primeiro
+  const dateKeysDesc = Object.keys(byDate).sort((a, b) => b.localeCompare(a));
+  const allClusters: SessionCluster[] = [];
+
+  for (const k of dateKeysDesc) {
+    const daySessions = byDate[k];
+    // Ordena o dia cronologicamente para identificar matérias estudadas em sequência
+    const sorted = [...daySessions].sort(
+      (a, b) => new Date(a.started_at).getTime() - new Date(b.started_at).getTime(),
+    );
+
+    const rawClusters: StudySession[][] = [];
+    let currentGroup: StudySession[] = [];
+
+    for (const sess of sorted) {
+      if (currentGroup.length === 0) {
+        currentGroup.push(sess);
+        continue;
+      }
+
+      const prevSess = currentGroup[currentGroup.length - 1];
+      const prevInfo = getSessionTypeInfo(prevSess);
+      const currInfo = getSessionTypeInfo(sess);
+
+      // Ambas do ciclo ou do mesmo tipo estruturado
+      const canGroupTypes =
+        (prevInfo.type === "ciclo" && currInfo.type === "ciclo") ||
+        (prevInfo.type === currInfo.type && prevInfo.type !== "livre");
+
+      const prevStartMs = new Date(prevSess.started_at).getTime();
+      const prevEndMs = prevSess.ended_at
+        ? new Date(prevSess.ended_at).getTime()
+        : prevStartMs + (prevSess.duration_minutes || 0) * 60000;
+      const currStartMs = new Date(sess.started_at).getTime();
+      const gapMinutes = (currStartMs - prevEndMs) / 60000;
+
+      // Se o intervalo entre as matérias for de até 12 min (pausa entre matérias do bloco), agrupa
+      if (canGroupTypes && gapMinutes >= -5 && gapMinutes <= 12) {
+        currentGroup.push(sess);
+      } else {
+        rawClusters.push(currentGroup);
+        currentGroup = [sess];
+      }
+    }
+
+    if (currentGroup.length > 0) {
+      rawClusters.push(currentGroup);
+    }
+
+    const dayClusters: SessionCluster[] = rawClusters.map((group, idx) => {
+      const first = group[0];
+      const last = group[group.length - 1];
+      const totalMinutes = group.reduce((acc, s) => acc + (s.duration_minutes || 0), 0);
+      const isSingle = group.length === 1;
+
+      const firstInfo = getSessionTypeInfo(first);
+      const cleanFirstName = first.subject_name.endsWith(" (Flashcards)")
+        ? first.subject_name.replace(" (Flashcards)", "")
+        : first.subject_name;
+
+      const items: SessionClusterItem[] = group.map((s) => ({
+        id: s.id,
+        subjectName: s.subject_name.endsWith(" (Flashcards)")
+          ? s.subject_name.replace(" (Flashcards)", "")
+          : s.subject_name,
+        durationMinutes: s.duration_minutes,
+        timeRange: formatSessionTimeRange(s.started_at, s.ended_at, s.duration_minutes),
+        type: getSessionTypeInfo(s).label,
+      }));
+
+      const timeRange = formatSessionTimeRange(
+        first.started_at,
+        last.ended_at,
+        totalMinutes,
+      );
+
+      return {
+        id: `cluster_${first.id}_${idx}`,
+        type: firstInfo.type,
+        typeLabel: isSingle
+          ? firstInfo.label
+          : firstInfo.type === "ciclo"
+          ? "Sessão de Ciclo"
+          : `${firstInfo.label} (${group.length})`,
+        badgeClasses: firstInfo.badgeClasses,
+        icon: firstInfo.icon,
+        startedAt: first.started_at,
+        endedAt: last.ended_at,
+        timeRange,
+        totalMinutes,
+        isSingle,
+        subjectName: cleanFirstName,
+        items,
+        dateStr: k ? k.slice(5).replace("-", "/") : undefined,
+      };
+    });
+
+    // Dentro do dia, mais recente primeiro
+    allClusters.push(...dayClusters.reverse());
+  }
+
+  return allClusters;
+}
+
+function SessionClusterCard({
+  cluster,
+  showDate = false,
+}: {
+  cluster: SessionCluster;
+  showDate?: boolean;
+}) {
+  const Icon = cluster.icon;
+
+  if (cluster.isSingle) {
+    return (
+      <div className="flex items-center justify-between gap-3 p-3 rounded-xl border border-[var(--line)] bg-[var(--surface)] hover:bg-[color-mix(in_srgb,var(--surface)_75%,var(--mist))] transition-colors">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className={`grid size-9 shrink-0 place-items-center rounded-lg border ${cluster.badgeClasses}`}>
+            <Icon size={16} strokeWidth={2.2} />
+          </div>
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="font-semibold text-xs sm:text-sm text-[var(--ink)] truncate max-w-[200px] sm:max-w-xs">
+                {cluster.subjectName}
+              </span>
+              <span className={`inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-full border ${cluster.badgeClasses}`}>
+                {cluster.typeLabel}
+              </span>
+            </div>
+            <div className="flex items-center gap-1.5 mt-0.5 text-[11px] text-[color-mix(in_srgb,var(--ink)_55%,transparent)] font-mono-num">
+              <Clock size={12} className="shrink-0 opacity-70" />
+              <span>
+                {showDate && cluster.dateStr ? `${cluster.dateStr} • ` : ""}
+                {cluster.timeRange}
+              </span>
+            </div>
+          </div>
+        </div>
+        <div className="shrink-0 text-right">
+          <span className="font-mono-num font-semibold text-xs sm:text-sm text-[var(--signal)]">
+            {cluster.totalMinutes} min
+          </span>
+          <div className="text-[10px] text-[color-mix(in_srgb,var(--ink)_45%,transparent)] uppercase tracking-wide">
+            concluído
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-3 sm:p-3.5 rounded-xl border border-[var(--line)] bg-[var(--surface)] hover:border-[color-mix(in_srgb,var(--signal)_35%,var(--line))] transition-all space-y-2.5">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className={`grid size-9 shrink-0 place-items-center rounded-lg border ${cluster.badgeClasses}`}>
+            <Icon size={16} strokeWidth={2.2} />
+          </div>
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="font-semibold text-xs sm:text-sm text-[var(--ink)]">
+                {cluster.typeLabel}
+              </span>
+              <span className="inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[var(--signal-soft)] text-[var(--signal)]">
+                {cluster.items.length} matérias no bloco
+              </span>
+            </div>
+            <div className="flex items-center gap-1.5 mt-0.5 text-[11px] text-[color-mix(in_srgb,var(--ink)_55%,transparent)] font-mono-num">
+              <Clock size={12} className="shrink-0 opacity-70" />
+              <span>
+                {showDate && cluster.dateStr ? `${cluster.dateStr} • ` : ""}
+                {cluster.timeRange}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div className="shrink-0 text-right">
+          <span className="font-mono-num font-semibold text-xs sm:text-sm text-[var(--signal)]">
+            {cluster.totalMinutes} min
+          </span>
+          <div className="text-[10px] text-[color-mix(in_srgb,var(--ink)_45%,transparent)] uppercase tracking-wide">
+            bloco completo
+          </div>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-1.5 flex-wrap pt-2 border-t border-[var(--line)]/50 text-xs">
+        <span className="text-[10px] uppercase font-bold tracking-wider text-[color-mix(in_srgb,var(--ink)_50%,transparent)]">
+          Matérias:
+        </span>
+        {cluster.items.map((it, idx) => (
+          <span
+            key={it.id}
+            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[var(--mist)] border border-[var(--line)]/60 text-xs text-[var(--ink)]"
+          >
+            <span className="font-medium">{it.subjectName}</span>
+            <span className="font-mono-num font-semibold text-[11px] text-[var(--signal)]">
+              {it.durationMinutes}m
+            </span>
+            {idx < cluster.items.length - 1 && (
+              <span className="text-[color-mix(in_srgb,var(--ink)_40%,transparent)] ml-0.5">+</span>
+            )}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function EstatisticasPage() {
   return (
     <RevisaoProvider>
@@ -236,6 +480,7 @@ function EstatisticasContent() {
   const [addHint, setAddHint] = useState<string | null>(null);
   const [metricaView, setMetricaView] = useState<"foco" | "diagnostico">("foco");
   const [sessionFilter, setSessionFilter] = useState<"todos" | "ciclo" | "flashcards" | "quiz_livre">("todos");
+  const [openDays, setOpenDays] = useState<Record<string, boolean>>({});
 
   // Estatísticas de Flashcards e Domínio
   const flashcardDominioCount = useMemo(() => {
@@ -625,7 +870,7 @@ function EstatisticasContent() {
     });
   }, [periodSessions, sessionFilter]);
 
-  // Agrupamento para a visão Semanal (Segunda a Domingo com subtotais e sessões)
+  // Agrupamento para a visão Semanal (Segunda a Domingo com subtotais, sessões e clusters)
   const weekGroupedSessions = useMemo(() => {
     if (range !== "semana") return [];
     return week.map((dayItem, index) => {
@@ -638,6 +883,7 @@ function EstatisticasContent() {
       const daySessionsList = filteredSessions.filter(
         (s) => getSessionDateKey(s.started_at) === dayKey,
       );
+      const dayClusters = clusterSessions(daySessionsList);
       const dayRounds = readCycleRoundsForDate(dayKey);
       const totalDayMinutes = daySessionsList.reduce((acc, s) => acc + (s.duration_minutes || 0), 0);
       const isToday = dayKey === dateKey();
@@ -648,6 +894,7 @@ function EstatisticasContent() {
         dateStr: shortFormattedDate,
         date: dayItem.date,
         sessions: daySessionsList,
+        clusters: dayClusters,
         rounds: dayRounds,
         totalMinutes: totalDayMinutes,
         focusSeconds: dayItem.seconds,
@@ -655,6 +902,59 @@ function EstatisticasContent() {
       };
     });
   }, [range, week, filteredSessions]);
+
+  // Clusters para visão de Dia único e períodos longos (Mês/Ano)
+  const dayClusters = useMemo(
+    () => clusterSessions(filteredSessions),
+    [filteredSessions],
+  );
+
+  const periodClusters = useMemo(
+    () => clusterSessions(filteredSessions),
+    [filteredSessions],
+  );
+
+  // Controle inteligente de dias abertos/fechados na Semana
+  const defaultOpenKey = useMemo(() => {
+    const todayKey = dateKey();
+    const hasToday = weekGroupedSessions.some(
+      (d) => d.key === todayKey && d.sessions.length > 0,
+    );
+    if (hasToday) return todayKey;
+    const activeDays = weekGroupedSessions.filter((d) => d.sessions.length > 0);
+    if (activeDays.length > 0) {
+      return activeDays[activeDays.length - 1].key;
+    }
+    return null;
+  }, [weekGroupedSessions]);
+
+  const isDayOpen = (key: string) => {
+    return openDays[key] ?? (key === defaultOpenKey);
+  };
+
+  const toggleDay = (key: string) => {
+    setOpenDays((prev) => ({
+      ...prev,
+      [key]: !isDayOpen(key),
+    }));
+  };
+
+  const areAllOpen = useMemo(() => {
+    const activeDays = weekGroupedSessions.filter(
+      (d) => d.sessions.length > 0 || d.rounds > 0,
+    );
+    if (activeDays.length === 0) return false;
+    return activeDays.every((d) => isDayOpen(d.key));
+  }, [weekGroupedSessions, openDays, defaultOpenKey]);
+
+  const toggleAllDays = () => {
+    const nextState = !areAllOpen;
+    const next: Record<string, boolean> = {};
+    weekGroupedSessions.forEach((d) => {
+      next[d.key] = nextState;
+    });
+    setOpenDays(next);
+  };
 
   async function downloadReport() {
     setDownloadingReport(true);
@@ -1563,61 +1863,73 @@ function EstatisticasContent() {
                 </p>
               </div>
 
-              {/* Filtro por tipo de atividade quando há sessões */}
-              {sessionCounts.total > 0 && (
-                <div className="flex items-center gap-1 overflow-x-auto pb-1 sm:pb-0 text-xs">
+              {/* Filtro por tipo de atividade e controles quando há sessões */}
+              <div className="flex items-center gap-2 flex-wrap">
+                {range === "semana" && filteredSessions.length > 0 && (
                   <button
                     type="button"
-                    onClick={() => setSessionFilter("todos")}
-                    className={`px-2.5 py-1 rounded-lg font-medium transition cursor-pointer text-xs shrink-0 ${
-                      sessionFilter === "todos"
-                        ? "bg-[var(--signal)] text-white shadow-2xs font-semibold"
-                        : "bg-[var(--mist)] text-[color-mix(in_srgb,var(--ink)_70%,transparent)] hover:text-[var(--ink)]"
-                    }`}
+                    onClick={toggleAllDays}
+                    className="text-xs text-[var(--signal)] hover:underline font-semibold cursor-pointer px-2 py-1 rounded-lg hover:bg-[var(--mist)] transition"
                   >
-                    Todos ({sessionCounts.total})
+                    {areAllOpen ? "Recolher dias ▴" : "Expandir dias ▾"}
                   </button>
-                  {sessionCounts.ciclo > 0 && (
+                )}
+
+                {sessionCounts.total > 0 && (
+                  <div className="flex items-center gap-1 overflow-x-auto pb-1 sm:pb-0 text-xs">
                     <button
                       type="button"
-                      onClick={() => setSessionFilter("ciclo")}
+                      onClick={() => setSessionFilter("todos")}
                       className={`px-2.5 py-1 rounded-lg font-medium transition cursor-pointer text-xs shrink-0 ${
-                        sessionFilter === "ciclo"
+                        sessionFilter === "todos"
                           ? "bg-[var(--signal)] text-white shadow-2xs font-semibold"
                           : "bg-[var(--mist)] text-[color-mix(in_srgb,var(--ink)_70%,transparent)] hover:text-[var(--ink)]"
                       }`}
                     >
-                      Ciclos ({sessionCounts.ciclo})
+                      Todos ({sessionCounts.total})
                     </button>
-                  )}
-                  {sessionCounts.flashcards > 0 && (
-                    <button
-                      type="button"
-                      onClick={() => setSessionFilter("flashcards")}
-                      className={`px-2.5 py-1 rounded-lg font-medium transition cursor-pointer text-xs shrink-0 ${
-                        sessionFilter === "flashcards"
-                          ? "bg-[var(--signal)] text-white shadow-2xs font-semibold"
-                          : "bg-[var(--mist)] text-[color-mix(in_srgb,var(--ink)_70%,transparent)] hover:text-[var(--ink)]"
-                      }`}
-                    >
-                      Flashcards ({sessionCounts.flashcards})
-                    </button>
-                  )}
-                  {sessionCounts.quiz_livre > 0 && (
-                    <button
-                      type="button"
-                      onClick={() => setSessionFilter("quiz_livre")}
-                      className={`px-2.5 py-1 rounded-lg font-medium transition cursor-pointer text-xs shrink-0 ${
-                        sessionFilter === "quiz_livre"
-                          ? "bg-[var(--signal)] text-white shadow-2xs font-semibold"
-                          : "bg-[var(--mist)] text-[color-mix(in_srgb,var(--ink)_70%,transparent)] hover:text-[var(--ink)]"
-                      }`}
-                    >
-                      Quiz / Outros ({sessionCounts.quiz_livre})
-                    </button>
-                  )}
-                </div>
-              )}
+                    {sessionCounts.ciclo > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => setSessionFilter("ciclo")}
+                        className={`px-2.5 py-1 rounded-lg font-medium transition cursor-pointer text-xs shrink-0 ${
+                          sessionFilter === "ciclo"
+                            ? "bg-[var(--signal)] text-white shadow-2xs font-semibold"
+                            : "bg-[var(--mist)] text-[color-mix(in_srgb,var(--ink)_70%,transparent)] hover:text-[var(--ink)]"
+                        }`}
+                      >
+                        Ciclos ({sessionCounts.ciclo})
+                      </button>
+                    )}
+                    {sessionCounts.flashcards > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => setSessionFilter("flashcards")}
+                        className={`px-2.5 py-1 rounded-lg font-medium transition cursor-pointer text-xs shrink-0 ${
+                          sessionFilter === "flashcards"
+                            ? "bg-[var(--signal)] text-white shadow-2xs font-semibold"
+                            : "bg-[var(--mist)] text-[color-mix(in_srgb,var(--ink)_70%,transparent)] hover:text-[var(--ink)]"
+                        }`}
+                      >
+                        Flashcards ({sessionCounts.flashcards})
+                      </button>
+                    )}
+                    {sessionCounts.quiz_livre > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => setSessionFilter("quiz_livre")}
+                        className={`px-2.5 py-1 rounded-lg font-medium transition cursor-pointer text-xs shrink-0 ${
+                          sessionFilter === "quiz_livre"
+                            ? "bg-[var(--signal)] text-white shadow-2xs font-semibold"
+                            : "bg-[var(--mist)] text-[color-mix(in_srgb,var(--ink)_70%,transparent)] hover:text-[var(--ink)]"
+                        }`}
+                      >
+                        Quiz / Outros ({sessionCounts.quiz_livre})
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Destaque de Rodadas do Ciclo Concluídas */}
@@ -1649,71 +1961,27 @@ function EstatisticasContent() {
             {/* Conteúdo: Visão DIA */}
             {range === "dia" && (
               <div className="space-y-2.5">
-                {filteredSessions.length === 0 ? (
+                {dayClusters.length === 0 ? (
                   <div className="rounded-xl border border-dashed border-[var(--line)] p-6 text-center text-xs text-[color-mix(in_srgb,var(--ink)_50%,transparent)] space-y-1.5">
                     <History size={24} className="mx-auto opacity-40 mb-2" />
                     <p className="font-semibold text-[var(--ink)]">Nenhuma sessão registrada nesta data</p>
                     <p className="max-w-md mx-auto">
-                      As matérias estudadas no ciclo, treinos de flashcards e quizzes concluídos serão listados aqui automaticamente com seus horários e duração.
+                      As matérias estudadas no ciclo, treinos de flashcards e quizzes concluídos serão listados aqui agrupados em blocos contínuos.
                     </p>
                   </div>
                 ) : (
                   <div className="space-y-2">
-                    {filteredSessions.map((sess) => {
-                      const info = getSessionTypeInfo(sess);
-                      const Icon = info.icon;
-                      const timeRange = formatSessionTimeRange(
-                        sess.started_at,
-                        sess.ended_at,
-                        sess.duration_minutes,
-                      );
-                      const cleanName = sess.subject_name.endsWith(" (Flashcards)")
-                        ? sess.subject_name.replace(" (Flashcards)", "")
-                        : sess.subject_name;
-
-                      return (
-                        <div
-                          key={sess.id}
-                          className="flex items-center justify-between gap-3 p-3 rounded-xl border border-[var(--line)] bg-[var(--surface)] hover:bg-[color-mix(in_srgb,var(--surface)_75%,var(--mist))] transition-colors"
-                        >
-                          <div className="flex items-center gap-3 min-w-0">
-                            <div className={`grid size-9 shrink-0 place-items-center rounded-lg border ${info.badgeClasses}`}>
-                              <Icon size={16} strokeWidth={2.2} />
-                            </div>
-                            <div className="min-w-0">
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <span className="font-semibold text-xs sm:text-sm text-[var(--ink)] truncate max-w-[180px] sm:max-w-xs">
-                                  {cleanName}
-                                </span>
-                                <span className={`inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-full border ${info.badgeClasses}`}>
-                                  {info.label}
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-1.5 mt-0.5 text-[11px] text-[color-mix(in_srgb,var(--ink)_55%,transparent)]">
-                                <Clock size={12} className="shrink-0 opacity-70" />
-                                <span className="font-mono-num">{timeRange}</span>
-                              </div>
-                            </div>
-                          </div>
-                          <div className="shrink-0 text-right">
-                            <span className="font-mono-num font-semibold text-xs sm:text-sm text-[var(--signal)]">
-                              {sess.duration_minutes} min
-                            </span>
-                            <div className="text-[10px] text-[color-mix(in_srgb,var(--ink)_45%,transparent)] uppercase tracking-wide">
-                              concluído
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
+                    {dayClusters.map((cluster) => (
+                      <SessionClusterCard key={cluster.id} cluster={cluster} />
+                    ))}
                   </div>
                 )}
               </div>
             )}
 
-            {/* Conteúdo: Visão SEMANA */}
+            {/* Conteúdo: Visão SEMANA com Sanfona Inteligente e Agrupamento em Blocos */}
             {range === "semana" && (
-              <div className="space-y-4">
+              <div className="space-y-3">
                 {filteredSessions.length === 0 ? (
                   <div className="rounded-xl border border-dashed border-[var(--line)] p-6 text-center text-xs text-[color-mix(in_srgb,var(--ink)_50%,transparent)] space-y-1.5">
                     <Calendar size={24} className="mx-auto opacity-40 mb-2" />
@@ -1726,14 +1994,23 @@ function EstatisticasContent() {
                   weekGroupedSessions.map((dayGroup) => {
                     const hasActivity = dayGroup.sessions.length > 0 || dayGroup.rounds > 0;
                     if (!hasActivity) return null;
+                    const open = isDayOpen(dayGroup.key);
 
                     return (
                       <div
                         key={dayGroup.key}
-                        className="rounded-xl border border-[var(--line)]/80 bg-[color-mix(in_srgb,var(--surface)_50%,var(--mist))] p-3.5 space-y-2.5"
+                        className="rounded-xl border border-[var(--line)]/80 bg-[var(--surface)] overflow-hidden shadow-2xs transition-all"
                       >
-                        <div className="flex items-center justify-between border-b border-[var(--line)]/60 pb-2">
-                          <div className="flex items-center gap-2 flex-wrap">
+                        {/* Cabeçalho Colapsável com Seta */}
+                        <button
+                          type="button"
+                          onClick={() => toggleDay(dayGroup.key)}
+                          className="w-full flex items-center justify-between p-3.5 hover:bg-[var(--mist)]/70 transition-colors cursor-pointer text-left select-none"
+                        >
+                          <div className="flex items-center gap-2.5 flex-wrap min-w-0">
+                            <span className="text-[color-mix(in_srgb,var(--ink)_50%,transparent)] shrink-0">
+                              {open ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                            </span>
                             <span className="text-xs font-bold text-[var(--ink)] uppercase tracking-wider">
                               {dayGroup.dayName}
                             </span>
@@ -1751,59 +2028,34 @@ function EstatisticasContent() {
                               </span>
                             )}
                           </div>
-                          <span className="text-xs font-mono-num font-semibold text-[var(--signal)] shrink-0">
-                            {formatFocusDuration(dayGroup.focusSeconds || dayGroup.totalMinutes * 60)}
-                          </span>
-                        </div>
 
-                        {dayGroup.sessions.length === 0 ? (
-                          <p className="text-[11px] text-[color-mix(in_srgb,var(--ink)_45%,transparent)] italic py-1">
-                            Sem sessões individuais registradas (rodada concluída).
-                          </p>
-                        ) : (
-                          <div className="space-y-1.5">
-                            {dayGroup.sessions.map((sess) => {
-                              const info = getSessionTypeInfo(sess);
-                              const Icon = info.icon;
-                              const timeRange = formatSessionTimeRange(
-                                sess.started_at,
-                                sess.ended_at,
-                                sess.duration_minutes,
-                              );
-                              const cleanName = sess.subject_name.endsWith(" (Flashcards)")
-                                ? sess.subject_name.replace(" (Flashcards)", "")
-                                : sess.subject_name;
+                          <div className="flex items-center gap-3 shrink-0">
+                            <span className="text-[11px] text-[color-mix(in_srgb,var(--ink)_55%,transparent)] hidden sm:inline">
+                              {dayGroup.clusters.length} {dayGroup.clusters.length === 1 ? "bloco" : "blocos"}
+                              {dayGroup.sessions.length > dayGroup.clusters.length && (
+                                <span className="text-[10px] opacity-75"> ({dayGroup.sessions.length} matérias)</span>
+                              )}
+                            </span>
+                            <span className="text-xs font-mono-num font-semibold text-[var(--signal)]">
+                              {formatFocusDuration(dayGroup.focusSeconds || dayGroup.totalMinutes * 60)}
+                            </span>
+                          </div>
+                        </button>
 
-                              return (
-                                <div
-                                  key={sess.id}
-                                  className="flex items-center justify-between gap-3 p-2.5 rounded-lg border border-[var(--line)] bg-[var(--surface)] hover:bg-[color-mix(in_srgb,var(--surface)_80%,var(--mist))] transition-colors"
-                                >
-                                  <div className="flex items-center gap-2.5 min-w-0">
-                                    <div className={`grid size-7 shrink-0 place-items-center rounded-md border ${info.badgeClasses}`}>
-                                      <Icon size={13} strokeWidth={2.2} />
-                                    </div>
-                                    <div className="min-w-0">
-                                      <div className="flex items-center gap-1.5 flex-wrap">
-                                        <span className="font-semibold text-xs text-[var(--ink)] truncate max-w-[170px] sm:max-w-xs">
-                                          {cleanName}
-                                        </span>
-                                        <span className={`inline-flex items-center text-[9px] font-semibold px-1.5 py-0.2 rounded-full border ${info.badgeClasses}`}>
-                                          {info.label}
-                                        </span>
-                                      </div>
-                                      <div className="flex items-center gap-1 mt-0.5 text-[10px] text-[color-mix(in_srgb,var(--ink)_50%,transparent)] font-mono-num">
-                                        <Clock size={11} className="shrink-0 opacity-70" />
-                                        <span>{timeRange}</span>
-                                      </div>
-                                    </div>
-                                  </div>
-                                  <span className="font-mono-num font-semibold text-xs text-[var(--signal)] shrink-0">
-                                    {sess.duration_minutes} min
-                                  </span>
-                                </div>
-                              );
-                            })}
+                        {/* Conteúdo do Dia quando expandido */}
+                        {open && (
+                          <div className="p-3.5 pt-0 border-t border-[var(--line)]/50 bg-[color-mix(in_srgb,var(--surface)_50%,var(--mist))]">
+                            {dayGroup.clusters.length === 0 ? (
+                              <p className="text-[11px] text-[color-mix(in_srgb,var(--ink)_45%,transparent)] italic py-2">
+                                Sem sessões individuais registradas (rodada concluída).
+                              </p>
+                            ) : (
+                              <div className="space-y-2 pt-2.5">
+                                {dayGroup.clusters.map((cluster) => (
+                                  <SessionClusterCard key={cluster.id} cluster={cluster} />
+                                ))}
+                              </div>
+                            )}
                           </div>
                         )}
                       </div>
@@ -1813,10 +2065,10 @@ function EstatisticasContent() {
               </div>
             )}
 
-            {/* Conteúdo: Visão MÊS ou ANO */}
+            {/* Conteúdo: Visão MÊS ou ANO com Sessões Agrupadas */}
             {(range === "mes" || range === "ano") && (
               <div className="space-y-3">
-                {filteredSessions.length === 0 ? (
+                {periodClusters.length === 0 ? (
                   <div className="rounded-xl border border-dashed border-[var(--line)] p-6 text-center text-xs text-[color-mix(in_srgb,var(--ink)_50%,transparent)] space-y-1.5">
                     <History size={24} className="mx-auto opacity-40 mb-2" />
                     <p className="font-semibold text-[var(--ink)]">Nenhuma sessão registrada neste período</p>
@@ -1824,52 +2076,11 @@ function EstatisticasContent() {
                 ) : (
                   <div className="space-y-2">
                     <p className="text-[11px] text-[color-mix(in_srgb,var(--ink)_55%,transparent)]">
-                      Exibindo as sessões mais recentes deste período:
+                      Exibindo os blocos de estudo mais recentes deste período:
                     </p>
-                    {filteredSessions.slice(0, 30).map((sess) => {
-                      const info = getSessionTypeInfo(sess);
-                      const Icon = info.icon;
-                      const timeRange = formatSessionTimeRange(
-                        sess.started_at,
-                        sess.ended_at,
-                        sess.duration_minutes,
-                      );
-                      const sessDate = getSessionDateKey(sess.started_at);
-                      const formattedDate = sessDate ? sessDate.slice(5).replace("-", "/") : "";
-                      const cleanName = sess.subject_name.endsWith(" (Flashcards)")
-                        ? sess.subject_name.replace(" (Flashcards)", "")
-                        : sess.subject_name;
-
-                      return (
-                        <div
-                          key={sess.id}
-                          className="flex items-center justify-between gap-3 p-2.5 rounded-lg border border-[var(--line)] bg-[var(--surface)] hover:bg-[color-mix(in_srgb,var(--surface)_75%,var(--mist))] transition-colors"
-                        >
-                          <div className="flex items-center gap-2.5 min-w-0">
-                            <div className={`grid size-8 shrink-0 place-items-center rounded-lg border ${info.badgeClasses}`}>
-                              <Icon size={14} strokeWidth={2.2} />
-                            </div>
-                            <div className="min-w-0">
-                              <div className="flex items-center gap-1.5 flex-wrap">
-                                <span className="font-semibold text-xs text-[var(--ink)] truncate max-w-[170px] sm:max-w-xs">
-                                  {cleanName}
-                                </span>
-                                <span className={`inline-flex items-center text-[10px] font-semibold px-1.5 py-0.2 rounded-full border ${info.badgeClasses}`}>
-                                  {info.label}
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-2 mt-0.5 text-[10px] text-[color-mix(in_srgb,var(--ink)_50%,transparent)] font-mono-num">
-                                <span className="font-semibold text-[var(--ink)]/80">{formattedDate}</span>
-                                <span>{timeRange}</span>
-                              </div>
-                            </div>
-                          </div>
-                          <span className="font-mono-num font-semibold text-xs text-[var(--signal)] shrink-0">
-                            {sess.duration_minutes} min
-                          </span>
-                        </div>
-                      );
-                    })}
+                    {periodClusters.slice(0, 30).map((cluster) => (
+                      <SessionClusterCard key={cluster.id} cluster={cluster} showDate={true} />
+                    ))}
                   </div>
                 )}
               </div>
