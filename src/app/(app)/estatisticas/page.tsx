@@ -22,8 +22,10 @@ import {
   X,
 } from "lucide-react";
 import { useApp } from "@/components/AppProvider";
-import { RevisaoProvider } from "@/components/revisao/RevisaoProvider";
+import { RevisaoProvider, useRevisao } from "@/components/revisao/RevisaoProvider";
 import { RevisaoStats } from "@/components/revisao/RevisaoStats";
+import { ReportConfigModal } from "@/components/estatisticas/ReportConfigModal";
+import { StudyAiAnalysisCard } from "@/components/estatisticas/StudyAiAnalysisCard";
 import { SIDEBAR_TIMER_ID, useTimerRuntime } from "@/components/TimerRuntimeProvider";
 import { DialogFrame } from "@/components/DialogFrame";
 import { FocusBarChart } from "@/components/FocusBarChart";
@@ -36,7 +38,11 @@ import {
   loadInterrupts,
   type ClockInterrupt,
 } from "@/lib/clock-interrupt";
-import { downloadFocusReport } from "@/lib/focus-report";
+import {
+  downloadFocusReport,
+  type FocusReportSections,
+  type FocusReportFlashcardSummary,
+} from "@/lib/focus-report";
 import {
   addFocusSeconds,
   aggregatePeriodSubjects,
@@ -197,7 +203,16 @@ function getSessionTypeInfo(sess: StudySession) {
 }
 
 export default function EstatisticasPage() {
+  return (
+    <RevisaoProvider>
+      <EstatisticasContent />
+    </RevisaoProvider>
+  );
+}
+
+function EstatisticasContent() {
   const { user, data } = useApp();
+  const { allFlashcards, flashcardsDoDia, stats: revisaoStats } = useRevisao();
   const { runtime, stopwatch, subjectStopwatches } = useTimerRuntime();
   const [range, setRange] = useState<Range>("semana");
   const [referenceDate, setReferenceDate] = useState(() => new Date());
@@ -205,6 +220,11 @@ export default function EstatisticasPage() {
   const [syncing, setSyncing] = useState(false);
   const [syncHint, setSyncHint] = useState<string | null>(null);
   const [downloadingReport, setDownloadingReport] = useState(false);
+  const [reportModalOpen, setReportModalOpen] = useState(false);
+  const [aiAnalysis, setAiAnalysis] = useState<string | null>(null);
+  const [aiGeneratedAt, setAiGeneratedAt] = useState<string | null>(null);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
   const [interrupts, setInterrupts] = useState<ClockInterrupt[]>([]);
   const [addTimeOpen, setAddTimeOpen] = useState(false);
   const [addHours, setAddHours] = useState("0");
@@ -216,6 +236,27 @@ export default function EstatisticasPage() {
   const [addHint, setAddHint] = useState<string | null>(null);
   const [metricaView, setMetricaView] = useState<"foco" | "diagnostico">("foco");
   const [sessionFilter, setSessionFilter] = useState<"todos" | "ciclo" | "flashcards" | "quiz_livre">("todos");
+
+  // Estatísticas de Flashcards e Domínio
+  const flashcardDominioCount = useMemo(() => {
+    const count = { novo: 0, dificil: 0, bom: 0, dominado: 0 };
+    (allFlashcards || []).forEach((c) => {
+      if (c.nivel_dominio === 0) count.novo++;
+      else if (c.nivel_dominio === 1) count.dificil++;
+      else if (c.nivel_dominio === 2) count.bom++;
+      else if (c.nivel_dominio === 3) count.dominado++;
+    });
+    return count;
+  }, [allFlashcards]);
+
+  const flashcardSummary = useMemo<FocusReportFlashcardSummary | null>(() => {
+    if (!allFlashcards || allFlashcards.length === 0) return null;
+    return {
+      totalCards: allFlashcards.length,
+      pendentesHoje: flashcardsDoDia?.length || 0,
+      dominioCount: flashcardDominioCount,
+    };
+  }, [allFlashcards, flashcardsDoDia, flashcardDominioCount]);
 
   // Filtros e visualização do card de Tempo por Matéria
   const [selectedSubjectFilter, setSelectedSubjectFilter] = useState<string | null>(null);
@@ -632,12 +673,239 @@ export default function EstatisticasPage() {
         })),
         completedCycleRounds: cycleRoundsPeriod,
         filename: report.filename,
+        flashcardStats: flashcardSummary ?? undefined,
+        aiAnalysis: aiAnalysis
+          ? {
+              content: aiAnalysis,
+              generatedAt: aiGeneratedAt || undefined,
+            }
+          : undefined,
       });
     } catch (error) {
       console.error("[foco] falha ao gerar relatório:", error);
       window.alert("Não foi possível gerar o PDF. Tente novamente.");
     } finally {
       setDownloadingReport(false);
+    }
+  }
+
+  async function handleCustomDownloadReport(config: {
+    periodRange: Range;
+    periodOffset: number;
+    subjectFilter: string | null;
+    sections: FocusReportSections;
+  }) {
+    setDownloadingReport(true);
+    try {
+      // 1. Data de referência alvo
+      let targetRef = new Date();
+      if (config.periodOffset === 0 && config.periodRange === range) {
+        targetRef = new Date(referenceDate);
+      } else if (config.periodOffset !== 0) {
+        if (config.periodRange === "dia") {
+          targetRef.setDate(targetRef.getDate() + config.periodOffset);
+        } else if (config.periodRange === "semana") {
+          targetRef.setDate(targetRef.getDate() + config.periodOffset * 7);
+        } else if (config.periodRange === "mes") {
+          targetRef.setMonth(targetRef.getMonth() + config.periodOffset);
+        } else if (config.periodRange === "ano") {
+          targetRef.setFullYear(targetRef.getFullYear() + config.periodOffset);
+        }
+      }
+
+      // 2. Chaves de dias e séries temporais
+      let targetPeriodTitle = "";
+      let targetFilename = "";
+      let targetRows: { label: string; seconds: number }[] = [];
+      let dayKeys: string[] = [];
+      const shortDate = (d: Date) => new Intl.DateTimeFormat("pt-BR").format(d);
+
+      if (config.periodRange === "dia") {
+        const dKey = dateKey(targetRef);
+        dayKeys = [dKey];
+        targetPeriodTitle = `Dia — ${shortDate(targetRef)}`;
+        targetFilename = `relatorio-foco-dia-${dKey}.pdf`;
+        const dayData = log.days[dKey] ?? { seconds: 0, byHour: Array(24).fill(0) };
+        targetRows = dayData.byHour.map((sec, hr) => ({
+          label: `${String(hr).padStart(2, "0")}:00–${String(hr).padStart(2, "0")}:59`,
+          seconds: sec,
+        }));
+      } else if (config.periodRange === "semana") {
+        const wSeries = weekSeries(log, targetRef);
+        dayKeys = wSeries.map((d) => dateKey(d.date));
+        const first = wSeries[0]?.date ?? targetRef;
+        const last = wSeries[wSeries.length - 1]?.date ?? targetRef;
+        targetPeriodTitle = `Semana — ${shortDate(first)} a ${shortDate(last)}`;
+        targetFilename = `relatorio-foco-semana-${dateKey(first)}.pdf`;
+        targetRows = wSeries.map((d, idx) => ({
+          label: `${DAYS[idx]} — ${shortDate(d.date)}`,
+          seconds: d.seconds,
+        }));
+      } else if (config.periodRange === "mes") {
+        const mSeries = monthSeries(log, targetRef);
+        dayKeys = mSeries.map((d) => dateKey(d.date));
+        targetPeriodTitle = `${MONTHS_LONG[targetRef.getMonth()]} de ${targetRef.getFullYear()}`;
+        targetFilename = `relatorio-foco-mes-${targetRef.getFullYear()}-${String(
+          targetRef.getMonth() + 1,
+        ).padStart(2, "0")}.pdf`;
+        targetRows = mSeries.map((d) => ({
+          label: shortDate(d.date),
+          seconds: d.seconds,
+        }));
+      } else {
+        const ySeries = yearSeries(log, targetRef);
+        targetPeriodTitle = `Ano de ${targetRef.getFullYear()}`;
+        targetFilename = `relatorio-foco-ano-${targetRef.getFullYear()}.pdf`;
+        targetRows = ySeries.map((it) => ({
+          label: MONTHS_LONG[it.month],
+          seconds: it.seconds,
+        }));
+        const yr = targetRef.getFullYear();
+        for (let m = 0; m < 12; m++) {
+          const dim = new Date(yr, m + 1, 0).getDate();
+          for (let day = 1; day <= dim; day++) {
+            dayKeys.push(
+              `${yr}-${String(m + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`,
+            );
+          }
+        }
+      }
+
+      // 3. Distribuição de Matérias
+      let targetSubjectRows = aggregatePeriodSubjects(log, dayKeys);
+      let totalPeriodSeconds = dayKeys.reduce((acc, k) => acc + (log.days[k]?.seconds ?? 0), 0);
+
+      if (config.subjectFilter) {
+        const subName = config.subjectFilter;
+        const match = targetSubjectRows.find(
+          (s) => s.name.toLowerCase() === subName.toLowerCase(),
+        );
+        const subSeconds = match?.seconds ?? 0;
+        targetSubjectRows = [
+          {
+            name: subName,
+            seconds: subSeconds,
+            percentage: 100,
+          },
+        ];
+        totalPeriodSeconds = subSeconds;
+        targetFilename = `relatorio-foco-${subName.toLowerCase().replace(/\s+/g, "-")}.pdf`;
+      }
+
+      // 4. Voltas do Ciclo
+      const targetCompletedCycleRounds = dayKeys.reduce(
+        (acc, k) => acc + readCycleRoundsForDate(k),
+        0,
+      );
+
+      // 5. Sessões de Estudo
+      const dayKeySet = new Set(dayKeys);
+      const targetSessions = (data.study_sessions || []).filter((s) => {
+        const sDate = getSessionDateKey(s.started_at);
+        if (!dayKeySet.has(sDate)) return false;
+        if (config.subjectFilter) {
+          return s.subject_name.toLowerCase() === config.subjectFilter.toLowerCase();
+        }
+        return true;
+      });
+
+      // 6. Chamada ao gerador customizado
+      await downloadFocusReport({
+        period: targetPeriodTitle,
+        totalSeconds: totalPeriodSeconds,
+        rows: targetRows,
+        subjectRows: targetSubjectRows,
+        sessionRows: targetSessions.map((s) => ({
+          subjectName: s.subject_name,
+          timeRange: formatSessionTimeRange(s.started_at, s.ended_at, s.duration_minutes),
+          durationMinutes: s.duration_minutes,
+          type: getSessionTypeInfo(s).label,
+          dateStr:
+            config.periodRange !== "dia"
+              ? getSessionDateKey(s.started_at).slice(5).replace("-", "/")
+              : undefined,
+        })),
+        completedCycleRounds: targetCompletedCycleRounds,
+        filename: targetFilename,
+        subjectFilter: config.subjectFilter,
+        sections: config.sections,
+        flashcardStats: flashcardSummary ?? undefined,
+        aiAnalysis:
+          config.sections.aiAnalysis && aiAnalysis
+            ? {
+                content: aiAnalysis,
+                generatedAt: aiGeneratedAt || undefined,
+              }
+            : undefined,
+      });
+    } catch (error) {
+      console.error("[foco] falha ao gerar relatório customizado:", error);
+      window.alert("Não foi possível gerar o PDF. Verifique os filtros e tente novamente.");
+    } finally {
+      setDownloadingReport(false);
+    }
+  }
+
+  async function handleGenerateAiAnalysis() {
+    setAiLoading(true);
+    setAiError(null);
+    try {
+      const res = await fetch("/api/estatisticas/analise-ia", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          period: range,
+          periodLabel: report.period,
+          totalSeconds: headline,
+          activeDaysCount: report.rows.filter((r) => r.seconds > 0).length,
+          totalDaysInPeriod:
+            range === "dia" ? 1 : range === "semana" ? 7 : range === "mes" ? 30 : 365,
+          completedCycleRounds: cycleRoundsPeriod,
+          subjectsBreakdown: subjectBreakdown,
+          timeSlotsSummary: report.rows,
+          sessionsSummary: {
+            totalSessions: periodSessions.length,
+            averageDurationMinutes:
+              periodSessions.length > 0
+                ? Math.round(
+                    periodSessions.reduce((acc, s) => acc + s.duration_minutes, 0) /
+                      periodSessions.length,
+                  )
+                : 0,
+            byType: {
+              Ciclo: sessionCounts.ciclo,
+              Flashcards: sessionCounts.flashcards,
+              Livre: sessionCounts.quiz_livre,
+            },
+          },
+          flashcardsStats: flashcardSummary
+            ? {
+                totalCards: flashcardSummary.totalCards,
+                pendentesHoje: flashcardSummary.pendentesHoje,
+                dominioCount: flashcardSummary.dominioCount,
+                errorNotebookSummary: revisaoStats
+                  ? {
+                      totalQuestoes: revisaoStats.totalQuestoes,
+                      porCausa: revisaoStats.porCausa,
+                    }
+                  : undefined,
+              }
+            : undefined,
+        }),
+      });
+
+      const resJson = await res.json();
+      if (!res.ok) {
+        throw new Error(resJson.error || "Falha ao gerar o parecer da IA.");
+      }
+
+      setAiAnalysis(resJson.analysis);
+      setAiGeneratedAt(resJson.generatedAt || new Date().toLocaleTimeString("pt-BR"));
+    } catch (err: any) {
+      console.error("[foco] erro na análise de IA:", err);
+      setAiError(err.message || "Erro de conexão ao gerar análise.");
+    } finally {
+      setAiLoading(false);
     }
   }
 
@@ -689,6 +957,17 @@ export default function EstatisticasPage() {
 
   return (
     <div className="w-full max-w-7xl mx-auto space-y-4 sm:space-y-5">
+      <ReportConfigModal
+        open={reportModalOpen}
+        onClose={() => setReportModalOpen(false)}
+        initialRange={range}
+        initialPeriodLabel={report.period}
+        subjects={data.subjects}
+        hasAiAnalysis={Boolean(aiAnalysis)}
+        hasFlashcards={(allFlashcards || []).length > 0}
+        onDownload={handleCustomDownloadReport}
+      />
+
       <DialogFrame
         open={addTimeOpen}
         onClose={() => setAddTimeOpen(false)}
@@ -1256,6 +1535,17 @@ export default function EstatisticasPage() {
             )}
           </section>
 
+          {/* Parecer Pedagógico & Análise de IA */}
+          <StudyAiAnalysisCard
+            periodLabel={report.period}
+            analysis={aiAnalysis}
+            generatedAt={aiGeneratedAt}
+            loading={aiLoading}
+            error={aiError}
+            onGenerate={handleGenerateAiAnalysis}
+            onExportPdf={() => setReportModalOpen(true)}
+          />
+
           {/* Linha do Tempo & Diário de Estudos do Período */}
           <section className="surface p-5 sm:p-6 shadow-xs space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[var(--line)]/60 pb-3.5">
@@ -1596,12 +1886,11 @@ export default function EstatisticasPage() {
 
             <button
               type="button"
-              className="btn w-full justify-center bg-[var(--surface)] hover:bg-[var(--mist)] text-sm font-semibold shadow-2xs gap-2"
-              disabled={downloadingReport}
-              onClick={() => void downloadReport()}
+              className="btn w-full justify-center bg-[var(--signal)] hover:opacity-90 text-white text-sm font-semibold shadow-xs gap-2"
+              onClick={() => setReportModalOpen(true)}
             >
               <Download size={15} strokeWidth={2} />
-              <span>{downloadingReport ? "Gerando PDF…" : REPORT_BUTTON_LABEL[range]}</span>
+              <span>Personalizar & Baixar PDF</span>
             </button>
 
             <button
@@ -1694,9 +1983,7 @@ export default function EstatisticasPage() {
         </>
       ) : (
         <div className="pt-2">
-          <RevisaoProvider>
-            <RevisaoStats />
-          </RevisaoProvider>
+          <RevisaoStats />
         </div>
       )}
     </div>
