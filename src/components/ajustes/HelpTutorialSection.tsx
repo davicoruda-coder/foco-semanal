@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import {
+  BookOpenCheck,
   BrainCircuit,
   CalendarDays,
   ChevronDown,
@@ -148,6 +149,23 @@ const TOPICS: TutorialTopic[] = [
       "Histórico de Desempenho: ao finalizar, confira seu percentual de acertos e tempo. O tempo de estudo é computado no seu histórico geral automaticamente.",
     ],
     tip: "Resolva um quiz de 3 ou 5 questões logo após ler um resumo ou teoria. O esforço imediato de recuperação ativa consolida a memória de longo prazo.",
+  },
+  {
+    id: "evidencias-ia",
+    icon: BookOpenCheck,
+    title: "Evidências Cognitivas & Parecer da IA",
+    badge: "Ciência & IA",
+    summary:
+      "Resumo dos estudos de Dunlosky, Roediger, Sweller e Cepeda que guiam o sistema e o parecer da IA.",
+    concept:
+      "Para que as análises de desempenho do FocoHub sejam responsáveis, cautelosas e livres de achismos, o parecer da IA e os indicadores do sistema são calibrados estritamente na literatura científica de aprendizagem. Veja o que cada estudo descobriu, sua importância e como usamos no app:",
+    steps: [
+      "John Dunlosky et al. (2013) — Prática Espaçada: Analisou 10 técnicas populares e comprovou que releitura e grifar têm baixa eficácia, enquanto espaçar o estudo e fazer testes práticos têm a mais alta retenção. • Como usamos: A IA avalia a regularidade do seu estudo ao longo dos dias, valorizando a consistência sustentável em vez de sobrecargas em um único dia.",
+      "Henry Roediger & Jeffrey Karpicke (2006) — Efeito da Testagem (Active Recall): Comprovaram experimentalmente que o esforço mental de tentar lembrar (evocação ativa com flashcards ou questões) retém até 3x mais conhecimento no longo prazo do que reler passivamente. • Como usamos: A IA monitora se você está equilibrando teoria com testes práticos (Flashcards e Quiz).",
+      "John Sweller (1988) — Teoria da Carga Cognitiva & Fadiga: Demonstrou que a memória de trabalho humana possui limite biológico restrito e satura rapidamente sem pausas. Sessões maratonas de horas contínuas geram ilusão de estudo, mas retenção real próxima de zero. • Como usamos: O temporizador em blocos recomendados (30 a 50 min) com pausas automáticas e o alerta da IA sobre sessões exaustivas.",
+      "Nicholas Cepeda et al. (2006) — Janelas Ideais de Espaçamento: Mapeou cientificamente os intervalos ótimos entre revisões para consolidar memórias por meses ou anos. • Como usamos: O algoritmo de Repetição Espaçada dos Flashcards (1 dia, 4-7 dias e 15-30 dias) e o cálculo de saúde das revisões nas Métricas.",
+    ],
+    tip: "A IA do FocoHub não faz julgamentos morais nem cobranças agressivas. Seu papel é atuar como um espelho de alta precisão, sugerindo ajustes de rotina sempre baseados nessas evidências científicas.",
   },
   {
     id: "agenda",

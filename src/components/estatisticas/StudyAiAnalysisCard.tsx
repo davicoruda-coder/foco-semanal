@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import {
   Sparkles,
   RefreshCw,
@@ -182,9 +183,15 @@ export function StudyAiAnalysisCard({
                 Nota de Cautela & Individualidade:
               </span>
               <p className="text-[color-mix(in_srgb,var(--ink)_75%,transparent)]">
-                Este parecer apresenta padrões observados com base na literatura científica. Cada
+                Este parecer apresenta padrões observados com base na literatura científica (Dunlosky, Roediger, Sweller, Cepeda). Cada
                 pessoa tem rotinas, cansaço e contextos distintos — adapte sempre as sugestões ao
-                seu bem-estar e ritmo sustentável.
+                seu bem-estar e ritmo sustentável.{" "}
+                <Link
+                  href="/ajuda"
+                  className="text-[var(--signal)] underline hover:opacity-80 font-medium inline-flex items-center gap-0.5 ml-1"
+                >
+                  Ver resumo dos estudos em Ajuda →
+                </Link>
               </p>
             </div>
           </div>
@@ -202,7 +209,13 @@ export function StudyAiAnalysisCard({
               </span>
               <p className="text-[11px] text-[color-mix(in_srgb,var(--ink)_65%,transparent)]">
                 Gere um parecer responsável baseado em evidências cognitivas (Dunlosky, Roediger,
-                Sweller) para orientar seus próximos passos com segurança.
+                Sweller, Cepeda) para orientar seus próximos passos com segurança.{" "}
+                <Link
+                  href="/ajuda"
+                  className="text-[var(--signal)] underline hover:opacity-80 font-medium inline-flex items-center gap-0.5 ml-1"
+                >
+                  Entenda a base científica →
+                </Link>
               </p>
             </div>
           </div>
@@ -220,3 +233,4 @@ export function StudyAiAnalysisCard({
     </section>
   );
 }
+
