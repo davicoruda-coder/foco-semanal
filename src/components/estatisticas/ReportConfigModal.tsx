@@ -167,7 +167,7 @@ export function ReportConfigModal({
             </div>
             <div>
               <h2 id={titleId} className="text-base font-semibold text-[var(--ink)]">
-                Personalizar Relatório PDF
+                Exportar Relatório PDF
               </h2>
               <p className="text-xs text-[color-mix(in_srgb,var(--ink)_60%,transparent)]">
                 Escolha o período, filtros e quais seções devem constar no documento.
@@ -513,7 +513,7 @@ export function ReportConfigModal({
               className="btn px-4 py-2 text-xs font-semibold bg-[var(--signal)] hover:opacity-90 text-white shadow-xs gap-1.5"
             >
               <Download size={14} strokeWidth={2.2} />
-              <span>{generating ? "Gerando PDF..." : "Gerar e Baixar PDF"}</span>
+              <span>{generating ? "Exportando PDF..." : "Exportar PDF"}</span>
             </button>
           </div>
         </div>
