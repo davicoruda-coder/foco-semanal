@@ -9,6 +9,8 @@ export type BlockRangeSettings = {
   maxMinutes: number;
   /** Descanso após o bloco (minutos). */
   restMinutes: number;
+  /** Limite de foco contínuo recomendado em minutos (padrão: 90 min / 1h30). 0 desativa. */
+  maxContinuousMinutes: number;
 };
 
 export const DEFAULT_BLOCK_RANGE: BlockRangeSettings = {
@@ -16,6 +18,7 @@ export const DEFAULT_BLOCK_RANGE: BlockRangeSettings = {
   minMinutes: 35,
   maxMinutes: 50,
   restMinutes: 20,
+  maxContinuousMinutes: 90,
 };
 
 const RANGE_KEY = "foco_semanal_block_range_v1";
@@ -28,6 +31,7 @@ export function clampInt(n: number, min: number, max: number) {
 export function readBlockRange(
   focusMinutes?: number,
   restMinutes?: number,
+  maxContinuousMinutes?: number,
 ): BlockRangeSettings {
   const base = { ...DEFAULT_BLOCK_RANGE };
   if (typeof focusMinutes === "number") {
@@ -35,6 +39,9 @@ export function readBlockRange(
   }
   if (typeof restMinutes === "number") {
     base.restMinutes = clampInt(restMinutes, 1, 60);
+  }
+  if (typeof maxContinuousMinutes === "number") {
+    base.maxContinuousMinutes = clampInt(maxContinuousMinutes, 0, 240);
   }
   if (typeof window === "undefined") return base;
   try {
@@ -56,6 +63,10 @@ export function readBlockRange(
         1,
         60,
       ),
+      maxContinuousMinutes:
+        typeof parsed.maxContinuousMinutes === "number"
+          ? clampInt(parsed.maxContinuousMinutes, 0, 240)
+          : base.maxContinuousMinutes,
     };
   } catch {
     return base;
@@ -71,6 +82,7 @@ export function writeBlockRange(settings: BlockRangeSettings) {
     maxMinutes: max,
     targetMinutes: clampInt(settings.targetMinutes, min, max),
     restMinutes: clampInt(settings.restMinutes, 1, 60),
+    maxContinuousMinutes: clampInt(settings.maxContinuousMinutes ?? 90, 0, 240),
   };
   try {
     localStorage.setItem(RANGE_KEY, JSON.stringify(next));

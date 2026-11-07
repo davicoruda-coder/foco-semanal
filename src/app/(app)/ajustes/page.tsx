@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import {
   AlertTriangle,
   Bell,
+  Brain,
   Calendar,
   ChevronRight,
   CircleHelp,
@@ -69,11 +70,6 @@ import {
   type BlockRangeSettings,
 } from "@/lib/session-block";
 import type { ThemePref } from "@/lib/types";
-import {
-  DEFAULT_SIDEBAR_TIMER_NAME,
-  normalizeSidebarTimerMinutes,
-  normalizeSidebarTimerName,
-} from "@/lib/utils";
 
 const OPTIONS: { value: ThemePref; label: string; icon: typeof Sun }[] = [
   { value: "light", label: "Claro", icon: Sun },
@@ -553,7 +549,6 @@ export default function AjustesPage() {
         <div className="mt-6 space-y-4">
           <ModulosSettings />
           <SessionBlockSettings />
-          <SidebarTimerSettings />
 
           {/* Guia Rápido & Tutorial */}
           <div className="surface mt-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 md:p-5 rounded-[var(--radius)] border-[var(--line)]">
@@ -931,87 +926,6 @@ export default function AjustesPage() {
   );
 }
 
-function SidebarTimerSettings() {
-  const { data, updateSettings } = useApp();
-  const name =
-    data.session_settings?.sidebar_timer_name ?? DEFAULT_SIDEBAR_TIMER_NAME;
-  const minutes = normalizeSidebarTimerMinutes(
-    data.session_settings?.sidebar_timer_minutes,
-  );
-  const [draftName, setDraftName] = useState(name);
-  const [draftMinutes, setDraftMinutes] = useState(String(minutes));
-  const [savedMsg, setSavedMsg] = useState<string | null>(null);
-
-  useEffect(() => {
-    setDraftName(name);
-    setDraftMinutes(String(minutes));
-  }, [name, minutes]);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    if (window.location.hash !== "#temporizador") return;
-    document
-      .getElementById("temporizador")
-      ?.scrollIntoView({ behavior: "smooth", block: "start" });
-  }, []);
-
-  function onSave() {
-    updateSettings({
-      sidebar_timer_name: normalizeSidebarTimerName(draftName),
-      sidebar_timer_minutes: normalizeSidebarTimerMinutes(draftMinutes),
-    });
-    setDraftName(normalizeSidebarTimerName(draftName));
-    setDraftMinutes(String(normalizeSidebarTimerMinutes(draftMinutes)));
-    setSavedMsg("Temporizador salvo.");
-  }
-
-  return (
-    <section id="temporizador" className="surface mt-4 scroll-mt-24 p-4 md:p-5">
-      <h2 className="font-display text-base font-semibold tracking-tight md:text-lg">
-        Temporizador
-      </h2>
-      <p className="mt-1 text-xs text-[color-mix(in_srgb,var(--ink)_75%,transparent)] sm:text-sm leading-relaxed">
-        Nome e duração do temporizador da tela Hoje. O tempo conta nas
-        estatísticas e não altera o ciclo.
-      </p>
-      <div className="mt-3 grid gap-3 sm:grid-cols-2">
-        <label className="block text-sm">
-          <span className="opacity-70">Nome</span>
-          <input
-            className="input mt-1 w-full"
-            maxLength={40}
-            value={draftName}
-            onChange={(e) => {
-              setDraftName(e.target.value);
-              setSavedMsg(null);
-            }}
-          />
-        </label>
-        <label className="block text-sm">
-          <span className="opacity-70">Tempo (min)</span>
-          <input
-            type="number"
-            min={1}
-            max={180}
-            className="input mt-1 w-full"
-            value={draftMinutes}
-            onChange={(e) => {
-              setDraftMinutes(e.target.value);
-              setSavedMsg(null);
-            }}
-          />
-        </label>
-      </div>
-      <div className="mt-3 flex items-center gap-3">
-        <button type="button" className="btn btn-primary btn-sm" onClick={onSave}>
-          Salvar
-        </button>
-        {savedMsg && <p className="text-xs font-medium text-[var(--ok)]">{savedMsg}</p>}
-      </div>
-    </section>
-  );
-}
-
 function SessionBlockSettings() {
   const { settings, saveSettings, refreshSettings } = useStudyFlow();
   const [draft, setDraft] = useState<BlockRangeSettings>(settings);
@@ -1038,6 +952,7 @@ function SessionBlockSettings() {
     let max = clampInt(draft.maxMinutes, min, 180);
     const target = clampInt(draft.targetMinutes, min, max);
     const rest = clampInt(draft.restMinutes, 1, 60);
+    const maxCont = clampInt(draft.maxContinuousMinutes ?? 90, 0, 240);
     if (min > max) {
       min = max;
     }
@@ -1046,22 +961,30 @@ function SessionBlockSettings() {
       maxMinutes: max,
       targetMinutes: target,
       restMinutes: rest,
+      maxContinuousMinutes: maxCont,
     });
-    setSavedMsg("Tempos da sessão salvos.");
+    setSavedMsg("Configurações salvas.");
   }
 
   return (
     <section className="surface mt-4 p-4 md:p-5">
-      <h2 className="font-display text-base font-semibold tracking-tight md:text-lg">
-        Sessão de estudos
-      </h2>
-      <p className="mt-1 text-xs text-[color-mix(in_srgb,var(--ink)_75%,transparent)] sm:text-sm leading-relaxed">
-        Meta e faixa usadas para montar o bloco do botão Iniciar sessão. O
-        descanso não entra nas estatísticas.
-      </p>
-      <div className="mt-3 grid gap-3 sm:grid-cols-2">
+      <div className="flex items-center gap-2.5">
+        <div className="grid size-9 shrink-0 place-items-center rounded-xl bg-[var(--signal-soft)] text-[var(--signal)]">
+          <Brain size={18} strokeWidth={2.2} />
+        </div>
+        <div>
+          <h2 className="font-display text-base font-semibold tracking-tight md:text-lg">
+            Sessão de Estudos & Descanso
+          </h2>
+          <p className="text-xs text-[color-mix(in_srgb,var(--ink)_75%,transparent)] sm:text-sm leading-relaxed">
+            Meta dos blocos do Ciclo, descanso neural e limite preventivo de fadiga cognitiva.
+          </p>
+        </div>
+      </div>
+
+      <div className="mt-4 grid gap-3 sm:grid-cols-2">
         <label className="block text-sm">
-          <span className="opacity-70">Meta (min)</span>
+          <span className="font-medium opacity-80">Meta do bloco (min)</span>
           <input
             type="number"
             min={10}
@@ -1070,9 +993,12 @@ function SessionBlockSettings() {
             value={draft.targetMinutes}
             onChange={(e) => patch("targetMinutes", Number(e.target.value))}
           />
+          <span className="mt-1 block text-[11px] text-[color-mix(in_srgb,var(--ink)_55%,transparent)]">
+            Duração planejada para cada sessão de estudos.
+          </span>
         </label>
         <label className="block text-sm">
-          <span className="opacity-70">Descanso (min)</span>
+          <span className="font-medium opacity-80">Descanso entre blocos (min)</span>
           <input
             type="number"
             min={1}
@@ -1081,9 +1007,12 @@ function SessionBlockSettings() {
             value={draft.restMinutes}
             onChange={(e) => patch("restMinutes", Number(e.target.value))}
           />
+          <span className="mt-1 block text-[11px] text-[color-mix(in_srgb,var(--ink)_55%,transparent)]">
+            Pausa pós-bloco para restaurar a concentração.
+          </span>
         </label>
         <label className="block text-sm">
-          <span className="opacity-70">Mínimo do bloco (min)</span>
+          <span className="font-medium opacity-80">Mínimo do bloco (min)</span>
           <input
             type="number"
             min={10}
@@ -1092,9 +1021,12 @@ function SessionBlockSettings() {
             value={draft.minMinutes}
             onChange={(e) => patch("minMinutes", Number(e.target.value))}
           />
+          <span className="mt-1 block text-[11px] text-[color-mix(in_srgb,var(--ink)_55%,transparent)]">
+            Tolerância mínima para encaixe automático de matérias.
+          </span>
         </label>
         <label className="block text-sm">
-          <span className="opacity-70">Máximo do bloco (min)</span>
+          <span className="font-medium opacity-80">Máximo do bloco (min)</span>
           <input
             type="number"
             min={10}
@@ -1103,10 +1035,65 @@ function SessionBlockSettings() {
             value={draft.maxMinutes}
             onChange={(e) => patch("maxMinutes", Number(e.target.value))}
           />
+          <span className="mt-1 block text-[11px] text-[color-mix(in_srgb,var(--ink)_55%,transparent)]">
+            Teto máximo aceitável para fechar o bloco sem cortar matéria.
+          </span>
         </label>
       </div>
-      <div className="mt-3 flex items-center gap-3">
-        <button type="button" className="btn btn-primary btn-sm" onClick={onSave}>
+
+      {/* Limite de Foco Contínuo / Fadiga Cognitiva (Neurociência) */}
+      <div className="mt-4 rounded-[var(--radius-tag)] border border-indigo-500/25 bg-indigo-500/5 p-3.5 space-y-2.5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-semibold uppercase tracking-wider text-indigo-900 dark:text-indigo-200">
+              Limite de Foco Contínuo (Alerta de Fadiga)
+            </span>
+            <span className="rounded-full bg-indigo-500/15 px-2 py-0.5 text-[10px] font-bold text-indigo-700 dark:text-indigo-300 border border-indigo-500/30">
+              Neurociência: 90 min máx
+            </span>
+          </div>
+          <span className="text-xs text-[color-mix(in_srgb,var(--ink)_60%,transparent)]">
+            Ciclo Ultradiano
+          </span>
+        </div>
+        <p className="text-xs text-[color-mix(in_srgb,var(--ink)_75%,transparent)] leading-relaxed">
+          Após 90 minutos contínuos (somando matérias ou tempos extras sem descanso), a retenção neural diminui. O FocoHub exibirá um aviso orientando a fazer uma pausa estratégica para não estudar no vazio.
+        </p>
+
+        <div className="flex flex-wrap items-center gap-2 pt-1">
+          <input
+            type="number"
+            min={0}
+            max={240}
+            className="input w-24 text-sm font-semibold"
+            value={draft.maxContinuousMinutes ?? 90}
+            onChange={(e) => patch("maxContinuousMinutes", Number(e.target.value))}
+          />
+          <span className="text-xs text-[color-mix(in_srgb,var(--ink)_60%,transparent)] mr-2">
+            minutos (0 desativa)
+          </span>
+
+          <div className="flex flex-wrap items-center gap-1.5">
+            {[60, 90, 120, 0].map((mins) => (
+              <button
+                key={mins}
+                type="button"
+                onClick={() => patch("maxContinuousMinutes", mins)}
+                className={`rounded-md px-2.5 py-1 text-xs font-medium transition cursor-pointer ${
+                  (draft.maxContinuousMinutes ?? 90) === mins
+                    ? "bg-indigo-600 text-white font-semibold shadow-2xs"
+                    : "border border-[var(--line)] bg-[var(--surface)] text-[var(--ink)] hover:bg-[var(--mist)]"
+                }`}
+              >
+                {mins === 0 ? "Desativar" : mins === 90 ? "90 min (Recomendado)" : `${mins} min`}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-4 flex items-center gap-3">
+        <button type="button" className="btn btn-primary btn-sm cursor-pointer" onClick={onSave}>
           Salvar
         </button>
         {savedMsg && <p className="text-xs font-medium text-[var(--ok)]">{savedMsg}</p>}

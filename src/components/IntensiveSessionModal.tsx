@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState, useEffect } from "react";
-import { ArrowRight, Check, Clock, Sparkles, X, Zap } from "lucide-react";
+import { ArrowRight, Check, Clock, Layers, Sparkles, X, Zap } from "lucide-react";
 import { DialogFrame } from "@/components/DialogFrame";
 import { useApp } from "@/components/AppProvider";
 import { useStudyFlow } from "@/components/StudyFlowProvider";
@@ -26,34 +26,46 @@ export function IntensiveSessionModal({ open, onClose }: IntensiveSessionModalPr
       .sort((a, b) => a.cycle_order - b.cycle_order);
   }, [data.subjects]);
 
-  const [selectedSubjectId, setSelectedSubjectId] = useState<string>("");
+  const [selectedSubjectIds, setSelectedSubjectIds] = useState<string[]>([]);
   const [durationType, setDurationType] = useState<"default" | "custom">("default");
   const [customMinutes, setCustomMinutes] = useState<number>(30);
 
-  // Inicializa a matéria selecionada com a próxima do ciclo quando o modal abre
+  // Inicializa com a próxima matéria do ciclo quando o modal abre
   useEffect(() => {
     if (!open) return;
     const day = todayIndex();
     const nextId = nextCycleSubjectId(data.subjects ?? [], day);
     if (nextId && activeSubjects.some((s) => s.id === nextId)) {
-      setSelectedSubjectId(nextId);
-    } else if (activeSubjects.length > 0 && !selectedSubjectId) {
-      setSelectedSubjectId(activeSubjects[0].id);
+      setSelectedSubjectIds([nextId]);
+    } else if (activeSubjects.length > 0 && selectedSubjectIds.length === 0) {
+      setSelectedSubjectIds([activeSubjects[0].id]);
     }
-  }, [open, data.subjects, activeSubjects, selectedSubjectId]);
+  }, [open, data.subjects, activeSubjects, selectedSubjectIds.length]);
 
-  const selectedSubject = useMemo(() => {
-    return activeSubjects.find((s) => s.id === selectedSubjectId) ?? null;
-  }, [activeSubjects, selectedSubjectId]);
+  const toggleSubject = (id: string) => {
+    setSelectedSubjectIds((prev) => {
+      if (prev.includes(id)) {
+        // Se já tem mais de uma selecionada, remove; se for a única, mantém para nunca ficar vazia
+        if (prev.length > 1) {
+          return prev.filter((item) => item !== id);
+        }
+        return prev;
+      }
+      return [...prev, id];
+    });
+  };
 
   const effectiveMinutes =
     durationType === "default"
       ? flow.settings.targetMinutes
       : Math.max(1, Math.min(180, customMinutes || 30));
 
+  const count = Math.max(1, selectedSubjectIds.length);
+  const perSubjectMinutes = Math.max(1, Math.floor(effectiveMinutes / count));
+
   const handleStart = () => {
-    if (!selectedSubjectId) return;
-    flow.startIntensiveSession(selectedSubjectId, effectiveMinutes);
+    if (selectedSubjectIds.length === 0) return;
+    flow.startIntensiveSession(selectedSubjectIds, effectiveMinutes);
     onClose();
   };
 
@@ -75,7 +87,7 @@ export function IntensiveSessionModal({ open, onClose }: IntensiveSessionModalPr
                 Modo Intensivo
               </h2>
               <p className="mt-0.5 text-xs text-[color-mix(in_srgb,var(--ink)_65%,transparent)] leading-relaxed">
-                Foque 100% em uma única matéria para sprints ou véspera de prova.
+                Estudo focado para sprints, revisões profundas ou véspera de prova.
               </p>
             </div>
           </div>
@@ -90,14 +102,14 @@ export function IntensiveSessionModal({ open, onClose }: IntensiveSessionModalPr
           </button>
         </div>
 
-        {/* 1. Escolha da matéria */}
+        {/* 1. Escolha das matérias */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <label className="text-xs font-semibold uppercase tracking-wider text-[color-mix(in_srgb,var(--ink)_60%,transparent)]">
-              1. Escolha a matéria
+              1. Selecione a(s) matéria(s)
             </label>
-            <span className="text-xs text-[color-mix(in_srgb,var(--ink)_50%,transparent)]">
-              {activeSubjects.length} disponível(is)
+            <span className="text-xs font-medium text-amber-600 dark:text-amber-400">
+              {selectedSubjectIds.length} selecionada(s)
             </span>
           </div>
 
@@ -108,12 +120,12 @@ export function IntensiveSessionModal({ open, onClose }: IntensiveSessionModalPr
               </p>
             ) : (
               activeSubjects.map((sub) => {
-                const isSelected = sub.id === selectedSubjectId;
+                const isSelected = selectedSubjectIds.includes(sub.id);
                 return (
                   <button
                     key={sub.id}
                     type="button"
-                    onClick={() => setSelectedSubjectId(sub.id)}
+                    onClick={() => toggleSubject(sub.id)}
                     className={`flex w-full items-center justify-between gap-3 px-3.5 py-2.5 text-left transition cursor-pointer ${
                       isSelected
                         ? "bg-amber-500/10 dark:bg-amber-500/15 text-[var(--ink)] font-semibold"
@@ -125,7 +137,7 @@ export function IntensiveSessionModal({ open, onClose }: IntensiveSessionModalPr
                       <span className="truncate text-sm">{sub.name}</span>
                     </div>
                     <div
-                      className={`grid size-5 shrink-0 place-items-center rounded-full border transition ${
+                      className={`grid size-5 shrink-0 place-items-center rounded-md border transition ${
                         isSelected
                           ? "border-amber-500 bg-amber-500 text-white"
                           : "border-[color-mix(in_srgb,var(--line)_80%,transparent)] bg-[var(--surface)]"
@@ -138,12 +150,27 @@ export function IntensiveSessionModal({ open, onClose }: IntensiveSessionModalPr
               })
             )}
           </div>
+
+          {/* Divisão de tempo calculada dinamicamente */}
+          <div className="rounded-[var(--radius-tag)] border border-[color-mix(in_srgb,var(--signal)_20%,var(--line))] bg-[color-mix(in_srgb,var(--signal)_5%,var(--surface))] px-3 py-2 text-xs text-[var(--ink)] flex items-center justify-between">
+            <span className="flex items-center gap-1.5 font-medium">
+              <Layers size={13} className="text-[var(--signal)] shrink-0" />
+              {count === 1 ? (
+                <span>1 matéria selecionada</span>
+              ) : (
+                <span>{count} matérias selecionadas ({perSubjectMinutes} min cada)</span>
+              )}
+            </span>
+            <span className="font-bold text-[var(--signal)]">
+              Total: {perSubjectMinutes * count} min
+            </span>
+          </div>
         </div>
 
         {/* 2. Duração da sessão */}
         <div className="space-y-2.5">
           <label className="block text-xs font-semibold uppercase tracking-wider text-[color-mix(in_srgb,var(--ink)_60%,transparent)]">
-            2. Duração da sessão
+            2. Duração total do bloco
           </label>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
@@ -225,7 +252,7 @@ export function IntensiveSessionModal({ open, onClose }: IntensiveSessionModalPr
                   className="w-24 rounded-lg border border-[var(--line)] bg-[var(--surface)] px-2.5 py-1.5 text-sm font-semibold text-[var(--ink)] focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/20"
                 />
                 <span className="text-xs text-[color-mix(in_srgb,var(--ink)_55%,transparent)]">
-                  minutos
+                  minutos no total
                 </span>
               </div>
 
@@ -257,9 +284,7 @@ export function IntensiveSessionModal({ open, onClose }: IntensiveSessionModalPr
         <div className="flex items-start gap-2.5 rounded-[var(--radius-tag)] border border-blue-500/20 bg-blue-500/8 dark:bg-blue-950/30 p-3 text-xs text-blue-900 dark:text-blue-200">
           <Sparkles size={15} className="shrink-0 text-blue-600 dark:text-blue-400 mt-0.5" />
           <p className="leading-relaxed">
-            Ao encerrar o Modo Intensivo, <strong>{selectedSubject?.name || "a matéria"}</strong>{" "}
-            ficará registrada como concluída no ciclo de hoje, e o ciclo avançará para a matéria
-            seguinte para não repetir o mesmo conteúdo.
+            Ao encerrar o Modo Intensivo, a(s) matéria(s) estudada(s) ficarão registradas como concluídas no ciclo de hoje, e o ciclo avançará para a matéria seguinte para não repetir o conteúdo recém-estudado.
           </p>
         </div>
 
@@ -274,12 +299,14 @@ export function IntensiveSessionModal({ open, onClose }: IntensiveSessionModalPr
           </button>
           <button
             type="button"
-            disabled={!selectedSubjectId || effectiveMinutes < 1}
+            disabled={selectedSubjectIds.length === 0 || effectiveMinutes < 1}
             onClick={handleStart}
             className="btn flex items-center gap-2 rounded-[var(--radius-btn)] bg-amber-500 hover:bg-amber-600 active:scale-[0.98] text-white px-5 py-2.5 text-xs sm:text-sm font-semibold shadow-sm transition disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
           >
             <Zap size={15} className="fill-current" />
-            <span>Iniciar Modo Intensivo ({effectiveMinutes} min)</span>
+            <span>
+              Iniciar Modo Intensivo ({count > 1 ? `${count} matérias · ${effectiveMinutes} min` : `${effectiveMinutes} min`})
+            </span>
             <ArrowRight size={14} />
           </button>
         </div>

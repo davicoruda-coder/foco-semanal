@@ -70,18 +70,23 @@ type StudyFlowContextValue = {
   isExtraModalOpen: boolean;
   openExtraSessionModal: () => void;
   closeExtraSessionModal: () => void;
-  /** Indica se a sessão atual em execução é Modo Intensivo (1 matéria). */
+  /** Indica se a sessão atual em execução é Modo Intensivo. */
   isIntensiveSession: boolean;
+  intensiveSubjectIds: string[];
   intensiveSubjectId: string | null;
   intensiveDurationMinutes?: number;
   /** Modal de Modo Intensivo aberto? */
   isIntensiveModalOpen: boolean;
   openIntensiveModal: () => void;
   closeIntensiveModal: () => void;
-  /** Inicia Modo Intensivo para 1 matéria com duração customizada ou dos ajustes. */
-  startIntensiveSession: (subjectId: string, durationMinutes: number) => void;
+  /** Inicia Modo Intensivo para 1 ou mais matérias com duração total dividida igualmente. */
+  startIntensiveSession: (subjectIds: string | string[], durationMinutes: number) => void;
   /** Encerra o Modo Intensivo, marca no ciclo e avança para a próxima matéria. */
   finishIntensiveMode: () => void;
+  /** Alerta de fadiga mental / limite contínuo atingido. */
+  continuousFocusMinutes: number;
+  showContinuousFocusAlert: boolean;
+  dismissContinuousFocusAlert: () => void;
   /** Todo o ciclo de hoje foi concluído (todas as matérias estão Ok) */
   cycleCompleted: boolean;
   /** Número da volta que acabou de ser concluída (ex: 1, 2) para aviso comemorativo */
@@ -189,6 +194,14 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
     const saved = readPersistedStudyFlow();
     return Boolean(saved.isIntensiveSession);
   });
+  const [intensiveSubjectIds, setIntensiveSubjectIds] = useState<string[]>(() => {
+    const saved = readPersistedStudyFlow();
+    return saved.intensiveSubjectIds && saved.intensiveSubjectIds.length > 0
+      ? saved.intensiveSubjectIds
+      : saved.intensiveSubjectId
+        ? [saved.intensiveSubjectId]
+        : [];
+  });
   const [intensiveSubjectId, setIntensiveSubjectId] = useState<string | null>(() => {
     const saved = readPersistedStudyFlow();
     return saved.intensiveSubjectId ?? null;
@@ -197,6 +210,20 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
     const saved = readPersistedStudyFlow();
     return saved.intensiveDurationMinutes;
   });
+  const [continuousFocusSeconds, setContinuousFocusSeconds] = useState<number>(() => {
+    const saved = readPersistedStudyFlow();
+    return saved.continuousFocusSeconds ?? 0;
+  });
+  const [hasWarnedContinuous, setHasWarnedContinuous] = useState<boolean>(() => {
+    const saved = readPersistedStudyFlow();
+    return Boolean(saved.hasWarnedContinuous);
+  });
+  const [showContinuousFocusAlert, setShowContinuousFocusAlert] = useState<boolean>(false);
+  const dismissContinuousFocusAlert = useCallback(() => {
+    setShowContinuousFocusAlert(false);
+    setHasWarnedContinuous(true);
+  }, []);
+
   const [isIntensiveModalOpen, setIsIntensiveModalOpen] = useState(false);
   const openIntensiveModal = useCallback(() => setIsIntensiveModalOpen(true), []);
   const closeIntensiveModal = useCallback(() => setIsIntensiveModalOpen(false), []);
@@ -211,6 +238,23 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
   phaseRef.current = phase;
   blockRef.current = block;
   indexRef.current = currentIndex;
+
+  // Monitora o foco contínuo e alerta sobre fadiga cognitiva (Ciclo Ultradiano de 90 min)
+  useEffect(() => {
+    if (phase !== "running") return;
+    const interval = window.setInterval(() => {
+      setContinuousFocusSeconds((prev) => {
+        const next = prev + 1;
+        const maxMins = settings.maxContinuousMinutes ?? 90;
+        if (maxMins > 0 && next >= maxMins * 60 && !hasWarnedContinuous) {
+          setShowContinuousFocusAlert(true);
+          setHasWarnedContinuous(true);
+        }
+        return next;
+      });
+    }, 1000);
+    return () => window.clearInterval(interval);
+  }, [phase, settings.maxContinuousMinutes, hasWarnedContinuous]);
 
   // Restaura sessão/descanso após F5 (timers das matérias já estão no localStorage).
   useEffect(() => {
@@ -239,6 +283,8 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
       }
       setBlock([]);
       setCurrentIndex(0);
+      setContinuousFocusSeconds(0);
+      setHasWarnedContinuous(false);
       setHydrated(true);
       return;
     }
@@ -270,8 +316,17 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
     setRestEndsAt(null);
     setIsExtraSession(Boolean(saved.isExtraSession));
     setIsIntensiveSession(Boolean(saved.isIntensiveSession));
+    setIntensiveSubjectIds(
+      saved.intensiveSubjectIds && saved.intensiveSubjectIds.length > 0
+        ? saved.intensiveSubjectIds
+        : saved.intensiveSubjectId
+          ? [saved.intensiveSubjectId]
+          : [],
+    );
     setIntensiveSubjectId(saved.intensiveSubjectId ?? null);
     setIntensiveDurationMinutes(saved.intensiveDurationMinutes);
+    setContinuousFocusSeconds(saved.continuousFocusSeconds ?? 0);
+    setHasWarnedContinuous(Boolean(saved.hasWarnedContinuous));
     if (saved.phase === "running") {
       resumeAfterHydrateRef.current = true;
     }
@@ -306,19 +361,40 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
       day: todayIndex(),
       isExtraSession,
       isIntensiveSession,
+      intensiveSubjectIds,
       intensiveSubjectId,
       intensiveDurationMinutes,
+      continuousFocusSeconds,
+      hasWarnedContinuous,
     });
-  }, [hydrated, phase, block, currentIndex, restEndsAt, isExtraSession, isIntensiveSession, intensiveSubjectId, intensiveDurationMinutes]);
+  }, [
+    hydrated,
+    phase,
+    block,
+    currentIndex,
+    restEndsAt,
+    isExtraSession,
+    isIntensiveSession,
+    intensiveSubjectIds,
+    intensiveSubjectId,
+    intensiveDurationMinutes,
+    continuousFocusSeconds,
+    hasWarnedContinuous,
+  ]);
 
   const refreshSettings = useCallback(() => {
     setSettings(
       readBlockRange(
         data.session_settings?.focus_minutes,
         data.session_settings?.break_long_minutes,
+        data.session_settings?.max_continuous_minutes,
       ),
     );
-  }, [data.session_settings?.focus_minutes, data.session_settings?.break_long_minutes]);
+  }, [
+    data.session_settings?.focus_minutes,
+    data.session_settings?.break_long_minutes,
+    data.session_settings?.max_continuous_minutes,
+  ]);
 
   useEffect(() => {
     refreshSettings();
@@ -331,6 +407,7 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
       updateSettings({
         focus_minutes: saved.targetMinutes,
         break_long_minutes: saved.restMinutes,
+        max_continuous_minutes: saved.maxContinuousMinutes,
       });
     },
     [updateSettings],
@@ -396,15 +473,15 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
     (index: number, subjects: Subject[]) => {
       const sub = subjects[index];
       if (!sub) return;
-      resetSubjectTimer(
-        sub.id,
-        isIntensiveSession ? intensiveDurationMinutes : undefined,
-      );
+      const customOverride = isIntensiveSession
+        ? (sub.study_minutes ?? (intensiveDurationMinutes ? Math.max(1, Math.floor(intensiveDurationMinutes / (intensiveSubjectIds.length || 1))) : undefined))
+        : undefined;
+      resetSubjectTimer(sub.id, customOverride);
       window.setTimeout(() => {
         toggleSubjectTimer(sub.id);
       }, 60);
     },
-    [resetSubjectTimer, toggleSubjectTimer, isIntensiveSession, intensiveDurationMinutes],
+    [resetSubjectTimer, toggleSubjectTimer, isIntensiveSession, intensiveDurationMinutes, intensiveSubjectIds],
   );
 
   const startSession = useCallback(() => {
@@ -441,6 +518,7 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
     advancingRef.current = false;
     setIsExtraSession(false);
     setIsIntensiveSession(false);
+    setIntensiveSubjectIds([]);
     setIntensiveSubjectId(null);
     setIntensiveDurationMinutes(undefined);
     setBlock(packed);
@@ -491,6 +569,7 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
       setIsExtraSession(true);
       setIsExtraModalOpen(false);
       setIsIntensiveSession(false);
+      setIntensiveSubjectIds([]);
       setIntensiveSubjectId(null);
       setIntensiveDurationMinutes(undefined);
       setBlock(packed);
@@ -504,38 +583,50 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
   );
 
   const startIntensiveSession = useCallback(
-    (subjectId: string, durationMinutes: number) => {
-      const sub = (data.subjects ?? []).find((s) => s.id === subjectId);
-      if (!sub) return;
+    (subjectIdsInput: string | string[], durationMinutes: number) => {
+      const ids = Array.isArray(subjectIdsInput) ? subjectIdsInput : [subjectIdsInput];
+      const validSubs = ids
+        .map((id) => (data.subjects ?? []).find((s) => s.id === id))
+        .filter((s): s is Subject => Boolean(s));
+
+      if (validSubs.length === 0) return;
 
       setCycleRoundCompleted(null);
       advancingRef.current = false;
       setIsExtraSession(false);
       setIsIntensiveSession(true);
-      setIntensiveSubjectId(subjectId);
+      setIntensiveSubjectIds(validSubs.map((s) => s.id));
+      setIntensiveSubjectId(validSubs[0].id);
       setIntensiveDurationMinutes(durationMinutes);
       setIsIntensiveModalOpen(false);
 
       const day = todayIndex();
-      const exclusiveCycle = isExclusiveCycleDay(data.subjects ?? [], day);
-      const st = exclusiveCycle ? sub.exclusive_status : sub.status;
-      if (st === "ok") {
-        setSubjectStatus(sub.id, "prox");
+      const perSubjectMinutes = Math.max(
+        1,
+        Math.floor(durationMinutes / validSubs.length),
+      );
+
+      for (const sub of validSubs) {
+        const exclusiveCycle = isExclusiveCycleDay(data.subjects ?? [], day);
+        const st = exclusiveCycle ? sub.exclusive_status : sub.status;
+        if (st === "ok") {
+          setSubjectStatus(sub.id, "prox");
+        }
       }
 
-      const intensiveSub: Subject = {
+      const packed: Subject[] = validSubs.map((sub) => ({
         ...sub,
-        study_minutes: durationMinutes,
-      };
-      const packed = [intensiveSub];
+        study_minutes: perSubjectMinutes,
+      }));
+
       setBlock(packed);
       setCurrentIndex(0);
       setPhase("running");
       setRestEndsAt(null);
 
-      resetSubjectTimer(sub.id, durationMinutes);
+      resetSubjectTimer(packed[0].id, perSubjectMinutes);
       window.setTimeout(() => {
-        toggleSubjectTimer(sub.id);
+        toggleSubjectTimer(packed[0].id);
       }, 60);
       playSessionStartTone();
     },
@@ -544,8 +635,13 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
 
   const finishIntensiveMode = useCallback(() => {
     setCycleRoundCompleted(null);
-    const subId = intensiveSubjectId || blockRef.current[indexRef.current]?.id;
-    if (subId) {
+    const ids = intensiveSubjectIds.length > 0
+      ? intensiveSubjectIds
+      : intensiveSubjectId
+        ? [intensiveSubjectId]
+        : blockRef.current.map((s) => s.id);
+
+    for (const subId of ids) {
       if (isClockRunning(subId, false)) {
         toggleSubjectTimer(subId);
       }
@@ -553,6 +649,7 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
       setSubjectStatus(subId, "ok");
     }
     setIsIntensiveSession(false);
+    setIntensiveSubjectIds([]);
     setIntensiveSubjectId(null);
     setIntensiveDurationMinutes(undefined);
     setPhase("idle");
@@ -560,7 +657,7 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
     setCurrentIndex(0);
     setRestEndsAt(null);
     advancingRef.current = false;
-  }, [intensiveSubjectId, isClockRunning, toggleSubjectTimer, setSubjectStatus]);
+  }, [intensiveSubjectIds, intensiveSubjectId, isClockRunning, toggleSubjectTimer, setSubjectStatus]);
 
   const pauseSession = useCallback(() => {
     if (phaseRef.current !== "running") return;
@@ -633,18 +730,22 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
     setPhase("resting");
     setBlock([]);
     setCurrentIndex(0);
+    setContinuousFocusSeconds(0);
+    setHasWarnedContinuous(false);
+    setShowContinuousFocusAlert(false);
   }, [settings.restMinutes]);
 
   const chooseContinue = useCallback(() => {
     setCycleRoundCompleted(null);
-    if (isIntensiveSession && intensiveSubjectId) {
+    if (isIntensiveSession && (intensiveSubjectIds.length > 0 || intensiveSubjectId)) {
+      const ids = intensiveSubjectIds.length > 0 ? intensiveSubjectIds : [intensiveSubjectId!];
       const duration = intensiveDurationMinutes ?? settings.targetMinutes;
       setPhase("idle");
       setBlock([]);
       setCurrentIndex(0);
       setRestEndsAt(null);
       window.setTimeout(() => {
-        startIntensiveSession(intensiveSubjectId, duration);
+        startIntensiveSession(ids, duration);
       }, 80);
       return;
     }
@@ -657,6 +758,7 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
     }, 80);
   }, [
     isIntensiveSession,
+    intensiveSubjectIds,
     intensiveSubjectId,
     intensiveDurationMinutes,
     settings.targetMinutes,
@@ -785,8 +887,12 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
     setRestEndsAt(null);
     setIsExtraSession(false);
     setIsIntensiveSession(false);
+    setIntensiveSubjectIds([]);
     setIntensiveSubjectId(null);
     setIntensiveDurationMinutes(undefined);
+    setContinuousFocusSeconds(0);
+    setHasWarnedContinuous(false);
+    setShowContinuousFocusAlert(false);
     setPhase("idle");
   }, []);
 
@@ -795,8 +901,12 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
     setRestEndsAt(null);
     setIsExtraSession(false);
     setIsIntensiveSession(false);
+    setIntensiveSubjectIds([]);
     setIntensiveSubjectId(null);
     setIntensiveDurationMinutes(undefined);
+    setContinuousFocusSeconds(0);
+    setHasWarnedContinuous(false);
+    setShowContinuousFocusAlert(false);
     setPhase("idle");
   }, []);
 
@@ -918,6 +1028,7 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
       openExtraSessionModal,
       closeExtraSessionModal,
       isIntensiveSession,
+      intensiveSubjectIds,
       intensiveSubjectId,
       intensiveDurationMinutes,
       isIntensiveModalOpen,
@@ -925,6 +1036,9 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
       closeIntensiveModal,
       startIntensiveSession,
       finishIntensiveMode,
+      continuousFocusMinutes: Math.floor(continuousFocusSeconds / 60),
+      showContinuousFocusAlert,
+      dismissContinuousFocusAlert,
       cycleCompleted,
       cycleRoundCompleted,
       sessionActive,
@@ -961,6 +1075,7 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
       openExtraSessionModal,
       closeExtraSessionModal,
       isIntensiveSession,
+      intensiveSubjectIds,
       intensiveSubjectId,
       intensiveDurationMinutes,
       isIntensiveModalOpen,
@@ -968,6 +1083,9 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
       closeIntensiveModal,
       startIntensiveSession,
       finishIntensiveMode,
+      continuousFocusSeconds,
+      showContinuousFocusAlert,
+      dismissContinuousFocusAlert,
       cycleCompleted,
       cycleRoundCompleted,
       sessionActive,

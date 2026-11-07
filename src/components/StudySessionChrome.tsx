@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowRight,
+  Brain,
   CheckCircle2,
   Clock,
   FileText,
@@ -324,10 +325,10 @@ export function StudySessionBar() {
               type="button"
               onClick={flow.openIntensiveModal}
               className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold text-amber-700 dark:text-amber-300 hover:bg-amber-500/10 active:scale-95 transition border border-amber-500/25 bg-amber-500/5 cursor-pointer"
-              title="Estudar apenas 1 matéria com tempo dedicado"
+              title="Estudo intensivo focado com tempo dedicado"
             >
               <Zap size={13} className="fill-current text-amber-600 dark:text-amber-400" />
-              <span>Modo Intensivo (1 matéria)</span>
+              <span>Modo Intensivo</span>
             </button>
           </div>
         )}
@@ -756,6 +757,59 @@ export function StudySessionChrome() {
             </button>
           </>
         )}
+      </DialogFrame>
+
+      {/* Alerta de Fadiga Cognitiva / Ritmo Ultradiano (Limite Contínuo) */}
+      <DialogFrame
+        open={flow.showContinuousFocusAlert}
+        onClose={flow.dismissContinuousFocusAlert}
+        labelledBy="fatigue-alert-title"
+        cardClassName="surface w-full max-w-md p-6 shadow-[var(--shadow-xl)] animate-fade-in"
+      >
+        <div className="flex items-start gap-3.5">
+          <div className="grid size-12 shrink-0 place-items-center rounded-2xl bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 ring-1 ring-indigo-500/25 shadow-2xs">
+            <Brain size={24} strokeWidth={2.2} />
+          </div>
+          <div className="min-w-0 flex-1 pt-0.5">
+            <div className="flex items-center gap-2">
+              <span className="rounded-full bg-indigo-500/10 px-2 py-0.5 text-[10px] font-bold text-indigo-700 dark:text-indigo-300">
+                Pausa Estratégica
+              </span>
+              <span className="text-[11px] text-[color-mix(in_srgb,var(--ink)_50%,transparent)] font-medium">
+                Ritmo Ultradiano
+              </span>
+            </div>
+            <h2 id="fatigue-alert-title" className="font-display text-lg sm:text-xl font-bold tracking-tight text-[var(--ink)] mt-1">
+              Hora de recarregar o cérebro
+            </h2>
+            <p className="mt-2 text-xs sm:text-sm text-[color-mix(in_srgb,var(--ink)_75%,transparent)] leading-relaxed">
+              Você atingiu <strong>{flow.settings.maxContinuousMinutes} minutos</strong> de estudo contínuo. A neurociência comprova que após 90 minutos a retenção de memória diminui e a fadiga se acumula rapidamente.
+            </p>
+            <p className="mt-2 text-xs text-[color-mix(in_srgb,var(--ink)_60%,transparent)] leading-relaxed">
+              Uma pausa de {flow.settings.restMinutes} minutos agora vai consolidar os conhecimentos absorvidos e restaurar seus níveis de foco para a próxima etapa.
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-6 flex flex-col sm:flex-row items-center gap-2.5">
+          <button
+            type="button"
+            className="btn btn-primary w-full py-3 text-sm font-semibold tracking-wide flex items-center justify-center gap-2 cursor-pointer bg-indigo-600 hover:bg-indigo-700 border-indigo-700 text-white shadow-sm"
+            onClick={() => {
+              flow.dismissContinuousFocusAlert();
+              flow.chooseRest();
+            }}
+          >
+            <span>Fazer pausa recomendada ({flow.settings.restMinutes} min)</span>
+          </button>
+          <button
+            type="button"
+            className="w-full sm:w-auto px-4 py-2.5 text-xs sm:text-sm font-medium text-[color-mix(in_srgb,var(--ink)_65%,transparent)] hover:text-[var(--ink)] hover:bg-[var(--mist)] rounded-[var(--radius-btn)] transition flex items-center justify-center cursor-pointer shrink-0"
+            onClick={flow.dismissContinuousFocusAlert}
+          >
+            <span>Continuar estudando</span>
+          </button>
+        </div>
       </DialogFrame>
     </>
   );

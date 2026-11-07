@@ -159,9 +159,11 @@ export interface SessionSettings {
   break_short_minutes: number;
   break_long_minutes: number;
   /** Nome do temporizador da lateral (Hoje). */
-  sidebar_timer_name: string;
+  sidebar_timer_name?: string;
   /** Duração em minutos do temporizador da lateral. */
-  sidebar_timer_minutes: number;
+  sidebar_timer_minutes?: number;
+  /** Limite de foco contínuo recomendado em minutos (ex: 90 para 1h30). 0 desativa. */
+  max_continuous_minutes?: number;
 }
 
 /** Temporizadores da tela principal (Bloco, Estudo, …) */

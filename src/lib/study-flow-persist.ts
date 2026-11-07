@@ -23,10 +23,16 @@ export type PersistedStudyFlow = {
   isExtraSession?: boolean;
   /** Indica se o bloco em execução foi iniciado como Modo Intensivo. */
   isIntensiveSession?: boolean;
-  /** Id da matéria sendo estudada no Modo Intensivo. */
+  /** Ids das matérias sendo estudadas no Modo Intensivo. */
+  intensiveSubjectIds?: string[];
+  /** Id da matéria sendo estudada no Modo Intensivo (retrocompatibilidade). */
   intensiveSubjectId?: string | null;
   /** Duração em minutos escolhida para o Modo Intensivo. */
   intensiveDurationMinutes?: number;
+  /** Segundos de foco contínuo acumulados sem descanso. */
+  continuousFocusSeconds?: number;
+  /** Indica se já alertou sobre fadiga cognitiva nesta sequência contínua. */
+  hasWarnedContinuous?: boolean;
 };
 
 const PHASES: StudyFlowPhase[] = [
@@ -49,8 +55,11 @@ function idleState(): PersistedStudyFlow {
     day: todayIndex(),
     isExtraSession: false,
     isIntensiveSession: false,
+    intensiveSubjectIds: [],
     intensiveSubjectId: null,
     intensiveDurationMinutes: undefined,
+    continuousFocusSeconds: 0,
+    hasWarnedContinuous: false,
   };
 }
 
@@ -100,12 +109,22 @@ export function readPersistedStudyFlow(): PersistedStudyFlow {
           : todayIndex(),
       isExtraSession: Boolean(parsed.isExtraSession),
       isIntensiveSession: Boolean(parsed.isIntensiveSession),
+      intensiveSubjectIds: Array.isArray(parsed.intensiveSubjectIds)
+        ? parsed.intensiveSubjectIds.filter((id): id is string => typeof id === "string")
+        : typeof parsed.intensiveSubjectId === "string"
+          ? [parsed.intensiveSubjectId]
+          : [],
       intensiveSubjectId:
         typeof parsed.intensiveSubjectId === "string" ? parsed.intensiveSubjectId : null,
       intensiveDurationMinutes:
         typeof parsed.intensiveDurationMinutes === "number" && parsed.intensiveDurationMinutes > 0
           ? Math.floor(parsed.intensiveDurationMinutes)
           : undefined,
+      continuousFocusSeconds:
+        typeof parsed.continuousFocusSeconds === "number" && parsed.continuousFocusSeconds >= 0
+          ? Math.floor(parsed.continuousFocusSeconds)
+          : 0,
+      hasWarnedContinuous: Boolean(parsed.hasWarnedContinuous),
     };
   } catch {
     return idleState();
