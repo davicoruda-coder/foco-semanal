@@ -300,12 +300,10 @@ export function IntensiveSessionModal({ open, onClose }: IntensiveSessionModalPr
             type="button"
             disabled={selectedSubjectIds.length === 0 || effectiveMinutes < 1}
             onClick={handleStart}
-            className="btn flex items-center gap-2 rounded-[var(--radius-btn)] bg-amber-500 hover:bg-amber-600 active:scale-[0.98] text-white px-5 py-2.5 text-xs sm:text-sm font-semibold shadow-sm transition disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+            className="btn flex items-center gap-2 rounded-[var(--radius-btn)] bg-amber-500 hover:bg-amber-600 active:scale-[0.98] text-white px-5 py-2.5 text-xs sm:text-sm font-semibold shadow-sm transition disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer whitespace-nowrap"
           >
             <Zap size={15} className="fill-current" />
-            <span>
-              Iniciar Modo Intensivo ({count > 1 ? `${count} matérias · ${effectiveMinutes} min` : `${effectiveMinutes} min`})
-            </span>
+            <span>Iniciar Modo Intensivo ({effectiveMinutes} min)</span>
             <ArrowRight size={14} />
           </button>
         </div>
