@@ -6,7 +6,6 @@ import { DialogFrame } from "@/components/DialogFrame";
 import { useApp } from "@/components/AppProvider";
 import { useStudyFlow } from "@/components/StudyFlowProvider";
 import { SubjectIcon } from "@/components/SubjectIcon";
-import { todayIndex, nextCycleSubjectId } from "@/lib/utils";
 
 interface IntensiveSessionModalProps {
   open: boolean;
@@ -31,33 +30,18 @@ export function IntensiveSessionModal({ open, onClose }: IntensiveSessionModalPr
   const [customMinutes, setCustomMinutes] = useState<number>(30);
   const wasOpenRef = useRef(false);
 
-  // Inicializa com a próxima matéria do ciclo apenas quando o modal abre (evita reset ao marcar múltiplas)
+  // Inicia sempre com nenhuma matéria selecionada (tudo desmarcado) ao abrir o modal
   useEffect(() => {
     if (open && !wasOpenRef.current) {
-      const day = todayIndex();
-      const nextId = nextCycleSubjectId(data.subjects ?? [], day);
-      if (nextId && activeSubjects.some((s) => s.id === nextId)) {
-        setSelectedSubjectIds([nextId]);
-      } else if (activeSubjects.length > 0) {
-        setSelectedSubjectIds([activeSubjects[0].id]);
-      } else {
-        setSelectedSubjectIds([]);
-      }
+      setSelectedSubjectIds([]);
     }
     wasOpenRef.current = open;
-  }, [open, data.subjects, activeSubjects]);
+  }, [open]);
 
   const toggleSubject = (id: string) => {
-    setSelectedSubjectIds((prev) => {
-      if (prev.includes(id)) {
-        // Se já tem mais de uma selecionada, remove; se for a única, mantém para nunca ficar vazia
-        if (prev.length > 1) {
-          return prev.filter((item) => item !== id);
-        }
-        return prev;
-      }
-      return [...prev, id];
-    });
+    setSelectedSubjectIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id],
+    );
   };
 
   const effectiveMinutes =
@@ -65,8 +49,9 @@ export function IntensiveSessionModal({ open, onClose }: IntensiveSessionModalPr
       ? flow.settings.targetMinutes
       : Math.max(1, Math.min(180, customMinutes || 30));
 
-  const count = Math.max(1, selectedSubjectIds.length);
-  const perSubjectMinutes = Math.max(1, Math.floor(effectiveMinutes / count));
+  const count = selectedSubjectIds.length;
+  const perSubjectMinutes =
+    count > 0 ? Math.max(1, Math.floor(effectiveMinutes / count)) : 0;
 
   const handleStart = () => {
     if (selectedSubjectIds.length === 0) return;
@@ -160,14 +145,18 @@ export function IntensiveSessionModal({ open, onClose }: IntensiveSessionModalPr
           <div className="rounded-[var(--radius-tag)] border border-[color-mix(in_srgb,var(--signal)_20%,var(--line))] bg-[color-mix(in_srgb,var(--signal)_5%,var(--surface))] px-3 py-2 text-xs text-[var(--ink)] flex items-center justify-between">
             <span className="flex items-center gap-1.5 font-medium">
               <Layers size={13} className="text-[var(--signal)] shrink-0" />
-              {count === 1 ? (
+              {count === 0 ? (
+                <span className="text-[color-mix(in_srgb,var(--ink)_65%,transparent)]">
+                  Nenhuma matéria selecionada
+                </span>
+              ) : count === 1 ? (
                 <span>1 matéria selecionada</span>
               ) : (
                 <span>{count} matérias selecionadas ({perSubjectMinutes} min cada)</span>
               )}
             </span>
             <span className="font-bold text-[var(--signal)]">
-              Total: {perSubjectMinutes * count} min
+              {count === 0 ? "Selecione ao menos 1" : `Total: ${perSubjectMinutes * count} min`}
             </span>
           </div>
         </div>
