@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
+  AlertTriangle,
   BarChart3,
   ChevronDown,
   ChevronUp,
@@ -29,6 +30,7 @@ import {
   isDeckPaused,
   setDeckPaused,
 } from "@/lib/revisao/revisao-store";
+import { analyzeCycleHealth } from "@/lib/cycle-health";
 import {
   DAYS,
   STATUS_LABEL,
@@ -912,6 +914,11 @@ export default function MateriasPage() {
     return typeof window !== "undefined" ? getPausedDeckNames() : [];
   });
 
+  const cycleHealth = useMemo(
+    () => analyzeCycleHealth(data.subjects ?? []),
+    [data.subjects],
+  );
+
   useEffect(() => {
     const handlePausedChanged = (e: Event) => {
       const custom = e as CustomEvent<{ pausedDecks: string[] }>;
@@ -1469,6 +1476,23 @@ export default function MateriasPage() {
                           );
                         })}
                       </div>
+
+                      {/* Alerta sutil e pedagógico caso o peso cause desproporção */}
+                      {!cycleHealth.isHealthy &&
+                        cycleHealth.dominantSubject?.id === s.id && (
+                          <div className="mt-2.5 rounded-lg border border-amber-500/25 bg-amber-500/8 p-2.5 text-xs text-amber-900 dark:text-amber-200 space-y-1 animate-fade-in">
+                            <div className="flex items-center gap-1.5 font-semibold text-amber-700 dark:text-amber-300">
+                              <AlertTriangle size={14} className="shrink-0" />
+                              <span>{cycleHealth.title}</span>
+                            </div>
+                            <p className="leading-relaxed opacity-90">
+                              {cycleHealth.message}
+                            </p>
+                            <p className="text-[11px] leading-relaxed opacity-75">
+                              💡 {cycleHealth.recommendation}
+                            </p>
+                          </div>
+                        )}
                     </div>
                   </div>
 
@@ -1632,6 +1656,23 @@ export default function MateriasPage() {
                           );
                         })}
                       </div>
+
+                      {/* Alerta sutil e pedagógico caso o peso cause desproporção */}
+                      {!cycleHealth.isHealthy &&
+                        cycleHealth.dominantSubject?.id === s.id && (
+                          <div className="mt-2.5 rounded-lg border border-amber-500/25 bg-amber-500/8 p-2.5 text-xs text-amber-900 dark:text-amber-200 space-y-1 animate-fade-in">
+                            <div className="flex items-center gap-1.5 font-semibold text-amber-700 dark:text-amber-300">
+                              <AlertTriangle size={14} className="shrink-0" />
+                              <span>{cycleHealth.title}</span>
+                            </div>
+                            <p className="leading-relaxed opacity-90">
+                              {cycleHealth.message}
+                            </p>
+                            <p className="text-[11px] leading-relaxed opacity-75">
+                              💡 {cycleHealth.recommendation}
+                            </p>
+                          </div>
+                        )}
                     </div>
 
                     {/* Frequência & Foco do dia */}
