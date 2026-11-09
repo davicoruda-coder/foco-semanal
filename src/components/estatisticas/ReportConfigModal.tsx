@@ -155,10 +155,10 @@ export function ReportConfigModal({
       open={open}
       onClose={onClose}
       labelledBy={titleId}
-      cardClassName="max-w-xl w-full p-0 overflow-hidden shadow-2xl"
+      cardClassName="surface max-w-xl w-full p-0 overflow-hidden shadow-2xl animate-fade-in"
       closeOnOutsideClick={!generating}
     >
-      <div className="flex flex-col max-h-[85vh]">
+      <div className="flex flex-col max-h-[85vh] bg-[var(--surface)]">
         {/* Cabeçalho */}
         <div className="flex items-center justify-between border-b border-[var(--line)] px-5 py-4 bg-[var(--surface)]">
           <div className="flex items-center gap-2.5">
@@ -185,8 +185,8 @@ export function ReportConfigModal({
           </button>
         </div>
 
-        {/* Corpo com scroll suave */}
-        <div className="flex-1 overflow-y-auto p-5 space-y-6 text-sm">
+        {/* Corpo com scroll suave e fundo sólido */}
+        <div className="flex-1 overflow-y-auto p-5 space-y-6 text-sm bg-[var(--surface)] scrollbar-subtle">
           {/* 1. Seleção de Período */}
           <div className="space-y-2.5">
             <label className="text-xs font-semibold uppercase tracking-wider text-[color-mix(in_srgb,var(--ink)_60%,transparent)] flex items-center gap-1.5">
@@ -297,9 +297,11 @@ export function ReportConfigModal({
                   onChange={(e) => setSelectedSubject(e.target.value)}
                   className="bg-transparent text-xs text-[var(--ink)] w-full outline-hidden cursor-pointer"
                 >
-                  <option value="all">Escolha uma matéria específica...</option>
+                  <option value="all" className="bg-[var(--surface)] text-[var(--ink)]">
+                    Escolha uma matéria específica...
+                  </option>
                   {subjects.map((s) => (
-                    <option key={s.id} value={s.name}>
+                    <option key={s.id} value={s.name} className="bg-[var(--surface)] text-[var(--ink)]">
                       {s.name}
                     </option>
                   ))}
