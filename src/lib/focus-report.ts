@@ -352,9 +352,9 @@ export async function downloadFocusReport({
       doc.setTextColor(63, 58, 99);
       doc.setFont("helvetica", "bold");
       doc.setFontSize(8);
-      doc.text("HORÁRIO", margin + 4, y + 5.5);
-      doc.text("MATÉRIA / ATIVIDADE", margin + 38, y + 5.5);
-      doc.text("TIPO", margin + 115, y + 5.5);
+      doc.text("DATA / HORÁRIO", margin + 4, y + 5.5);
+      doc.text("MATÉRIA / ATIVIDADE", margin + 50, y + 5.5);
+      doc.text("TIPO", margin + 128, y + 5.5);
       doc.text("DURAÇÃO", pageWidth - margin - 4, y + 5.5, { align: "right" });
       y += 8;
     }
@@ -375,11 +375,15 @@ export async function downloadFocusReport({
 
       doc.setTextColor(42, 43, 52);
       doc.setFont("helvetica", "normal");
-      doc.setFontSize(8.5);
-      const timeLabel = s.dateStr ? `${s.dateStr} ${s.timeRange}` : s.timeRange;
+      doc.setFontSize(8);
+      const safeTimeRange = (s.timeRange || "")
+        .replace(/[→➔➜]/g, "-")
+        .replace(/[•·]/g, "-")
+        .trim();
+      const timeLabel = s.dateStr ? `${s.dateStr}  ${safeTimeRange}` : safeTimeRange;
       doc.text(timeLabel, margin + 4, y + 5.5);
-      doc.text(s.subjectName.slice(0, 38), margin + 38, y + 5.5);
-      doc.text(s.type, margin + 115, y + 5.5);
+      doc.text(s.subjectName.slice(0, 36), margin + 50, y + 5.5);
+      doc.text(s.type, margin + 128, y + 5.5);
       doc.setFont("helvetica", "bold");
       doc.text(`${s.durationMinutes} min`, pageWidth - margin - 4, y + 5.5, { align: "right" });
       y += 8;

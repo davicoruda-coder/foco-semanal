@@ -149,6 +149,14 @@ function shiftPeriod(date: Date, range: Range, amount: number): Date {
   return next;
 }
 
+function formatSessionDateShort(startedAt: string): string {
+  const d = new Date(startedAt);
+  if (isNaN(d.getTime())) return "";
+  const day = String(d.getDate()).padStart(2, "0");
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  return `${day}/${month}`;
+}
+
 function formatSessionTimeRange(startedAt: string, endedAt: string | null, durationMinutes: number) {
   const start = new Date(startedAt);
   const startStr = isNaN(start.getTime())
@@ -167,7 +175,7 @@ function formatSessionTimeRange(startedAt: string, endedAt: string | null, durat
     endStr = endCalc.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
   }
 
-  return endStr ? `${startStr} → ${endStr}` : startStr;
+  return endStr ? `${startStr} - ${endStr}` : startStr;
 }
 
 function getSessionTypeInfo(sess: StudySession) {
@@ -1105,7 +1113,7 @@ function EstatisticasContent() {
           timeRange: formatSessionTimeRange(s.started_at, s.ended_at, s.duration_minutes),
           durationMinutes: s.duration_minutes,
           type: getSessionTypeInfo(s).label,
-          dateStr: range !== "dia" ? getSessionDateKey(s.started_at).slice(5).replace("-", "/") : undefined,
+          dateStr: range !== "dia" ? formatSessionDateShort(s.started_at) : undefined,
         })),
         completedCycleRounds: cycleRoundsPeriod,
         filename: report.filename,
@@ -1258,7 +1266,7 @@ function EstatisticasContent() {
           type: getSessionTypeInfo(s).label,
           dateStr:
             config.periodRange !== "dia"
-              ? getSessionDateKey(s.started_at).slice(5).replace("-", "/")
+              ? formatSessionDateShort(s.started_at)
               : undefined,
         })),
         completedCycleRounds: targetCompletedCycleRounds,
