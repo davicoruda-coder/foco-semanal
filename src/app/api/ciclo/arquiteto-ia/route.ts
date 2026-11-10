@@ -280,3 +280,4 @@ Gere agora a resposta estritamente em JSON conforme o schema do sistema.`;
     });
   }
 }
+

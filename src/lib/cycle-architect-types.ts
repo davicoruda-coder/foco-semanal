@@ -67,3 +67,4 @@ export interface CycleArchitectResponsePayload {
     caution_warning: string | null;
   };
 }
+

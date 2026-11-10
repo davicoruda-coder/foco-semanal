@@ -525,7 +525,7 @@ export default function HojePage() {
                             {s.name}
                           </p>
                           <SessionSubjectClock subjectId={s.id} compact />
-                          {(s.weight ?? 1) > 1 && (
+                          {!flow.isIntensiveSession && (s.weight ?? 1) > 1 && (
                             <span
                               className="rounded-full border border-[color-mix(in_srgb,var(--signal)_35%,transparent)] bg-[color-mix(in_srgb,var(--signal)_12%,transparent)] px-2 py-0.5 text-[11px] font-semibold text-[var(--signal)]"
                               title={`Ciclo ponderado: ${Math.min(s.cycle_done ?? 0, s.weight ?? 1)} de ${s.weight} concluídos`}
@@ -728,7 +728,7 @@ export default function HojePage() {
                             <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2.5 gap-y-1">
                               <span className="min-w-0">{s.name}</span>
                               <SessionSubjectClock subjectId={s.id} />
-                              {(s.weight ?? 1) > 1 && (
+                              {!flow.isIntensiveSession && (s.weight ?? 1) > 1 && (
                                 <span
                                   className="rounded-full border border-[color-mix(in_srgb,var(--signal)_35%,transparent)] bg-[color-mix(in_srgb,var(--signal)_12%,transparent)] px-2 py-0.5 text-[11px] font-semibold text-[var(--signal)]"
                                   title={`Ciclo ponderado: ${Math.min(s.cycle_done ?? 0, s.weight ?? 1)} de ${s.weight} concluídos`}
