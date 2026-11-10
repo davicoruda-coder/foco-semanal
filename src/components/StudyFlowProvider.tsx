@@ -606,14 +606,6 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
         Math.floor(durationMinutes / validSubs.length),
       );
 
-      for (const sub of validSubs) {
-        const exclusiveCycle = isExclusiveCycleDay(data.subjects ?? [], day);
-        const st = exclusiveCycle ? sub.exclusive_status : sub.status;
-        if (st === "ok") {
-          setSubjectStatus(sub.id, "prox");
-        }
-      }
-
       const packed: Subject[] = validSubs.map((sub) => ({
         ...sub,
         study_minutes: perSubjectMinutes,
@@ -630,7 +622,7 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
       }, 60);
       playSessionStartTone();
     },
-    [data.subjects, resetSubjectTimer, toggleSubjectTimer, setSubjectStatus],
+    [data.subjects, resetSubjectTimer, toggleSubjectTimer],
   );
 
   const finishIntensiveMode = useCallback(() => {
@@ -645,8 +637,8 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
       if (isClockRunning(subId, false)) {
         toggleSubjectTimer(subId);
       }
+      // Registra resfriamento no ciclo para priorizar as outras matérias na volta, sem queimar as etapas do ciclo
       recordLastCycleCompletedSubjectId(subId);
-      setSubjectStatus(subId, "ok");
     }
     setIsIntensiveSession(false);
     setIntensiveSubjectIds([]);
@@ -657,7 +649,7 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
     setCurrentIndex(0);
     setRestEndsAt(null);
     advancingRef.current = false;
-  }, [intensiveSubjectIds, intensiveSubjectId, isClockRunning, toggleSubjectTimer, setSubjectStatus]);
+  }, [intensiveSubjectIds, intensiveSubjectId, isClockRunning, toggleSubjectTimer]);
 
   const pauseSession = useCallback(() => {
     if (phaseRef.current !== "running") return;
@@ -827,7 +819,9 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
     if (!current) return;
     if (isClockRunning(current.id, current.is_free)) toggleSubjectTimer(current.id);
     recordLastCycleCompletedSubjectId(current.id);
-    setSubjectStatus(current.id, "ok");
+    if (!isIntensiveSession) {
+      setSubjectStatus(current.id, "ok");
+    }
     const durationMin = Math.max(1, current.study_minutes ?? 25);
     const nowIso = new Date().toISOString();
     addStudySession({
@@ -836,11 +830,11 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
       started_at: new Date(Date.now() - durationMin * 60000).toISOString(),
       ended_at: nowIso,
       duration_minutes: durationMin,
-      mode: "ciclo",
+      mode: isIntensiveSession ? "intensivo" : "ciclo",
       completed: true,
     });
     advanceAfterComplete(current.id);
-  }, [isClockRunning, toggleSubjectTimer, setSubjectStatus, addStudySession, advanceAfterComplete]);
+  }, [isIntensiveSession, isClockRunning, toggleSubjectTimer, setSubjectStatus, addStudySession, advanceAfterComplete]);
 
   const extendCurrentSubject = useCallback(
     (extraMinutes: number) => {

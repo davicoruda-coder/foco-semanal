@@ -208,7 +208,7 @@ function parseSession(raw: unknown): StudySession | null {
     started_at: asString(raw.started_at, new Date().toISOString(), 40),
     ended_at: typeof raw.ended_at === "string" ? raw.ended_at.slice(0, 40) : null,
     duration_minutes: asInt(raw.duration_minutes, 0, 0, 24 * 60),
-    mode: raw.mode === "unica" ? "unica" : "ciclo",
+    mode: raw.mode === "unica" ? "unica" : raw.mode === "intensivo" ? "intensivo" : "ciclo",
     completed: asBool(raw.completed, false),
   };
 }

@@ -7,7 +7,7 @@ export type ThemePref = Theme | "auto";
 
 export type BlockType = "trabalho" | "estudo" | "reuniao" | "pessoal" | "outro";
 
-export type SessionMode = "ciclo" | "unica";
+export type SessionMode = "ciclo" | "unica" | "intensivo";
 
 export type TimerPhase = "focus" | "break_short" | "break_long";
 

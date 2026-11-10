@@ -22,6 +22,7 @@ import {
   Search,
   Sparkles,
   X,
+  Zap,
 } from "lucide-react";
 import { useApp } from "@/components/AppProvider";
 import { RevisaoProvider, useRevisao } from "@/components/revisao/RevisaoProvider";
@@ -196,6 +197,14 @@ function getSessionTypeInfo(sess: StudySession) {
       badgeClasses: "bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/20",
     };
   }
+  if (sess.mode === "intensivo") {
+    return {
+      type: "intensivo" as const,
+      label: "Modo Intensivo",
+      icon: Zap,
+      badgeClasses: "bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30",
+    };
+  }
   if (sess.mode === "ciclo") {
     return {
       type: "ciclo" as const,
@@ -223,7 +232,7 @@ type SessionClusterItem = {
 
 type SessionCluster = {
   id: string;
-  type: "ciclo" | "flashcards" | "quiz" | "livre";
+  type: "ciclo" | "flashcards" | "quiz" | "livre" | "intensivo";
   typeLabel: string;
   badgeClasses: string;
   icon: typeof RefreshCw;
@@ -232,6 +241,7 @@ type SessionCluster = {
   timeRange: string;
   totalMinutes: number;
   isSingle: boolean;
+  isIntensive?: boolean;
   subjectName: string;
   items: SessionClusterItem[];
   dateStr?: string;
@@ -389,21 +399,29 @@ function clusterSessions(
         totalMinutes,
       );
 
+      const isIntensive =
+        firstInfo.type === "intensivo" || group.some((s) => s.mode === "intensivo");
+
       return {
         id: `cluster_${first.id}_${idx}`,
-        type: firstInfo.type,
-        typeLabel: isSingle
-          ? firstInfo.type === "ciclo"
-            ? "Matéria Única"
-            : firstInfo.label
-          : "Sessão em Bloco",
-        badgeClasses: firstInfo.badgeClasses,
-        icon: firstInfo.icon,
+        type: isIntensive ? ("intensivo" as const) : firstInfo.type,
+        typeLabel: isIntensive
+          ? "Modo Intensivo"
+          : isSingle
+            ? firstInfo.type === "ciclo"
+              ? "Matéria Única"
+              : firstInfo.label
+            : "Sessão em Bloco",
+        badgeClasses: isIntensive
+          ? "bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30"
+          : firstInfo.badgeClasses,
+        icon: isIntensive ? Zap : firstInfo.icon,
         startedAt: first.started_at,
         endedAt: last.ended_at,
         timeRange,
         totalMinutes,
         isSingle,
+        isIntensive,
         subjectName: cleanFirstName,
         items,
         dateStr: k ? k.slice(5).replace("-", "/") : undefined,
@@ -426,20 +444,34 @@ function SessionClusterCard({
   showDate?: boolean;
 }) {
   const Icon = cluster.icon;
+  const isIntensive = Boolean(cluster.isIntensive);
 
   if (cluster.isSingle) {
     return (
-      <div className="flex items-center justify-between gap-3 p-3 sm:p-3.5 rounded-xl border border-[var(--line)] bg-[var(--surface)] hover:bg-[color-mix(in_srgb,var(--surface)_75%,var(--mist))] transition-all">
+      <div
+        className={`flex items-center justify-between gap-3 p-3 sm:p-3.5 rounded-xl border transition-all ${
+          isIntensive
+            ? "border-amber-500/35 bg-amber-500/[0.04] dark:bg-amber-500/[0.06] hover:border-amber-500/45 shadow-[0_2px_10px_-4px_rgba(245,158,11,0.15)]"
+            : "border-[var(--line)] bg-[var(--surface)] hover:bg-[color-mix(in_srgb,var(--surface)_75%,var(--mist))]"
+        }`}
+      >
         <div className="flex items-center gap-3 min-w-0">
           <div className={`grid size-9 shrink-0 place-items-center rounded-lg border ${cluster.badgeClasses}`}>
-            <Icon size={16} strokeWidth={2.2} />
+            <Icon size={16} strokeWidth={2.2} className={isIntensive ? "fill-current" : undefined} />
           </div>
           <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               <span className="font-semibold text-xs sm:text-sm text-[var(--ink)] truncate max-w-[200px] sm:max-w-xs">
                 {cluster.subjectName}
               </span>
-              <span className="inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[var(--mist)] text-[color-mix(in_srgb,var(--ink)_75%,transparent)] border border-[var(--line)]">
+              <span
+                className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full border ${
+                  isIntensive
+                    ? "bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30"
+                    : "bg-[var(--mist)] text-[color-mix(in_srgb,var(--ink)_75%,transparent)] border-[var(--line)]"
+                }`}
+              >
+                {isIntensive && <Zap size={10} className="fill-current text-amber-500" />}
                 {cluster.typeLabel}
               </span>
               {cluster.extraMinutes ? (
@@ -458,11 +490,21 @@ function SessionClusterCard({
           </div>
         </div>
         <div className="shrink-0 text-right">
-          <span className="font-mono-num font-semibold text-xs sm:text-sm text-[var(--ink)]">
+          <span
+            className={`font-mono-num font-semibold text-xs sm:text-sm ${
+              isIntensive ? "text-amber-600 dark:text-amber-400 font-bold" : "text-[var(--ink)]"
+            }`}
+          >
             {cluster.totalMinutes} min
           </span>
-          <div className="text-[10px] font-medium text-[color-mix(in_srgb,var(--ink)_45%,transparent)] uppercase tracking-wide">
-            {cluster.type === "ciclo" ? "finalizada" : "concluído"}
+          <div
+            className={`text-[10px] uppercase tracking-wide ${
+              isIntensive
+                ? "text-amber-700 dark:text-amber-300 font-semibold"
+                : "text-[color-mix(in_srgb,var(--ink)_45%,transparent)] font-medium"
+            }`}
+          >
+            {isIntensive ? "sprint concluído" : cluster.type === "ciclo" ? "finalizada" : "concluído"}
           </div>
         </div>
       </div>
@@ -470,19 +512,42 @@ function SessionClusterCard({
   }
 
   return (
-    <div className="p-3 sm:p-3.5 rounded-xl border border-[color-mix(in_srgb,var(--signal)_28%,var(--line))] bg-[color-mix(in_srgb,var(--signal)_4.5%,var(--surface))] hover:border-[color-mix(in_srgb,var(--signal)_45%,var(--line))] transition-all space-y-2.5 shadow-[0_2px_10px_-4px_color-mix(in_srgb,var(--signal)_12%,transparent)]">
+    <div
+      className={`p-3 sm:p-3.5 rounded-xl border transition-all space-y-2.5 ${
+        isIntensive
+          ? "border-amber-500/35 bg-amber-500/[0.04] dark:bg-amber-500/[0.06] hover:border-amber-500/50 shadow-[0_2px_12px_-4px_rgba(245,158,11,0.18)]"
+          : "border-[color-mix(in_srgb,var(--signal)_28%,var(--line))] bg-[color-mix(in_srgb,var(--signal)_4.5%,var(--surface))] hover:border-[color-mix(in_srgb,var(--signal)_45%,var(--line))] shadow-[0_2px_10px_-4px_color-mix(in_srgb,var(--signal)_12%,transparent)]"
+      }`}
+    >
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">
-          <div className="grid size-9 shrink-0 place-items-center rounded-lg bg-[var(--signal-soft)] text-[var(--signal)] border border-[color-mix(in_srgb,var(--signal)_25%,transparent)]">
-            <Icon size={16} strokeWidth={2.2} />
+          <div
+            className={`grid size-9 shrink-0 place-items-center rounded-lg border ${
+              isIntensive
+                ? "bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30"
+                : "bg-[var(--signal-soft)] text-[var(--signal)] border-[color-mix(in_srgb,var(--signal)_25%,transparent)]"
+            }`}
+          >
+            <Icon size={16} strokeWidth={2.2} className={isIntensive ? "fill-current" : undefined} />
           </div>
           <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="font-semibold text-xs sm:text-sm text-[var(--ink)] tracking-tight">
+              <span
+                className={`font-semibold text-xs sm:text-sm tracking-tight ${
+                  isIntensive ? "text-amber-950 dark:text-amber-100" : "text-[var(--ink)]"
+                }`}
+              >
                 {cluster.typeLabel}
               </span>
-              <span className="inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[var(--signal-soft)] text-[var(--signal)] border border-[color-mix(in_srgb,var(--signal)_20%,transparent)]">
-                {cluster.items.length} matérias no bloco
+              <span
+                className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full border ${
+                  isIntensive
+                    ? "bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30"
+                    : "bg-[var(--signal-soft)] text-[var(--signal)] border-[color-mix(in_srgb,var(--signal)_20%,transparent)]"
+                }`}
+              >
+                {isIntensive && <Zap size={10} className="fill-current text-amber-500" />}
+                {cluster.items.length} {cluster.items.length === 1 ? "matéria" : "matérias"} no bloco
               </span>
               {cluster.extraMinutes ? (
                 <span className="inline-flex items-center gap-0.5 text-[10px] font-semibold px-1.5 py-0.5 rounded-md bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/25">
@@ -501,26 +566,50 @@ function SessionClusterCard({
         </div>
 
         <div className="shrink-0 text-right">
-          <span className="font-mono-num font-bold text-xs sm:text-sm text-[var(--signal)]">
+          <span
+            className={`font-mono-num font-bold text-xs sm:text-sm ${
+              isIntensive ? "text-amber-600 dark:text-amber-400" : "text-[var(--signal)]"
+            }`}
+          >
             {cluster.totalMinutes} min
           </span>
-          <div className="text-[10px] font-semibold text-[color-mix(in_srgb,var(--signal)_75%,var(--ink))] uppercase tracking-wide">
-            bloco completo
+          <div
+            className={`text-[10px] font-semibold uppercase tracking-wide ${
+              isIntensive
+                ? "text-amber-700 dark:text-amber-300"
+                : "text-[color-mix(in_srgb,var(--signal)_75%,var(--ink))]"
+            }`}
+          >
+            {isIntensive ? "bloco intensivo" : "bloco completo"}
           </div>
         </div>
       </div>
 
-      <div className="flex items-center gap-1.5 flex-wrap pt-2 border-t border-[color-mix(in_srgb,var(--signal)_15%,var(--line))] text-xs">
+      <div
+        className={`flex items-center gap-1.5 flex-wrap pt-2 border-t text-xs ${
+          isIntensive
+            ? "border-amber-500/20"
+            : "border-[color-mix(in_srgb,var(--signal)_15%,var(--line))]"
+        }`}
+      >
         <span className="text-[10px] uppercase font-bold tracking-wider text-[color-mix(in_srgb,var(--ink)_50%,transparent)]">
           Matérias:
         </span>
         {cluster.items.map((it, idx) => (
           <span
             key={it.id}
-            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[var(--surface)] border border-[color-mix(in_srgb,var(--signal)_20%,var(--line))] text-xs text-[var(--ink)] shadow-2xs"
+            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[var(--surface)] border text-xs text-[var(--ink)] shadow-2xs ${
+              isIntensive
+                ? "border-amber-500/25"
+                : "border-[color-mix(in_srgb,var(--signal)_20%,var(--line))]"
+            }`}
           >
             <span className="font-medium">{it.subjectName}</span>
-            <span className="font-mono-num font-semibold text-[11px] text-[var(--signal)]">
+            <span
+              className={`font-mono-num font-semibold text-[11px] ${
+                isIntensive ? "text-amber-600 dark:text-amber-400" : "text-[var(--signal)]"
+              }`}
+            >
               {it.durationMinutes}m
             </span>
             {it.extraMinutes ? (
@@ -946,7 +1035,7 @@ function EstatisticasContent() {
     let quiz_livre = 0;
     for (const s of periodSessions) {
       const type = getSessionTypeInfo(s).type;
-      if (type === "ciclo") ciclo++;
+      if (type === "ciclo" || type === "intensivo") ciclo++;
       else if (type === "flashcards") flashcards++;
       else quiz_livre++;
     }
@@ -958,7 +1047,7 @@ function EstatisticasContent() {
     if (sessionFilter === "todos") return periodSessions;
     return periodSessions.filter((s) => {
       const type = getSessionTypeInfo(s).type;
-      if (sessionFilter === "ciclo") return type === "ciclo";
+      if (sessionFilter === "ciclo") return type === "ciclo" || type === "intensivo";
       if (sessionFilter === "flashcards") return type === "flashcards";
       return type === "quiz" || type === "livre";
     });

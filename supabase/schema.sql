@@ -98,7 +98,7 @@ create table if not exists public.study_sessions (
   started_at timestamptz not null default now(),
   ended_at timestamptz,
   duration_minutes int not null default 0,
-  mode text not null check (mode in ('ciclo', 'unica')) default 'ciclo',
+  mode text not null check (mode in ('ciclo', 'unica', 'intensivo')) default 'ciclo',
   completed boolean not null default false
 );
 

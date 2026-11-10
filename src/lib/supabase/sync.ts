@@ -259,7 +259,7 @@ export async function loadCloudData(
     started_at: s.started_at,
     ended_at: s.ended_at,
     duration_minutes: s.duration_minutes ?? 0,
-    mode: s.mode === "unica" ? "unica" : "ciclo",
+    mode: s.mode === "unica" ? "unica" : s.mode === "intensivo" ? "intensivo" : "ciclo",
     completed: Boolean(s.completed),
   }));
 
@@ -574,7 +574,7 @@ export async function saveCloudData(
   );
 
   if (data.study_sessions.length) {
-    const { error } = await supabase.from("study_sessions").upsert(
+    let { error } = await supabase.from("study_sessions").upsert(
       data.study_sessions.slice(0, 100).map((s) => ({
         id: s.id,
         user_id: userId,
@@ -588,6 +588,23 @@ export async function saveCloudData(
       })),
       { onConflict: "id" },
     );
+    if (error && (error.message?.includes("study_sessions_mode_check") || error.code === "23514")) {
+      const fallbackResult = await supabase.from("study_sessions").upsert(
+        data.study_sessions.slice(0, 100).map((s) => ({
+          id: s.id,
+          user_id: userId,
+          subject_id: s.subject_id,
+          subject_name: s.subject_name,
+          started_at: s.started_at,
+          ended_at: s.ended_at,
+          duration_minutes: s.duration_minutes,
+          mode: s.mode === "intensivo" ? "ciclo" : s.mode,
+          completed: s.completed,
+        })),
+        { onConflict: "id" },
+      );
+      error = fallbackResult.error;
+    }
     assertOk("study_sessions upsert", error);
   }
 }

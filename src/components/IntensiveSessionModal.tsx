@@ -269,10 +269,10 @@ export function IntensiveSessionModal({ open, onClose }: IntensiveSessionModalPr
         </div>
 
         {/* Nota informativa de retorno inteligente ao ciclo */}
-        <div className="flex items-start gap-2.5 rounded-[var(--radius-tag)] border border-blue-500/20 bg-blue-500/8 dark:bg-blue-950/30 p-3 text-xs text-blue-900 dark:text-blue-200">
-          <Sparkles size={15} className="shrink-0 text-blue-600 dark:text-blue-400 mt-0.5" />
+        <div className="flex items-start gap-2.5 rounded-[var(--radius-tag)] border border-amber-500/25 bg-amber-500/10 dark:bg-amber-950/30 p-3 text-xs text-amber-900 dark:text-amber-200">
+          <Sparkles size={15} className="shrink-0 text-amber-600 dark:text-amber-400 mt-0.5" />
           <p className="leading-relaxed">
-            Ao encerrar o Modo Intensivo, a(s) matéria(s) estudada(s) avançam no ciclo de hoje, evitando repetições imediatas.
+            O Modo Intensivo é um sprint focado independente: ele não consome as etapas planejadas do seu ciclo regular e ajusta a fila do dia para priorizar as outras matérias, evitando repetições imediatas.
           </p>
         </div>
 

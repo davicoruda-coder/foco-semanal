@@ -21,6 +21,7 @@ import {
   writeHeartbeat,
 } from "@/lib/clock-interrupt";
 import { addFocusSeconds, commitFocusDisplaySnapshot } from "@/lib/focus-log";
+import { readPersistedStudyFlow } from "@/lib/study-flow-persist";
 import { syncFocusLogWithCloud } from "@/lib/supabase/focus-sync";
 import { emitSubjectComplete, emitCycleComplete } from "@/lib/study-flow-events";
 import {
@@ -1091,7 +1092,10 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
         playAlarmTone();
         notify("FocoHub", `${item.name} concluída`);
         const sid = subjectIdFromKey(item.key);
-        setSubjectStatusRef.current(sid, "ok");
+        const isIntensive = Boolean(readPersistedStudyFlow().isIntensiveSession);
+        if (!isIntensive) {
+          setSubjectStatusRef.current(sid, "ok");
+        }
         const sub = subjectsRef.current.find((s) => s.id === sid);
         const isExt = Boolean(prev[item.key]?.isExtension);
         const extMin = prev[item.key]?.extensionMinutes ?? 0;
@@ -1105,7 +1109,7 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
           started_at: new Date(Date.now() - durationMin * 60000).toISOString(),
           ended_at: nowIso,
           duration_minutes: durationMin,
-          mode: "ciclo",
+          mode: isIntensive ? "intensivo" : "ciclo",
           completed: true,
           extra_minutes: isExt && extMin > 0 ? extMin : undefined,
         });
@@ -1190,7 +1194,10 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
         playAlarmTone();
         notify("FocoHub", `${item.name} concluída`);
         const sid = subjectIdFromKey(item.key);
-        setSubjectStatusRef.current(sid, "ok");
+        const isIntensive = Boolean(readPersistedStudyFlow().isIntensiveSession);
+        if (!isIntensive) {
+          setSubjectStatusRef.current(sid, "ok");
+        }
         const sub = subjectsRef.current.find((s) => s.id === sid);
         const isExt = Boolean(prev[item.key]?.isExtension);
         const extMin = prev[item.key]?.extensionMinutes ?? 0;
@@ -1204,7 +1211,7 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
           started_at: new Date(Date.now() - durationMin * 60000).toISOString(),
           ended_at: nowIso,
           duration_minutes: durationMin,
-          mode: "ciclo",
+          mode: isIntensive ? "intensivo" : "ciclo",
           completed: true,
           extra_minutes: isExt && extMin > 0 ? extMin : undefined,
         });
@@ -1406,8 +1413,11 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
       if (canComplete) {
         playAlarmTone();
         notify("FocoHub", `${s.name} concluída`);
-        setSubjectStatus(s.id, "ok");
         const sid = s.id;
+        const isIntensive = Boolean(readPersistedStudyFlow().isIntensiveSession);
+        if (!isIntensive) {
+          setSubjectStatus(s.id, "ok");
+        }
         const sub = subjectsRef.current.find((x) => x.id === sid);
         const isExt = Boolean(r.isExtension);
         const extMin = r.extensionMinutes ?? 0;
@@ -1421,7 +1431,7 @@ export function TimerRuntimeProvider({ children }: { children: ReactNode }) {
           started_at: new Date(Date.now() - durationMin * 60000).toISOString(),
           ended_at: nowIso,
           duration_minutes: durationMin,
-          mode: "ciclo",
+          mode: isIntensive ? "intensivo" : "ciclo",
           completed: true,
           extra_minutes: isExt && extMin > 0 ? extMin : undefined,
         });

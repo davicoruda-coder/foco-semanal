@@ -383,7 +383,8 @@ export async function downloadFocusReport({
       const timeLabel = s.dateStr ? `${s.dateStr}  ${safeTimeRange}` : safeTimeRange;
       doc.text(timeLabel, margin + 4, y + 5.5);
       doc.text(s.subjectName.slice(0, 36), margin + 50, y + 5.5);
-      doc.text(s.type, margin + 128, y + 5.5);
+      const displayType = s.type === "Modo Intensivo" || s.type === "intensivo" ? "Intensivo" : s.type;
+      doc.text(displayType, margin + 128, y + 5.5);
       doc.setFont("helvetica", "bold");
       doc.text(`${s.durationMinutes} min`, pageWidth - margin - 4, y + 5.5, { align: "right" });
       y += 8;
