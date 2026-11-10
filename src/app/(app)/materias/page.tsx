@@ -53,6 +53,7 @@ import {
   progressPercent,
 } from "@/lib/utils";
 import { SubjectResources } from "@/components/SubjectResources";
+import { CycleArchitectModal } from "@/components/CycleArchitectModal";
 
 type DraftFreq = {
   mode: "all" | "days";
@@ -913,6 +914,7 @@ export default function MateriasPage() {
   const [pausedDecks, setPausedDecks] = useState<string[]>(() => {
     return typeof window !== "undefined" ? getPausedDeckNames() : [];
   });
+  const [architectModalOpen, setArchitectModalOpen] = useState(false);
 
   const cycleHealth = useMemo(
     () => analyzeCycleHealth(data.subjects ?? []),
@@ -1027,18 +1029,27 @@ export default function MateriasPage() {
           </p>
         </div>
 
-        {subjects.length > 0 && (
-          <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-2 flex-wrap">
+          <button
+            type="button"
+            onClick={() => setArchitectModalOpen(true)}
+            className="inline-flex items-center gap-1.5 rounded-full border border-[color-mix(in_srgb,var(--signal)_35%,var(--line))] bg-[color-mix(in_srgb,var(--signal)_8%,var(--surface))] px-3 py-1.5 text-xs font-semibold text-[var(--signal)] transition hover:bg-[color-mix(in_srgb,var(--signal)_15%,var(--surface))] shadow-2xs cursor-pointer"
+            title="Calibrar pesos e tempos com IA e evidências científicas"
+          >
+            <Sparkles size={14} strokeWidth={2.3} />
+            <span>Arquiteto de Ciclo</span>
+          </button>
+          {subjects.length > 0 && (
             <button
               type="button"
               onClick={allExpanded ? collapseAll : expandAll}
-              className="inline-flex items-center gap-1.5 rounded-full border border-[var(--line)] bg-[var(--surface)] px-3 py-1.5 text-xs font-medium text-[color-mix(in_srgb,var(--ink)_75%,transparent)] transition hover:border-[color-mix(in_srgb,var(--signal)_40%,var(--line))] hover:text-[var(--ink)]"
+              className="inline-flex items-center gap-1.5 rounded-full border border-[var(--line)] bg-[var(--surface)] px-3 py-1.5 text-xs font-medium text-[color-mix(in_srgb,var(--ink)_75%,transparent)] transition hover:border-[color-mix(in_srgb,var(--signal)_40%,var(--line))] hover:text-[var(--ink)] cursor-pointer"
             >
               <ChevronsUpDown size={14} strokeWidth={2} className="text-[var(--signal)]" />
               <span>{allExpanded ? "Recolher todas" : "Expandir todas"}</span>
             </button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       {/* Formulário de Adição */}
@@ -1888,6 +1899,11 @@ export default function MateriasPage() {
           );
         })}
       </ul>
+
+      <CycleArchitectModal
+        isOpen={architectModalOpen}
+        onClose={() => setArchitectModalOpen(false)}
+      />
     </div>
   );
 }
