@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowUpRight, Target } from "lucide-react";
+import { Target } from "lucide-react";
 import { useApp } from "@/components/AppProvider";
 import { SIDEBAR_TIMER_ID, useTimerRuntime } from "@/components/TimerRuntimeProvider";
 import {
@@ -125,12 +125,6 @@ export function FocusTodayCard({
             aria-hidden
           />
           <span>Foco hoje</span>
-          <ArrowUpRight
-            size={13}
-            strokeWidth={2}
-            className="opacity-40 transition-all duration-200 group-hover:opacity-100 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-[var(--signal)]"
-            aria-hidden
-          />
         </p>
         <p
           className={`font-mono-num font-semibold tracking-tight ${
