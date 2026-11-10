@@ -88,10 +88,11 @@ export function SubjectResources({ recursos = [], onChange, compact }: Props) {
           <button
             type="button"
             onClick={() => setIsAdding(true)}
-            className="flex items-center justify-center p-0.5 text-[color-mix(in_srgb,var(--ink)_55%,transparent)] transition hover:text-[var(--signal)]"
-            title="Adicionar link"
+            className="inline-flex items-center gap-1.5 rounded-full border border-dashed border-[var(--line)] px-2.5 py-1 text-[11px] font-medium text-[color-mix(in_srgb,var(--ink)_65%,transparent)] hover:border-[var(--signal)] hover:text-[var(--signal)] hover:bg-[var(--surface)] transition cursor-pointer"
+            title="Adicionar link ou recurso"
           >
-            <Link2 size={13} strokeWidth={2.25} />
+            <Link2 size={12} strokeWidth={2.2} />
+            <span>Adicionar link</span>
           </button>
         )}
       </div>

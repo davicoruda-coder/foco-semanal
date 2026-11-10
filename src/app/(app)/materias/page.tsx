@@ -1375,104 +1375,96 @@ export default function MateriasPage() {
 
               {/* CORPO EXPANDIDO (Configurações detalhadas da matéria) */}
               {isExpanded && (
-                <div className="border-t border-[var(--line)] bg-[color-mix(in_srgb,var(--mist)_25%,var(--surface))] p-4 space-y-4 transition-all">
-                  {/* Status & Modo de Estudo */}
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="text-xs font-medium uppercase tracking-wider opacity-50">
-                        Modo:
+                <div className="border-t border-[var(--line)] bg-[color-mix(in_srgb,var(--mist)_20%,var(--surface))] p-3.5 sm:p-4 space-y-3.5 transition-all animate-in fade-in duration-150">
+                  {/* PAINEL 1: PARÂMETROS DO CICLO & TEMPORIZADOR */}
+                  <div className="rounded-xl border border-[var(--line)] bg-[var(--surface)] p-3.5 sm:p-4 space-y-3.5 shadow-2xs">
+                    <div className="flex flex-wrap items-center justify-between gap-2.5 pb-2.5 border-b border-[var(--line)]/50">
+                      <span className="text-xs font-bold uppercase tracking-wider text-[var(--ink)] flex items-center gap-1.5">
+                        <Clock size={13} className="text-[var(--signal)]" />
+                        <span>Parâmetros do Ciclo</span>
                       </span>
-                      <div className="inline-flex items-center gap-0.5 rounded-full border border-[var(--line)] bg-[var(--mist)] p-0.5 shadow-2xs">
-                        <button
-                          type="button"
-                          className={`rounded-full px-2.5 py-1 text-xs font-semibold transition ${
-                            !free
-                              ? "bg-[var(--surface)] text-[var(--ink)] shadow-xs ring-1 ring-black/[0.04] dark:ring-white/[0.06]"
-                              : "text-[color-mix(in_srgb,var(--ink)_55%,transparent)] hover:text-[var(--ink)] hover:bg-[var(--surface)]/40"
-                          }`}
-                          onClick={() => {
-                            if (!free) return;
-                            upsertSubject({ ...s, is_free: false });
-                          }}
-                        >
-                          Com tempo
-                        </button>
-                        <button
-                          type="button"
-                          className={`rounded-full px-2.5 py-1 text-xs font-semibold transition ${
-                            free
-                              ? "bg-[var(--surface)] text-[var(--ink)] shadow-xs ring-1 ring-black/[0.04] dark:ring-white/[0.06]"
-                              : "text-[color-mix(in_srgb,var(--ink)_55%,transparent)] hover:text-[var(--ink)] hover:bg-[var(--surface)]/40"
-                          }`}
-                          onClick={() => {
-                            if (free) return;
-                            upsertSubject({ ...s, is_free: true });
-                          }}
-                        >
-                          Livre
-                        </button>
-                      </div>
-                    </div>
 
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="text-xs font-medium uppercase tracking-wider opacity-50">
-                        Ciclo:
-                      </span>
-                      <div className="inline-flex items-center gap-0.5 rounded-full border border-[var(--line)] bg-[var(--surface)] p-0.5">
-                        {(["ok", "prox"] as SubjectStatus[]).map((st) => {
-                          const active = s.status === st;
-                          return (
+                      <div className="flex flex-wrap items-center gap-3">
+                        {/* Modo do Temporizador */}
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[11px] font-medium text-[color-mix(in_srgb,var(--ink)_50%,transparent)] uppercase">
+                            Modo:
+                          </span>
+                          <div className="inline-flex items-center gap-0.5 rounded-full border border-[var(--line)] bg-[var(--mist)] p-0.5 shadow-2xs">
                             <button
-                              key={st}
                               type="button"
-                              className={`rounded-full px-2.5 py-1 text-xs font-medium transition ${
-                                active
-                                  ? statusClass(st)
+                              className={`rounded-full px-2.5 py-0.5 text-xs font-semibold transition cursor-pointer ${
+                                !free
+                                  ? "bg-[var(--surface)] text-[var(--ink)] shadow-xs ring-1 ring-black/[0.04] dark:ring-white/[0.06]"
                                   : "text-[color-mix(in_srgb,var(--ink)_55%,transparent)] hover:text-[var(--ink)]"
                               }`}
-                              onClick={() => setSubjectStatus(s.id, st)}
+                              onClick={() => {
+                                if (!free) return;
+                                upsertSubject({ ...s, is_free: false });
+                              }}
                             >
-                              {STATUS_LABEL[st]}
+                              Com tempo
                             </button>
-                          );
-                        })}
-                      </div>
-
-                      {/* Alerta sutil e pedagógico caso o peso cause desproporção */}
-                      {!cycleHealth.isHealthy &&
-                        cycleHealth.dominantSubject?.id === s.id && (
-                          <div className="mt-2.5 rounded-lg border border-amber-500/25 bg-amber-500/8 p-2.5 text-xs text-amber-900 dark:text-amber-200 space-y-1 animate-fade-in">
-                            <div className="flex items-center gap-1.5 font-semibold text-amber-700 dark:text-amber-300">
-                              <AlertTriangle size={14} className="shrink-0" />
-                              <span>{cycleHealth.title}</span>
-                            </div>
-                            <p className="leading-relaxed opacity-90">
-                              {cycleHealth.message}
-                            </p>
-                            <p className="text-[11px] leading-relaxed opacity-75">
-                              💡 {cycleHealth.recommendation}
-                            </p>
+                            <button
+                              type="button"
+                              className={`rounded-full px-2.5 py-0.5 text-xs font-semibold transition cursor-pointer ${
+                                free
+                                  ? "bg-[var(--surface)] text-[var(--ink)] shadow-xs ring-1 ring-black/[0.04] dark:ring-white/[0.06]"
+                                  : "text-[color-mix(in_srgb,var(--ink)_55%,transparent)] hover:text-[var(--ink)]"
+                              }`}
+                              onClick={() => {
+                                if (free) return;
+                                upsertSubject({ ...s, is_free: true });
+                              }}
+                            >
+                              Livre
+                            </button>
                           </div>
-                        )}
-                    </div>
-                  </div>
+                        </div>
 
-                  {/* Tempo & Peso */}
-                  <div className={`space-y-4 transition-opacity ${!isActive ? "opacity-60" : ""}`}>
+                        {/* Status Imediato no Ciclo */}
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[11px] font-medium text-[color-mix(in_srgb,var(--ink)_50%,transparent)] uppercase">
+                            Ciclo:
+                          </span>
+                          <div className="inline-flex items-center gap-0.5 rounded-full border border-[var(--line)] bg-[var(--mist)] p-0.5">
+                            {(["ok", "prox"] as SubjectStatus[]).map((st) => {
+                              const active = s.status === st;
+                              return (
+                                <button
+                                  key={st}
+                                  type="button"
+                                  className={`rounded-full px-2.5 py-0.5 text-xs font-medium transition cursor-pointer ${
+                                    active
+                                      ? statusClass(st)
+                                      : "text-[color-mix(in_srgb,var(--ink)_55%,transparent)] hover:text-[var(--ink)]"
+                                  }`}
+                                  onClick={() => setSubjectStatus(s.id, st)}
+                                >
+                                  {STATUS_LABEL[st]}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Duração do Bloco (se não for livre) */}
                     {!free && (
                       <div className="space-y-2">
                         <div className="flex items-center justify-between gap-2">
-                          <p className="text-xs font-medium uppercase tracking-wider opacity-50">
-                            Tempo de estudo
-                          </p>
-                          <span className="text-[11px] opacity-55">
-                            Duração de cada bloco desta matéria
+                          <span className="text-xs font-semibold text-[var(--ink)]">
+                            Duração do bloco
+                          </span>
+                          <span className="text-[11px] text-[color-mix(in_srgb,var(--ink)_50%,transparent)]">
+                            Tempo do timer para cada passagem
                           </span>
                         </div>
 
-                        <div className="flex flex-wrap items-center gap-3">
-                          {/* Campo numérico com largura fixa, botões -/+ e suporte a Enter */}
-                          <div className="flex items-center rounded-lg border border-[var(--line)] bg-[var(--surface)] p-1 shadow-2xs">
+                        <div className="flex flex-wrap items-center gap-2.5">
+                          {/* Stepper com input */}
+                          <div className="flex items-center rounded-lg border border-[var(--line)] bg-[var(--surface)] p-0.5 shadow-2xs">
                             <button
                               type="button"
                               onClick={() => {
@@ -1487,20 +1479,17 @@ export default function MateriasPage() {
                               }}
                               className="size-7 flex items-center justify-center rounded-md hover:bg-[var(--mist)] text-[var(--ink)] active:scale-95 transition cursor-pointer text-sm font-bold"
                               title="Diminuir 5 minutos"
-                              aria-label="Diminuir 5 minutos"
                             >
                               -
                             </button>
                             <div className="flex items-center px-1">
                               <input
-                                className="w-14 bg-transparent py-1 text-center font-mono-num font-semibold text-sm sm:text-base text-[var(--ink)] focus:outline-none"
+                                className="w-12 bg-transparent py-0.5 text-center font-mono-num font-semibold text-xs sm:text-sm text-[var(--ink)] focus:outline-none"
                                 type="number"
                                 min={1}
                                 max={999}
                                 inputMode="numeric"
-                                value={
-                                  minutesDraft[s.id] ?? String(s.study_minutes ?? 25)
-                                }
+                                value={minutesDraft[s.id] ?? String(s.study_minutes ?? 25)}
                                 onChange={(e) =>
                                   setMinutesDraft((prev) => ({
                                     ...prev,
@@ -1508,9 +1497,7 @@ export default function MateriasPage() {
                                   }))
                                 }
                                 onKeyDown={(e) => {
-                                  if (e.key === "Enter") {
-                                    e.currentTarget.blur();
-                                  }
+                                  if (e.key === "Enter") e.currentTarget.blur();
                                 }}
                                 onBlur={() => {
                                   const next = parseMinutes(
@@ -1545,14 +1532,13 @@ export default function MateriasPage() {
                               }}
                               className="size-7 flex items-center justify-center rounded-md hover:bg-[var(--mist)] text-[var(--ink)] active:scale-95 transition cursor-pointer text-sm font-bold"
                               title="Aumentar 5 minutos"
-                              aria-label="Aumentar 5 minutos"
                             >
                               +
                             </button>
                           </div>
 
                           {/* Pílulas de atalho rápido */}
-                          <div className="flex flex-wrap items-center gap-1.5">
+                          <div className="flex flex-wrap items-center gap-1">
                             {[15, 20, 25, 30, 40, 50, 60].map((mins) => {
                               const isCurrent = (s.study_minutes ?? 25) === mins;
                               return (
@@ -1568,12 +1554,11 @@ export default function MateriasPage() {
                                     });
                                     upsertSubject({ ...s, study_minutes: mins });
                                   }}
-                                  className={`rounded-full px-2.5 py-1 text-xs font-medium transition cursor-pointer ${
+                                  className={`rounded-full px-2.5 py-0.5 text-xs font-medium transition cursor-pointer ${
                                     isCurrent
                                       ? "bg-[var(--signal)] text-white shadow-2xs font-semibold"
                                       : "bg-[var(--surface)] border border-[var(--line)] text-[color-mix(in_srgb,var(--ink)_70%,transparent)] hover:border-[var(--signal)] hover:text-[var(--ink)] hover:bg-[var(--mist)]"
                                   }`}
-                                  title={`Definir para ${mins} minutos`}
                                 >
                                   {mins}m
                                 </button>
@@ -1584,249 +1569,257 @@ export default function MateriasPage() {
                       </div>
                     )}
 
-                    <div>
-                      <div className="mb-1.5 flex items-center justify-between gap-2">
-                        <p className="text-xs font-medium uppercase tracking-wider opacity-50">
-                          Peso no ciclo
-                        </p>
-                        <span className="text-[11px] opacity-55">
-                          {(s.weight ?? 1) > 1
-                            ? `${s.weight}x por ciclo (intercalado)`
-                            : "1x por ciclo (padrão)"}
-                        </span>
+                    {/* Grid em 2 Colunas: Peso no Ciclo + Frequência */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
+                      {/* Peso no Ciclo */}
+                      <div className="space-y-1.5">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-xs font-semibold text-[var(--ink)]">
+                            Peso no ciclo
+                          </span>
+                          <span className="text-[11px] text-[color-mix(in_srgb,var(--ink)_55%,transparent)]">
+                            {(s.weight ?? 1) > 1
+                              ? `${s.weight}x por ciclo (intercalado)`
+                              : "1x por ciclo (padrão)"}
+                          </span>
+                        </div>
+                        <div className="inline-flex items-center gap-1 rounded-full border border-[var(--line)] bg-[var(--surface)] p-0.5 shadow-2xs">
+                          {[1, 2, 3, 4].map((w) => {
+                            const active = (s.weight ?? 1) === w;
+                            return (
+                              <button
+                                key={w}
+                                type="button"
+                                className={`rounded-full px-3 py-1 text-xs font-medium transition cursor-pointer ${
+                                  active
+                                    ? "bg-[var(--signal)] text-white shadow-xs font-semibold"
+                                    : "text-[color-mix(in_srgb,var(--ink)_55%,transparent)] hover:text-[var(--ink)]"
+                                }`}
+                                onClick={() => {
+                                  if (active) return;
+                                  upsertSubject({ ...s, weight: w });
+                                }}
+                              >
+                                {w === 1 ? "1x (Normal)" : `${w}x`}
+                              </button>
+                            );
+                          })}
+                        </div>
+
+                        {/* Alerta de saúde do ciclo se houver desbalanceamento */}
+                        {!cycleHealth.isHealthy &&
+                          cycleHealth.dominantSubject?.id === s.id && (
+                            <div className="mt-2 rounded-lg border border-amber-500/25 bg-amber-500/8 p-2.5 text-xs text-amber-900 dark:text-amber-200 space-y-1">
+                              <div className="flex items-center gap-1.5 font-semibold text-amber-700 dark:text-amber-300">
+                                <AlertTriangle size={13} className="shrink-0" />
+                                <span>{cycleHealth.title}</span>
+                              </div>
+                              <p className="leading-relaxed opacity-90">{cycleHealth.message}</p>
+                              <p className="text-[11px] leading-relaxed opacity-75">💡 {cycleHealth.recommendation}</p>
+                            </div>
+                          )}
                       </div>
-                      <div className="inline-flex items-center gap-1 rounded-full border border-[var(--line)] bg-[var(--surface)] p-0.5">
-                        {[1, 2, 3, 4].map((w) => {
-                          const active = (s.weight ?? 1) === w;
-                          return (
+
+                      {/* Frequência */}
+                      <div className="space-y-1.5">
+                        <span className="text-xs font-semibold text-[var(--ink)]">
+                          Frequência semanal
+                        </span>
+                        <StudyDaysPicker
+                          value={freq}
+                          onChange={(next) => updateStudyDays(s, next)}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* PAINEL 2: CONTEÚDO, ANOTAÇÕES & ACOMPANHAMENTO */}
+                  <div className="rounded-xl border border-[var(--line)] bg-[var(--surface)] p-3.5 sm:p-4 space-y-3 shadow-2xs">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold uppercase tracking-wider text-[var(--ink)] flex items-center gap-1.5">
+                        <FileText size={13} className="text-[var(--signal)]" />
+                        <span>Anotações & Recursos</span>
+                      </span>
+                      <span className="text-[11px] text-[color-mix(in_srgb,var(--ink)_50%,transparent)]">
+                        Onde parou e materiais da matéria
+                      </span>
+                    </div>
+
+                    {!rot && (
+                      <div className="space-y-2.5">
+                        <textarea
+                          className="input w-full min-h-20 text-xs sm:text-sm font-normal p-3 rounded-xl border border-[var(--line)] bg-[var(--surface)] focus:border-[var(--signal)] focus:ring-1 focus:ring-[var(--signal)] transition leading-relaxed"
+                          placeholder="Onde parou na matéria (ex: Aula 03, página 45, módulo X, resumo ou links)..."
+                          value={s.notes}
+                          onChange={(e) =>
+                            upsertSubject({ ...s, notes: e.target.value })
+                          }
+                        />
+                        <SubjectResources
+                          recursos={s.recursos}
+                          onChange={(recursos) => upsertSubject({ ...s, recursos })}
+                        />
+                      </div>
+                    )}
+
+                    {/* Ferramentas opcionais de avanço: Progresso e Rodízio */}
+                    <div className="flex flex-wrap items-center gap-2.5 pt-1">
+                      <ProgressEditor
+                        progress={s.progress}
+                        onSave={(progress) => upsertSubject({ ...s, progress })}
+                      />
+                      {!free && (
+                        <RotationEditor
+                          subject={s}
+                          onSave={(rotation) => upsertSubject({ ...s, rotation })}
+                        />
+                      )}
+                    </div>
+                  </div>
+
+                  {/* PAINEL 3: GERENCIAMENTO & RODAPÉ */}
+                  <div className="rounded-xl border border-[var(--line)] bg-[var(--surface)] p-3.5 sm:p-4 space-y-3 shadow-2xs">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      {/* Ícone */}
+                      <div className="flex items-center gap-2">
+                        <SubjectIconPicker
+                          name={s.name}
+                          value={s.icon}
+                          onChange={(icon) => upsertSubject({ ...s, icon })}
+                        />
+                      </div>
+
+                      {/* Diálogo de confirmação de exclusão */}
+                      {pendingDelete?.id === s.id ? (
+                        <div
+                          id={`delete-confirm-${s.id}`}
+                          className="rounded-[var(--radius-tag)] border border-[color-mix(in_srgb,var(--warn)_40%,var(--line))] bg-[color-mix(in_srgb,var(--warn)_10%,var(--surface))] p-3 w-full"
+                          role="alertdialog"
+                          aria-labelledby={`delete-title-${s.id}`}
+                        >
+                          <p
+                            id={`delete-title-${s.id}`}
+                            className="text-sm font-semibold text-[var(--warn)]"
+                          >
+                            Excluir “{s.name}”?
+                          </p>
+                          <p className="mt-1 text-xs leading-snug text-[color-mix(in_srgb,var(--ink)_65%,transparent)]">
+                            Essa ação não pode ser desfeita. O histórico e as configurações desta matéria serão excluídos.
+                          </p>
+                          <div className="mt-3 flex flex-wrap items-center gap-2">
                             <button
-                              key={w}
                               type="button"
-                              className={`rounded-full px-3 py-1 text-xs font-medium transition ${
-                                active
-                                  ? "bg-[var(--signal)] text-white shadow-sm"
-                                  : "text-[color-mix(in_srgb,var(--ink)_55%,transparent)] hover:text-[var(--ink)]"
-                              }`}
+                              className="btn"
+                              onClick={() => setPendingDelete(null)}
+                            >
+                              Cancelar
+                            </button>
+                            <button
+                              type="button"
+                              className="btn ml-auto border-[var(--warn)] bg-[color-mix(in_srgb,var(--warn)_12%,var(--surface))] text-[var(--warn)]"
                               onClick={() => {
-                                if (active) return;
-                                upsertSubject({ ...s, weight: w });
+                                deleteSubject(s.id);
+                                setFreqDrafts((prev) => {
+                                  const next = { ...prev };
+                                  delete next[s.id];
+                                  return next;
+                                });
+                                setPendingDelete(null);
                               }}
                             >
-                              {w === 1 ? "1x (Normal)" : `${w}x`}
+                              <Trash2 size={16} strokeWidth={1.75} /> Sim, excluir
                             </button>
-                          );
-                        })}
-                      </div>
-
-                      {/* Alerta sutil e pedagógico caso o peso cause desproporção */}
-                      {!cycleHealth.isHealthy &&
-                        cycleHealth.dominantSubject?.id === s.id && (
-                          <div className="mt-2.5 rounded-lg border border-amber-500/25 bg-amber-500/8 p-2.5 text-xs text-amber-900 dark:text-amber-200 space-y-1 animate-fade-in">
-                            <div className="flex items-center gap-1.5 font-semibold text-amber-700 dark:text-amber-300">
-                              <AlertTriangle size={14} className="shrink-0" />
-                              <span>{cycleHealth.title}</span>
-                            </div>
-                            <p className="leading-relaxed opacity-90">
-                              {cycleHealth.message}
-                            </p>
-                            <p className="text-[11px] leading-relaxed opacity-75">
-                              💡 {cycleHealth.recommendation}
-                            </p>
                           </div>
-                        )}
-                    </div>
-
-                    {/* Frequência */}
-                    <div className="min-w-0">
-                      <p className="mb-1.5 text-xs font-medium uppercase tracking-wider opacity-50">
-                        Frequência
-                      </p>
-                      <StudyDaysPicker
-                        value={freq}
-                        onChange={(next) => updateStudyDays(s, next)}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Rodízio interno de disciplinas */}
-                  {!free && (
-                    <div className="pt-2">
-                      <RotationEditor
-                        subject={s}
-                        onSave={(rotation) => upsertSubject({ ...s, rotation })}
-                      />
-                    </div>
-                  )}
-
-                  {/* Anotações e Recursos quando não usa rodízio */}
-                  {!rot && (
-                    <div className="space-y-2 pt-1">
-                      <p className="text-xs font-medium uppercase tracking-wider opacity-50">
-                        Anotações & Recursos
-                      </p>
-                      <textarea
-                        className="input w-full min-h-20"
-                        placeholder="Onde parou, links rápidos, resumo..."
-                        value={s.notes}
-                        onChange={(e) =>
-                          upsertSubject({ ...s, notes: e.target.value })
-                        }
-                      />
-                      <SubjectResources
-                        recursos={s.recursos}
-                        onChange={(recursos) => upsertSubject({ ...s, recursos })}
-                      />
-                    </div>
-                  )}
-
-                  {/* Progresso do Módulo */}
-                  <div className="pt-1">
-                    <ProgressEditor
-                      progress={s.progress}
-                      onSave={(progress) => upsertSubject({ ...s, progress })}
-                    />
-                  </div>
-
-                  {/* Ícone */}
-                  <div className="pt-1">
-                    <SubjectIconPicker
-                      name={s.name}
-                      value={s.icon}
-                      onChange={(icon) => upsertSubject({ ...s, icon })}
-                    />
-                  </div>
-
-                  {/* Diálogo de confirmação de exclusão */}
-                  {pendingDelete?.id === s.id ? (
-                    <div
-                      id={`delete-confirm-${s.id}`}
-                      className="rounded-[var(--radius-tag)] border border-[color-mix(in_srgb,var(--warn)_40%,var(--line))] bg-[color-mix(in_srgb,var(--warn)_10%,var(--surface))] p-3"
-                      role="alertdialog"
-                      aria-labelledby={`delete-title-${s.id}`}
-                    >
-                      <p
-                        id={`delete-title-${s.id}`}
-                        className="text-sm font-semibold text-[var(--warn)]"
-                      >
-                        Excluir “{s.name}”?
-                      </p>
-                      <p className="mt-1 text-xs leading-snug text-[color-mix(in_srgb,var(--ink)_65%,transparent)]">
-                        Essa ação não pode ser desfeita. O histórico e as configurações desta matéria serão excluídos.
-                      </p>
-                      <div className="mt-3 flex flex-wrap items-center gap-2">
-                        <button
-                          type="button"
-                          className="btn"
-                          onClick={() => setPendingDelete(null)}
-                        >
-                          Cancelar
-                        </button>
-                        <button
-                          type="button"
-                          className="btn ml-auto border-[var(--warn)] bg-[color-mix(in_srgb,var(--warn)_12%,var(--surface))] text-[var(--warn)]"
-                          onClick={() => {
-                            deleteSubject(s.id);
-                            setFreqDrafts((prev) => {
-                              const next = { ...prev };
-                              delete next[s.id];
-                              return next;
-                            });
-                            setPendingDelete(null);
-                          }}
-                        >
-                          <Trash2 size={16} strokeWidth={1.75} /> Sim, excluir
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    /* Ações do Rodapé da Matéria */
-                    <div className="flex flex-col gap-2 border-t border-[var(--line)]/60 pt-3">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <button
-                          type="button"
-                          className={`btn inline-flex items-center gap-1.5 transition ${
-                            isActive
-                              ? "text-[color-mix(in_srgb,var(--ink)_75%,transparent)] hover:text-[var(--ink)]"
-                              : "btn-primary shadow-sm"
-                          }`}
-                          onClick={() => upsertSubject({ ...s, active: !isActive })}
-                          title={
-                            isActive
-                              ? "Pausar matéria (não aparecerá no ciclo até ser reativada)"
-                              : "Reativar matéria no ciclo"
-                          }
-                        >
-                          {isActive ? (
-                            <>
-                              <Pause size={14} strokeWidth={2} /> Pausar matéria
-                            </>
-                          ) : (
-                            <>
-                              <Play size={14} strokeWidth={2.5} fill="currentColor" /> Ativar matéria
-                            </>
-                          )}
-                        </button>
-
-                        <button
-                          type="button"
-                          className={`btn inline-flex items-center gap-1.5 transition ${
-                            isFcPaused
-                              ? "border-slate-500/30 bg-slate-500/10 text-slate-700 dark:text-slate-300 dark:border-slate-600/50 hover:bg-slate-500/20"
-                              : "text-[color-mix(in_srgb,var(--ink)_75%,transparent)] hover:text-[var(--ink)]"
-                          }`}
-                          onClick={() => {
-                            const next = !isFcPaused;
-                            void setDeckPaused(s.name, next);
-                            const rot = normalizeRotation(s.rotation);
-                            if (rot && Array.isArray(rot.items)) {
-                              rot.items.forEach((it) => {
-                                if (it.name) void setDeckPaused(it.name, next);
-                              });
+                        </div>
+                      ) : (
+                        /* Ações: Pausar e Excluir */
+                        <div className="flex flex-wrap items-center gap-2">
+                          <button
+                            type="button"
+                            className={`btn inline-flex items-center gap-1.5 text-xs transition cursor-pointer ${
+                              isActive
+                                ? "text-[color-mix(in_srgb,var(--ink)_75%,transparent)] hover:text-[var(--ink)]"
+                                : "btn-primary shadow-xs"
+                            }`}
+                            onClick={() => upsertSubject({ ...s, active: !isActive })}
+                            title={
+                              isActive
+                                ? "Pausar matéria (não aparecerá no ciclo até ser reativada)"
+                                : "Reativar matéria no ciclo"
                             }
-                          }}
-                          title={
-                            isFcPaused
-                              ? "Flashcards desta matéria estão pausados (não aparecem no Fixar diário). Clique para retomar."
-                              : "Pausar revisões de flashcards desta matéria (não aparecerão no Fixar diário até retomar)"
-                          }
-                        >
-                          {isFcPaused ? (
-                            <>
-                              <Pause size={14} strokeWidth={2.5} className="text-slate-500 dark:text-slate-400" />
-                              <span>Flashcards pausados</span>
-                            </>
-                          ) : (
-                            <>
-                              <Sparkles size={14} strokeWidth={2} className="text-[var(--signal)]" />
-                              <span>Pausar flashcards</span>
-                            </>
-                          )}
-                        </button>
+                          >
+                            {isActive ? (
+                              <>
+                                <Pause size={13} strokeWidth={2} /> Pausar matéria
+                              </>
+                            ) : (
+                              <>
+                                <Play size={13} strokeWidth={2.5} fill="currentColor" /> Ativar matéria
+                              </>
+                            )}
+                          </button>
 
-                        <button
-                          type="button"
-                          className="btn ml-auto text-[var(--warn)] hover:bg-[var(--warn-soft)]"
-                          onClick={() =>
-                            setPendingDelete({ id: s.id, name: s.name })
-                          }
-                        >
-                          <Trash2 size={15} strokeWidth={1.75} /> Excluir
-                        </button>
-                      </div>
+                          <button
+                            type="button"
+                            className={`btn inline-flex items-center gap-1.5 text-xs transition cursor-pointer ${
+                              isFcPaused
+                                ? "border-slate-500/30 bg-slate-500/10 text-slate-700 dark:text-slate-300 dark:border-slate-600/50 hover:bg-slate-500/20"
+                                : "text-[color-mix(in_srgb,var(--ink)_75%,transparent)] hover:text-[var(--ink)]"
+                            }`}
+                            onClick={() => {
+                              const next = !isFcPaused;
+                              void setDeckPaused(s.name, next);
+                              const rot = normalizeRotation(s.rotation);
+                              if (rot && Array.isArray(rot.items)) {
+                                rot.items.forEach((it) => {
+                                  if (it.name) void setDeckPaused(it.name, next);
+                                });
+                              }
+                            }}
+                            title={
+                              isFcPaused
+                                ? "Flashcards desta matéria estão pausados (não aparecem no Fixar diário). Clique para retomar."
+                                : "Pausar revisões de flashcards desta matéria (não aparecerão no Fixar diário até retomar)"
+                            }
+                          >
+                            {isFcPaused ? (
+                              <>
+                                <Pause size={13} strokeWidth={2.5} className="text-slate-500 dark:text-slate-400" />
+                                <span>Flashcards pausados</span>
+                              </>
+                            ) : (
+                              <>
+                                <Sparkles size={13} strokeWidth={2} className="text-[var(--signal)]" />
+                                <span>Pausar flashcards</span>
+                              </>
+                            )}
+                          </button>
 
-                      {/* Dica contextual quando a matéria está pausada */}
-                      {!isActive && !isFcPaused && (
-                        <p className="text-[11px] text-amber-700/80 dark:text-amber-400/80">
-                          💡 Matéria pausada no ciclo. Você também pode pausar as revisões diárias de flashcards no botão acima se quiser tirar as pendências do Fixar.
-                        </p>
-                      )}
-                      {isFcPaused && (
-                        <p className="text-[11px] text-slate-600 dark:text-slate-400">
-                          ⏸️ Revisões de flashcards de <strong>{s.name}</strong> pausadas (não aparecem no Deck Global do Fixar).
-                        </p>
+                          <button
+                            type="button"
+                            className="btn ml-auto text-[var(--warn)] hover:bg-[var(--warn-soft)] text-xs inline-flex items-center gap-1 cursor-pointer"
+                            onClick={() =>
+                              setPendingDelete({ id: s.id, name: s.name })
+                            }
+                          >
+                            <Trash2 size={13} strokeWidth={1.75} /> Excluir
+                          </button>
+                        </div>
                       )}
                     </div>
-                  )}
+
+                    {/* Dica contextual quando a matéria está pausada */}
+                    {!isActive && !isFcPaused && (
+                      <p className="text-[11px] text-amber-700/80 dark:text-amber-400/80 pt-1 border-t border-[var(--line)]/40">
+                        💡 Matéria pausada no ciclo. Você também pode pausar as revisões diárias de flashcards no botão acima se quiser tirar as pendências do Fixar.
+                      </p>
+                    )}
+                    {isFcPaused && (
+                      <p className="text-[11px] text-slate-600 dark:text-slate-400 pt-1 border-t border-[var(--line)]/40">
+                        ⏸️ Revisões de flashcards de <strong>{s.name}</strong> pausadas (não aparecem no Deck Global do Fixar).
+                      </p>
+                    )}
+                  </div>
                 </div>
               )}
             </li>
