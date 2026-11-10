@@ -145,49 +145,6 @@ function StudyDaysPicker({
   );
 }
 
-function ExclusiveDaysPicker({
-  value,
-  onChange,
-}: {
-  value: number[];
-  onChange: (days: number[]) => void;
-}) {
-  return (
-    <div className="space-y-2">
-      <div className="flex flex-wrap gap-1.5">
-        {DAYS.map((name, i) => {
-          const on = value.includes(i);
-          return (
-            <button
-              key={name}
-              type="button"
-              title={name}
-              className={`rounded-full px-2.5 py-1 text-xs font-medium transition ring-1 ${
-                on
-                  ? "bg-[var(--signal-soft)] text-[var(--signal)] ring-[color-mix(in_srgb,var(--signal)_35%,transparent)]"
-                  : "text-[color-mix(in_srgb,var(--ink)_50%,transparent)] ring-[var(--line)] hover:text-[var(--ink)]"
-              }`}
-              onClick={() => {
-                const days = on
-                  ? value.filter((d) => d !== i)
-                  : [...value, i].sort((a, b) => a - b);
-                onChange(days);
-              }}
-            >
-              {name.slice(0, 3)}
-            </button>
-          );
-        })}
-      </div>
-      {value.length > 0 && (
-        <p className="text-xs opacity-55">
-          1 matéria: só anotações. 2+ no mesmo dia: mini-ciclo entre elas.
-        </p>
-      )}
-    </div>
-  );
-}
-
 function parseMinutes(raw: string, fallback = 25) {
   const n = Number.parseInt(raw, 10);
   if (!Number.isFinite(n) || n < 1) return fallback;
@@ -1192,7 +1149,6 @@ export default function MateriasPage() {
           const isExpanded = Boolean(expandedIds[s.id]);
           const rot = normalizeRotation(s.rotation);
           const currentRotItem = rot ? rot.items[rot.index] ?? rot.items[0] : null;
-          const exclusiveDays = normalizeExclusiveDays(s.exclusive_days) ?? [];
           const customStudyDays = normalizeStudyDays(s.study_days);
           const isFcPaused = isDeckPaused(s.name, pausedDecks);
 
@@ -1386,12 +1342,6 @@ export default function MateriasPage() {
                   {customStudyDays && customStudyDays.length > 0 && (
                     <span className="rounded-md bg-[color-mix(in_srgb,var(--ink)_5%,transparent)] px-2 py-0.5 font-medium">
                       {customStudyDays.map((d) => DAYS[d]?.slice(0, 3)).join(", ")}
-                    </span>
-                  )}
-
-                  {exclusiveDays.length > 0 && (
-                    <span className="rounded-md bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 font-medium text-amber-700 dark:text-amber-400">
-                      Foco: {exclusiveDays.map((d) => DAYS[d]?.slice(0, 3)).join(", ")}
                     </span>
                   )}
 
@@ -1686,31 +1636,15 @@ export default function MateriasPage() {
                         )}
                     </div>
 
-                    {/* Frequência & Foco do dia */}
-                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:items-start">
-                      <div className="min-w-0">
-                        <p className="mb-1.5 text-xs font-medium uppercase tracking-wider opacity-50">
-                          Frequência
-                        </p>
-                        <StudyDaysPicker
-                          value={freq}
-                          onChange={(next) => updateStudyDays(s, next)}
-                        />
-                      </div>
-                      <div className="min-w-0">
-                        <p className="mb-1.5 text-xs font-medium uppercase tracking-wider opacity-50">
-                          Foco do dia
-                        </p>
-                        <p className="mb-1.5 text-[11px] leading-snug opacity-50">
-                          Nestes dias o foco é só as matérias marcadas.
-                        </p>
-                        <ExclusiveDaysPicker
-                          value={exclusiveDays}
-                          onChange={(days) =>
-                            upsertSubject({ ...s, exclusive_days: days })
-                          }
-                        />
-                      </div>
+                    {/* Frequência */}
+                    <div className="min-w-0">
+                      <p className="mb-1.5 text-xs font-medium uppercase tracking-wider opacity-50">
+                        Frequência
+                      </p>
+                      <StudyDaysPicker
+                        value={freq}
+                        onChange={(next) => updateStudyDays(s, next)}
+                      />
                     </div>
                   </div>
 

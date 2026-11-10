@@ -185,13 +185,13 @@ const TOPICS: TutorialTopic[] = [
   {
     id: "foco-lembretes",
     icon: Target,
-    title: "Foco do Dia & Lembretes",
-    badge: "Dia Especial",
-    summary: "Dias exclusivos para matérias específicas e alarmes sonoros.",
+    title: "Modo Intensivo & Lembretes",
+    badge: "Sprints & Alarmes",
+    summary: "Sprints focados para matérias específicas e alarmes sonoros.",
     concept:
-      "Recursos para dias de imersão e para não perder prazos de trabalhos, provas ou simulados agendados.",
+      "Recursos para momentos de imersão rápida e para não perder prazos de trabalhos, provas ou simulados agendados.",
     steps: [
-      "Foco do Dia: em Matérias, defina dias da semana para 'Foco do dia' em disciplinas específicas. Nesses dias, elas assumem prioridade no ciclo.",
+      "Modo Intensivo: inicie um sprint focado independente a qualquer momento com as matérias que desejar, sem queimar as etapas do seu ciclo regular.",
       "Lembretes & Alarmes: crie lembretes com data, hora e alerta sonoro/notificação. Acesse facilmente pela barra lateral no computador ou pela aba dedicada 'Lembretes' no menu inferior do celular.",
       "Notas Rápidas: use o mural de post-its para anotações livres, fórmulas, links e rascunhos sem sair do fluxo de estudos.",
     ],
