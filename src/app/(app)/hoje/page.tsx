@@ -174,7 +174,7 @@ export default function HojePage() {
     const daySubjects = subjectsOnDay(data.subjects, day);
     const baseMap = new Map<string, Subject>(daySubjects.map((s) => [s.id, s]));
 
-    // Se há sessão ativa (ex: Ciclo Adiantado ou Modo Intensivo) e faltam matérias do bloco ativo na lista,
+    // Se há sessão ativa (ex: Continuar Ciclo ou Modo Intensivo) e faltam matérias do bloco ativo na lista,
     // injeta as matérias do bloco para que apareçam na tela com seus cards e timers
     if (flow.sessionActive && flow.block.length > 0) {
       for (const b of flow.block) {
@@ -805,8 +805,8 @@ export default function HojePage() {
                     <p className="text-sm font-medium text-[var(--ink)]">
                       Hoje não há matérias programadas
                     </p>
-                    <p className="mx-auto mt-1 max-w-sm text-xs text-[color-mix(in_srgb,var(--ink)_60%,transparent)]">
-                      Use Adiantar Ciclo ou Modo Intensivo acima para estudar fora da grade.
+                    <p className="mx-auto mt-1 max-w-md text-xs text-[color-mix(in_srgb,var(--ink)_60%,transparent)]">
+                      Use Continuar Ciclo ou Modo Intensivo acima para estudar fora da grade.
                     </p>
                   </>
                 ) : (

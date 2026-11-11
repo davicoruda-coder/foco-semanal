@@ -69,7 +69,7 @@ export function IntensiveSessionModal({ open, onClose }: IntensiveSessionModalPr
         {/* Header */}
         <div className="flex items-start justify-between gap-3 border-b border-[var(--line)] pb-4">
           <div className="flex items-center gap-3">
-            <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/25 shadow-2xs">
+            <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-[var(--ink)] text-[var(--surface)] shadow-2xs">
               <Zap size={20} className="fill-current" />
             </div>
             <div>
@@ -98,7 +98,7 @@ export function IntensiveSessionModal({ open, onClose }: IntensiveSessionModalPr
             <label className="text-xs font-semibold uppercase tracking-wider text-[color-mix(in_srgb,var(--ink)_60%,transparent)]">
               1. Selecione a(s) matéria(s)
             </label>
-            <span className="text-xs font-medium text-amber-600 dark:text-amber-400">
+            <span className="text-xs font-semibold text-[var(--signal)]">
               {selectedSubjectIds.length} selecionada(s)
             </span>
           </div>
@@ -118,7 +118,7 @@ export function IntensiveSessionModal({ open, onClose }: IntensiveSessionModalPr
                     onClick={() => toggleSubject(sub.id)}
                     className={`flex w-full items-center justify-between gap-3 px-3.5 py-2.5 text-left transition cursor-pointer ${
                       isSelected
-                        ? "bg-amber-500/10 dark:bg-amber-500/15 text-[var(--ink)] font-semibold"
+                        ? "bg-[color-mix(in_srgb,var(--signal)_8%,var(--surface))] text-[var(--ink)] font-semibold"
                         : "hover:bg-[var(--mist)]/70 text-[var(--ink)]"
                     }`}
                   >
@@ -129,7 +129,7 @@ export function IntensiveSessionModal({ open, onClose }: IntensiveSessionModalPr
                     <div
                       className={`grid size-5 shrink-0 place-items-center rounded-md border transition ${
                         isSelected
-                          ? "border-amber-500 bg-amber-500 text-white"
+                          ? "border-[var(--signal)] bg-[var(--signal)] text-white"
                           : "border-[color-mix(in_srgb,var(--line)_80%,transparent)] bg-[var(--surface)]"
                       }`}
                     >
@@ -186,7 +186,13 @@ export function IntensiveSessionModal({ open, onClose }: IntensiveSessionModalPr
                   Recomendado
                 </span>
               </div>
-              <div className="flex items-center gap-1.5 text-base font-bold text-[var(--signal)] mt-0.5">
+              <div
+                className={`flex items-center gap-1.5 text-base font-bold mt-0.5 ${
+                  durationType === "default"
+                    ? "text-[var(--signal)]"
+                    : "text-[color-mix(in_srgb,var(--ink)_75%,transparent)]"
+                }`}
+              >
                 <Clock size={16} />
                 <span>{flow.settings.targetMinutes} min</span>
               </div>
@@ -198,7 +204,7 @@ export function IntensiveSessionModal({ open, onClose }: IntensiveSessionModalPr
               onClick={() => setDurationType("custom")}
               className={`flex flex-col items-start gap-1 rounded-[var(--radius-tag)] border p-3 text-left transition cursor-pointer ${
                 durationType === "custom"
-                  ? "border-amber-500 bg-amber-500/10 dark:bg-amber-500/15 ring-1 ring-amber-500/30"
+                  ? "border-[var(--signal)] bg-[color-mix(in_srgb,var(--signal)_8%,var(--surface))] ring-1 ring-[var(--signal)]/30"
                   : "border-[var(--line)] bg-[var(--surface)] hover:bg-[var(--mist)]/50"
               }`}
             >
@@ -210,7 +216,13 @@ export function IntensiveSessionModal({ open, onClose }: IntensiveSessionModalPr
                   1 a 180 min
                 </span>
               </div>
-              <div className="flex items-center gap-1.5 text-base font-bold text-amber-600 dark:text-amber-400 mt-0.5">
+              <div
+                className={`flex items-center gap-1.5 text-base font-bold mt-0.5 ${
+                  durationType === "custom"
+                    ? "text-[var(--signal)]"
+                    : "text-[color-mix(in_srgb,var(--ink)_75%,transparent)]"
+                }`}
+              >
                 <Clock size={16} />
                 <span>{customMinutes || 30} min</span>
               </div>
@@ -219,7 +231,7 @@ export function IntensiveSessionModal({ open, onClose }: IntensiveSessionModalPr
 
           {/* Seletor numérico e presets quando duração customizada estiver ativa */}
           {durationType === "custom" && (
-            <div className="rounded-[var(--radius-tag)] border border-amber-500/20 bg-amber-500/5 p-3 space-y-2.5 animate-fade-in">
+            <div className="rounded-[var(--radius-tag)] border border-[var(--line)] bg-[var(--mist)] p-3 space-y-2.5 animate-fade-in">
               <div className="flex items-center gap-3">
                 <label
                   htmlFor="custom-minutes-input"
@@ -237,7 +249,7 @@ export function IntensiveSessionModal({ open, onClose }: IntensiveSessionModalPr
                     const val = parseInt(e.target.value, 10);
                     setCustomMinutes(isNaN(val) ? 0 : Math.max(1, Math.min(180, val)));
                   }}
-                  className="w-24 rounded-lg border border-[var(--line)] bg-[var(--surface)] px-2.5 py-1.5 text-sm font-semibold text-[var(--ink)] focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/20"
+                  className="w-24 rounded-lg border border-[var(--line)] bg-[var(--surface)] px-2.5 py-1.5 text-sm font-semibold text-[var(--ink)] focus:border-[var(--signal)] focus:outline-none focus:ring-2 focus:ring-[var(--signal)]/20"
                 />
                 <span className="text-xs text-[color-mix(in_srgb,var(--ink)_55%,transparent)]">
                   minutos no total
@@ -256,7 +268,7 @@ export function IntensiveSessionModal({ open, onClose }: IntensiveSessionModalPr
                     onClick={() => setCustomMinutes(preset)}
                     className={`rounded-md px-2 py-1 text-xs font-medium transition cursor-pointer ${
                       customMinutes === preset
-                        ? "bg-amber-500 text-white font-semibold shadow-2xs"
+                        ? "bg-[var(--ink)] text-[var(--surface)] font-semibold shadow-2xs"
                         : "border border-[var(--line)] bg-[var(--surface)] text-[var(--ink)] hover:bg-[var(--mist)]"
                     }`}
                   >
@@ -269,8 +281,8 @@ export function IntensiveSessionModal({ open, onClose }: IntensiveSessionModalPr
         </div>
 
         {/* Nota informativa de retorno inteligente ao ciclo */}
-        <div className="flex items-start gap-2.5 rounded-[var(--radius-tag)] border border-amber-500/25 bg-amber-500/10 dark:bg-amber-950/30 p-3 text-xs text-amber-900 dark:text-amber-200">
-          <Sparkles size={15} className="shrink-0 text-amber-600 dark:text-amber-400 mt-0.5" />
+        <div className="flex items-start gap-2.5 rounded-[var(--radius-tag)] border border-[color-mix(in_srgb,var(--signal)_22%,var(--line))] bg-[var(--mist)] p-3 text-xs text-[color-mix(in_srgb,var(--ink)_82%,transparent)]">
+          <Sparkles size={15} className="shrink-0 text-[var(--signal)] mt-0.5" />
           <p className="leading-relaxed">
             O Modo Intensivo é um sprint focado independente: ele não consome as etapas planejadas do seu ciclo regular e ajusta a fila do dia para priorizar as outras matérias, evitando repetições imediatas.
           </p>
@@ -289,7 +301,7 @@ export function IntensiveSessionModal({ open, onClose }: IntensiveSessionModalPr
             type="button"
             disabled={selectedSubjectIds.length === 0 || effectiveMinutes < 1}
             onClick={handleStart}
-            className="btn flex items-center gap-2 rounded-[var(--radius-btn)] bg-amber-500 hover:bg-amber-600 active:scale-[0.98] text-white px-5 py-2.5 text-xs sm:text-sm font-semibold shadow-sm transition disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer whitespace-nowrap"
+            className="btn btn-primary flex items-center gap-2 rounded-[var(--radius-btn)] px-5 py-2.5 text-xs sm:text-sm font-semibold active:scale-[0.98] transition disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer whitespace-nowrap"
           >
             <Zap size={15} className="fill-current" />
             <span>Iniciar Modo Intensivo ({effectiveMinutes} min)</span>

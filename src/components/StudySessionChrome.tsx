@@ -231,11 +231,11 @@ export function StudySessionBar() {
         return {
           title: "Encerrar Modo Intensivo?",
           message: currentName
-            ? `O estudo de "${currentName}" será computado no ciclo de hoje e o ciclo avançará para a próxima matéria. Deseja encerrar o Modo Intensivo?`
-            : "A matéria estudada será computada no ciclo de hoje e o ciclo avançará para a próxima matéria. Deseja encerrar o Modo Intensivo?",
+            ? `A sessão intensiva de "${currentName}" será encerrada sem consumir etapas do ciclo regular — apenas priorizando as outras matérias na volta. Deseja voltar ao ciclo?`
+            : "A sessão intensiva será encerrada sem consumir etapas do ciclo regular — apenas priorizando as outras matérias na volta. Deseja voltar ao ciclo?",
           confirmLabel: "Encerrar Intensivo",
           cancelLabel: "Continuar estudando",
-          confirmVariant: "danger" as const,
+          confirmVariant: "signal" as const,
         };
       }
       return {
@@ -279,7 +279,7 @@ export function StudySessionBar() {
           onClick={() => {
             if (isAdvanceCycleCandidate) {
               requestPlay({
-                targetName: "o Ciclo Adiantado",
+                targetName: "a sessão fora da grade",
                 onPlay: flow.startAdvanceCycleSession,
               });
               return;
@@ -293,7 +293,7 @@ export function StudySessionBar() {
         >
           <span className="min-w-0">
             <span className="flex items-center gap-1.5 text-sm font-semibold tracking-tight md:text-[15px]">
-              {isAdvanceCycleCandidate ? "Adiantar Ciclo" : "Iniciar sessão"}
+              {isAdvanceCycleCandidate ? "Continuar Ciclo" : "Iniciar sessão"}
             </span>
             <span className="mt-0.5 block truncate text-xs text-white/80">
               {flow.canStart
@@ -322,10 +322,10 @@ export function StudySessionBar() {
             <button
               type="button"
               onClick={flow.openIntensiveModal}
-              className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold text-amber-700 dark:text-amber-300 hover:bg-amber-500/10 active:scale-95 transition border border-amber-500/25 bg-amber-500/5 cursor-pointer"
+              className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold border border-[var(--line)] bg-[var(--mist)] text-[var(--ink)] hover:border-[color-mix(in_srgb,var(--signal)_45%,var(--line))] hover:bg-[var(--signal-soft)] hover:text-[var(--signal)] active:scale-95 transition cursor-pointer"
               title="Estudo intensivo focado com tempo dedicado"
             >
-              <Zap size={13} className="fill-current text-amber-600 dark:text-amber-400" />
+              <Zap size={13} className="fill-current text-[var(--signal)]" />
               <span>Modo Intensivo</span>
             </button>
           </div>
@@ -380,13 +380,13 @@ export function StudySessionBar() {
               {flow.phase === "paused" ? "Sessão pausada" : "Em sessão"}
             </p>
             {flow.isIntensiveSession && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-bold text-amber-700 dark:text-amber-300 border border-amber-500/30">
-                <Zap size={10} className="fill-current text-amber-600 dark:text-amber-400" /> Modo Intensivo
+              <span className="inline-flex items-center gap-1 rounded-full bg-[var(--ink)] px-2 py-0.5 text-[10px] font-bold text-[var(--surface)] shadow-2xs">
+                <Zap size={10} className="fill-current shrink-0" /> Modo Intensivo
               </span>
             )}
             {!flow.isIntensiveSession && flow.isExtraSession && (
               <span className="inline-flex items-center gap-1 rounded-full bg-[var(--signal-soft)] px-2 py-0.5 text-[10px] font-bold text-[var(--signal)] border border-[color-mix(in_srgb,var(--signal)_25%,transparent)]">
-                <FastForward size={10} /> Ciclo Adiantado
+                <FastForward size={10} /> Fora da grade
               </span>
             )}
           </div>
@@ -614,7 +614,7 @@ export function StudySessionChrome() {
           <div
             className={`grid size-11 shrink-0 place-items-center rounded-2xl ring-1 shadow-2xs ${
               flow.isIntensiveSession
-                ? "bg-amber-500/15 text-amber-600 dark:text-amber-400 ring-amber-500/25"
+                ? "bg-[var(--ink)] text-[var(--surface)] ring-[color-mix(in_srgb,var(--ink)_25%,transparent)]"
                 : "bg-[var(--signal-soft)] text-[var(--signal)] ring-[var(--signal)]/25"
             }`}
           >
@@ -675,7 +675,7 @@ export function StudySessionChrome() {
             <>
               <button
                 type="button"
-                className="btn btn-primary w-full py-3 text-sm font-semibold tracking-wide flex items-center justify-center gap-2 cursor-pointer bg-amber-500 hover:bg-amber-600 border-amber-600 text-white"
+                className="btn btn-primary w-full py-3 text-sm font-semibold tracking-wide flex items-center justify-center gap-2 cursor-pointer"
                 onClick={() => afterNotesThen(flow.chooseContinue)}
               >
                 <Zap size={15} className="fill-current" />

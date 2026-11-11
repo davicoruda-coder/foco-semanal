@@ -179,6 +179,9 @@ function formatSessionTimeRange(startedAt: string, endedAt: string | null, durat
   return endStr ? `${startStr} - ${endStr}` : startStr;
 }
 
+const INTENSIVE_BADGE_CLASS =
+  "bg-[var(--ink)] text-[var(--surface)] border-[var(--ink)]";
+
 function getSessionTypeInfo(sess: StudySession) {
   const nameLower = (sess.subject_name || "").toLowerCase();
   if (nameLower.includes("flashcard")) {
@@ -202,7 +205,7 @@ function getSessionTypeInfo(sess: StudySession) {
       type: "intensivo" as const,
       label: "Modo Intensivo",
       icon: Zap,
-      badgeClasses: "bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30",
+      badgeClasses: INTENSIVE_BADGE_CLASS,
     };
   }
   if (sess.mode === "ciclo") {
@@ -413,7 +416,7 @@ function clusterSessions(
               : firstInfo.label
             : "Sessão em Bloco",
         badgeClasses: isIntensive
-          ? "bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30"
+          ? INTENSIVE_BADGE_CLASS
           : firstInfo.badgeClasses,
         icon: isIntensive ? Zap : firstInfo.icon,
         startedAt: first.started_at,
@@ -451,7 +454,7 @@ function SessionClusterCard({
       <div
         className={`flex items-center justify-between gap-3 p-3 sm:p-3.5 rounded-xl border transition-all ${
           isIntensive
-            ? "border-amber-500/35 bg-amber-500/[0.04] dark:bg-amber-500/[0.06] hover:border-amber-500/45 shadow-[0_2px_10px_-4px_rgba(245,158,11,0.15)]"
+            ? "border-[color-mix(in_srgb,var(--signal)_30%,var(--line))] bg-[color-mix(in_srgb,var(--signal)_4.5%,var(--surface))] hover:border-[color-mix(in_srgb,var(--signal)_48%,var(--line))] shadow-[0_2px_10px_-4px_color-mix(in_srgb,var(--signal)_12%,transparent)]"
             : "border-[var(--line)] bg-[var(--surface)] hover:bg-[color-mix(in_srgb,var(--surface)_75%,var(--mist))]"
         }`}
       >
@@ -467,11 +470,11 @@ function SessionClusterCard({
               <span
                 className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full border ${
                   isIntensive
-                    ? "bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30"
+                    ? INTENSIVE_BADGE_CLASS
                     : "bg-[var(--mist)] text-[color-mix(in_srgb,var(--ink)_75%,transparent)] border-[var(--line)]"
                 }`}
               >
-                {isIntensive && <Zap size={10} className="fill-current text-amber-500" />}
+                {isIntensive && <Zap size={10} className="fill-current shrink-0" />}
                 {cluster.typeLabel}
               </span>
               {cluster.extraMinutes ? (
@@ -492,7 +495,7 @@ function SessionClusterCard({
         <div className="shrink-0 text-right">
           <span
             className={`font-mono-num font-semibold text-xs sm:text-sm ${
-              isIntensive ? "text-amber-600 dark:text-amber-400 font-bold" : "text-[var(--ink)]"
+              isIntensive ? "text-[var(--signal)] font-bold" : "text-[var(--ink)]"
             }`}
           >
             {cluster.totalMinutes} min
@@ -500,7 +503,7 @@ function SessionClusterCard({
           <div
             className={`text-[10px] uppercase tracking-wide ${
               isIntensive
-                ? "text-amber-700 dark:text-amber-300 font-semibold"
+                ? "text-[color-mix(in_srgb,var(--signal)_75%,var(--ink))] font-semibold"
                 : "text-[color-mix(in_srgb,var(--ink)_45%,transparent)] font-medium"
             }`}
           >
@@ -515,7 +518,7 @@ function SessionClusterCard({
     <div
       className={`p-3 sm:p-3.5 rounded-xl border transition-all space-y-2.5 ${
         isIntensive
-          ? "border-amber-500/35 bg-amber-500/[0.04] dark:bg-amber-500/[0.06] hover:border-amber-500/50 shadow-[0_2px_12px_-4px_rgba(245,158,11,0.18)]"
+          ? "border-[color-mix(in_srgb,var(--signal)_34%,var(--line))] bg-[color-mix(in_srgb,var(--signal)_5.5%,var(--surface))] hover:border-[color-mix(in_srgb,var(--signal)_52%,var(--line))] shadow-[0_2px_12px_-4px_color-mix(in_srgb,var(--signal)_14%,transparent)]"
           : "border-[color-mix(in_srgb,var(--signal)_28%,var(--line))] bg-[color-mix(in_srgb,var(--signal)_4.5%,var(--surface))] hover:border-[color-mix(in_srgb,var(--signal)_45%,var(--line))] shadow-[0_2px_10px_-4px_color-mix(in_srgb,var(--signal)_12%,transparent)]"
       }`}
     >
@@ -524,7 +527,7 @@ function SessionClusterCard({
           <div
             className={`grid size-9 shrink-0 place-items-center rounded-lg border ${
               isIntensive
-                ? "bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30"
+                ? INTENSIVE_BADGE_CLASS
                 : "bg-[var(--signal-soft)] text-[var(--signal)] border-[color-mix(in_srgb,var(--signal)_25%,transparent)]"
             }`}
           >
@@ -532,21 +535,17 @@ function SessionClusterCard({
           </div>
           <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <span
-                className={`font-semibold text-xs sm:text-sm tracking-tight ${
-                  isIntensive ? "text-amber-950 dark:text-amber-100" : "text-[var(--ink)]"
-                }`}
-              >
+              <span className="font-semibold text-xs sm:text-sm tracking-tight text-[var(--ink)]">
                 {cluster.typeLabel}
               </span>
               <span
                 className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full border ${
                   isIntensive
-                    ? "bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30"
+                    ? INTENSIVE_BADGE_CLASS
                     : "bg-[var(--signal-soft)] text-[var(--signal)] border-[color-mix(in_srgb,var(--signal)_20%,transparent)]"
                 }`}
               >
-                {isIntensive && <Zap size={10} className="fill-current text-amber-500" />}
+                {isIntensive && <Zap size={10} className="fill-current shrink-0" />}
                 {cluster.items.length} {cluster.items.length === 1 ? "matéria" : "matérias"} no bloco
               </span>
               {cluster.extraMinutes ? (
@@ -566,50 +565,26 @@ function SessionClusterCard({
         </div>
 
         <div className="shrink-0 text-right">
-          <span
-            className={`font-mono-num font-bold text-xs sm:text-sm ${
-              isIntensive ? "text-amber-600 dark:text-amber-400" : "text-[var(--signal)]"
-            }`}
-          >
+          <span className="font-mono-num font-bold text-xs sm:text-sm text-[var(--signal)]">
             {cluster.totalMinutes} min
           </span>
-          <div
-            className={`text-[10px] font-semibold uppercase tracking-wide ${
-              isIntensive
-                ? "text-amber-700 dark:text-amber-300"
-                : "text-[color-mix(in_srgb,var(--signal)_75%,var(--ink))]"
-            }`}
-          >
+          <div className="text-[10px] font-semibold uppercase tracking-wide text-[color-mix(in_srgb,var(--signal)_75%,var(--ink))]">
             {isIntensive ? "bloco intensivo" : "bloco completo"}
           </div>
         </div>
       </div>
 
-      <div
-        className={`flex items-center gap-1.5 flex-wrap pt-2 border-t text-xs ${
-          isIntensive
-            ? "border-amber-500/20"
-            : "border-[color-mix(in_srgb,var(--signal)_15%,var(--line))]"
-        }`}
-      >
+      <div className="flex items-center gap-1.5 flex-wrap pt-2 border-t text-xs border-[color-mix(in_srgb,var(--signal)_15%,var(--line))]">
         <span className="text-[10px] uppercase font-bold tracking-wider text-[color-mix(in_srgb,var(--ink)_50%,transparent)]">
           Matérias:
         </span>
         {cluster.items.map((it, idx) => (
           <span
             key={it.id}
-            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[var(--surface)] border text-xs text-[var(--ink)] shadow-2xs ${
-              isIntensive
-                ? "border-amber-500/25"
-                : "border-[color-mix(in_srgb,var(--signal)_20%,var(--line))]"
-            }`}
+            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[var(--surface)] border text-xs text-[var(--ink)] shadow-2xs border-[color-mix(in_srgb,var(--signal)_20%,var(--line))]"
           >
             <span className="font-medium">{it.subjectName}</span>
-            <span
-              className={`font-mono-num font-semibold text-[11px] ${
-                isIntensive ? "text-amber-600 dark:text-amber-400" : "text-[var(--signal)]"
-              }`}
-            >
+            <span className="font-mono-num font-semibold text-[11px] text-[var(--signal)]">
               {it.durationMinutes}m
             </span>
             {it.extraMinutes ? (

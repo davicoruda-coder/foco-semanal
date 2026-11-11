@@ -731,9 +731,9 @@ export function CycleArchitectModal({
 
               {/* Gatilhos de Modo Intensivo */}
               {result.intensive_triggers && result.intensive_triggers.length > 0 && (
-                <div className="p-3 rounded-xl border border-amber-500/25 bg-amber-500/5 space-y-1.5">
-                  <div className="flex items-center gap-1.5 text-xs font-bold text-amber-700 dark:text-amber-300">
-                    <Zap size={14} className="fill-current text-amber-500" />
+                <div className="p-3 rounded-xl border border-[color-mix(in_srgb,var(--signal)_25%,var(--line))] bg-[var(--mist)] space-y-1.5">
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-[var(--ink)]">
+                    <Zap size={14} className="fill-current text-[var(--signal)]" />
                     <span>Gatilhos Estratégicos para Modo Intensivo</span>
                   </div>
                   <div className="space-y-1">

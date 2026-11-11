@@ -83,17 +83,17 @@ const TOPICS: TutorialTopic[] = [
   {
     id: "sessao-extra",
     icon: Sparkles,
-    title: "Adiantar Ciclo (Dias Sem Matérias na Grade)",
+    title: "Continuar Ciclo (Dias Sem Matérias na Grade)",
     badge: "Dias Livres",
-    summary: "Adiante seu ciclo de estudos mesmo fora da grade semanal.",
+    summary: "Continue seu ciclo de estudos normalmente mesmo fora da grade semanal.",
     concept:
-      "Quando o dia atual não tiver matérias agendadas na grade semanal (como em fins de semana ou feriados), o FocoHub permite adiantar a fila global do ciclo com 1 clique ou iniciar um sprint livre no Modo Intensivo.",
+      "Quando o dia atual não tiver matérias agendadas na grade semanal (como em fins de semana ou feriados), o FocoHub permite continuar a fila global do ciclo com 1 clique ou iniciar um sprint livre no Modo Intensivo.",
     steps: [
-      "Ao abrir a tela Hoje em um dia sem matérias programadas, clique em 'Adiantar Ciclo' para iniciar o próximo bloco da fila global do ciclo.",
+      "Ao abrir a tela Hoje em um dia sem matérias programadas, clique em 'Continuar Ciclo' para iniciar o próximo bloco da fila global do ciclo.",
       "Continuidade Real do Ciclo: as matérias concluídas atualizam o progresso e a rodada global do ciclo normalmente, mantendo a fila alinhada para o dia seguinte.",
       "Quer escolher matérias avulsas sem mexer na ordem do ciclo? Use o 'Modo Intensivo' para selecionar as disciplinas e personalizar a duração do sprint.",
     ],
-    tip: "Use 'Adiantar Ciclo' para avançar sua rotina regular em dias livres; use 'Modo Intensivo' para revisões pontuais, gargalos ou véspera de prova sem consumir etapas do ciclo.",
+    tip: "Use 'Continuar Ciclo' para seguir sua rotina regular em dias livres; use 'Modo Intensivo' para revisões pontuais, gargalos ou véspera de prova sem consumir etapas do ciclo.",
   },
   {
     id: "rodizio",
