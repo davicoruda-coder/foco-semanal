@@ -293,9 +293,6 @@ export function StudySessionBar() {
         >
           <span className="min-w-0">
             <span className="flex items-center gap-1.5 text-sm font-semibold tracking-tight md:text-[15px]">
-              {isAdvanceCycleCandidate && (
-                <FastForward size={15} className="shrink-0 text-white/90" />
-              )}
               {isAdvanceCycleCandidate ? "Adiantar Ciclo" : "Iniciar sessão"}
             </span>
             <span className="mt-0.5 block truncate text-xs text-white/80">
