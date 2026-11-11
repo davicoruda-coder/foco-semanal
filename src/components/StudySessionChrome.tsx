@@ -6,12 +6,12 @@ import {
   Brain,
   CheckCircle2,
   Clock,
+  FastForward,
   FileText,
   Pause,
   Play,
   RotateCcw,
   SkipForward,
-  Sparkles,
   Trophy,
   X,
   Zap,
@@ -269,16 +269,19 @@ export function StudySessionBar() {
     const hasActiveCycleSubjects = (data.subjects ?? []).some(
       (s) => s.active && !s.is_free,
     );
-    const isExtraSessionCandidate = !flow.canStart && hasActiveCycleSubjects;
+    const isAdvanceCycleCandidate = !flow.canStart && flow.canAdvanceCycle;
 
     return (
       <div className="border-b border-[var(--line)] px-4 py-3 md:px-5 space-y-2">
         <button
           type="button"
-          disabled={!flow.canStart && !isExtraSessionCandidate}
+          disabled={!flow.canStart && !isAdvanceCycleCandidate}
           onClick={() => {
-            if (isExtraSessionCandidate) {
-              flow.openExtraSessionModal();
+            if (isAdvanceCycleCandidate) {
+              requestPlay({
+                targetName: "o Ciclo Adiantado",
+                onPlay: flow.startAdvanceCycleSession,
+              });
               return;
             }
             requestPlay({
@@ -290,24 +293,22 @@ export function StudySessionBar() {
         >
           <span className="min-w-0">
             <span className="flex items-center gap-1.5 text-sm font-semibold tracking-tight md:text-[15px]">
-              {isExtraSessionCandidate && (
-                <Sparkles size={15} className="shrink-0 text-amber-200" />
+              {isAdvanceCycleCandidate && (
+                <FastForward size={15} className="shrink-0 text-white/90" />
               )}
-              {isExtraSessionCandidate
-                ? "Iniciar Sessão Extra"
-                : "Iniciar sessão"}
+              {isAdvanceCycleCandidate ? "Adiantar Ciclo" : "Iniciar sessão"}
             </span>
             <span className="mt-0.5 block truncate text-xs text-white/80">
               {flow.canStart
                 ? flow.previewSummary
-                : isExtraSessionCandidate
-                  ? "Hoje não há matérias programadas · Iniciar Sessão Extra"
+                : isAdvanceCycleCandidate
+                  ? `Sem grade hoje · ${flow.advanceCycleSummary}`
                   : "Nenhuma matéria cadastrada"}
             </span>
           </span>
           <span className="grid size-9 shrink-0 place-items-center rounded-full bg-white/20 md:size-10">
-            {isExtraSessionCandidate ? (
-              <Sparkles size={16} fill="currentColor" strokeWidth={0} />
+            {isAdvanceCycleCandidate ? (
+              <FastForward size={16} fill="currentColor" strokeWidth={0} />
             ) : (
               <Play
                 size={16}
@@ -384,6 +385,11 @@ export function StudySessionBar() {
             {flow.isIntensiveSession && (
               <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-bold text-amber-700 dark:text-amber-300 border border-amber-500/30">
                 <Zap size={10} className="fill-current text-amber-600 dark:text-amber-400" /> Modo Intensivo
+              </span>
+            )}
+            {!flow.isIntensiveSession && flow.isExtraSession && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-[var(--signal-soft)] px-2 py-0.5 text-[10px] font-bold text-[var(--signal)] border border-[color-mix(in_srgb,var(--signal)_25%,transparent)]">
+                <FastForward size={10} /> Ciclo Adiantado
               </span>
             )}
           </div>

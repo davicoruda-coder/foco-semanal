@@ -39,13 +39,15 @@ import {
 import { claimTimerCompletion } from "@/lib/tab-sync";
 import type { Subject } from "@/lib/types";
 import {
-  buildExtraSessionQueue,
+  buildGlobalCycleQueue,
+  buildLoopedCycleQueue,
   buildFullWeightedCycle,
   buildWeightedCycleQueue,
   cycleSubjectsOnDay,
   isExclusiveCycleDay,
+  isExclusiveSoloDay,
+  isSubjectDoneToday,
   recordLastCycleCompletedSubjectId,
-  rotateToAvoidAdjacent,
   todayIndex,
 } from "@/lib/utils";
 
@@ -56,6 +58,8 @@ type StudyFlowContextValue = {
   blockSummary: string;
   previewBlock: Subject[];
   previewSummary: string;
+  advanceCyclePreview: Subject[];
+  advanceCycleSummary: string;
   currentSubjectId: string | null;
   /** Índice da matéria atual no bloco (útil em subject_notes). */
   currentIndex: number;
@@ -64,12 +68,9 @@ type StudyFlowContextValue = {
   refreshSettings: () => void;
   saveSettings: (next: BlockRangeSettings) => void;
   canStart: boolean;
-  /** Indica se a sessão atual em execução é uma Sessão Extra. */
+  canAdvanceCycle: boolean;
+  /** Indica se a sessão atual em execução é um ciclo adiantado em dia sem grade. */
   isExtraSession: boolean;
-  /** Modal de Sessão Extra aberto? */
-  isExtraModalOpen: boolean;
-  openExtraSessionModal: () => void;
-  closeExtraSessionModal: () => void;
   /** Indica se a sessão atual em execução é Modo Intensivo. */
   isIntensiveSession: boolean;
   intensiveSubjectIds: string[];
@@ -95,12 +96,8 @@ type StudyFlowContextValue = {
   /** Play individual permitido? (sessão ativa → só a matéria atual) */
   allowSubjectPlay: (subjectId: string) => boolean;
   startSession: () => void;
-  /** Inicia Sessão Extra para dias sem grade ou estudo focado. */
-  startExtraSession: (
-    mode: "cycle" | "custom",
-    selectedSubjectIds?: string[],
-    options?: { allSelected?: boolean },
-  ) => void;
+  /** Adianta o ciclo global em dias sem matérias agendadas na grade semanal. */
+  startAdvanceCycleSession: () => void;
   pauseSession: () => void;
   resumeSession: () => void;
   /** Zera o bloco atual e recomeça do início. */
@@ -124,24 +121,7 @@ function todayQueue(subjects: Subject[]): Subject[] {
   const day = todayIndex();
   const remaining = buildWeightedCycleQueue(subjects, day);
   const fullCycle = buildFullWeightedCycle(subjects, day);
-
-  if (fullCycle.length === 0) return remaining;
-
-  if (remaining.length === 0) {
-    const cycle1 = fullCycle;
-    const last1 = cycle1[cycle1.length - 1]?.id;
-    const cycle2 = rotateToAvoidAdjacent(fullCycle, last1);
-    const last2 = cycle2[cycle2.length - 1]?.id;
-    const cycle3 = rotateToAvoidAdjacent(fullCycle, last2);
-    return [...cycle1, ...cycle2, ...cycle3];
-  }
-
-  const lastRemId = remaining[remaining.length - 1]?.id;
-  const cycle1 = rotateToAvoidAdjacent(fullCycle, lastRemId);
-  const last1 = cycle1[cycle1.length - 1]?.id;
-  const cycle2 = rotateToAvoidAdjacent(fullCycle, last1);
-
-  return [...remaining, ...cycle1, ...cycle2];
+  return buildLoopedCycleQueue(remaining, fullCycle);
 }
 
 export function StudyFlowProvider({ children }: { children: ReactNode }) {
@@ -187,9 +167,6 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
     const saved = readPersistedStudyFlow();
     return Boolean(saved.isExtraSession);
   });
-  const [isExtraModalOpen, setIsExtraModalOpen] = useState(false);
-  const openExtraSessionModal = useCallback(() => setIsExtraModalOpen(true), []);
-  const closeExtraSessionModal = useCallback(() => setIsExtraModalOpen(false), []);
   const [isIntensiveSession, setIsIntensiveSession] = useState<boolean>(() => {
     const saved = readPersistedStudyFlow();
     return Boolean(saved.isIntensiveSession);
@@ -452,6 +429,28 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
 
   const canStart = (previewBlock.length > 0 || cycleCompleted) && !sessionActive;
 
+  const advanceCyclePreview = useMemo(() => {
+    if (canStart || sessionActive) return [];
+    const day = todayIndex();
+    if (isExclusiveSoloDay(data.subjects ?? [], day)) return [];
+    if (cycleSubjectsOnDay(data.subjects ?? [], day).length > 0) return [];
+    const queue = buildGlobalCycleQueue(data.subjects ?? []);
+    return packStudyBlock(
+      queue,
+      settings.minMinutes,
+      settings.maxMinutes,
+      settings.targetMinutes,
+    );
+  }, [canStart, sessionActive, data.subjects, settings]);
+
+  const advanceCycleSummary = useMemo(
+    () => formatBlockSummary(advanceCyclePreview),
+    [advanceCyclePreview],
+  );
+
+  const canAdvanceCycle =
+    !canStart && !sessionActive && advanceCyclePreview.length > 0;
+
   const allowSubjectPlay = useCallback(
     (subjectId: string) => {
       if (!sessionActive) return true;
@@ -529,58 +528,46 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
     playSessionStartTone();
   }, [data.subjects, settings, startSubjectAt, resetCycleToday, setSubjectStatus]);
 
-  const startExtraSession = useCallback(
-    (
-      mode: "cycle" | "custom",
-      selectedSubjectIds?: string[],
-      options?: { allSelected?: boolean },
-    ) => {
-      setCycleRoundCompleted(null);
-      const queue = buildExtraSessionQueue(
-        data.subjects ?? [],
-        mode,
-        selectedSubjectIds,
-      );
-      if (queue.length === 0) return;
+  const startAdvanceCycleSession = useCallback(() => {
+    setCycleRoundCompleted(null);
+    const day = todayIndex();
+    if (isExclusiveSoloDay(data.subjects ?? [], day)) return;
 
-      let packed: Subject[];
-      if (mode === "custom" && (options?.allSelected || (selectedSubjectIds && selectedSubjectIds.length > 0))) {
-        // Se usuário escolheu matérias manualmente, roda a sequência selecionada
-        packed = queue;
-      } else {
-        packed = packStudyBlock(
-          queue,
-          settings.minMinutes,
-          settings.maxMinutes,
-          settings.targetMinutes,
-        );
-      }
-      if (packed.length === 0) return;
+    const globalActive = (data.subjects ?? []).filter(
+      (s) => s.active && !s.is_free,
+    );
+    const allGlobalDone =
+      globalActive.length > 0 &&
+      globalActive.every((s) => isSubjectDoneToday(s, false));
 
-      // Garante que matérias incluídas no bloco a ser iniciado não permaneçam com status "ok"
-      for (const s of packed) {
-        const live = (data.subjects ?? []).find((x) => x.id === s.id);
-        if (live?.status === "ok") {
-          setSubjectStatus(s.id, "prox");
-        }
-      }
+    if (allGlobalDone) {
+      resetCycleToday();
+    }
 
-      advancingRef.current = false;
-      setIsExtraSession(true);
-      setIsExtraModalOpen(false);
-      setIsIntensiveSession(false);
-      setIntensiveSubjectIds([]);
-      setIntensiveSubjectId(null);
-      setIntensiveDurationMinutes(undefined);
-      setBlock(packed);
-      setCurrentIndex(0);
-      setPhase("running");
-      setRestEndsAt(null);
-      startSubjectAt(0, packed);
-      playSessionStartTone();
-    },
-    [data.subjects, settings, startSubjectAt, setSubjectStatus],
-  );
+    const queue = buildGlobalCycleQueue(data.subjects ?? []);
+    if (queue.length === 0) return;
+
+    const packed = packStudyBlock(
+      queue,
+      settings.minMinutes,
+      settings.maxMinutes,
+      settings.targetMinutes,
+    );
+    if (packed.length === 0) return;
+
+    advancingRef.current = false;
+    setIsExtraSession(true);
+    setIsIntensiveSession(false);
+    setIntensiveSubjectIds([]);
+    setIntensiveSubjectId(null);
+    setIntensiveDurationMinutes(undefined);
+    setBlock(packed);
+    setCurrentIndex(0);
+    setPhase("running");
+    setRestEndsAt(null);
+    startSubjectAt(0, packed);
+    playSessionStartTone();
+  }, [data.subjects, settings, startSubjectAt, resetCycleToday]);
 
   const startIntensiveSession = useCallback(
     (subjectIdsInput: string | string[], durationMinutes: number) => {
@@ -741,20 +728,27 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
       }, 80);
       return;
     }
+    const wasExtraSession = isExtraSession;
     setPhase("idle");
     setBlock([]);
     setCurrentIndex(0);
     setRestEndsAt(null);
     window.setTimeout(() => {
-      startSession();
+      if (wasExtraSession) {
+        startAdvanceCycleSession();
+      } else {
+        startSession();
+      }
     }, 80);
   }, [
     isIntensiveSession,
+    isExtraSession,
     intensiveSubjectIds,
     intensiveSubjectId,
     intensiveDurationMinutes,
     settings.targetMinutes,
     startIntensiveSession,
+    startAdvanceCycleSession,
     startSession,
   ]);
 
@@ -1010,6 +1004,8 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
       blockSummary,
       previewBlock,
       previewSummary,
+      advanceCyclePreview,
+      advanceCycleSummary,
       currentSubjectId,
       currentIndex,
       restSecondsLeft,
@@ -1017,10 +1013,8 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
       refreshSettings,
       saveSettings,
       canStart,
+      canAdvanceCycle,
       isExtraSession,
-      isExtraModalOpen,
-      openExtraSessionModal,
-      closeExtraSessionModal,
       isIntensiveSession,
       intensiveSubjectIds,
       intensiveSubjectId,
@@ -1038,7 +1032,7 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
       sessionActive,
       allowSubjectPlay,
       startSession,
-      startExtraSession,
+      startAdvanceCycleSession,
       pauseSession,
       resumeSession,
       resetSession,
@@ -1057,6 +1051,8 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
       blockSummary,
       previewBlock,
       previewSummary,
+      advanceCyclePreview,
+      advanceCycleSummary,
       currentSubjectId,
       currentIndex,
       restSecondsLeft,
@@ -1064,10 +1060,8 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
       refreshSettings,
       saveSettings,
       canStart,
+      canAdvanceCycle,
       isExtraSession,
-      isExtraModalOpen,
-      openExtraSessionModal,
-      closeExtraSessionModal,
       isIntensiveSession,
       intensiveSubjectIds,
       intensiveSubjectId,
@@ -1085,7 +1079,7 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
       sessionActive,
       allowSubjectPlay,
       startSession,
-      startExtraSession,
+      startAdvanceCycleSession,
       pauseSession,
       resumeSession,
       resetSession,

@@ -33,6 +33,7 @@ import { checkCurrentUserAccess } from "@/lib/supabase/access";
 import {
   cycleSubjectsOnDay,
   isExclusiveCycleDay,
+  isExclusiveSoloDay,
   todayIndex,
   normalizeStudyDays,
   normalizeExclusiveDays,
@@ -870,18 +871,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
           if (!target) return prev;
           // Solo exclusivo: sem Concluída/Próxima.
           const day = todayIndex();
-          if (
-            !isExclusiveCycleDay(prev.subjects, day) &&
-            cycleSubjectsOnDay(prev.subjects, day).length === 0
-          ) {
+          if (isExclusiveSoloDay(prev.subjects, day)) {
             return prev;
           }
 
           const exclusiveCycle = isExclusiveCycleDay(prev.subjects, day);
-
           const ordered = cycleSubjectsOnDay(prev.subjects, day);
-          const idx = ordered.findIndex((s) => s.id === id);
-          if (idx < 0) return prev;
+          if (ordered.length > 0) {
+            const idx = ordered.findIndex((s) => s.id === id);
+            if (idx < 0) return prev;
+          } else {
+            // Dia sem grade: avança apenas matérias ativas não-livres do ciclo global.
+            if (!target.active || target.is_free) return prev;
+          }
 
           const readStatus = (s: Subject): SubjectStatus =>
             exclusiveCycle ? (s.exclusive_status ?? "prox") : s.status;
@@ -1020,12 +1022,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
         clearLastCycleCompletedSubjectId();
         setData((prev) => {
           const day = todayIndex();
+          if (isExclusiveSoloDay(prev.subjects, day)) return prev;
           const exclusiveCycle = isExclusiveCycleDay(prev.subjects, day);
           const writeStatus = (s: Subject, next: SubjectStatus): Subject =>
             exclusiveCycle
               ? { ...s, exclusive_status: next }
               : { ...s, status: next };
-          const ids = new Set(cycleSubjectsOnDay(prev.subjects, day).map((s) => s.id));
+          const todayScheduled = cycleSubjectsOnDay(prev.subjects, day);
+          const ids = new Set(
+            (todayScheduled.length > 0
+              ? todayScheduled
+              : prev.subjects.filter((s) => s.active && !s.is_free)
+            ).map((s) => s.id),
+          );
           return {
             ...prev,
             subjects: prev.subjects.map((s) =>

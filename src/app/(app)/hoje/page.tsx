@@ -11,10 +11,11 @@ import {
   ChevronDown,
   ChevronRight,
   ChevronUp,
+  FastForward,
   Pencil,
   RotateCcw,
-  Sparkles,
   Trophy,
+  Zap,
 } from "lucide-react";
 import { useApp } from "@/components/AppProvider";
 import { useStudyFlow } from "@/components/StudyFlowProvider";
@@ -47,10 +48,10 @@ import { IntensiveSessionModal } from "@/components/IntensiveSessionModal";
 import { FocusTodayCard } from "@/components/FocusTodayCard";
 import { MonthCalendarDialog } from "@/components/MonthCalendar";
 import { AutoGrowTextarea } from "@/components/AutoGrowTextarea";
-import { ExtraSessionModal } from "@/components/ExtraSessionModal";
 import { StudySessionBar } from "@/components/StudySessionChrome";
 import { SessionSubjectClock } from "@/components/SessionSubjectClock";
 import { SubjectIcon } from "@/components/SubjectIcon";
+import { useTimerRuntime } from "@/components/TimerRuntimeProvider";
 
 function applyNotesAndAutoProgress(
   s: Subject,
@@ -113,13 +114,106 @@ function applyProgressUpdate(
   return { ...s, progress };
 }
 
+function EmptyScheduleCard({
+  compact = false,
+  advanceSummary,
+  canAdvanceCycle,
+  onAdvanceCycle,
+  onOpenIntensive,
+}: {
+  compact?: boolean;
+  advanceSummary: string;
+  canAdvanceCycle: boolean;
+  onAdvanceCycle: () => void;
+  onOpenIntensive: () => void;
+}) {
+  return (
+    <div
+      className={`rounded-2xl border border-[var(--line)] bg-[color-mix(in_srgb,var(--signal)_4%,var(--surface))] text-center shadow-2xs ${
+        compact ? "my-1 p-5" : "p-8"
+      }`}
+    >
+      <div
+        className={`mx-auto mb-3 flex items-center justify-center rounded-2xl bg-[var(--signal)] text-white shadow-xs ${
+          compact ? "size-11" : "size-12"
+        }`}
+      >
+        <FastForward size={compact ? 20 : 22} />
+      </div>
+      <h3
+        className={`font-semibold tracking-tight text-[var(--ink)] ${
+          compact ? "text-sm" : "text-base"
+        }`}
+      >
+        Hoje não há matérias programadas
+      </h3>
+      <p
+        className={`mx-auto mt-1 text-xs leading-relaxed text-[color-mix(in_srgb,var(--ink)_70%,transparent)] ${
+          compact ? "max-w-xs" : "max-w-md"
+        }`}
+      >
+        Adiante a fila do seu ciclo ou faça um sprint livre no Modo Intensivo.
+      </p>
+      {canAdvanceCycle && (
+        <p className="mt-2 text-xs font-medium text-[var(--signal)]">
+          Próximo bloco do ciclo: {advanceSummary}
+        </p>
+      )}
+      <div
+        className={`flex items-center justify-center ${
+          compact ? "mt-4 flex-col gap-2" : "mt-5 flex-wrap gap-3"
+        }`}
+      >
+        {canAdvanceCycle && (
+          <button
+            type="button"
+            onClick={onAdvanceCycle}
+            className={`flex items-center justify-center gap-2 rounded-xl bg-[var(--signal)] font-semibold text-white shadow-sm transition hover:opacity-95 active:scale-[0.99] cursor-pointer ${
+              compact ? "w-full px-4 py-2.5 text-xs" : "px-5 py-2.5 text-sm"
+            }`}
+          >
+            <FastForward size={compact ? 14 : 16} />
+            Adiantar Ciclo
+          </button>
+        )}
+        <button
+          type="button"
+          onClick={onOpenIntensive}
+          className={`flex items-center justify-center gap-1.5 rounded-xl border border-amber-500/30 bg-amber-500/10 font-semibold text-amber-700 dark:text-amber-300 transition hover:bg-amber-500/15 active:scale-[0.99] cursor-pointer ${
+            compact ? "w-full px-4 py-2.5 text-xs" : "px-4 py-2.5 text-sm"
+          }`}
+        >
+          <Zap size={compact ? 14 : 15} className="fill-current text-amber-600 dark:text-amber-400" />
+          Modo Intensivo
+        </button>
+      </div>
+      <div className="mt-3">
+        <Link
+          href="/materias"
+          className="text-xs font-medium text-[color-mix(in_srgb,var(--ink)_70%,transparent)] hover:text-[var(--ink)] hover:underline"
+        >
+          Ajustar grade semanal →
+        </Link>
+      </div>
+    </div>
+  );
+}
+
 export default function HojePage() {
   const router = useRouter();
   const { data, upsertSubject, resetCycleToday } = useApp();
   const flow = useStudyFlow();
+  const { requestPlay } = useTimerRuntime();
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [showFullCycle, setShowFullCycle] = useState(false);
   const day = todayIndex();
+
+  const handleAdvanceCycle = () => {
+    requestPlay({
+      targetName: "o Ciclo Adiantado",
+      onPlay: flow.startAdvanceCycleSession,
+    });
+  };
 
   // No mobile, abrir o app do zero deve começar na aba "Hoje" (/agenda).
   // Se o celular abriu diretamente em /hoje (ex: atalho antigo do PWA ou aba restaurada),
@@ -179,7 +273,7 @@ export default function HojePage() {
     const daySubjects = subjectsOnDay(data.subjects, day);
     const baseMap = new Map<string, Subject>(daySubjects.map((s) => [s.id, s]));
 
-    // Se há sessão ativa (ex: Sessão Extra) e faltam matérias do bloco ativo na lista,
+    // Se há sessão ativa (ex: Ciclo Adiantado ou Modo Intensivo) e faltam matérias do bloco ativo na lista,
     // injeta as matérias do bloco para que apareçam na tela com seus cards e timers
     if (flow.sessionActive && flow.block.length > 0) {
       for (const b of flow.block) {
@@ -596,33 +690,13 @@ export default function HojePage() {
               })}
               {subjects.length === 0 && (
                 hasActiveCycleSubjects ? (
-                  <div className="rounded-2xl border border-[var(--line)] bg-[color-mix(in_srgb,var(--signal)_4%,var(--surface))] p-5 text-center shadow-2xs my-1">
-                    <div className="mx-auto flex size-11 items-center justify-center rounded-2xl bg-[var(--signal)] text-white shadow-xs mb-3">
-                      <Sparkles size={20} />
-                    </div>
-                    <h3 className="text-sm font-semibold tracking-tight text-[var(--ink)]">
-                      Hoje não há matérias programadas
-                    </h3>
-                    <p className="mx-auto mt-1 max-w-xs text-xs text-[color-mix(in_srgb,var(--ink)_70%,transparent)] leading-relaxed">
-                      Deseja fazer uma sessão extra agora?
-                    </p>
-                    <div className="mt-4 flex flex-col gap-2">
-                      <button
-                        type="button"
-                        onClick={flow.openExtraSessionModal}
-                        className="flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--signal)] px-4 py-2.5 text-xs font-semibold text-white shadow-sm transition hover:opacity-95 active:scale-[0.99]"
-                      >
-                        <Sparkles size={14} />
-                        Iniciar Sessão Extra
-                      </button>
-                      <Link
-                        href="/materias"
-                        className="text-xs font-medium text-[color-mix(in_srgb,var(--ink)_70%,transparent)] hover:text-[var(--ink)] hover:underline"
-                      >
-                        Ajustar grade semanal →
-                      </Link>
-                    </div>
-                  </div>
+                  <EmptyScheduleCard
+                    compact
+                    advanceSummary={flow.advanceCycleSummary}
+                    canAdvanceCycle={flow.canAdvanceCycle}
+                    onAdvanceCycle={handleAdvanceCycle}
+                    onOpenIntensive={flow.openIntensiveModal}
+                  />
                 ) : (
                   <p className="px-2 py-8 text-center text-sm opacity-55">
                     Nenhuma matéria para hoje —{" "}
@@ -820,33 +894,12 @@ export default function HojePage() {
                     <tr>
                       <td colSpan={3} className="px-5 py-6 text-sm">
                         {hasActiveCycleSubjects ? (
-                          <div className="rounded-2xl border border-[var(--line)] bg-[color-mix(in_srgb,var(--signal)_4%,var(--surface))] p-8 text-center shadow-2xs">
-                            <div className="mx-auto flex size-12 items-center justify-center rounded-2xl bg-[var(--signal)] text-white shadow-xs mb-3">
-                              <Sparkles size={24} />
-                            </div>
-                            <h3 className="text-base font-semibold tracking-tight text-[var(--ink)]">
-                              Hoje não há matérias programadas
-                            </h3>
-                            <p className="mx-auto mt-1 max-w-sm text-xs text-[color-mix(in_srgb,var(--ink)_70%,transparent)] leading-relaxed">
-                              Deseja fazer uma sessão extra agora?
-                            </p>
-                            <div className="mt-5 flex items-center justify-center gap-3">
-                              <button
-                                type="button"
-                                onClick={flow.openExtraSessionModal}
-                                className="flex items-center gap-2 rounded-xl bg-[var(--signal)] px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:opacity-95 active:scale-[0.99]"
-                              >
-                                <Sparkles size={16} />
-                                Iniciar Sessão Extra
-                              </button>
-                              <Link
-                                href="/materias"
-                                className="text-xs font-medium text-[color-mix(in_srgb,var(--ink)_70%,transparent)] hover:text-[var(--ink)] hover:underline"
-                              >
-                                Ajustar grade semanal →
-                              </Link>
-                            </div>
-                          </div>
+                          <EmptyScheduleCard
+                            advanceSummary={flow.advanceCycleSummary}
+                            canAdvanceCycle={flow.canAdvanceCycle}
+                            onAdvanceCycle={handleAdvanceCycle}
+                            onOpenIntensive={flow.openIntensiveModal}
+                          />
                         ) : (
                           <p className="text-center opacity-55">
                             Nenhuma matéria para hoje —{" "}
@@ -902,10 +955,6 @@ export default function HojePage() {
         </aside>
       </div>
 
-      <ExtraSessionModal
-        open={flow.isExtraModalOpen}
-        onClose={flow.closeExtraSessionModal}
-      />
       <IntensiveSessionModal
         open={flow.isIntensiveModalOpen}
         onClose={flow.closeIntensiveModal}

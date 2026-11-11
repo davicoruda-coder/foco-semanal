@@ -83,19 +83,17 @@ const TOPICS: TutorialTopic[] = [
   {
     id: "sessao-extra",
     icon: Sparkles,
-    title: "Sessão Extra (Dias Sem Matérias na Grade)",
+    title: "Adiantar Ciclo (Dias Sem Matérias na Grade)",
     badge: "Dias Livres",
-    summary: "Estude fora da sua grade semanal sem afetar suas configurações.",
+    summary: "Adiante seu ciclo de estudos mesmo fora da grade semanal.",
     concept:
-      "Quando o dia atual não tiver matérias agendadas na grade semanal (ou for um dia livre), o FocoHub permite abrir uma Sessão Extra com total flexibilidade e duas opções simples.",
+      "Quando o dia atual não tiver matérias agendadas na grade semanal (como em fins de semana ou feriados), o FocoHub permite adiantar a fila global do ciclo com 1 clique ou iniciar um sprint livre no Modo Intensivo.",
     steps: [
-      "Ao abrir a tela Hoje em um dia sem grade, clique no botão 'Iniciar Sessão Extra'.",
-      "Opção 1 - Continuar Ciclo: segue o fluxo normal da fila global (pega a próxima da vez, roda a intercalação e avança os contadores) sem alterar suas regras semanais de dias.",
-      "Opção 2 - Escolher Matérias: exibe uma lista simples de checkboxes com as matérias ativas para você marcar apenas o que quer rodar naquele momento.",
-      "Intercalação Automática Inteligente: mesmo ao escolher um subconjunto de matérias avulsas, o sistema reorganiza dinamicamente as disciplinas aplicando a intercalação balanceada e a regra de anti-adjacência do FocoHub.",
-      "Cálculo e Continuidade: os blocos concluídos computam tempo, progresso da rodada e histórico normalmente. No dia seguinte, a grade semanal leva em conta o que foi estudado para manter o ciclo sempre contínuo.",
+      "Ao abrir a tela Hoje em um dia sem matérias programadas, clique em 'Adiantar Ciclo' para iniciar o próximo bloco da fila global do ciclo.",
+      "Continuidade Real do Ciclo: as matérias concluídas atualizam o progresso e a rodada global do ciclo normalmente, mantendo a fila alinhada para o dia seguinte.",
+      "Quer escolher matérias avulsas sem mexer na ordem do ciclo? Use o 'Modo Intensivo' para selecionar as disciplinas e personalizar a duração do sprint.",
     ],
-    tip: "A Sessão Extra é ideal para adiantar matérias nos fins de semana ou em feriados, sem precisar alterar sua grade semanal em Matérias.",
+    tip: "Use 'Adiantar Ciclo' para avançar sua rotina regular em dias livres; use 'Modo Intensivo' para revisões pontuais, gargalos ou véspera de prova sem consumir etapas do ciclo.",
   },
   {
     id: "rodizio",
