@@ -928,7 +928,14 @@ export default function AjustesPage() {
 
 function SessionBlockSettings() {
   const { settings, saveSettings, refreshSettings } = useStudyFlow();
-  const [draft, setDraft] = useState<BlockRangeSettings>(settings);
+  const [draft, setDraft] = useState<{
+    targetMinutes: number | "";
+    minMinutes: number | "";
+    maxMinutes: number | "";
+    restMinutes: number | "";
+    maxContinuousMinutes: number | "";
+  }>(settings);
+  const [isDirty, setIsDirty] = useState(false);
   const [savedMsg, setSavedMsg] = useState<string | null>(null);
 
   useEffect(() => {
@@ -936,33 +943,108 @@ function SessionBlockSettings() {
   }, [refreshSettings]);
 
   useEffect(() => {
-    setDraft(settings);
-  }, [settings]);
+    if (!isDirty) {
+      setDraft(settings);
+    }
+  }, [settings, isDirty]);
 
   function patch<K extends keyof BlockRangeSettings>(
     key: K,
-    value: number,
+    value: number | string,
   ) {
-    setDraft((prev) => ({ ...prev, [key]: value }));
+    setIsDirty(true);
     setSavedMsg(null);
+    if (typeof value === "string") {
+      if (value === "") {
+        setDraft((prev) => ({ ...prev, [key]: "" }));
+        return;
+      }
+      // Remove zero à esquerda caso o usuário digite com 0 no campo (ex: "020" -> 20)
+      const cleaned = value.replace(/^0+(?=\d)/, "");
+      const parsed = parseInt(cleaned, 10);
+      setDraft((prev) => ({
+        ...prev,
+        [key]: Number.isNaN(parsed) ? "" : parsed,
+      }));
+    } else {
+      setDraft((prev) => ({ ...prev, [key]: value }));
+    }
+  }
+
+  function handleBlur(key: keyof BlockRangeSettings) {
+    setDraft((prev) => {
+      const val = prev[key];
+      if (val === "" || typeof val !== "number" || Number.isNaN(val)) {
+        const fallback =
+          key === "targetMinutes"
+            ? 40
+            : key === "restMinutes"
+            ? 20
+            : key === "minMinutes"
+            ? 35
+            : key === "maxMinutes"
+            ? 50
+            : 90;
+        return { ...prev, [key]: fallback };
+      }
+      if (key === "restMinutes") {
+        return { ...prev, restMinutes: clampInt(val, 1, 60) };
+      }
+      if (key === "targetMinutes") {
+        return { ...prev, targetMinutes: clampInt(val, 10, 180) };
+      }
+      if (key === "minMinutes") {
+        return { ...prev, minMinutes: clampInt(val, 10, 120) };
+      }
+      if (key === "maxMinutes") {
+        return { ...prev, maxMinutes: clampInt(val, 10, 180) };
+      }
+      if (key === "maxContinuousMinutes") {
+        return { ...prev, maxContinuousMinutes: clampInt(val, 0, 240) };
+      }
+      return prev;
+    });
   }
 
   function onSave() {
-    let min = clampInt(draft.minMinutes, 10, 120);
-    let max = clampInt(draft.maxMinutes, min, 180);
-    const target = clampInt(draft.targetMinutes, min, max);
-    const rest = clampInt(draft.restMinutes, 1, 60);
-    const maxCont = clampInt(draft.maxContinuousMinutes ?? 90, 0, 240);
+    let min = clampInt(
+      typeof draft.minMinutes === "number" ? draft.minMinutes : 35,
+      10,
+      120,
+    );
+    let max = clampInt(
+      typeof draft.maxMinutes === "number" ? draft.maxMinutes : 50,
+      min,
+      180,
+    );
+    const target = clampInt(
+      typeof draft.targetMinutes === "number" ? draft.targetMinutes : 40,
+      min,
+      max,
+    );
+    const rest = clampInt(
+      typeof draft.restMinutes === "number" ? draft.restMinutes : 20,
+      1,
+      60,
+    );
+    const rawCont =
+      typeof draft.maxContinuousMinutes === "number"
+        ? draft.maxContinuousMinutes
+        : 90;
+    const maxCont = clampInt(rawCont, 0, 240);
     if (min > max) {
       min = max;
     }
-    saveSettings({
+    const cleanSettings: BlockRangeSettings = {
       minMinutes: min,
       maxMinutes: max,
       targetMinutes: target,
       restMinutes: rest,
       maxContinuousMinutes: maxCont,
-    });
+    };
+    saveSettings(cleanSettings);
+    setDraft(cleanSettings);
+    setIsDirty(false);
     setSavedMsg("Configurações salvas.");
   }
 
@@ -991,7 +1073,8 @@ function SessionBlockSettings() {
             max={180}
             className="input mt-1 w-full"
             value={draft.targetMinutes}
-            onChange={(e) => patch("targetMinutes", Number(e.target.value))}
+            onChange={(e) => patch("targetMinutes", e.target.value)}
+            onBlur={() => handleBlur("targetMinutes")}
           />
           <span className="mt-1 block text-[11px] text-[color-mix(in_srgb,var(--ink)_55%,transparent)]">
             Duração planejada para cada sessão de estudos.
@@ -1005,7 +1088,8 @@ function SessionBlockSettings() {
             max={60}
             className="input mt-1 w-full"
             value={draft.restMinutes}
-            onChange={(e) => patch("restMinutes", Number(e.target.value))}
+            onChange={(e) => patch("restMinutes", e.target.value)}
+            onBlur={() => handleBlur("restMinutes")}
           />
           <span className="mt-1 block text-[11px] text-[color-mix(in_srgb,var(--ink)_55%,transparent)]">
             Pausa pós-bloco para restaurar a concentração.
@@ -1019,7 +1103,8 @@ function SessionBlockSettings() {
             max={120}
             className="input mt-1 w-full"
             value={draft.minMinutes}
-            onChange={(e) => patch("minMinutes", Number(e.target.value))}
+            onChange={(e) => patch("minMinutes", e.target.value)}
+            onBlur={() => handleBlur("minMinutes")}
           />
           <span className="mt-1 block text-[11px] text-[color-mix(in_srgb,var(--ink)_55%,transparent)]">
             Tolerância mínima para encaixe automático de matérias.
@@ -1033,7 +1118,8 @@ function SessionBlockSettings() {
             max={180}
             className="input mt-1 w-full"
             value={draft.maxMinutes}
-            onChange={(e) => patch("maxMinutes", Number(e.target.value))}
+            onChange={(e) => patch("maxMinutes", e.target.value)}
+            onBlur={() => handleBlur("maxMinutes")}
           />
           <span className="mt-1 block text-[11px] text-[color-mix(in_srgb,var(--ink)_55%,transparent)]">
             Teto máximo aceitável para fechar o bloco sem cortar matéria.
@@ -1066,8 +1152,9 @@ function SessionBlockSettings() {
             min={0}
             max={240}
             className="input w-24 text-sm font-semibold"
-            value={draft.maxContinuousMinutes ?? 90}
-            onChange={(e) => patch("maxContinuousMinutes", Number(e.target.value))}
+            value={draft.maxContinuousMinutes}
+            onChange={(e) => patch("maxContinuousMinutes", e.target.value)}
+            onBlur={() => handleBlur("maxContinuousMinutes")}
           />
           <span className="text-xs text-[color-mix(in_srgb,var(--ink)_60%,transparent)] mr-2">
             minutos (0 desativa)
@@ -1080,7 +1167,7 @@ function SessionBlockSettings() {
                 type="button"
                 onClick={() => patch("maxContinuousMinutes", mins)}
                 className={`rounded-md px-2.5 py-1 text-xs font-medium transition cursor-pointer ${
-                  (draft.maxContinuousMinutes ?? 90) === mins
+                  (draft.maxContinuousMinutes === "" ? 90 : draft.maxContinuousMinutes) === mins
                     ? "bg-indigo-600 text-white font-semibold shadow-2xs"
                     : "border border-[var(--line)] bg-[var(--surface)] text-[var(--ink)] hover:bg-[var(--mist)]"
                 }`}
