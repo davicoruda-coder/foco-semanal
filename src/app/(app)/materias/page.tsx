@@ -1157,9 +1157,11 @@ export default function MateriasPage() {
               key={s.id}
               className={`surface overflow-hidden rounded-[var(--radius)] transition-all ${
                 !isActive
-                  ? "border-[color-mix(in_srgb,var(--line)_80%,transparent)] bg-[color-mix(in_srgb,var(--mist)_35%,var(--surface))]"
-                  : ""
-              } ${free ? freeRowClass() : statusRowClass(s.status)}`}
+                  ? "border-[color-mix(in_srgb,var(--line)_80%,transparent)] bg-[color-mix(in_srgb,var(--mist)_45%,var(--surface))] opacity-75 hover:opacity-100 shadow-none"
+                  : free
+                  ? freeRowClass()
+                  : statusRowClass(s.status)
+              }`}
             >
               {/* CABEÇALHO DO CARD (Sempre visível / Compacto) */}
               <div className="flex flex-col gap-2 p-3 sm:p-3.5">
@@ -1203,14 +1205,16 @@ export default function MateriasPage() {
                     </div>
 
                     {/* Ícone da Matéria */}
-                    <div className="shrink-0">
+                    <div className={`shrink-0 ${!isActive ? "opacity-75 grayscale-[25%]" : ""}`}>
                       <SubjectIcon name={s.name || "?"} icon={s.icon} size={30} />
                     </div>
 
                     {/* Nome da Matéria */}
                     <div className="min-w-0 flex-1">
                       <input
-                        className="input w-full font-semibold text-sm sm:text-base py-1 px-2.5 bg-transparent border-transparent hover:border-[var(--line)] focus:bg-[var(--surface)] focus:border-[var(--signal)] rounded-lg transition"
+                        className={`input w-full font-semibold text-sm sm:text-base py-1 px-2.5 bg-transparent border-transparent hover:border-[var(--line)] focus:bg-[var(--surface)] focus:border-[var(--signal)] rounded-lg transition ${
+                          !isActive ? "text-[color-mix(in_srgb,var(--ink)_70%,transparent)]" : ""
+                        }`}
                         value={s.name}
                         onClick={(e) => e.stopPropagation()}
                         onChange={(e) => upsertSubject({ ...s, name: e.target.value })}
@@ -1223,8 +1227,8 @@ export default function MateriasPage() {
                   <div className="flex shrink-0 items-center gap-2">
                     {/* Status Badge */}
                     {!isActive ? (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 border border-amber-500/30 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wider text-amber-700 dark:text-amber-400">
-                        <Pause size={11} strokeWidth={2.5} /> Pausada
+                      <span className="inline-flex items-center gap-1.5 rounded-full border border-[color-mix(in_srgb,var(--ink)_18%,transparent)] bg-[color-mix(in_srgb,var(--ink)_5%,transparent)] px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wider text-[color-mix(in_srgb,var(--ink)_65%,transparent)] dark:text-[color-mix(in_srgb,var(--ink-dark)_70%,transparent)]">
+                        <Pause size={10} strokeWidth={2.6} className="opacity-70" /> Pausada
                       </span>
                     ) : free ? (
                       <span className="rounded-full bg-[var(--signal-soft)] border border-[color-mix(in_srgb,var(--signal)_30%,transparent)] px-2 py-0.5 text-[11px] font-semibold text-[var(--signal)]">
@@ -1813,7 +1817,7 @@ export default function MateriasPage() {
 
                     {/* Dica contextual quando a matéria está pausada */}
                     {!isActive && !isFcPaused && (
-                      <p className="text-[11px] text-amber-700/80 dark:text-amber-400/80 pt-1 border-t border-[var(--line)]/40">
+                      <p className="text-[11px] text-[color-mix(in_srgb,var(--ink)_65%,transparent)] pt-1 border-t border-[var(--line)]/40">
                         💡 Matéria pausada no ciclo. Você também pode pausar as revisões diárias de flashcards no botão acima se quiser tirar as pendências do Fixar.
                       </p>
                     )}
