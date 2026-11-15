@@ -38,6 +38,7 @@ const TOPICS: TutorialTopic[] = [
       "Em vez de uma grade rígida com horários fixos que geram frustração quando você atrasa, o ciclo é uma fila dinâmica. Matérias com maior peso (dificuldade ou importância) aparecem mais vezes no ciclo de forma intercalada — nunca repetidas em sequência!",
     steps: [
       "Configure em Matérias o tempo e o peso de cada matéria (1x, 2x, 3x ou 4x).",
+      "Ordem Base e Preferência (Setas ▲ / ▼): Os números (1, 2, 3...) e as setas à esquerda de cada matéria definem a sua ordem de preferência de partida. Ao resetar ou iniciar um novo ciclo, a matéria nº 1 é a primeira a receber o status 'Próxima'. Se duas matérias empatarem no cálculo de espaçamento de pesos, a que estiver mais acima tem a prioridade de desempate.",
       "Como funcionam os pesos: se Português tem peso 2x e História tem 1x, você estuda Português ➔ História ➔ Português. Você cumpre 2 blocos de Português no ciclo, mas com outra matéria no meio para não cansar a mente.",
       "Acompanhe o indicador (ex.: 0/2, 1/2): ao concluir cada passagem, o contador sobe. Quando atingir a meta (2/2), a matéria fica verde e aguarda as demais terminarem para reiniciar o ciclo completo.",
       "Concluir antecipadamente: se terminar antes do timer acabar, basta clicar no botão de avançar (⏭) na barra de sessão para passar imediatamente para a próxima matéria.",

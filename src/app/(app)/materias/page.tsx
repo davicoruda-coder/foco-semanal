@@ -1176,12 +1176,15 @@ export default function MateriasPage() {
                         }}
                         disabled={!isActive || idx === 0}
                         aria-label={`Subir ${s.name}`}
-                        title="Subir no ciclo"
+                        title="Subir na ordem base do ciclo"
                         className="rounded p-0.5 hover:bg-[var(--mist)] hover:text-[var(--ink)] disabled:opacity-20 transition"
                       >
                         <ChevronUp size={13} strokeWidth={2.5} />
                       </button>
-                      <span className="text-[10px] font-mono-num font-semibold leading-none opacity-50">
+                      <span
+                        className="text-[10px] font-mono-num font-semibold leading-none opacity-50 cursor-help"
+                        title="Ordem base do ciclo: define a preferência de partida e desempate no rodízio"
+                      >
                         {idx + 1}
                       </span>
                       <button
@@ -1192,7 +1195,7 @@ export default function MateriasPage() {
                         }}
                         disabled={!isActive || idx === subjects.length - 1}
                         aria-label={`Descer ${s.name}`}
-                        title="Descer no ciclo"
+                        title="Descer na ordem base do ciclo"
                         className="rounded p-0.5 hover:bg-[var(--mist)] hover:text-[var(--ink)] disabled:opacity-20 transition"
                       >
                         <ChevronDown size={13} strokeWidth={2.5} />
