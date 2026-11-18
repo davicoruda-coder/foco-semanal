@@ -1,14 +1,17 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
-import { resolveAIModel } from "../gerar-flashcards/route";
+import {
+  checkUserQuota,
+  callAIUniversal,
+  getEffectiveAIConfig,
+  recordAIUsage,
+} from "@/lib/ai/client";
+import type { AIMessage } from "@/lib/ai/types";
 
 /* ------------------------------------------------------------------ */
 /*  Config & Defaults                                                  */
 /* ------------------------------------------------------------------ */
 
-const DEFAULT_MODEL = "google/gemini-2.5-flash";
-const DEFAULT_LIMIT = 15;
 const MIN_TEXT_LENGTH = 10;
 const MAX_TEXT_LENGTH = 12000;
 /** Tamanho máximo de imagem base64: ~4MB (encoded). */
@@ -78,12 +81,16 @@ DIRETRIZES:
 
 Responda APENAS com JSON válido no seguinte formato:
 {
-  "explicacao": "Sua resposta didática e completa sanando a dúvida do aluno com acolhimento e clareza. Use quebras de linha e parágrafos bem espaçados.",
-  "ponto_chave": "Frase curta de fixação do esclarecimento (opcional, máximo 1 linha)",
-  "exemplo_adicional": "Exemplo prático do cotidiano ou contextualizado para ilustrar (opcional, ou deixe vazio)"
+  "explicacao": "Sua explicação didática e esclarecedora focada diretamente na dúvida levantada pelo aluno.",
+  "ponto_chave": "Uma frase de reforço destacando o conceito essencial que o aluno precisa memorizar.",
+  "exemplo_adicional": "Um contraexemplo ou analogia simples do dia a dia para ilustrar (opcional, deixe vazio se não for necessário)"
 }
 
-- Sem markdown fora do JSON, sem textos adicionais fora do JSON.`;
+- Sem markdown fora do JSON, sem texto antes ou depois do JSON.`;
+
+/* ------------------------------------------------------------------ */
+/*  Helpers                                                            */
+/* ------------------------------------------------------------------ */
 
 function parseFollowUpResponse(raw: string): FollowUpResponse {
   let cleaned = raw.trim();
@@ -94,7 +101,11 @@ function parseFollowUpResponse(raw: string): FollowUpResponse {
 
   try {
     const parsed = JSON.parse(cleaned);
-    if (parsed && typeof parsed.explicacao === "string" && parsed.explicacao.trim()) {
+    if (
+      parsed &&
+      typeof parsed.explicacao === "string" &&
+      parsed.explicacao.trim().length > 0
+    ) {
       return {
         explicacao: parsed.explicacao.trim(),
         ponto_chave:
@@ -158,7 +169,9 @@ function parseAIResponse(raw: string): TiraDuvidasResponse | null {
         flashcard_sugerido:
           parsed.flashcard_sugerido &&
           typeof parsed.flashcard_sugerido.frente === "string" &&
-          typeof parsed.flashcard_sugerido.verso === "string"
+          typeof parsed.flashcard_sugerido.verso === "string" &&
+          parsed.flashcard_sugerido.frente.trim() &&
+          parsed.flashcard_sugerido.verso.trim()
             ? {
                 frente: parsed.flashcard_sugerido.frente.trim(),
                 verso: parsed.flashcard_sugerido.verso.trim(),
@@ -166,80 +179,41 @@ function parseAIResponse(raw: string): TiraDuvidasResponse | null {
             : undefined,
       };
     }
-    return null;
   } catch {
-    return null;
+    // JSON parse failed
   }
+
+  return null;
 }
 
 /* ------------------------------------------------------------------ */
-/*  POST /api/revisao/tira-duvidas                                     */
+/*  POST Handler                                                       */
 /* ------------------------------------------------------------------ */
 
 export async function POST(request: Request) {
-  // 1. Auth
+  // 1. Auth check
   const supabase = await createClient();
   const { data: authData } = await supabase.auth.getUser();
+
   if (!authData.user) {
     return NextResponse.json({ error: "Sessão inválida." }, { status: 401 });
   }
+
   const userId = authData.user.id;
 
-  // 2. Verifica se o usuário é Master
-  const { data: isMaster } = await supabase.rpc("current_user_is_access_admin");
+  // 2. Admin / Master check
+  const { data: isMaster } = await supabase.rpc(
+    "current_user_is_access_admin",
+  );
 
-  // 3. Obtém configurações de IA (banco system_settings > fallback env)
-  let dbConfig: Record<string, unknown> | null = null;
-  if (isMaster) {
-    const { data } = await supabase
-      .from("system_settings")
-      .select("value")
-      .eq("key", "ai_config")
-      .maybeSingle();
-    dbConfig = (data?.value as Record<string, unknown>) || null;
-  } else {
-    const admin = createAdminClient();
-    if (admin) {
-      const { data } = await admin
-        .from("system_settings")
-        .select("value")
-        .eq("key", "ai_config")
-        .maybeSingle();
-      dbConfig = (data?.value as Record<string, unknown>) || null;
-    } else {
-      const { data } = await supabase.rpc("get_ai_config_for_user");
-      dbConfig = (data as Record<string, unknown>) || null;
-    }
-  }
+  // 3. IA Config
+  const aiConfig = await getEffectiveAIConfig(supabase, Boolean(isMaster));
 
-  const envKey = process.env.OPENROUTER_API_KEY?.trim() || "";
-  const envModel = process.env.OPENROUTER_MODEL?.trim() || "";
-
-  const apiKey =
-    (typeof dbConfig?.api_key === "string" ? dbConfig.api_key : "") || envKey;
-  const rawModel =
-    (typeof dbConfig?.model === "string" ? dbConfig.model : "") ||
-    envModel ||
-    DEFAULT_MODEL;
-  const model = resolveAIModel(rawModel);
-  const limitEnabled =
-    typeof dbConfig?.limit_enabled === "boolean"
-      ? dbConfig.limit_enabled
-      : true;
-  const dailyLimit =
-    typeof dbConfig?.daily_limit === "number"
-      ? dbConfig.daily_limit
-      : DEFAULT_LIMIT;
-  const customPrompt =
-    typeof dbConfig?.custom_prompt === "string"
-      ? dbConfig.custom_prompt.trim()
-      : "";
-
-  if (!apiKey) {
+  if (!aiConfig.isConfigured) {
     return NextResponse.json(
       {
         error:
-          "IA não configurada no sistema. O Administrador Master precisa configurar a chave do OpenRouter em Ajustes.",
+          "IA não configurada no sistema. O Administrador Master precisa configurar a chave em Ajustes > Inteligência Artificial.",
       },
       { status: 503 },
     );
@@ -300,61 +274,45 @@ export async function POST(request: Request) {
         { status: 400 },
       );
     }
-    if (pergunta && pergunta.length > MAX_TEXT_LENGTH) {
+    if (pergunta.length > MAX_TEXT_LENGTH) {
       return NextResponse.json(
-        {
-          error: `O texto não pode ter mais de ${MAX_TEXT_LENGTH} caracteres.`,
-        },
-        { status: 400 },
-      );
-    }
-    if (imagem && imagem.length > MAX_IMAGE_SIZE) {
-      return NextResponse.json(
-        { error: "A imagem é muito grande. Tente com uma imagem menor (até 4MB)." },
+        { error: `O texto não pode ter mais de ${MAX_TEXT_LENGTH} caracteres.` },
         { status: 400 },
       );
     }
   }
 
-  // 5. Rate limiting (Master tem uso ilimitado; se limitEnabled for falso, todos têm)
-  const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-  const { count: generationsToday, error: countError } = await supabase
-    .from("ai_generation_log")
-    .select("id", { count: "exact", head: true })
-    .eq("user_id", userId)
-    .gte("created_at", oneDayAgo);
-
-  if (countError) {
-    console.error("[tira-duvidas] count generations:", countError.message);
+  if (imagem && imagem.length > MAX_IMAGE_SIZE) {
     return NextResponse.json(
-      { error: "Erro ao verificar limite de gerações." },
-      { status: 500 },
+      {
+        error:
+          "A imagem é muito grande (máximo ~4MB). Tente tirar um print menor ou comprimir a imagem.",
+      },
+      { status: 400 },
     );
   }
 
-  const userGenerations = generationsToday ?? 0;
-  const isExempt = Boolean(isMaster) || !limitEnabled;
+  // 5. Rate limiting
+  const quota = await checkUserQuota(
+    supabase,
+    userId,
+    aiConfig.dailyLimit,
+    aiConfig.limitEnabled,
+    Boolean(isMaster),
+  );
 
-  if (!isExempt && userGenerations >= dailyLimit) {
+  if (!quota.allowed) {
     return NextResponse.json(
       {
-        error: `Limite diário de ${dailyLimit} gerações atingido. O limite será renovado amanhã.`,
-        limit_reached: true,
+        error: `Limite diário de uso atingido (${aiConfig.dailyLimit}/${aiConfig.dailyLimit} gerações por dia). Tente novamente amanhã.`,
       },
       { status: 429 },
     );
   }
 
-  // 6. Montar messages para OpenRouter
-  let messagesPayload: Array<{
-    role: "system" | "user" | "assistant";
-    content:
-      | string
-      | Array<
-          | { type: "text"; text: string }
-          | { type: "image_url"; image_url: { url: string } }
-        >;
-  }> = [];
+  // 6. Build messages payload
+  let messagesPayload: AIMessage[] = [];
+  const customPrompt = aiConfig.customPrompt;
 
   let effectiveSystemPrompt: string;
 
@@ -451,20 +409,20 @@ export async function POST(request: Request) {
     if (pergunta) {
       userContent.push({
         type: "text",
-        text: `${contextPrefix}${pergunta.slice(0, MAX_TEXT_LENGTH)}`,
+        text: `${contextPrefix}Explique este assunto ou resolva a questão abaixo com riqueza didática e aponte eventuais pegadinhas:\n\n${pergunta}`,
       });
-    } else if (disciplina) {
+    } else {
       userContent.push({
         type: "text",
-        text: `${contextPrefix}Analise e explique a questão/conteúdo da imagem abaixo.`,
+        text: `${contextPrefix}Analise com atenção a imagem/print anexa enviada pelo aluno. Explique o conceito, resolva a questão (se for o caso), aponte pegadinhas e forneça um passo a passo detalhado.`,
       });
     }
 
     if (imagem) {
-      // Garantir prefixo data URI
-      const imageUrl = imagem.startsWith("data:")
-        ? imagem
-        : `data:image/png;base64,${imagem}`;
+      let imageUrl = imagem;
+      if (!imageUrl.startsWith("data:")) {
+        imageUrl = `data:image/jpeg;base64,${imageUrl}`;
+      }
       userContent.push({
         type: "image_url",
         image_url: { url: imageUrl },
@@ -477,57 +435,26 @@ export async function POST(request: Request) {
     ];
   }
 
-  // 7. Call OpenRouter
-  let aiResponseText: string;
+  // 7. Chamada Universal de IA
+  let aiResponseText = "";
   let tokensUsed = 0;
 
   try {
-    const orResponse = await fetch(
-      "https://openrouter.ai/api/v1/chat/completions",
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          "Content-Type": "application/json",
-          "HTTP-Referer": "https://focohub.app",
-          "X-Title": "FocoHub - Tira-Dúvidas",
-        },
-        body: JSON.stringify({
-          model,
-          temperature: 0.2,
-          max_tokens: 4096,
-          messages: messagesPayload,
-        }),
-      },
-    );
+    const aiRes = await callAIUniversal(aiConfig, {
+      messages: messagesPayload,
+      temperature: 0.2,
+      maxTokens: 4096,
+      responseFormat: "json_object",
+    });
 
-    if (!orResponse.ok) {
-      const errBody = await orResponse.text().catch(() => "");
-      console.error(
-        "[tira-duvidas] OpenRouter error:",
-        orResponse.status,
-        errBody,
-      );
-      let errorMsg = `Erro ao comunicar com a IA (${orResponse.status}). Verifique a chave e modelo em Ajustes.`;
-      if (orResponse.status === 404) {
-        errorMsg = `O modelo de IA "${model}" não foi encontrado no OpenRouter (404). Selecione outro modelo em Ajustes.`;
-      } else if (orResponse.status === 401) {
-        errorMsg = `Chave de API do OpenRouter inválida ou expirada (401). Verifique a chave em Ajustes.`;
-      } else if (orResponse.status === 402) {
-        errorMsg = `Créditos insuficientes no OpenRouter (402). Recarregue seus créditos.`;
-      }
-      return NextResponse.json({ error: errorMsg }, { status: 502 });
-    }
-
-    const orData = await orResponse.json();
-    aiResponseText = orData?.choices?.[0]?.message?.content ?? "";
-    tokensUsed = orData?.usage?.total_tokens ?? 0;
-  } catch (err) {
-    console.error("[tira-duvidas] fetch error:", err);
+    aiResponseText = aiRes.content;
+    tokensUsed = aiRes.tokensUsed;
+  } catch (err: unknown) {
+    console.error("[tira-duvidas] erro ao chamar IA:", err);
+    const msg = err instanceof Error ? err.message : "erro de rede";
     return NextResponse.json(
       {
-        error:
-          "Falha de conexão com a IA. Verifique sua internet e tente novamente.",
+        error: `Falha na comunicação com o serviço de IA: ${msg}. Verifique o provedor e modelo em Ajustes.`,
       },
       { status: 502 },
     );
@@ -556,25 +483,21 @@ export async function POST(request: Request) {
     }
   }
 
-  // 9. Log generation (mesma tabela do flashcard — cota unificada)
-  await supabase.from("ai_generation_log").insert({
-    user_id: userId,
-    tokens_used: tokensUsed,
-    cards_generated: 0, // Não gera cards automaticamente; é tira-dúvidas
-  });
+  // 9. Log generation
+  await recordAIUsage(supabase, userId, 0, tokensUsed);
 
   // 10. Return
-  const remaining = isExempt
-    ? null
-    : Math.max(0, dailyLimit - (userGenerations + 1));
+  const remaining = quota.remaining !== null ? Math.max(0, quota.remaining - 1) : null;
 
   return NextResponse.json({
     ok: true,
     resposta: parsedResposta,
     followUp: parsedFollowUp,
     remaining,
-    limitEnabled: !isExempt,
-    dailyLimit,
+    limitEnabled: aiConfig.limitEnabled && !isMaster,
+    dailyLimit: aiConfig.dailyLimit,
     tokens_used: tokensUsed,
+    provider: aiConfig.provider,
+    model: aiConfig.model,
   });
 }

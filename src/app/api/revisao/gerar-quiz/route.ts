@@ -1,24 +1,16 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
+import {
+  checkUserQuota,
+  callAIUniversal,
+  getEffectiveAIConfig,
+  recordAIUsage,
+} from "@/lib/ai/client";
 import type { QuizQuestion, QuizQuestionType } from "@/lib/revisao/quiz-types";
+import type { AIMessage } from "@/lib/ai/types";
 
-const DEFAULT_MODEL = "google/gemini-2.5-flash";
-const DEFAULT_LIMIT = 15;
 const MAX_TEXT_LENGTH = 20000;
 const MAX_QUESTIONS = 10;
-
-const DEPRECATED_MODEL_MAP: Record<string, string> = {
-  "google/gemini-2.0-flash-001": "google/gemini-2.5-flash",
-  "anthropic/claude-3.5-haiku": "google/gemini-2.5-flash",
-  "anthropic/claude-3.5-haiku-20241022": "google/gemini-2.5-flash",
-};
-
-function resolveAIModel(rawModel?: string | null): string {
-  const trimmed = rawModel?.trim();
-  if (!trimmed) return DEFAULT_MODEL;
-  return DEPRECATED_MODEL_MAP[trimmed] || trimmed;
-}
 
 const SYSTEM_PROMPT = `Você é um elaborador sênior especialista em questões de avaliação ativa, concursos e exames de alto rendimento.
 Seu objetivo é criar um Quiz didático e focado para fixação ativa, baseado ESTRITAMENTE no conteúdo fornecido pelo estudante.
@@ -58,90 +50,77 @@ function parseAIResponse(raw: string, maxCount = MAX_QUESTIONS): QuizQuestion[] 
     const parsed = JSON.parse(cleaned);
     if (!parsed || !Array.isArray(parsed.questions)) return null;
 
-    const questions: QuizQuestion[] = [];
+    const validated: QuizQuestion[] = [];
     for (let i = 0; i < parsed.questions.length; i++) {
       const q = parsed.questions[i];
-      if (
-        typeof q.statement === "string" &&
-        q.statement.trim().length > 0 &&
-        Array.isArray(q.options) &&
-        q.options.length >= 2 &&
-        typeof q.answerIndex === "number" &&
-        q.answerIndex >= 0 &&
-        q.answerIndex < q.options.length &&
-        typeof q.explanation === "string"
-      ) {
-        const type: QuizQuestionType =
-          q.type === "certo_errado" || q.options.length === 2
-            ? "certo_errado"
-            : "multipla_escolha";
+      if (typeof q.statement !== "string" || !q.statement.trim()) continue;
 
-        questions.push({
-          id: `q_${Date.now()}_${i}`,
-          statement: q.statement.trim(),
-          type,
-          options: q.options.map((opt: unknown) => String(opt).trim()),
-          answerIndex: Math.floor(q.answerIndex),
-          explanation: q.explanation.trim(),
-        });
+      const type: QuizQuestionType =
+        q.type === "certo_errado" ? "certo_errado" : "multipla_escolha";
+
+      let options: string[] = [];
+      let answerIndex = typeof q.answerIndex === "number" ? q.answerIndex : 0;
+
+      if (type === "certo_errado") {
+        options = ["Certo", "Errado"];
+        if (answerIndex !== 0 && answerIndex !== 1) {
+          answerIndex = 0;
+        }
+      } else {
+        if (!Array.isArray(q.options) || q.options.length < 2) continue;
+        options = q.options.map((opt: unknown) => String(opt).trim()).filter(Boolean);
+        if (options.length !== 4) continue;
+        if (answerIndex < 0 || answerIndex >= options.length) {
+          answerIndex = 0;
+        }
       }
+
+      const explanation =
+        typeof q.explanation === "string" && q.explanation.trim()
+          ? q.explanation.trim()
+          : "Gabarito fundamentado no conteúdo estudado.";
+
+      validated.push({
+        id: `q_${Date.now()}_${i}`,
+        statement: q.statement.trim(),
+        type,
+        options,
+        answerIndex,
+        explanation,
+      });
     }
 
-    return questions.length > 0 ? questions.slice(0, maxCount) : null;
-  } catch {
+    if (validated.length === 0) return null;
+    return validated.slice(0, maxCount);
+  } catch (err) {
+    console.warn("[quiz-ia] falha ao fazer JSON.parse da resposta:", err);
     return null;
   }
 }
 
 export async function POST(request: Request) {
-  // 1. Auth
+  // 1. Auth check
   const supabase = await createClient();
   const { data: authData } = await supabase.auth.getUser();
+
   if (!authData.user) {
     return NextResponse.json({ error: "Sessão inválida." }, { status: 401 });
   }
+
   const userId = authData.user.id;
 
   // 2. Admin / Master check
-  const { data: isMaster } = await supabase.rpc("current_user_is_access_admin");
+  const { data: isMaster } = await supabase.rpc(
+    "current_user_is_access_admin",
+  );
 
-  // 3. IA Config (system_settings > fallback env)
-  let dbConfig: Record<string, unknown> | null = null;
-  if (isMaster) {
-    const { data } = await supabase
-      .from("system_settings")
-      .select("value")
-      .eq("key", "ai_config")
-      .maybeSingle();
-    dbConfig = (data?.value as Record<string, unknown>) || null;
-  } else {
-    const admin = createAdminClient();
-    if (admin) {
-      const { data } = await admin
-        .from("system_settings")
-        .select("value")
-        .eq("key", "ai_config")
-        .maybeSingle();
-      dbConfig = (data?.value as Record<string, unknown>) || null;
-    } else {
-      const { data } = await supabase.rpc("get_ai_config_for_user");
-      dbConfig = (data as Record<string, unknown>) || null;
-    }
-  }
+  // 3. IA Config
+  const aiConfig = await getEffectiveAIConfig(supabase, Boolean(isMaster));
 
-  const envKey = process.env.OPENROUTER_API_KEY?.trim() || "";
-  const envModel = process.env.OPENROUTER_MODEL?.trim() || "";
-
-  const apiKey = (typeof dbConfig?.api_key === "string" ? dbConfig.api_key : "") || envKey;
-  const rawModel = (typeof dbConfig?.model === "string" ? dbConfig.model : "") || envModel || DEFAULT_MODEL;
-  const model = resolveAIModel(rawModel);
-  const limitEnabled = typeof dbConfig?.limit_enabled === "boolean" ? dbConfig.limit_enabled : true;
-  const dailyLimit = typeof dbConfig?.daily_limit === "number" ? dbConfig.daily_limit : DEFAULT_LIMIT;
-
-  if (!apiKey) {
+  if (!aiConfig.isConfigured) {
     return NextResponse.json(
       {
-        error: "IA não configurada no sistema. O Administrador precisa configurar a chave do OpenRouter em Ajustes.",
+        error: "IA não configurada no sistema. O Administrador precisa configurar a chave em Ajustes > Inteligência Artificial.",
       },
       { status: 503 },
     );
@@ -157,7 +136,6 @@ export async function POST(request: Request) {
     disciplina?: unknown;
   } | null;
 
-  const sourceType = typeof body?.sourceType === "string" ? body.sourceType : "texto";
   const texto = typeof body?.texto === "string" ? body.texto.trim() : "";
   const disciplina = typeof body?.disciplina === "string" ? body.disciplina.trim() : "";
   const questionType =
@@ -187,24 +165,18 @@ export async function POST(request: Request) {
   }
 
   // 5. Rate limiting
-  const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-  const { count: generationsToday, error: countError } = await supabase
-    .from("ai_generation_log")
-    .select("id", { count: "exact", head: true })
-    .eq("user_id", userId)
-    .gte("created_at", oneDayAgo);
+  const quota = await checkUserQuota(
+    supabase,
+    userId,
+    aiConfig.dailyLimit,
+    aiConfig.limitEnabled,
+    Boolean(isMaster),
+  );
 
-  if (countError) {
-    console.error("[quiz-ia] count generations error:", countError.message);
-  }
-
-  const userGenerations = generationsToday ?? 0;
-  const isExempt = Boolean(isMaster) || !limitEnabled;
-
-  if (!isExempt && userGenerations >= dailyLimit) {
+  if (!quota.allowed) {
     return NextResponse.json(
       {
-        error: `Limite diário de ${dailyLimit} gerações atingido. O limite será renovado amanhã.`,
+        error: `Limite diário de ${aiConfig.dailyLimit} gerações atingido. O limite será renovado amanhã.`,
         limit_reached: true,
       },
       { status: 429 },
@@ -225,63 +197,53 @@ export async function POST(request: Request) {
   }
 
   const fullTextPrompt = `${instruction}\n\nCONTEÚDO:\n${texto}`;
-  const userContentParts: Array<{ type: "text"; text: string } | { type: "image_url"; image_url: { url: string } }> = [];
-  userContentParts.push({
-    type: "text",
-    text: fullTextPrompt,
-  });
+  let userMessageContent: AIMessage["content"];
 
-  for (const imgUrl of images) {
-    userContentParts.push({
-      type: "image_url",
-      image_url: { url: imgUrl },
-    });
+  if (images.length > 0) {
+    const parts: AIMessage["content"] = [
+      {
+        type: "text",
+        text: fullTextPrompt,
+      },
+    ];
+    for (const imgUrl of images) {
+      parts.push({
+        type: "image_url",
+        image_url: { url: imgUrl },
+      });
+    }
+    userMessageContent = parts;
+  } else {
+    userMessageContent = fullTextPrompt;
   }
 
-  // 7. Chamada ao OpenRouter
+  // 7. Chamada Universal de IA
   let aiResponseText = "";
   let tokensUsed = 0;
 
   try {
-    const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-        "HTTP-Referer": "https://focohub.app",
-        "X-Title": "FocoHub Quiz",
-      },
-      body: JSON.stringify({
-        model,
-        messages: [
-          { role: "system", content: SYSTEM_PROMPT },
-          { role: "user", content: images.length > 0 ? userContentParts : fullTextPrompt },
-        ],
-        temperature: 0.2, // Baixa temperatura para precisão factual
-        max_tokens: 3000,
-      }),
+    const customPrompt = aiConfig.customPrompt;
+    const effectiveSystemPrompt = customPrompt
+      ? `${SYSTEM_PROMPT}\n\nDIRETRIZES E COMPORTAMENTO ADICIONAIS DO ELABORADOR:\n${customPrompt}\n\nIMPORTANTE: Responda ESTRITAMENTE em formato JSON no schema solicitado.`
+      : SYSTEM_PROMPT;
+
+    const aiRes = await callAIUniversal(aiConfig, {
+      messages: [
+        { role: "system", content: effectiveSystemPrompt },
+        { role: "user", content: userMessageContent },
+      ],
+      temperature: 0.2, // Baixa temperatura para precisão factual
+      maxTokens: 3000,
+      responseFormat: "json_object",
     });
 
-    if (!res.ok) {
-      const errBody = await res.text().catch(() => "");
-      console.error("[quiz-ia] OpenRouter HTTP error:", res.status, errBody);
-      return NextResponse.json(
-        { error: `Erro na API da IA (${res.status}). Verifique a chave ou tente novamente.` },
-        { status: 502 },
-      );
-    }
-
-    const json = (await res.json()) as {
-      choices?: Array<{ message?: { content?: string } }>;
-      usage?: { total_tokens?: number };
-    };
-
-    aiResponseText = json.choices?.[0]?.message?.content || "";
-    tokensUsed = json.usage?.total_tokens || 0;
-  } catch (err) {
-    console.error("[quiz-ia] OpenRouter fetch failed:", err);
+    aiResponseText = aiRes.content;
+    tokensUsed = aiRes.tokensUsed;
+  } catch (err: unknown) {
+    console.error("[quiz-ia] erro ao chamar IA:", err);
+    const msg = err instanceof Error ? err.message : "falha de rede";
     return NextResponse.json(
-      { error: "Falha de conexão com a IA. Tente novamente em instantes." },
+      { error: `Erro na comunicação com a IA: ${msg}` },
       { status: 502 },
     );
   }
@@ -290,35 +252,29 @@ export async function POST(request: Request) {
   const questions = parseAIResponse(aiResponseText, countRequested);
 
   if (!questions || questions.length === 0) {
-    console.error("[quiz-ia] Resposta inválida da IA:", aiResponseText.slice(0, 300));
+    console.warn("[quiz-ia] resposta inválida:", aiResponseText.slice(0, 500));
     return NextResponse.json(
-      { error: "A IA não conseguiu estruturar as questões no formato esperado. Tente novamente." },
+      {
+        error: "A IA não conseguiu estruturar as questões com base no conteúdo enviado. Tente enviar um texto mais limpo.",
+      },
       { status: 422 },
     );
   }
 
-  // Adiciona a disciplina em cada questão se aplicável
-  if (disciplina) {
-    for (const q of questions) {
-      q.subjectName = disciplina;
-    }
-  }
-
   // 9. Registrar no log de uso
-  try {
-    await supabase.from("ai_generation_log").insert({
-      user_id: userId,
-      model,
-      tokens_used: tokensUsed,
-      source: `quiz_${sourceType}`,
-    });
-  } catch (logErr) {
-    console.warn("[quiz-ia] Log insert failed:", logErr);
-  }
+  await recordAIUsage(supabase, userId, questions.length, tokensUsed);
+
+  // 10. Retornar resposta
+  const remaining = quota.remaining !== null ? Math.max(0, quota.remaining - 1) : null;
 
   return NextResponse.json({
+    success: true,
     questions,
-    model,
-    tokensUsed,
+    totalQuestions: questions.length,
+    remaining,
+    limitEnabled: aiConfig.limitEnabled && !isMaster,
+    dailyLimit: aiConfig.dailyLimit,
+    provider: aiConfig.provider,
+    model: aiConfig.model,
   });
 }

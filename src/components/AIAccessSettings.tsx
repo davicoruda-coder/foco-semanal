@@ -14,52 +14,54 @@ import {
   Sparkles,
   Wifi,
   Bot,
+  Zap,
+  Cpu,
+  Brain,
+  Globe,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import {
+  AI_PROVIDERS,
+  PROVIDER_LIST,
+  detectProvider,
+  getDefaultModelForProvider,
+} from "@/lib/ai/providers";
+import type { AIProviderId, AIProviderMeta } from "@/lib/ai/types";
 
-export const MODEL_OPTIONS = [
-  {
-    id: "google/gemini-2.5-flash",
-    label: "Google Gemini 2.5 Flash (Recomendado — Rápido, Inteligente e Econômico)",
-    badge: "Recomendado",
-  },
-  {
-    id: "google/gemini-2.5-flash-lite",
-    label: "Google Gemini 2.5 Flash Lite (Ultra Rápido e Muito Barato)",
-    badge: "Mais Rápido",
-  },
-  {
-    id: "google/gemini-3.8-flash",
-    label: "Google Gemini 3.8 Flash (Nova Geração)",
-    badge: "Novo",
-  },
-  {
-    id: "deepseek/deepseek-chat",
-    label: "DeepSeek V3 (Excelente para provas, exames e estudos em português)",
-    badge: "Alta Qualidade",
-  },
-  {
-    id: "openai/gpt-4o-mini",
-    label: "OpenAI GPT-4o Mini (Alta confiabilidade)",
-    badge: "OpenAI",
-  },
-  {
-    id: "custom",
-    label: "Outro modelo (digitar identificador do OpenRouter)",
-    badge: "Personalizado",
-  },
-];
+export function getProviderIcon(providerId: AIProviderId) {
+  switch (providerId) {
+    case "google":
+      return <Sparkles size={16} className="text-amber-500" />;
+    case "groq":
+      return <Zap size={16} className="text-emerald-500" />;
+    case "openai":
+      return <Bot size={16} className="text-sky-500" />;
+    case "anthropic":
+      return <Brain size={16} className="text-amber-600 dark:text-amber-400" />;
+    case "deepseek":
+      return <Cpu size={16} className="text-indigo-500" />;
+    case "openrouter":
+    default:
+      return <Globe size={16} className="text-purple-500" />;
+  }
+}
 
-export function getModelDisplayName(modelId?: string | null): string {
-  if (!modelId) return "Google Gemini 2.5 Flash";
-  const match = MODEL_OPTIONS.find((m) => m.id === modelId);
-  if (match && match.id !== "custom") return match.label;
-  if (modelId === "google/gemini-2.0-flash-001") return "Google Gemini 2.5 Flash (atualizado)";
+export function getModelDisplayName(modelId?: string | null, providerId?: AIProviderId): string {
+  if (!modelId) return "Padrão do Sistema";
+  if (providerId && AI_PROVIDERS[providerId]) {
+    const match = AI_PROVIDERS[providerId].models.find((m) => m.id === modelId);
+    if (match) return match.label;
+  }
+  for (const p of PROVIDER_LIST) {
+    const match = p.models.find((m) => m.id === modelId);
+    if (match) return `${match.label} (${p.name})`;
+  }
   return modelId;
 }
 
 interface MemberAIConfig {
   configured: boolean;
+  provider?: AIProviderId;
   isMaster: boolean;
   limitEnabled: boolean;
   dailyLimit: number;
@@ -74,9 +76,10 @@ export function AIAccessSettings() {
   const [memberConfig, setMemberConfig] = useState<MemberAIConfig | null>(null);
 
   // Form state (Master)
+  const [selectedProvider, setSelectedProvider] = useState<AIProviderId>("google");
   const [apiKey, setApiKey] = useState("");
   const [showKey, setShowKey] = useState(false);
-  const [selectedModel, setSelectedModel] = useState("google/gemini-2.5-flash");
+  const [selectedModel, setSelectedModel] = useState("gemini-2.5-flash");
   const [customModel, setCustomModel] = useState("");
   const [limitEnabled, setLimitEnabled] = useState(true);
   const [dailyLimit, setDailyLimit] = useState(15);
@@ -88,6 +91,8 @@ export function AIAccessSettings() {
   const [testResult, setTestResult] = useState<{ ok: boolean; msg: string } | null>(null);
   const [saveResult, setSaveResult] = useState<{ ok: boolean; msg: string } | null>(null);
   const [sourceInfo, setSourceInfo] = useState<string | null>(null);
+
+  const currentProviderMeta: AIProviderMeta = AI_PROVIDERS[selectedProvider] || AI_PROVIDERS.google;
 
   // Carregar dados
   const loadConfig = useCallback(async () => {
@@ -118,18 +123,17 @@ export function AIAccessSettings() {
       const res = await fetch("/api/admin/ai-settings");
       if (res.ok) {
         const data = await res.json();
+        const prov = (data.provider as AIProviderId) || "google";
+        setSelectedProvider(prov);
         setApiKey(data.apiKey || "");
         setLimitEnabled(data.limitEnabled ?? true);
         setDailyLimit(data.dailyLimit || 15);
         setCustomPrompt(data.customPrompt || "");
 
-        let loadedModel = data.model || "google/gemini-2.5-flash";
-        // Migração de modelos descontinuados
-        if (loadedModel === "google/gemini-2.0-flash-001" || loadedModel === "anthropic/claude-3.5-haiku") {
-          loadedModel = "google/gemini-2.5-flash";
-        }
+        const loadedModel = data.model || getDefaultModelForProvider(prov);
+        const meta = AI_PROVIDERS[prov];
+        const isPreset = meta?.models.some((o) => o.id === loadedModel);
 
-        const isPreset = MODEL_OPTIONS.some((o) => o.id === loadedModel);
         if (isPreset) {
           setSelectedModel(loadedModel);
         } else {
@@ -151,13 +155,37 @@ export function AIAccessSettings() {
   }, []);
 
   useEffect(() => {
-    void loadConfig();
+    const id = window.setTimeout(() => void loadConfig(), 0);
+    return () => window.clearTimeout(id);
   }, [loadConfig]);
+
+  // Ao trocar o provedor manualmente
+  const handleProviderChange = (newProv: AIProviderId) => {
+    setSelectedProvider(newProv);
+    const meta = AI_PROVIDERS[newProv];
+    setSelectedModel(meta.defaultModel);
+    setCustomModel("");
+    setTestResult(null);
+  };
+
+  // Auto-detecção de chave ao colar
+  const handleKeyChange = (val: string) => {
+    setApiKey(val);
+    const trimmed = val.trim();
+    if (!trimmed) return;
+
+    const detected = detectProvider(trimmed, selectedModel, null);
+    if (detected !== selectedProvider) {
+      setSelectedProvider(detected);
+      setSelectedModel(getDefaultModelForProvider(detected));
+      setCustomModel("");
+    }
+  };
 
   // Testar conexão
   const handleTest = async () => {
     if (!apiKey.trim()) {
-      setTestResult({ ok: false, msg: "Digite a API Key antes de testar." });
+      setTestResult({ ok: false, msg: "Digite a chave de API antes de testar." });
       return;
     }
 
@@ -171,6 +199,7 @@ export function AIAccessSettings() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          provider: selectedProvider,
           apiKey: apiKey.trim(),
           model: modelToTest,
           testOnly: true,
@@ -181,7 +210,7 @@ export function AIAccessSettings() {
       if (data.ok) {
         setTestResult({ ok: true, msg: data.message || "Conexão estabelecida com sucesso!" });
       } else {
-        setTestResult({ ok: false, msg: data.error || "Falha ao validar com o OpenRouter." });
+        setTestResult({ ok: false, msg: data.error || "Falha ao validar com o provedor." });
       }
     } catch {
       setTestResult({ ok: false, msg: "Erro de conexão ao testar com o servidor." });
@@ -212,6 +241,7 @@ export function AIAccessSettings() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          provider: selectedProvider,
           apiKey: apiKey.trim(),
           model: finalModel,
           limitEnabled,
@@ -240,8 +270,11 @@ export function AIAccessSettings() {
     return null;
   }
 
-  // --- Visão de Membro Comum (Visualizar Modelo de IA) ---
+  // --- Visão de Membro Comum (Visualizar Provedor e Cota de IA) ---
   if (!isAdmin) {
+    const activeProv = memberConfig?.provider || "google";
+    const provMeta = AI_PROVIDERS[activeProv] || AI_PROVIDERS.google;
+
     return (
       <section id="ia" className="surface mt-4 p-4 md:p-5">
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--line)] pb-3">
@@ -251,10 +284,10 @@ export function AIAccessSettings() {
             </div>
             <div>
               <h2 className="font-display text-base font-semibold tracking-tight md:text-lg">
-                Inteligência Artificial (Revisão & Flashcards)
+                Inteligência Artificial (Estudos & Revisão)
               </h2>
               <p className="text-xs opacity-60">
-                Recursos inteligentes para elaboração de flashcards e resolução didática de dúvidas.
+                Arquiteto de ciclos, elaboração de flashcards, quizzes e resolução didática de dúvidas.
               </p>
             </div>
           </div>
@@ -270,14 +303,14 @@ export function AIAccessSettings() {
               Motor de IA Integrado
             </span>
             <p className="text-sm font-semibold text-[var(--ink)] flex items-center gap-1.5">
-              <Bot size={16} className="text-[var(--signal)]" />
-              IA FocoHub
+              {getProviderIcon(activeProv)}
+              {provMeta.name}
             </p>
             <p className="mt-1 text-xs text-[var(--ink-soft)]">
-              Pronta para criar flashcards, resumos e explicar dúvidas com passo a passo.
+              {provMeta.description}
             </p>
             <p className="mt-2 text-[11px] opacity-60">
-              Otimizado e gerenciado pelo Administrador da plataforma.
+              Gerenciado pelo Administrador Master da plataforma.
             </p>
           </div>
 
@@ -302,7 +335,7 @@ export function AIAccessSettings() {
     );
   }
 
-  // --- Visão de Administrador Master (Escolher e Configurar Modelo) ---
+  // --- Visão de Administrador Master (Configurar Provedor e Modelo) ---
   const currentActiveModelId = selectedModel === "custom" ? customModel : selectedModel;
 
   return (
@@ -315,10 +348,10 @@ export function AIAccessSettings() {
           </div>
           <div>
             <h2 className="font-display text-base font-semibold tracking-tight md:text-lg">
-              Inteligência Artificial (Flashcards & Tira-Dúvidas)
+              Inteligência Artificial (Multi-Provedores)
             </h2>
             <p className="text-xs opacity-60">
-              Configure a chave da API e escolha o modelo central que abastecerá tanto os Flashcards quanto o Tira-Dúvidas.
+              Escolha seu provedor preferido (Google Gemini Grátis, Groq, OpenAI, Anthropic, DeepSeek ou OpenRouter) e configure a chave central.
             </p>
           </div>
         </div>
@@ -331,22 +364,24 @@ export function AIAccessSettings() {
         <p className="mt-2 text-xs opacity-50 italic">{sourceInfo}</p>
       )}
 
-      {/* Banner de Modelo Ativo */}
+      {/* Banner de Provedor & Modelo Ativo */}
       <div className="mt-3.5 rounded-xl border border-[var(--signal)]/30 bg-[var(--signal-soft)]/30 p-3 flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2.5">
-          <Bot size={18} className="text-[var(--signal)] shrink-0" />
+          <div className="p-1 rounded-lg bg-[var(--surface)] shrink-0">
+            {getProviderIcon(selectedProvider)}
+          </div>
           <div>
             <div className="flex items-center gap-2">
               <span className="text-[11px] font-semibold uppercase tracking-wider text-[var(--signal)]">
-                Modelo Ativo no Sistema (Flashcards & Tira-Dúvidas)
+                {currentProviderMeta.name}
               </span>
               <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2 py-0.2 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                Pronto para Responder
+                {currentProviderMeta.badge}
               </span>
             </div>
             <p className="text-xs font-semibold text-[var(--ink)] mt-0.5">
-              {getModelDisplayName(currentActiveModelId)}
+              {getModelDisplayName(currentActiveModelId, selectedProvider)}
             </p>
             <p className="font-mono text-[11px] text-[var(--ink-soft)]">
               {currentActiveModelId || "Nenhum modelo selecionado"}
@@ -357,20 +392,61 @@ export function AIAccessSettings() {
 
       {/* Form */}
       <form onSubmit={(e) => void handleSave(e)} className="mt-4 space-y-4">
+        {/* Seletor de Provedor */}
+        <div>
+          <label className="text-xs font-semibold text-[var(--ink)] mb-2 flex items-center gap-1.5">
+            <Globe size={14} className="text-[var(--signal)]" />
+            Selecione o Provedor de IA
+          </label>
+
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            {PROVIDER_LIST.map((prov) => {
+              const isSelected = selectedProvider === prov.id;
+              return (
+                <button
+                  type="button"
+                  key={prov.id}
+                  onClick={() => handleProviderChange(prov.id)}
+                  className={`p-2.5 rounded-xl border text-left transition-all relative flex flex-col justify-between ${
+                    isSelected
+                      ? "border-[var(--signal)] bg-[var(--signal-soft)]/20 shadow-sm ring-1 ring-[var(--signal)]"
+                      : "border-[var(--line)] bg-[var(--surface-soft)] hover:bg-[var(--surface-hover)]"
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-1 mb-1">
+                    <div className="flex items-center gap-1.5">
+                      {getProviderIcon(prov.id)}
+                      <span className="text-xs font-semibold text-[var(--ink)] leading-tight">
+                        {prov.name.split(" ")[0]}
+                      </span>
+                    </div>
+                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-[var(--surface)] text-[var(--ink-soft)] border border-[var(--line)]">
+                      {prov.badge.split(" ")[0]}
+                    </span>
+                  </div>
+                  <p className="text-[10px] text-[var(--ink-soft)] line-clamp-2 leading-tight">
+                    {prov.description}
+                  </p>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
         {/* API Key */}
         <div>
           <div className="flex items-center justify-between mb-1.5">
             <label className="text-xs font-medium text-[var(--ink)] flex items-center gap-1.5">
               <Key size={14} className="text-[var(--signal)]" />
-              OpenRouter API Key
+              {currentProviderMeta.keyLabel}
             </label>
             <a
-              href="https://openrouter.ai/keys"
+              href={currentProviderMeta.keyHelpUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="text-xs text-[var(--signal)] hover:underline inline-flex items-center gap-1"
             >
-              Obter chave no OpenRouter <ExternalLink size={11} />
+              Obter chave {currentProviderMeta.name.split(" ")[0]} <ExternalLink size={11} />
             </a>
           </div>
 
@@ -378,9 +454,9 @@ export function AIAccessSettings() {
             <input
               type={showKey ? "text" : "password"}
               required
-              placeholder="sk-or-v1-..."
+              placeholder={currentProviderMeta.keyPlaceholder}
               value={apiKey}
-              onChange={(e) => setApiKey(e.target.value)}
+              onChange={(e) => handleKeyChange(e.target.value)}
               className="input w-full pr-11 font-mono text-xs sm:text-sm"
               autoComplete="off"
               spellCheck={false}
@@ -396,7 +472,7 @@ export function AIAccessSettings() {
             </button>
           </div>
           <p className="mt-1 text-[11px] opacity-60">
-            A chave é armazenada com segurança no banco e nunca é compartilhada com membros comuns.
+            {currentProviderMeta.keyPrefixHint}. A chave é criptografada e armazenada com segurança no banco.
           </p>
         </div>
 
@@ -404,35 +480,33 @@ export function AIAccessSettings() {
         <div>
           <label className="text-xs font-medium text-[var(--ink)] mb-1.5 flex items-center gap-1.5">
             <Sliders size={14} className="text-[var(--signal)]" />
-            Escolher Modelo de IA (Flashcards & Tira-Dúvidas)
+            Escolher Modelo ({currentProviderMeta.name})
           </label>
           <select
             value={selectedModel}
             onChange={(e) => setSelectedModel(e.target.value)}
             className="input w-full text-xs sm:text-sm"
           >
-            {MODEL_OPTIONS.map((opt) => (
+            {currentProviderMeta.models.map((opt) => (
               <option key={opt.id} value={opt.id}>
                 {opt.label}
               </option>
             ))}
+            <option value="custom">Outro modelo (digitar identificador)</option>
           </select>
-          <p className="mt-1 text-[11px] opacity-60">
-            Este modelo único alimentará tanto a criação de Flashcards quanto o Professor IA / Tira-Dúvidas.
-          </p>
 
           {selectedModel === "custom" && (
             <div className="mt-2">
               <input
                 type="text"
                 required
-                placeholder="Ex: meta-llama/llama-3.3-70b-instruct"
+                placeholder="Ex: gemini-2.5-flash ou gpt-4o"
                 value={customModel}
                 onChange={(e) => setCustomModel(e.target.value)}
                 className="input w-full font-mono text-xs sm:text-sm"
               />
               <p className="mt-1 text-[11px] opacity-50">
-                Insira o ID exato do modelo conforme listado no catálogo do OpenRouter.
+                Insira o identificador exato do modelo aceito pelo provedor selecionado.
               </p>
             </div>
           )}
@@ -451,13 +525,13 @@ export function AIAccessSettings() {
           </div>
 
           <p className="text-[11px] text-[color-mix(in_srgb,var(--ink)_65%,transparent)] leading-relaxed">
-            Instruções pedagógicas adicionais sobre como a IA deve responder dúvidas e gerar flashcards (ex: focar em bancas como FGV/Cebraspe, tom didático ou instruções caso o usuário envie assuntos fora do escopo de estudos).
+            Instruções pedagógicas adicionais sobre como a IA deve responder dúvidas e gerar flashcards (ex: focar em bancas como FGV/Cebraspe, tom didático ou instruções específicas).
           </p>
 
           <textarea
-            rows={4}
+            rows={3}
             maxLength={2000}
-            placeholder="Ex: Priorize explicações didáticas com foco em concursos da banca FGV. Se o aluno enviar uma dúvida que não tenha relação com matérias de estudo ou concursos, alerte educadamente no campo de explicação que este assistente é restrito a dúvidas de estudo."
+            placeholder="Ex: Priorize explicações didáticas com foco em concursos e faculdade. Se o aluno enviar uma dúvida fora do escopo de estudos, responda com cordialidade orientando o retorno ao foco."
             value={customPrompt}
             onChange={(e) => setCustomPrompt(e.target.value)}
             className="input w-full text-xs sm:text-sm py-2 leading-relaxed resize-y font-normal"
@@ -465,7 +539,7 @@ export function AIAccessSettings() {
 
           <p className="text-[10px] text-[var(--signal)] flex items-center gap-1">
             <Sparkles size={11} className="shrink-0" />
-            <span>As regras estruturais de segurança e formatação JSON continuam garantidas no sistema.</span>
+            <span>As regras estruturais de segurança e formatação JSON continuam garantidas em todos os provedores.</span>
           </p>
         </div>
 
@@ -477,7 +551,7 @@ export function AIAccessSettings() {
                 Ativar limite diário por usuário
               </span>
               <span className="text-[11px] opacity-60 block">
-                Controla o total de vezes que cada aluno/membro pode usar a IA (Flashcards + Tira-Dúvidas) por dia.
+                Controla o total de vezes que cada aluno/membro pode usar a IA (Ciclo, Flashcards, Quiz e Tira-Dúvidas) por dia.
               </span>
             </div>
             <input
@@ -495,7 +569,7 @@ export function AIAccessSettings() {
                   Gerações permitidas por dia:
                 </label>
                 <span className="text-[11px] opacity-50">
-                  Cota compartilhada por aluno entre gerar flashcards e tirar dúvidas.
+                  Cota compartilhada por aluno entre gerar flashcards, quizzes e tirar dúvidas.
                 </span>
               </div>
               <input
@@ -509,7 +583,7 @@ export function AIAccessSettings() {
             </div>
           ) : (
             <p className="text-xs text-[var(--signal)] font-medium pt-1">
-              ✓ Limite desativado: todos os usuários podem usar Flashcards e Tira-Dúvidas livremente.
+              ✓ Limite desativado: todos os usuários podem usar os recursos de IA livremente.
             </p>
           )}
 

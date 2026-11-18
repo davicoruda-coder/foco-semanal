@@ -1,28 +1,22 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
+import {
+  checkUserQuota,
+  callAIUniversal,
+  getEffectiveAIConfig,
+  recordAIUsage,
+} from "@/lib/ai/client";
+import { resolveAIModel } from "@/lib/ai/providers";
+
+export { resolveAIModel };
 
 /* ------------------------------------------------------------------ */
 /*  Config & Defaults                                                  */
 /* ------------------------------------------------------------------ */
 
-const DEFAULT_MODEL = "google/gemini-2.5-flash";
-const DEFAULT_LIMIT = 15;
 const MIN_TEXT_LENGTH = 50;
 const MAX_TEXT_LENGTH = 8000;
 const MAX_CARDS_PER_GENERATION = 30;
-
-const DEPRECATED_MODEL_MAP: Record<string, string> = {
-  "google/gemini-2.0-flash-001": "google/gemini-2.5-flash",
-  "anthropic/claude-3.5-haiku": "google/gemini-2.5-flash",
-  "anthropic/claude-3.5-haiku-20241022": "google/gemini-2.5-flash",
-};
-
-export function resolveAIModel(rawModel?: string | null): string {
-  const trimmed = rawModel?.trim();
-  if (!trimmed) return DEFAULT_MODEL;
-  return DEPRECATED_MODEL_MAP[trimmed] || trimmed;
-}
 
 const SYSTEM_PROMPT = `Você é um gerador de flashcards didático para aprendizado ativo e estudos em geral (como faculdade, certificações, provas e concursos). Dado o texto abaixo, extraia os conceitos-chave e crie flashcards no formato pergunta/resposta.
 
@@ -58,12 +52,12 @@ DIRETRIZES FUNDAMENTAIS:
 /*  Helpers                                                            */
 /* ------------------------------------------------------------------ */
 
-interface AICard {
+interface GeneratedCard {
   frente: string;
   verso: string;
 }
 
-function parseAIResponse(raw: string, maxCards: number = MAX_CARDS_PER_GENERATION): AICard[] | null {
+function parseAIResponse(raw: string, maxCount = MAX_CARDS_PER_GENERATION): GeneratedCard[] | null {
   let cleaned = raw.trim();
   const jsonBlockMatch = cleaned.match(/```(?:json)?\s*([\s\S]*?)```/);
   if (jsonBlockMatch) {
@@ -72,82 +66,57 @@ function parseAIResponse(raw: string, maxCards: number = MAX_CARDS_PER_GENERATIO
 
   try {
     const parsed = JSON.parse(cleaned);
-    if (parsed && Array.isArray(parsed.cards)) {
-      const cards: AICard[] = [];
-      for (const c of parsed.cards) {
-        if (
-          typeof c.frente === "string" &&
-          typeof c.verso === "string" &&
-          c.frente.trim().length > 0 &&
-          c.verso.trim().length > 0
-        ) {
-          cards.push({
-            frente: c.frente.trim().slice(0, 1000),
-            verso: c.verso.trim().slice(0, 2000),
-          });
-        }
+    if (!parsed || !Array.isArray(parsed.cards)) return null;
+
+    const validCards: GeneratedCard[] = [];
+    for (const item of parsed.cards) {
+      if (
+        typeof item.frente === "string" &&
+        typeof item.verso === "string" &&
+        item.frente.trim().length > 0 &&
+        item.verso.trim().length > 0
+      ) {
+        validCards.push({
+          frente: item.frente.trim(),
+          verso: item.verso.trim(),
+        });
       }
-      return cards.length > 0 ? cards.slice(0, maxCards) : null;
     }
-    return null;
+
+    if (validCards.length === 0) return null;
+    return validCards.slice(0, maxCount);
   } catch {
     return null;
   }
 }
 
 /* ------------------------------------------------------------------ */
-/*  POST /api/revisao/gerar-flashcards                                 */
+/*  POST Handler                                                       */
 /* ------------------------------------------------------------------ */
 
 export async function POST(request: Request) {
-  // 1. Auth
+  // 1. Auth check
   const supabase = await createClient();
   const { data: authData } = await supabase.auth.getUser();
+
   if (!authData.user) {
     return NextResponse.json({ error: "Sessão inválida." }, { status: 401 });
   }
+
   const userId = authData.user.id;
 
-  // 2. Verifica se o usuário é Master
-  const { data: isMaster } = await supabase.rpc("current_user_is_access_admin");
+  // 2. Admin / Master check
+  const { data: isMaster } = await supabase.rpc(
+    "current_user_is_access_admin",
+  );
 
-  // 3. Obtém configurações de IA (banco system_settings > fallback env)
-  let dbConfig: Record<string, unknown> | null = null;
-  if (isMaster) {
-    const { data } = await supabase
-      .from("system_settings")
-      .select("value")
-      .eq("key", "ai_config")
-      .maybeSingle();
-    dbConfig = (data?.value as Record<string, unknown>) || null;
-  } else {
-    const admin = createAdminClient();
-    if (admin) {
-      const { data } = await admin
-        .from("system_settings")
-        .select("value")
-        .eq("key", "ai_config")
-        .maybeSingle();
-      dbConfig = (data?.value as Record<string, unknown>) || null;
-    } else {
-      const { data } = await supabase.rpc("get_ai_config_for_user");
-      dbConfig = (data as Record<string, unknown>) || null;
-    }
-  }
+  // 3. IA Config
+  const aiConfig = await getEffectiveAIConfig(supabase, Boolean(isMaster));
 
-  const envKey = process.env.OPENROUTER_API_KEY?.trim() || "";
-  const envModel = process.env.OPENROUTER_MODEL?.trim() || "";
-
-  const apiKey = (typeof dbConfig?.api_key === "string" ? dbConfig.api_key : "") || envKey;
-  const rawModel = (typeof dbConfig?.model === "string" ? dbConfig.model : "") || envModel || DEFAULT_MODEL;
-  const model = resolveAIModel(rawModel);
-  const limitEnabled = typeof dbConfig?.limit_enabled === "boolean" ? dbConfig.limit_enabled : true;
-  const dailyLimit = typeof dbConfig?.daily_limit === "number" ? dbConfig.daily_limit : DEFAULT_LIMIT;
-
-  if (!apiKey) {
+  if (!aiConfig.isConfigured) {
     return NextResponse.json(
       {
-        error: "IA não configurada no sistema. O Administrador Master precisa configurar a chave do OpenRouter em Ajustes.",
+        error: "IA não configurada no sistema. O Administrador Master precisa configurar a chave em Ajustes > Inteligência Artificial.",
       },
       { status: 503 },
     );
@@ -193,43 +162,31 @@ export async function POST(request: Request) {
     );
   }
 
-  // 5. Rate limiting (Master tem uso ilimitado; se limitEnabled for falso, todos têm uso ilimitado)
-  const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-  const { count: generationsToday, error: countError } = await supabase
-    .from("ai_generation_log")
-    .select("id", { count: "exact", head: true })
-    .eq("user_id", userId)
-    .gte("created_at", oneDayAgo);
+  // 5. Rate limiting
+  const quota = await checkUserQuota(
+    supabase,
+    userId,
+    aiConfig.dailyLimit,
+    aiConfig.limitEnabled,
+    Boolean(isMaster),
+  );
 
-  if (countError) {
-    console.error("[revisao-ia] count generations:", countError.message);
-    return NextResponse.json(
-      { error: "Erro ao verificar limite de gerações." },
-      { status: 500 },
-    );
-  }
-
-  const userGenerations = generationsToday ?? 0;
-  const isExempt = Boolean(isMaster) || !limitEnabled;
-
-  if (!isExempt && userGenerations >= dailyLimit) {
+  if (!quota.allowed) {
     return NextResponse.json(
       {
-        error: `Limite diário de ${dailyLimit} gerações atingido. O limite será renovado amanhã.`,
+        error: `Limite diário de ${aiConfig.dailyLimit} gerações atingido. O limite será renovado amanhã.`,
         limit_reached: true,
       },
       { status: 429 },
     );
   }
 
-  // 6. Call OpenRouter
-  let aiResponseText: string;
+  // 6. Chamada Universal de IA
+  let aiResponseText = "";
   let tokensUsed = 0;
 
   try {
-    const customPrompt =
-      typeof dbConfig?.custom_prompt === "string" ? dbConfig.custom_prompt.trim() : "";
-
+    const customPrompt = aiConfig.customPrompt;
     const basePrompt = modo === "caderno" ? CADERNO_SYSTEM_PROMPT : SYSTEM_PROMPT;
 
     const effectiveSystemPrompt = customPrompt
@@ -249,49 +206,23 @@ export async function POST(request: Request) {
       userPromptContent = texto.slice(0, MAX_TEXT_LENGTH);
     }
 
-    const orResponse = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-        "HTTP-Referer": "https://focohub.app",
-        "X-Title": "FocoHub - Flashcards",
-      },
-      body: JSON.stringify({
-        model: model,
-        temperature: modo === "caderno" ? 0.2 : 0.1,
-        max_tokens: 4096,
-        messages: [
-          { role: "system", content: effectiveSystemPrompt },
-          { role: "user", content: userPromptContent },
-        ],
-      }),
+    const aiRes = await callAIUniversal(aiConfig, {
+      messages: [
+        { role: "system", content: effectiveSystemPrompt },
+        { role: "user", content: userPromptContent },
+      ],
+      temperature: modo === "caderno" ? 0.2 : 0.1,
+      maxTokens: 4096,
+      responseFormat: "json_object",
     });
 
-    if (!orResponse.ok) {
-      const errBody = await orResponse.text().catch(() => "");
-      console.error("[revisao-ia] OpenRouter error:", orResponse.status, errBody);
-      let errorMsg = `Erro ao comunicar com a IA (${orResponse.status}). Verifique a chave e modelo em Ajustes.`;
-      if (orResponse.status === 404) {
-        errorMsg = `O modelo de IA "${model}" não foi encontrado no OpenRouter (404). Selecione outro modelo (ex: Gemini 2.5 Flash) em Ajustes.`;
-      } else if (orResponse.status === 401) {
-        errorMsg = `Chave de API do OpenRouter inválida ou expirada (401). Verifique a chave em Ajustes.`;
-      } else if (orResponse.status === 402) {
-        errorMsg = `Créditos insuficientes no OpenRouter (402). Recarregue seus créditos ou escolha outro provedor.`;
-      }
-      return NextResponse.json(
-        { error: errorMsg },
-        { status: 502 },
-      );
-    }
-
-    const orData = await orResponse.json();
-    aiResponseText = orData?.choices?.[0]?.message?.content ?? "";
-    tokensUsed = orData?.usage?.total_tokens ?? 0;
-  } catch (err) {
-    console.error("[revisao-ia] fetch error:", err);
+    aiResponseText = aiRes.content;
+    tokensUsed = aiRes.tokensUsed;
+  } catch (err: unknown) {
+    console.error("[revisao-ia] erro ao chamar IA:", err);
+    const msg = err instanceof Error ? err.message : "erro de rede";
     return NextResponse.json(
-      { error: "Falha de conexão com a IA. Verifique sua internet e tente novamente." },
+      { error: `Falha na comunicação com o serviço de IA: ${msg}` },
       { status: 502 },
     );
   }
@@ -320,32 +251,29 @@ export async function POST(request: Request) {
   const { data: inserted, error: insertError } = await supabase
     .from("flashcards")
     .insert(rows)
-    .select();
+    .select("id, frente, verso, disciplina, questao_id, created_at");
 
   if (insertError) {
-    console.error("[revisao-ia] insert flashcards:", insertError.message);
+    console.error("[revisao-ia] insert cards:", insertError.message);
     return NextResponse.json(
-      { error: "Erro ao salvar os flashcards. Tente novamente." },
+      { error: "Erro ao salvar flashcards no banco de dados." },
       { status: 500 },
     );
   }
 
   // 9. Log generation
-  await supabase.from("ai_generation_log").insert({
-    user_id: userId,
-    tokens_used: tokensUsed,
-    cards_generated: inserted?.length ?? cards.length,
-  });
+  await recordAIUsage(supabase, userId, cards.length, tokensUsed);
 
   // 10. Return
-  const remaining = isExempt ? null : Math.max(0, dailyLimit - (userGenerations + 1));
+  const remaining = quota.remaining !== null ? Math.max(0, quota.remaining - 1) : null;
 
   return NextResponse.json({
-    ok: true,
-    cards: inserted ?? [],
-    count: inserted?.length ?? cards.length,
+    cards: inserted,
+    total_criados: inserted.length,
     remaining,
-    limitEnabled: !isExempt,
-    dailyLimit,
+    limitEnabled: aiConfig.limitEnabled && !isMaster,
+    dailyLimit: aiConfig.dailyLimit,
+    provider: aiConfig.provider,
+    model: aiConfig.model,
   });
 }

@@ -1,23 +1,13 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
+import {
+  checkUserQuota,
+  callAIUniversal,
+  getEffectiveAIConfig,
+  recordAIUsage,
+} from "@/lib/ai/client";
 import { sanitizeAndAuditArchitectPayload } from "@/lib/cycle-architect-calc";
 import type { CycleArchitectRequestPayload } from "@/lib/cycle-architect-types";
-
-const DEFAULT_MODEL = "google/gemini-2.5-flash";
-const DEFAULT_LIMIT = 15;
-
-const DEPRECATED_MODEL_MAP: Record<string, string> = {
-  "google/gemini-2.0-flash-001": "google/gemini-2.5-flash",
-  "anthropic/claude-3.5-haiku": "google/gemini-2.5-flash",
-  "anthropic/claude-3.5-haiku-20241022": "google/gemini-2.5-flash",
-};
-
-function resolveAIModel(rawModel?: string | null): string {
-  const trimmed = rawModel?.trim();
-  if (!trimmed) return DEFAULT_MODEL;
-  return DEPRECATED_MODEL_MAP[trimmed] || trimmed;
-}
 
 const SYSTEM_PROMPT = `Você é o Arquiteto de Ciclo de Estudos do FocoHub, um especialista sênior em psicologia cognitiva, neurociência da aprendizagem e engenharia de rotina de estudos (baseado em evidências de Dunlosky, Sweller, Roediger, Cepeda e Csíkszentmihályi).
 
@@ -102,43 +92,12 @@ export async function POST(request: Request) {
     );
   }
 
-  // 3. Verificação de Permissão Master / Ajustes de IA
+  // 3. Verificação de Permissão Master e Configuração de IA
   const { data: isMaster } = await supabase.rpc("current_user_is_access_admin");
-
-  let dbConfig: Record<string, unknown> | null = null;
-  if (isMaster) {
-    const { data } = await supabase
-      .from("system_settings")
-      .select("value")
-      .eq("key", "ai_config")
-      .maybeSingle();
-    dbConfig = (data?.value as Record<string, unknown>) || null;
-  } else {
-    const admin = createAdminClient();
-    if (admin) {
-      const { data } = await admin
-        .from("system_settings")
-        .select("value")
-        .eq("key", "ai_config")
-        .maybeSingle();
-      dbConfig = (data?.value as Record<string, unknown>) || null;
-    } else {
-      const { data } = await supabase.rpc("get_ai_config_for_user");
-      dbConfig = (data as Record<string, unknown>) || null;
-    }
-  }
-
-  const envKey = process.env.OPENROUTER_API_KEY?.trim() || "";
-  const envModel = process.env.OPENROUTER_MODEL?.trim() || "";
-
-  const apiKey = (typeof dbConfig?.api_key === "string" ? dbConfig.api_key : "") || envKey;
-  const rawModel = (typeof dbConfig?.model === "string" ? dbConfig.model : "") || envModel || DEFAULT_MODEL;
-  const model = resolveAIModel(rawModel);
-  const limitEnabled = typeof dbConfig?.limit_enabled === "boolean" ? dbConfig.limit_enabled : true;
-  const dailyLimit = typeof dbConfig?.daily_limit === "number" ? dbConfig.daily_limit : DEFAULT_LIMIT;
+  const aiConfig = await getEffectiveAIConfig(supabase, Boolean(isMaster));
 
   // Se a chave não estiver configurada, fazemos fallback seguro para o cálculo heurístico determinístico
-  if (!apiKey) {
+  if (!aiConfig.isConfigured) {
     const heuristicResult = sanitizeAndAuditArchitectPayload(null, body);
     return NextResponse.json({
       success: true,
@@ -149,26 +108,23 @@ export async function POST(request: Request) {
   }
 
   // 4. Rate Limiting de IA
-  if (!isMaster && limitEnabled) {
-    const hoje = new Date().toISOString().slice(0, 10);
-    const { count, error: countErr } = await supabase
-      .from("ai_generation_log")
-      .select("id", { count: "exact", head: true })
-      .eq("user_id", userId)
-      .gte("created_at", `${hoje}T00:00:00.000Z`);
+  const quota = await checkUserQuota(
+    supabase,
+    userId,
+    aiConfig.dailyLimit,
+    aiConfig.limitEnabled,
+    Boolean(isMaster),
+  );
 
-    if (countErr) {
-      console.warn("[arquiteto-ia] erro ao checar quota:", countErr.message);
-    } else if (typeof count === "number" && count >= dailyLimit) {
-      // Fallback gracioso para cálculo determinístico caso a quota diária seja atingida
-      const heuristicResult = sanitizeAndAuditArchitectPayload(null, body);
-      return NextResponse.json({
-        success: true,
-        source: "heuristic",
-        architectResult: heuristicResult,
-        notice: `Limite diário de requisições de IA atingido (${dailyLimit}/${dailyLimit}). Aplicado o motor determinístico de ciclo.`,
-      });
-    }
+  if (!quota.allowed) {
+    // Fallback gracioso para cálculo determinístico caso a quota diária seja atingida
+    const heuristicResult = sanitizeAndAuditArchitectPayload(null, body);
+    return NextResponse.json({
+      success: true,
+      source: "heuristic",
+      architectResult: heuristicResult,
+      notice: `Limite diário de requisições de IA atingido (${aiConfig.dailyLimit}/${aiConfig.dailyLimit}). Aplicado o motor determinístico de ciclo.`,
+    });
   }
 
   // 5. Construção do Prompt de Contexto
@@ -201,45 +157,22 @@ ${body.user_notes ? `OBSERVAÇÕES ADICIONAIS DO ALUNO:\n"${body.user_notes}"` :
 
 Gere agora a resposta estritamente em JSON conforme o schema do sistema.`;
 
-  // 6. Chamada à API OpenRouter
+  // 6. Chamada Universal de IA
   try {
-    const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-        "HTTP-Referer": "https://focohub.app",
-        "X-Title": "FocoHub - Arquiteto de Ciclo",
-      },
-      body: JSON.stringify({
-        model,
-        messages: [
-          { role: "system", content: SYSTEM_PROMPT },
-          { role: "user", content: promptUserContext },
-        ],
-        temperature: 0.25,
-        response_format: { type: "json_object" },
-        max_tokens: 1800,
-      }),
+    const aiResponse = await callAIUniversal(aiConfig, {
+      messages: [
+        { role: "system", content: SYSTEM_PROMPT },
+        { role: "user", content: promptUserContext },
+      ],
+      temperature: 0.25,
+      responseFormat: "json_object",
+      maxTokens: 1800,
     });
 
-    if (!res.ok) {
-      console.warn("[arquiteto-ia] chamada openrouter falhou com status:", res.status);
-      const heuristicResult = sanitizeAndAuditArchitectPayload(null, body);
-      return NextResponse.json({
-        success: true,
-        source: "heuristic_fallback",
-        architectResult: heuristicResult,
-      });
-    }
-
-    const json = await res.json();
-    const rawContent = json?.choices?.[0]?.message?.content;
-
     let parsedRaw: unknown = null;
-    if (typeof rawContent === "string") {
+    if (typeof aiResponse.content === "string") {
       try {
-        const cleaned = rawContent
+        const cleaned = aiResponse.content
           .replace(/```json/gi, "")
           .replace(/```/g, "")
           .trim();
@@ -253,24 +186,14 @@ Gere agora a resposta estritamente em JSON conforme o schema do sistema.`;
     const finalResult = sanitizeAndAuditArchitectPayload(parsedRaw, body);
 
     // 8. Registro de Uso no Log de IA
-    try {
-      const admin = createAdminClient();
-      const clientToUse = admin || supabase;
-      await clientToUse.from("ai_generation_log").insert({
-        user_id: userId,
-        cards_generated: 1,
-        tokens_used: json?.usage?.total_tokens || 0,
-      });
-    } catch (logErr) {
-      console.warn("[arquiteto-ia] falha ao registrar ai_generation_log:", logErr);
-    }
+    await recordAIUsage(supabase, userId, 1, aiResponse.tokensUsed);
 
     return NextResponse.json({
       success: true,
       source: "ai",
       architectResult: finalResult,
     });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error("[arquiteto-ia] exceção durante processamento:", err);
     const heuristicResult = sanitizeAndAuditArchitectPayload(null, body);
     return NextResponse.json({
@@ -280,4 +203,3 @@ Gere agora a resposta estritamente em JSON conforme o schema do sistema.`;
     });
   }
 }
-

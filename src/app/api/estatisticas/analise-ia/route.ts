@@ -1,21 +1,11 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
-
-const DEFAULT_MODEL = "google/gemini-2.5-flash";
-const DEFAULT_LIMIT = 15;
-
-const DEPRECATED_MODEL_MAP: Record<string, string> = {
-  "google/gemini-2.0-flash-001": "google/gemini-2.5-flash",
-  "anthropic/claude-3.5-haiku": "google/gemini-2.5-flash",
-  "anthropic/claude-3.5-haiku-20241022": "google/gemini-2.5-flash",
-};
-
-function resolveAIModel(rawModel?: string | null): string {
-  const trimmed = rawModel?.trim();
-  if (!trimmed) return DEFAULT_MODEL;
-  return DEPRECATED_MODEL_MAP[trimmed] || trimmed;
-}
+import {
+  checkUserQuota,
+  callAIUniversal,
+  getEffectiveAIConfig,
+  recordAIUsage,
+} from "@/lib/ai/client";
 
 const SYSTEM_PROMPT = `Você é um consultor pedagógico e especialista sênior em psicologia cognitiva e neurociência da aprendizagem aplicada (estilo Dunlosky, Roediger, Sweller e Cepeda).
 Seu papel é analisar as métricas de estudo reais fornecidas pelo aplicativo FocoHub e gerar um Parecer Pedagógico de Alto Nível para o estudante.
@@ -64,67 +54,34 @@ export async function POST(request: Request) {
   // 2. Admin / Master check
   const { data: isMaster } = await supabase.rpc("current_user_is_access_admin");
 
-  // 3. IA Config (system_settings > fallback env)
-  let dbConfig: Record<string, unknown> | null = null;
-  if (isMaster) {
-    const { data } = await supabase
-      .from("system_settings")
-      .select("value")
-      .eq("key", "ai_config")
-      .maybeSingle();
-    dbConfig = (data?.value as Record<string, unknown>) || null;
-  } else {
-    const admin = createAdminClient();
-    if (admin) {
-      const { data } = await admin
-        .from("system_settings")
-        .select("value")
-        .eq("key", "ai_config")
-        .maybeSingle();
-      dbConfig = (data?.value as Record<string, unknown>) || null;
-    } else {
-      const { data } = await supabase.rpc("get_ai_config_for_user");
-      dbConfig = (data as Record<string, unknown>) || null;
-    }
-  }
+  // 3. IA Config universal
+  const aiConfig = await getEffectiveAIConfig(supabase, Boolean(isMaster));
 
-  const envKey = process.env.OPENROUTER_API_KEY?.trim() || "";
-  const envModel = process.env.OPENROUTER_MODEL?.trim() || "";
-
-  const apiKey = (typeof dbConfig?.api_key === "string" ? dbConfig.api_key : "") || envKey;
-  const rawModel = (typeof dbConfig?.model === "string" ? dbConfig.model : "") || envModel || DEFAULT_MODEL;
-  const model = resolveAIModel(rawModel);
-  const limitEnabled = typeof dbConfig?.limit_enabled === "boolean" ? dbConfig.limit_enabled : true;
-  const dailyLimit = typeof dbConfig?.daily_limit === "number" ? dbConfig.daily_limit : DEFAULT_LIMIT;
-
-  if (!apiKey) {
+  if (!aiConfig.isConfigured) {
     return NextResponse.json(
       {
-        error: "IA não configurada no sistema. O Administrador precisa configurar a chave do OpenRouter em Ajustes.",
+        error: "IA não configurada no sistema. O Administrador precisa configurar a chave em Ajustes > Inteligência Artificial.",
       },
       { status: 503 },
     );
   }
 
-  // 4. Rate limiting (se não for master)
-  if (!isMaster && limitEnabled) {
-    const hoje = new Date().toISOString().slice(0, 10);
-    const { count, error: countErr } = await supabase
-      .from("ai_generation_log")
-      .select("id", { count: "exact", head: true })
-      .eq("user_id", userId)
-      .gte("created_at", `${hoje}T00:00:00.000Z`);
+  // 4. Rate limiting
+  const quota = await checkUserQuota(
+    supabase,
+    userId,
+    aiConfig.dailyLimit,
+    aiConfig.limitEnabled,
+    Boolean(isMaster),
+  );
 
-    if (countErr) {
-      console.warn("[analise-ia] erro ao checar quota:", countErr.message);
-    } else if (typeof count === "number" && count >= dailyLimit) {
-      return NextResponse.json(
-        {
-          error: `Limite diário de requisições de IA atingido (${dailyLimit}/${dailyLimit}). Tente novamente amanhã.`,
-        },
-        { status: 429 },
-      );
-    }
+  if (!quota.allowed) {
+    return NextResponse.json(
+      {
+        error: `Limite diário de requisições de IA atingido (${aiConfig.dailyLimit}/${aiConfig.dailyLimit}). Tente novamente amanhã.`,
+      },
+      { status: 429 },
+    );
   }
 
   // 5. Extração e validação do corpo
@@ -160,10 +117,10 @@ DISTRIBUIÇÃO DE MATÉRIAS NO PERÍODO:
 ${
   subjects.length > 0
     ? subjects
-        .map(
-          (s: any) =>
-            `- ${s.name}: ${Math.round((s.seconds || 0) / 60)} min (${s.percentage || 0}% do foco)`,
-        )
+        .map((s) => {
+          const item = s as { name?: string; seconds?: number; percentage?: number };
+          return `- ${item.name || "Matéria"}: ${Math.round((item.seconds || 0) / 60)} min (${item.percentage || 0}% do foco)`;
+        })
         .join("\n")
     : "- Nenhuma matéria discriminada"
 }
@@ -172,8 +129,9 @@ HORÁRIOS DE ATIVIDADE COM REGISTRO:
 ${
   timeSlots.length > 0
     ? timeSlots
-        .filter((t: any) => (t.seconds || 0) > 0)
-        .map((t: any) => `- ${t.label}: ${Math.round(t.seconds / 60)} min`)
+        .map((t) => t as { label?: string; seconds?: number })
+        .filter((t) => (t.seconds || 0) > 0)
+        .map((t) => `- ${t.label || "Turno"}: ${Math.round((t.seconds || 0) / 60)} min`)
         .join("\n")
     : "- Sem registros por turno específico"
 }
@@ -189,38 +147,18 @@ ${
 
 Gere agora o Parecer Pedagógico de acordo com as instruções do sistema, com profundidade, embasamento e tom humano e cauteloso.`;
 
-  // 6. Chamada ao OpenRouter
+  // 6. Chamada Universal de IA
   try {
-    const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-        "HTTP-Referer": "https://focohub.app",
-        "X-Title": "FocoHub - Analise Pedagogica",
-      },
-      body: JSON.stringify({
-        model,
-        messages: [
-          { role: "system", content: SYSTEM_PROMPT },
-          { role: "user", content: promptContext },
-        ],
-        temperature: 0.35,
-        max_tokens: 1500,
-      }),
+    const aiResponse = await callAIUniversal(aiConfig, {
+      messages: [
+        { role: "system", content: SYSTEM_PROMPT },
+        { role: "user", content: promptContext },
+      ],
+      temperature: 0.35,
+      maxTokens: 1500,
     });
 
-    if (!res.ok) {
-      const errText = await res.text().catch(() => "");
-      console.error("[analise-ia] erro na chamada openrouter:", res.status, errText);
-      return NextResponse.json(
-        { error: `Erro na comunicação com o provedor de IA (${res.status}).` },
-        { status: 502 },
-      );
-    }
-
-    const json = await res.json();
-    const content = json?.choices?.[0]?.message?.content;
+    const content = aiResponse.content;
 
     if (!content || typeof content !== "string") {
       return NextResponse.json(
@@ -230,17 +168,7 @@ Gere agora o Parecer Pedagógico de acordo com as instruções do sistema, com p
     }
 
     // 7. Registro no log de geração
-    try {
-      const admin = createAdminClient();
-      const clientToUse = admin || supabase;
-      await clientToUse.from("ai_generation_log").insert({
-        user_id: userId,
-        cards_generated: 1,
-        tokens_used: json?.usage?.total_tokens || 0,
-      });
-    } catch (logErr) {
-      console.warn("[analise-ia] falha ao salvar log de IA:", logErr);
-    }
+    await recordAIUsage(supabase, userId, 1, aiResponse.tokensUsed);
 
     return NextResponse.json({
       success: true,
@@ -249,14 +177,15 @@ Gere agora o Parecer Pedagógico de acordo com as instruções do sistema, com p
         dateStyle: "short",
         timeStyle: "short",
       }).format(new Date()),
-      model,
+      model: aiResponse.modelUsed,
+      provider: aiResponse.providerUsed,
     });
-  } catch (fetchErr: any) {
+  } catch (fetchErr: unknown) {
     console.error("[analise-ia] falha de rede/execução:", fetchErr);
+    const msg = fetchErr instanceof Error ? fetchErr.message : "erro de rede";
     return NextResponse.json(
-      { error: "Falha de conexão com o serviço de IA. Verifique sua rede." },
+      { error: `Falha na comunicação com o serviço de IA: ${msg}` },
       { status: 500 },
     );
   }
 }
-
